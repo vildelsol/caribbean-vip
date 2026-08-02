@@ -1,0 +1,49 @@
+name: CI
+
+on:
+  push:
+    branches: ['**']
+  pull_request:
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9.15.9
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+
+      - name: Install
+        run: pnpm install --frozen-lockfile
+
+      - name: Type-check
+        run: pnpm typecheck
+
+      - name: Lint
+        run: pnpm lint
+
+      - name: Test
+        run: pnpm test
+
+      - name: Build web apps
+        run: pnpm build
+
+      # AD-01: the Expo bundle is the check that catches monorepo resolution regressions —
+      # type-check alone will not. It runs on every push for that reason.
+      - name: Bundle mobile app
+        run: pnpm bundle:mobile
+
+      # Operating rule 10. A committed .env would not be caught by any test above.
+      - name: Assert no committed secrets
+        run: |
+          if git ls-files | grep -E '(^|/)\.env($|\.)' | grep -v '\.example$'; then
+            echo "::error::A .env file is tracked in git. Remove it and rotate the values."
+            exit 1
+          fi

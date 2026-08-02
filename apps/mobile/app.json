@@ -1,0 +1,29 @@
+{
+  "expo": {
+    "name": "Caribbean VIP",
+    "slug": "caribbean-vip",
+    "scheme": "caribbeanvip",
+    "version": "0.1.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "light",
+    "backgroundColor": "#FBF1E3",
+    "splash": {
+      "backgroundColor": "#073A32",
+      "resizeMode": "contain"
+    },
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.caribbeanvip.app",
+      "infoPlist": {
+        "NSLocationWhenInUseUsageDescription": "TODO-LEGAL (OD-04): Caribbean VIP uses your location to show nearby experiences and, if you opt in, nearby offers. The app works without it.",
+        "NSLocationAlwaysAndWhenInUseUsageDescription": "TODO-LEGAL (OD-04): Background location is optional and used only for offers you have opted into. Discovery works without it."
+      }
+    },
+    "android": {
+      "package": "com.caribbeanvip.app",
+      "adaptiveIcon": { "backgroundColor": "#073A32" }
+    },
+    "plugins": ["expo-router"],
+    "experiments": { "typedRoutes": true }
+  }
+}

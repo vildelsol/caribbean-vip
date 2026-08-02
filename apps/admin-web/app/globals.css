@@ -1,0 +1,25 @@
+:root {
+  --sand: #fbf1e3;
+  --sand-deep: #f3e6d2;
+  --green-900: #073a32;
+  --green-700: #0b5a53;
+  --turquoise: #10828a;
+  --gold: #dbaa50;
+  --gold-deep: #9e8541;
+  --coral: #d9694f;
+  --ink: #12211d;
+  --ink-muted: #4a5a55;
+  --border: #e2d6c2;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  /* PRD §16: readable outdoors — body text never below 16px. */
+  font: 16px/1.5 system-ui, -apple-system, 'Segoe UI', sans-serif;
+  background: var(--sand);
+  color: var(--ink);
+}

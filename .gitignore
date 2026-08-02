@@ -1,0 +1,26 @@
+node_modules/
+dist/
+build/
+.next/
+.expo/
+out/
+coverage/
+*.tsbuildinfo
+
+# Secrets — operating rule 10: never commit secrets.
+.env
+.env.*
+!.env.example
+!.env.*.example
+
+# Supabase local state
+supabase/.branches/
+supabase/.temp/
+supabase/.env
+
+.DS_Store
+*.log
+npm-debug.log*
+.vscode/
+.idea/
+.expo-export/

@@ -1,0 +1,17 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "vendor-web",
+      "runtimeExecutable": "npx",
+      "runtimeArgs": ["--yes", "pnpm@9", "--filter", "@cvip/vendor-web", "dev"],
+      "port": 3001
+    },
+    {
+      "name": "admin-web",
+      "runtimeExecutable": "npx",
+      "runtimeArgs": ["--yes", "pnpm@9", "--filter", "@cvip/admin-web", "dev"],
+      "port": 3002
+    }
+  ]
+}

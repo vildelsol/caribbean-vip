@@ -1,0 +1,46 @@
+{
+  "name": "caribbean-vip",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Caribbean VIP — regional tourism marketplace. One platform. Every island.",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "typecheck": "pnpm -r --if-present run typecheck",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "format": "prettier --write .",
+    "test": "vitest run",
+    "build": "pnpm -r --if-present run build",
+    "mobile": "pnpm --filter @cvip/mobile start",
+    "vendor": "pnpm --filter @cvip/vendor-web dev",
+    "admin": "pnpm --filter @cvip/admin-web dev",
+    "bundle:mobile": "pnpm --filter @cvip/mobile exec expo export --platform ios --output-dir .expo-export"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.17.0",
+    "eslint": "^9.17.0",
+    "prettier": "^3.4.2",
+    "typescript": "^5.7.2",
+    "typescript-eslint": "^8.18.0",
+    "vitest": "^2.1.8"
+  },
+  "allowScripts": {
+    "esbuild@0.21.5": true,
+    "fsevents@2.3.3": true,
+    "sharp@0.34.5": true
+  },
+  "packageManager": "pnpm@9.15.9",
+  "pnpm": {
+    "//": "Expo SDK 52 targets React 18 while Next 15 targets React 19. pnpm keeps the runtimes isolated, but the React Navigation type packages resolve @types/react 19 and leak an incompatible ReactNode into the mobile app. Pin their type dependency to 18.x; the Next apps keep 19.",
+    "overrides": {
+      "@react-navigation/bottom-tabs>@types/react": "^18.3.12",
+      "@react-navigation/native-stack>@types/react": "^18.3.12",
+      "@react-navigation/native>@types/react": "^18.3.12",
+      "@react-navigation/elements>@types/react": "^18.3.12",
+      "expo-router>@types/react": "^18.3.12",
+      "react-native>@types/react": "^18.3.12"
+    }
+  }
+}

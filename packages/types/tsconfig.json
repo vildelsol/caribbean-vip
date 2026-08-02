@@ -1,0 +1,13 @@
+{
+  "extends": "@cvip/config/tsconfig.base.json",
+  "compilerOptions": {
+    // Web Crypto, TextEncoder and base64 helpers are WinterCG globals available in Node 18+,
+    // Deno (Edge Functions) and the browser. `DOM` is the lib that declares them.
+    "lib": ["ES2022", "DOM"],
+    "rootDir": "./src",
+    "outDir": "./dist",
+    "noEmit": true,
+    "types": ["vitest/globals"]
+  },
+  "include": ["src/**/*"]
+}
