@@ -6,13 +6,14 @@ A mobile-first regional tourism marketplace connecting tourists with verified lo
 attractions, restaurants and transport — with geofenced offers, QR vouchers and a grounded AI
 concierge. Jamaica is the populated launch market; the architecture is island-aware from day one.
 
-**Status:** M0 complete. Nothing here is production-approved — see
+**Status:** M0–M2 complete, M3 in progress. Nothing here is production-approved — see
 [`docs/implementation-status.md`](docs/implementation-status.md).
 
 ## Documentation
 
 | Document | What it is |
 |---|---|
+| [`docs/HANDOVER.md`](docs/HANDOVER.md) | **Start here if you are picking this up.** State, next steps, and the things that will bite you. |
 | [`docs/PRD.md`](docs/PRD.md) | **Product source of truth.** Sections 1–15 of the founding PRD. |
 | [`docs/build-prompt.md`](docs/build-prompt.md) | Section 16 — the standing operating contract for the build. |
 | [`docs/architecture.md`](docs/architecture.md) | System shape, numbered architecture decisions, design tokens, security posture. |
