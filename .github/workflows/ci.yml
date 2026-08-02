@@ -47,3 +47,41 @@ jobs:
             echo "::error::A .env file is tracked in git. Remove it and rotate the values."
             exit 1
           fi
+
+  database:
+    runs-on: ubuntu-latest
+
+    # Plain Postgres plus supabase/tests/_harness.sql, not `supabase start` — no Docker service
+    # needed, and the same script developers run locally.
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_HOST_AUTH_METHOD: trust
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    env:
+      PGHOST: localhost
+      PGPORT: '5432'
+      PGUSER: postgres
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install psql client
+        run: sudo apt-get update && sudo apt-get install -y postgresql-client
+
+      # Verifies the migrations apply to a FRESH database, then runs the RLS and atomicity suites.
+      - name: Migrations, seed and SQL tests
+        run: ./scripts/db-test.sh
+
+      # V-03 and V-05 under genuine concurrency. A sequential test passes against an
+      # implementation with no row lock at all, so this one is not optional.
+      - name: Concurrency tests
+        run: ./scripts/db-concurrency-test.sh

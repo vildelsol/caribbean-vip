@@ -9,8 +9,10 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "@cvip/supabase": "workspace:^",
     "@cvip/types": "workspace:*",
     "@cvip/ui": "workspace:*",
+    "@supabase/supabase-js": "^2.47.10",
     "next": "^15.1.3",
     "react": "^19.0.0",
     "react-dom": "^19.0.0"

@@ -9,8 +9,16 @@ verification log in [`implementation-status.md`](implementation-status.md).
 |---|---|---|
 | Node | 20+ (verified on 26.4.0) | |
 | pnpm | 9.15.9 | **Required — npm workspaces will not work.** See AD-01 in [`architecture.md`](architecture.md). |
-| Supabase CLI | latest | Needed from M1 onward, not for M0 |
-| Docker | latest | Local Supabase |
+| PostgreSQL | 17 (client + server) | Required for the database tests. `brew install postgresql@17 && brew services start postgresql@17` |
+| Supabase CLI | latest | Only needed to run the full Supabase stack or regenerate types |
+| Docker | latest | Optional — only for `supabase start`. **The test suite does not need it.** |
+
+> The database tests run against a plain PostgreSQL instance plus
+> [`supabase/tests/_harness.sql`](../supabase/tests/_harness.sql), which stands in for the pieces of
+> Supabase the migrations touch (`auth.users`, `auth.uid()`, the `anon`/`authenticated`/
+> `service_role` roles). That keeps migrations, RLS and the atomicity functions verifiable without
+> Docker, in CI as well as locally. It is not a Supabase emulator — Storage policies and Auth
+> behaviour still need a real project before staging.
 
 No third-party credentials are needed to install, type-check, lint, test or build. Maps,
 notifications, AI and payments all default to mock adapters (operating rule 4).
@@ -38,6 +46,26 @@ pnpm typecheck
 
 ```bash
 pnpm lint
+```
+
+Rebuild a fresh database, apply every migration in order, seed Jamaica and run the SQL suite:
+
+```bash
+pnpm db:test
+```
+
+The concurrency suite — V-03 and V-05 with 16 real simultaneous connections. Worth running after
+any change to `reserve_availability` or `redeem_voucher`, because the sequential tests pass even
+against an implementation with no row lock:
+
+```bash
+pnpm db:concurrency
+```
+
+Everything the milestone gate requires, in one command:
+
+```bash
+pnpm verify
 ```
 
 ```bash
@@ -77,22 +105,44 @@ key, the Stripe webhook secret and `VOUCHER_HMAC_SECRET` belong only to Edge Fun
 `packages/types/src/env.ts` splits the two schemas so the boundary is enforced rather than
 remembered. `pnpm test` asserts it.
 
-## What works today (M0)
+## What works today (M0 + M1)
 
 - `packages/types` — money, pricing, voucher codec, state machines, env schemas, all unit-tested.
 - `packages/ui` — Caribbean VIP design tokens with contrast tests.
-- `apps/vendor-web`, `apps/admin-web` — Next.js shells that build and serve.
-- `apps/mobile` — Expo app that bundles, with the PRD §5 five-tab navigation
-  (Explore · Nearby · **Irie AI** · Trips · Profile).
+- `packages/supabase` — client factories that refuse a service-role key in a client bundle.
+- `supabase/` — the full schema for all 24 PRD entities, RLS on every table, the two atomicity
+  functions, and seeded Jamaica demo content.
+- `apps/mobile` — Expo app with guest browsing (T-01), island/destination switching (T-02), a live
+  Explore list, and the privacy controls PRD §14 requires.
+- `apps/vendor-web` — membership-gated portal shell.
+- `apps/admin-web` — role-gated console shell.
 
-Nothing connects to a database yet. Supabase, auth, seed data and the Jamaica content arrive in M1;
-see [`implementation-plan.md`](implementation-plan.md).
+Every app runs against a real database as soon as one is configured, and renders a labelled
+unconfigured state when one is not.
 
-## Coming in M1
+## Connecting to Supabase
+
+Nothing above requires a hosted project. To use one:
+
+1. Create a Supabase project.
+2. Apply the migrations — either `supabase db push`, or run the SQL in
+   `supabase/migrations/` in filename order.
+3. Optionally seed demo content with `supabase/seed/seed.sql`.
+4. Put the project URL and **anon** key in each app's `.env`.
+
+Regenerate the database types once the project exists, replacing the hand-written file:
 
 ```bash
-supabase start
-supabase db reset
+supabase gen types typescript --project-id <your-project-id> > packages/supabase/src/database.types.ts
 ```
 
-This section will be filled in with the real commands and their output when M1 lands, not before.
+### Creating the first admin
+
+`profiles.role` defaults to `tourist` and **cannot be self-assigned** — a trigger rejects any role
+change made by a non-super-admin, which is what stops a tourist promoting themselves into the admin
+console. The first admin therefore has to be set from the SQL editor, where there is no end-user
+context:
+
+```sql
+update profiles set role = 'super_admin' where id = '<the user uuid>';
+```

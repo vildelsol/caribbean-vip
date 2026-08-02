@@ -11,8 +11,12 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "@babel/runtime": "^7.26.0",
+    "@cvip/supabase": "workspace:^",
     "@cvip/types": "workspace:*",
     "@cvip/ui": "workspace:*",
+    "@react-native-async-storage/async-storage": "1.23.1",
+    "@supabase/supabase-js": "^2.47.10",
     "expo": "~52.0.0",
     "expo-asset": "~11.0.0",
     "expo-constants": "~17.0.0",
@@ -27,6 +31,7 @@
   },
   "devDependencies": {
     "@cvip/config": "workspace:*",
+    "@types/node": "^22.10.2",
     "@types/react": "~18.3.12",
     "babel-preset-expo": "~12.0.0",
     "typescript": "^5.7.2"
