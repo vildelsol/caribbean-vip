@@ -3,7 +3,7 @@
 Per operating rule 6: no requirement is silently omitted. Every requirement is marked
 `complete` · `partial` · `blocked` · `deferred` · `not started`.
 
-**Last updated:** 2026-08-02 · **Current milestone:** M0–M2 complete, M3 not started
+**Last updated:** 2026-08-02 · **Current milestone:** M0–M2 complete, M3 in progress
 
 ---
 
@@ -15,7 +15,7 @@ Per operating rule 6: no requirement is silently omitted. Every requirement is m
 | M0 — Repository foundation | complete | pnpm monorepo, shared config, `@cvip/types` with 38 unit tests, `@cvip/ui` tokens with 9 contrast tests, three app shells building, CI, env templates. All gates green — see verification log. |
 | M1 — Auth and domain foundation | complete | 11 migrations covering all 24 PRD entities plus 3 additions; RLS on all 29 tables; `reserve_availability` and `redeem_voucher`; Jamaica seed; auth in all three apps; 5 SQL test files plus a concurrency suite. |
 | M2 — Tourist discovery | complete | Full-text search with filters and sort, Explore sections, Nearby list with distance, experience detail, saved items, maps/location adapters. 7 SQL test files; 98 unit tests. |
-| M3 — Booking and Stripe | not started | |
+| M3 — Booking, Stripe and redemption | in progress | `packages/payments` core complete (44 tests). Scope revised: vendor QR scanner moved here from M4. Remaining: Edge Function adapters, booking UI, Trips, voucher display, scanner. |
 | M4 — Vendor portal | not started | |
 | M5 — Admin console | not started | |
 | M6 — Geofenced offers | not started | |
@@ -68,6 +68,9 @@ Per operating rule 5, no feature is claimed to work without a recorded command a
 | 2026-08-02 | `./scripts/db-test.sh` (after M2) | **7/7 SQL test files pass** on a fresh database |
 | 2026-08-02 | `pnpm typecheck` / `pnpm lint` (after M2) | exit 0 |
 | 2026-08-02 | Both Next builds + `expo export` (after M2) | exit 0 / exit 0 / iOS bundle 999 modules |
+| 2026-08-02 | `pnpm test` (payments core) | **142 passed**, 10 files — 44 of them new in `@cvip/payments` |
+| 2026-08-02 | `./scripts/db-push.sh` against an empty local DB | 29 tables, RLS enabled everywhere, 16 approved listings, 6 destinations |
+| 2026-08-02 | `./scripts/db-push.sh` against a non-empty DB | correctly refused rather than half-applying |
 
 Not yet verified: the mobile app running on a simulator or device (bundling and type-checking are
 verified, launch is not), and anything that needs a real Supabase instance — see Known limitations.
@@ -86,8 +89,8 @@ Per operating rule 4, none of these block the build; each sits behind an env var
 
 | Credential | Needed for | Status | Effect if absent |
 |---|---|---|---|
-| Supabase project URL + anon key | All apps | not provided | Local Supabase CLI used instead |
-| Supabase service-role key | Edge Functions | not provided | Local only |
+| Supabase project URL + anon key | All apps | **being provisioned** — see [`supabase-provisioning.md`](supabase-provisioning.md) | Apps render a labelled unconfigured state |
+| Supabase service-role key | Edge Functions | not provided | Needed to deploy the M3 Edge Functions; the payment core is testable without it |
 | Stripe test secret + publishable key | M3 checkout | not provided | Mock payment adapter; flows testable, no real Stripe call |
 | Stripe webhook signing secret | M3 webhook | not provided | Signature verification tested against fixtures |
 | Voucher signing secret (`VOUCHER_HMAC_SECRET`) | M3 vouchers | generated locally | Dev-only value; must be rotated for staging/production |

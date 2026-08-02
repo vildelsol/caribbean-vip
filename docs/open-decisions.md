@@ -19,8 +19,18 @@ onboarding real vendors.
 |---|---|---|---|
 | OD-07 | Does a geofenced offer voucher require a paid booking, or can it stand alone? | PRD §9 implies both (T-08 saves without booking; Journey B step 6 links to a booking). Modelled as a `promotions.requires_booking` flag so both exist. | None — already configurable |
 | OD-08 | Refund authority: vendor, admin, or both? | Admin only at MVP (PRD §7 puts refund state in admin booking operations; §6 does not give vendors refunds). | Small — a vendor-web screen and a policy change |
-| OD-09 | Currency display vs settlement currency | Display in the island's currency per PRD §3; **settle in USD** so Stripe and commission maths stay single-currency at MVP. FX display rate is informational and labelled as such. | Significant if changed after M3 — multi-currency settlement touches every money column |
+| OD-09 | Currency display vs settlement currency | **RESOLVED 2026-08-02: display localized, settle in USD.** Prices may be shown in the island's currency as an informational conversion, clearly labelled; every booking, payment and payout is denominated in USD. | Was significant; now locked before M3, which is the point at which it becomes expensive |
 
-OD-09 is the one worth a decision before M3, because reversing it later is expensive. The
-recommendation is the simplest option that satisfies PRD §3's "currency display" wording without
-committing to multi-currency settlement.
+## Resolved
+
+| ID | Decision | Resolved | Consequence |
+|---|---|---|---|
+| OD-09 | Display localized, settle in USD | 2026-08-02 | `platform_settings['pricing.settlement_currency']` is `USD`. Every `*_minor` column on `bookings` and `payments` is USD. An island's currency is a display concern only, and the conversion is labelled as indicative — never presented as the amount charged. Multi-currency settlement would now require a migration touching every monetary column, plus per-currency Stripe configuration. |
+
+## Escalated earlier than originally filed
+
+**OD-02 (Stripe Connect at launch, or manual settlement during pilot) is now due before M4, not
+before the first payout.** If Connect is used at launch, vendor onboarding must embed the Connect
+account-link and KYC flow — that is a material scope difference in the milestone that builds
+onboarding, and discovering it mid-M4 would mean rebuilding the flow. The build proceeds
+Connect-ready either way (AD-09), but the M4 onboarding UI cannot be finished without the answer.

@@ -19,7 +19,8 @@
     "bundle:mobile": "pnpm --filter @cvip/mobile exec expo export --platform ios --output-dir .expo-export",
     "db:test": "./scripts/db-test.sh",
     "db:concurrency": "./scripts/db-concurrency-test.sh",
-    "verify": "pnpm typecheck && pnpm lint && pnpm test && pnpm db:test"
+    "verify": "pnpm typecheck && pnpm lint && pnpm test && pnpm db:test",
+    "db:push": "./scripts/db-push.sh"
   },
   "devDependencies": {
     "@eslint/js": "^9.17.0",

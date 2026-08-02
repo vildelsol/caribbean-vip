@@ -76,13 +76,32 @@ isolated linking will not let them borrow it from an app.
 
 Turborepo can be layered on later without moving files.
 
-### AD-02 — Business logic lives in Supabase Edge Functions, not in Next.js API routes
+### AD-02 — Fat testable core, thin Edge Function adapter (refined before M3)
 
 Three clients (Expo, vendor-web, admin-web) need the same pricing, voucher and redemption logic. If
-it lived in a Next.js route the Expo app would depend on a web app being deployed. Edge Functions are
-client-agnostic and colocated with the database. Pure domain logic (pricing maths, state machines,
-voucher payload shape) lives in `packages/types` so it can be unit-tested in Node without a running
-Supabase.
+it lived in a Next.js route the Expo app would depend on a web app being deployed. Edge Functions
+are client-agnostic and colocated with the database, and deploy with one command — which matters
+for a small team that should not be operating a separate API service.
+
+**But Edge Functions run on Deno, so vitest cannot import them and `supabase functions serve`
+requires Docker.** Written the obvious way, the code that takes money would be the least-tested
+code in the repository — the exact inversion of operating rule 7.
+
+So the split is deliberate and load-bearing:
+
+- **`packages/payments`** holds the orchestration: what a checkout does, how a webhook event
+  changes booking state, when a voucher is issued. Pure functions over *injected* dependencies
+  (a booking store, a payment provider, a clock, an id generator). No Deno, no network, no
+  Supabase import. Tested in vitest against recorded Stripe fixtures, in milliseconds.
+- **`supabase/functions/*`** are thin Deno adapters: parse the request, build the real
+  dependencies, call the core, serialize the result. Tens of lines each, with no branching logic
+  worth testing.
+
+The rule of thumb: **if it can be got wrong, it belongs in the core.** A bug in an adapter breaks
+the endpoint loudly and immediately; a bug in the orchestration double-charges someone quietly.
+
+This preserves the original decision — the logic still runs in Edge Functions, deployed the same
+way — while moving everything worth testing into a runtime that can be tested here.
 
 ### AD-03 — Postgres functions for the two atomicity-critical paths
 
@@ -106,11 +125,18 @@ a version byte. The server stores `sha256(token)`, never the token itself, so a 
 mint a working QR. The human-readable booking reference (e.g. `VIPJ-7M24-83A1`) is displayed
 alongside for support, and is *not* accepted as a redemption credential.
 
-### AD-05 — Money is integer minor units, everywhere
+### AD-05 — Money is integer minor units, everywhere; settlement is USD
 
 All amounts are `bigint` minor units (cents) with an explicit ISO-4217 currency code. No floats, no
 decimals in transit. This matches Stripe's own representation and removes a whole class of rounding
 defect from the pricing tests.
+
+**Settlement currency is USD** (OD-09, resolved 2026-08-02). PRD §3 asks for localized *currency
+display*, which is a presentation concern: an island's currency may be shown alongside the price as
+an indicative conversion, clearly labelled as such. Every `bookings` and `payments` amount is USD.
+This keeps commission, refunds and reconciliation single-currency for the MVP; multi-currency
+settlement would now require a migration across every monetary column plus per-currency Stripe
+configuration.
 
 ### AD-06 — Pricing is a pure function, quoted server-side, re-verified at checkout
 

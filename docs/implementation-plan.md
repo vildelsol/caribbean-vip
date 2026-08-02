@@ -47,21 +47,42 @@ marker previews, experience detail, saved items, island/destination switcher.
 
 **Exit:** T-01, T-02, T-03 pass. Map failure and location-denied states render usefully.
 
-## M3 — Booking and Stripe
+## M3 — Booking, Stripe, and redemption
 
-Availability calendar, party/add-on selection, quote endpoint, `checkout-session` and
-`stripe-webhook` Edge Functions, booking confirmation, Trips, voucher issuance and QR display.
+Scope revised 2026-08-02: the vendor QR scanner moves here from M4.
 
-**Exit:** T-04, T-05, T-06 pass. Webhook replay creates exactly one booking. Concurrent checkout on
-the last seat: one succeeds, one fails cleanly.
+1. `packages/payments` — the testable core (AD-02): checkout orchestration, webhook event handling,
+   booking state transitions, voucher issuance. Pure functions over injected dependencies, tested
+   against recorded Stripe fixtures.
+2. Availability calendar, party and add-on selection, quote endpoint.
+3. `checkout-session` and `stripe-webhook` Edge Functions as thin Deno adapters over the core.
+4. Booking confirmation, Trips, voucher issuance and QR display.
+5. **Vendor QR scanner and redemption result screen.** Backed by `redeem_voucher()`, already built
+   and concurrency-tested in M1.
+
+**Why the scanner moved.** Journey A — discover, pay, receive a voucher, *have a vendor validate
+it* — is the demonstration that matters, and under the original order it would not close until
+midway through M4. The scanner is a camera view and a result screen over a function that already
+exists, so bringing it forward is cheap and closes the loop a milestone early. The rest of the
+vendor portal stays in M4.
+
+**Exit:** T-04, T-05, T-06 pass, and V-04/V-05 pass end to end rather than only at the database
+level. Webhook replay creates exactly one booking. Concurrent checkout on the last seat: one
+succeeds, one fails cleanly. A voucher issued by a real test payment can be scanned and rejected on
+a second scan.
 
 ## M4 — Vendor portal
 
 Onboarding flow with document upload, listing management, availability and blackout dates,
-promotions, bookings list, browser-camera QR scanner, `redeem-voucher` integration, gross/fee/net
-dashboard, staff invitations.
+promotions, bookings list, gross/fee/net dashboard, staff invitations.
 
-**Exit:** V-01 through V-05 and V-07 pass. Duplicate scan rejected with the original timestamp.
+The QR scanner moved to M3 (see above), so this milestone is the rest of the portal around it.
+
+**Blocked on a decision:** OD-02. If Stripe Connect is used at launch, onboarding must embed the
+Connect account-link and KYC flow. That answer is needed before the onboarding UI is finished, not
+before the first payout.
+
+**Exit:** V-01, V-02, V-03 and V-07 pass. (V-04 and V-05 already passed end to end in M3.)
 
 ## M5 — Admin console
 
