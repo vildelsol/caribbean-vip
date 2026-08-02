@@ -4,6 +4,7 @@ import { semantic } from '@cvip/ui';
 import { SessionProvider } from '../lib/session';
 import { IslandProvider } from '../lib/island';
 import { SavedProvider } from '../lib/saved';
+import { DemoBanner } from '../components/DemoBanner';
 
 /**
  * Root layout.
@@ -18,6 +19,7 @@ export default function RootLayout() {
       <IslandProvider>
         <SavedProvider>
         <StatusBar style="light" />
+        <DemoBanner />
         <Stack
           screenOptions={{
             headerStyle: { backgroundColor: semantic.brand },

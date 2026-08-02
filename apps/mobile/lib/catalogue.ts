@@ -1,12 +1,15 @@
 import type { SearchFilters } from '@cvip/types';
+import { demoBackend, demoOptionsFor } from '@cvip/demo';
 import { supabase } from './supabase';
+import { isDemoMode } from './mode';
 
 /**
- * Catalogue reads for the tourist app.
+ * Catalogue reads.
  *
- * Every query here relies on RLS for visibility rather than adding `status = 'approved'` itself
- * (AD-10). That is deliberate: the guarantee lives in one place, is covered by negative database
- * tests, and cannot be forgotten at a new call site.
+ * Dispatches between the demo backend and Supabase. Every Supabase query here relies on RLS for
+ * visibility rather than adding `status = 'approved'` itself (AD-10), and the demo path applies
+ * the same rule in `isPubliclyVisibleDemo` — so neither path can surface a listing the other
+ * would hide.
  */
 
 export interface CatalogueItem {
@@ -21,9 +24,6 @@ export interface CatalogueItem {
   fromAmountMinor: number;
   currency: string;
   isDemo: boolean;
-  rating?: number | null;
-  reviewCount?: number;
-  coordinates?: { lat: number; lng: number } | null;
 }
 
 interface SearchRow {
@@ -61,16 +61,57 @@ export interface SearchResult {
   error: string | null;
 }
 
-/**
- * Search the public catalogue.
- *
- * Filters go to the database rather than being applied after fetching, so a filtered search does
- * not silently return only what happened to be in the first page.
- */
 export async function searchCatalogue(
   filters: SearchFilters,
   limit = 50,
 ): Promise<SearchResult> {
+  if (isDemoMode) {
+    const q = filters.query.trim().toLowerCase();
+
+    const items = demoBackend
+      .visibleExperiences()
+      .filter((e) => {
+        if (q && !`${e.title} ${e.summary}`.toLowerCase().includes(q)) return false;
+        if (filters.destinationId) {
+          const dest = demoBackend.destinationBySlug(e.destinationSlug);
+          if (dest?.id !== filters.destinationId) return false;
+        }
+        if (filters.categories.length > 0 && !filters.categories.includes(e.category)) return false;
+        if (filters.minPriceMinor !== undefined && e.fromAmountMinor < filters.minPriceMinor) {
+          return false;
+        }
+        if (filters.maxPriceMinor !== undefined && e.fromAmountMinor > filters.maxPriceMinor) {
+          return false;
+        }
+        if (
+          filters.maxDurationMinutes !== undefined &&
+          e.durationMinutes > filters.maxDurationMinutes
+        ) {
+          return false;
+        }
+        return true;
+      })
+      .slice(0, limit)
+      .map((e) => {
+        const dest = demoBackend.destinationBySlug(e.destinationSlug);
+        return {
+          id: e.id,
+          vendorOrgId: e.vendorId,
+          islandId: 'island-jm',
+          destinationId: dest?.id ?? '',
+          category: e.category,
+          title: e.title,
+          summary: e.summary,
+          durationMinutes: e.durationMinutes,
+          fromAmountMinor: e.fromAmountMinor,
+          currency: 'USD',
+          isDemo: true,
+        };
+      });
+
+    return { items, error: null };
+  }
+
   const { data, error } = await supabase.rpc('search_experiences', {
     p_query: filters.query || '',
     p_island_id: filters.islandId ?? null,
@@ -107,19 +148,72 @@ export interface ExperienceDetail extends CatalogueItem {
   }[];
   upcomingSlots: { id: string; startsAt: string; capacity: number; bookedCount: number }[];
   reviews: { id: string; rating: number; body: string | null; createdAt: string }[];
+  /** The offer attached to this listing, if any. */
+  promotion: { id: string; title: string; terms: string } | null;
 }
 
 /**
  * Load one experience with everything the detail page needs (PRD §5).
  *
- * Returns null when the listing is not publicly visible — which is the same answer RLS gives for
- * a draft, a suspended vendor's listing, or an id that does not exist. The UI must not
- * distinguish those cases, because doing so would confirm that a hidden listing exists.
+ * Returns null when the listing is not publicly visible — the same answer RLS gives for a draft,
+ * a suspended vendor's listing, or an id that does not exist. The UI must not distinguish those
+ * cases, because doing so would confirm that a hidden listing exists.
  */
 export async function loadExperience(id: string): Promise<{
   detail: ExperienceDetail | null;
   error: string | null;
 }> {
+  if (isDemoMode) {
+    const exp = demoBackend.experience(id);
+    if (!exp) return { detail: null, error: null };
+
+    const vendor = demoBackend.vendor(exp.vendorId);
+    const dest = demoBackend.destinationBySlug(exp.destinationSlug);
+    const promo = demoBackend.promotionFor(exp.id);
+
+    return {
+      detail: {
+        id: exp.id,
+        vendorOrgId: exp.vendorId,
+        islandId: 'island-jm',
+        destinationId: dest?.id ?? '',
+        category: exp.category,
+        title: exp.title,
+        summary: exp.summary,
+        description: exp.description,
+        durationMinutes: exp.durationMinutes,
+        fromAmountMinor: exp.fromAmountMinor,
+        currency: 'USD',
+        isDemo: true,
+        inclusions: exp.inclusions,
+        exclusions: [],
+        pickupInfo: exp.pickupInfo,
+        meetingPoint: vendor?.location.name ?? null,
+        cancellationPolicy: { free_cancellation_hours: exp.cancellationHours },
+        vendorName: vendor?.tradingName ?? null,
+        destinationName: dest?.name ?? null,
+        media: [],
+        options: demoOptionsFor(exp).map((o) => ({
+          id: o.id,
+          kind: o.kind,
+          label: o.label,
+          unitAmountMinor: o.unitAmountMinor,
+          currency: 'USD',
+          occupiesCapacity: o.occupiesCapacity,
+        })),
+        upcomingSlots: demoBackend.upcomingSlots(exp.id).map((s) => ({
+          id: s.id,
+          startsAt: s.startsAt,
+          capacity: s.capacity,
+          bookedCount: s.bookedCount,
+        })),
+        reviews: [],
+        promotion: promo ? { id: promo.id, title: promo.title, terms: promo.terms } : null,
+      },
+      error: null,
+    };
+  }
+
   const { data, error } = await supabase
     .from('experiences')
     .select(
@@ -139,8 +233,7 @@ export async function loadExperience(id: string): Promise<{
   if (error) return { detail: null, error: error.message };
   if (!data) return { detail: null, error: null };
 
-  const row = data as unknown as Record<string, never> & Record<string, unknown>;
-  const r = row as Record<string, unknown>;
+  const r = data as unknown as Record<string, unknown>;
 
   const media = ((r.experience_media as Record<string, unknown>[]) ?? [])
     .slice()
@@ -168,8 +261,7 @@ export async function loadExperience(id: string): Promise<{
   const upcomingSlots = ((r.availability_slots as Record<string, unknown>[]) ?? [])
     .filter((s) => s.status === 'open' && new Date(String(s.starts_at)).getTime() > now)
     .sort(
-      (a, b) =>
-        new Date(String(a.starts_at)).getTime() - new Date(String(b.starts_at)).getTime(),
+      (a, b) => new Date(String(a.starts_at)).getTime() - new Date(String(b.starts_at)).getTime(),
     )
     .slice(0, 12)
     .map((s) => ({
@@ -179,8 +271,6 @@ export async function loadExperience(id: string): Promise<{
       bookedCount: Number(s.booked_count),
     }));
 
-  // Belt and braces: RLS already restricts reviews to published ones for a tourist, but the
-  // filter documents the intent at the point of use.
   const reviews = ((r.reviews as Record<string, unknown>[]) ?? [])
     .filter((v) => v.moderation_state === 'published')
     .map((v) => ({
@@ -218,20 +308,30 @@ export async function loadExperience(id: string): Promise<{
       options,
       upcomingSlots,
       reviews,
+      promotion: null,
     },
     error: null,
   };
 }
 
-/**
- * Vendor locations for the island, used as map markers and to compute distance.
- *
- * Only approved vendors' locations are readable, so the Nearby map cannot plot a pin for a
- * business that is not live.
- */
 export async function loadVendorLocations(islandId: string): Promise<
   { vendorOrgId: string; name: string; lat: number; lng: number; destinationId: string | null }[]
 > {
+  if (isDemoMode) {
+    return demoBackend
+      .visibleExperiences()
+      .map((e) => demoBackend.vendor(e.vendorId))
+      .filter((v): v is NonNullable<typeof v> => v !== null)
+      .filter((v, i, arr) => arr.findIndex((x) => x.id === v.id) === i)
+      .map((v) => ({
+        vendorOrgId: v.id,
+        name: v.location.name,
+        lat: v.location.lat,
+        lng: v.location.lng,
+        destinationId: demoBackend.destinationBySlug(v.location.destinationSlug)?.id ?? null,
+      }));
+  }
+
   const { data, error } = await supabase
     .from('vendor_locations')
     .select('vendor_org_id, name, lat, lng, destination_id, vendor_organizations!inner(island_id)')
@@ -252,10 +352,12 @@ export async function loadVendorLocations(islandId: string): Promise<
 }
 
 // ---------------------------------------------------------------------------
-// Saved items — requires an account
+// Saved items
 // ---------------------------------------------------------------------------
 
 export async function loadSavedExperienceIds(userId: string): Promise<Set<string>> {
+  if (isDemoMode) return new Set(demoBackend.savedExperienceIds);
+
   const { data, error } = await supabase
     .from('saved_items')
     .select('item_id')
@@ -274,6 +376,10 @@ export async function toggleSavedExperience(
   experienceId: string,
   currentlySaved: boolean,
 ): Promise<{ saved: boolean; error: string | null }> {
+  if (isDemoMode) {
+    return { saved: demoBackend.toggleSaved(experienceId), error: null };
+  }
+
   if (currentlySaved) {
     const { error } = await supabase
       .from('saved_items')

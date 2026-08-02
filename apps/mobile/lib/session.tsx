@@ -2,6 +2,7 @@ import { createContext, useContext, useEffect, useMemo, useState, type ReactNode
 import type { Session } from '@supabase/supabase-js';
 import type { ProfileRow } from '@cvip/supabase';
 import { isSupabaseConfigured, supabase } from './supabase';
+import { isDemoMode } from './mode';
 
 /**
  * Session and profile context for the tourist app.
@@ -26,13 +27,35 @@ interface SessionContextValue {
 
 const SessionContext = createContext<SessionContextValue | null>(null);
 
+/**
+ * In demo mode there is a standing signed-in tourist, so saving and booking work without an
+ * account screen in the middle of a walkthrough. Guest browsing (T-01) is still demonstrable —
+ * signing out returns to the guest state rather than to a login wall.
+ */
+const DEMO_PROFILE: ProfileRow = {
+  id: 'demo-tourist',
+  role: 'tourist',
+  display_name: 'Demo guest',
+  selected_island_id: 'island-jm',
+  selected_destination_id: null,
+  interests: [],
+  party_size: 2,
+  currency: 'USD',
+  locale: 'en',
+  location_consent: false,
+  offer_consent: false,
+  notification_consent: false,
+};
+
 export function SessionProvider({ children }: { children: ReactNode }) {
-  const [state, setState] = useState<AuthState>(isSupabaseConfigured ? 'loading' : 'guest');
+  const [state, setState] = useState<AuthState>(
+    isDemoMode ? 'authenticated' : isSupabaseConfigured ? 'loading' : 'guest',
+  );
   const [session, setSession] = useState<Session | null>(null);
-  const [profile, setProfile] = useState<ProfileRow | null>(null);
+  const [profile, setProfile] = useState<ProfileRow | null>(isDemoMode ? DEMO_PROFILE : null);
 
   useEffect(() => {
-    if (!isSupabaseConfigured) return;
+    if (!isSupabaseConfigured || isDemoMode) return;
 
     let active = true;
 
@@ -57,6 +80,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
   const userId = session?.user.id;
 
   useEffect(() => {
+    if (isDemoMode) return;
     if (!userId || !isSupabaseConfigured) {
       setProfile(null);
       return;
@@ -75,12 +99,18 @@ export function SessionProvider({ children }: { children: ReactNode }) {
       state,
       session,
       profile,
-      configured: isSupabaseConfigured,
+      configured: isSupabaseConfigured || isDemoMode,
       signOut: async () => {
         // Signing out returns the user to GUEST, not to a login wall — browsing still works.
+        if (isDemoMode) {
+          setProfile(null);
+          setState('guest');
+          return;
+        }
         await supabase.auth.signOut();
       },
       refreshProfile: async () => {
+        if (isDemoMode) return;
         if (userId) setProfile(await loadProfile(userId));
       },
     }),

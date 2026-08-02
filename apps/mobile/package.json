@@ -12,6 +12,7 @@
   },
   "dependencies": {
     "@babel/runtime": "^7.26.0",
+    "@cvip/demo": "workspace:^",
     "@cvip/supabase": "workspace:^",
     "@cvip/types": "workspace:*",
     "@cvip/ui": "workspace:*",

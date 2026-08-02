@@ -1,7 +1,9 @@
 import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
 import type { DestinationRow, IslandRow, ProfileRow } from '@cvip/supabase';
 import { APP_BRAND, ISLAND_BRANDS, type IslandCode } from '@cvip/types';
+import { demoBackend } from '@cvip/demo';
 import { isSupabaseConfigured, supabase } from './supabase';
+import { isDemoMode } from './mode';
 import { useSession } from './session';
 
 /**
@@ -35,11 +37,18 @@ export function IslandProvider({ children }: { children: ReactNode }) {
   const [destinations, setDestinations] = useState<DestinationRow[]>([]);
   const [islandId, setIslandId] = useState<string | null>(null);
   const [destinationId, setDestinationId] = useState<string | null>(null);
-  const [loading, setLoading] = useState(isSupabaseConfigured);
+  const [loading, setLoading] = useState(isSupabaseConfigured && !isDemoMode);
 
   // Only active islands come back — the RLS policy enforces that, so an unlaunched market cannot
   // be selected even by a client that asks for it.
   useEffect(() => {
+    if (isDemoMode) {
+      const rows = demoBackend.islands() as unknown as IslandRow[];
+      setIslands(rows);
+      setIslandId((current) => current ?? rows[0]?.id ?? null);
+      setLoading(false);
+      return;
+    }
     if (!isSupabaseConfigured) {
       setLoading(false);
       return;
@@ -61,6 +70,12 @@ export function IslandProvider({ children }: { children: ReactNode }) {
   }, []);
 
   useEffect(() => {
+    if (isDemoMode) {
+      setDestinations(
+        (islandId ? demoBackend.destinations(islandId) : []) as unknown as DestinationRow[],
+      );
+      return;
+    }
     if (!islandId || !isSupabaseConfigured) {
       setDestinations([]);
       return;
@@ -98,6 +113,7 @@ export function IslandProvider({ children }: { children: ReactNode }) {
 
   const value = useMemo<IslandContextValue>(() => {
     const persist = async (patch: Partial<ProfileRow>) => {
+      if (isDemoMode) return; // demo selection is local state; nothing to persist to
       if (!profile) return; // guest: selection stays local, which is the point of T-01
       const { error } = await supabase.from('profiles').update(patch).eq('id', profile.id);
       if (error) console.warn('[island] could not save selection:', error.message);
