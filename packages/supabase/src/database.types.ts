@@ -15,6 +15,7 @@ import type {
   Currency,
   ExperienceCategory,
   ListingStatus,
+  RedemptionResult,
   UserRole,
   VendorStatus,
 } from '@cvip/types';
@@ -197,6 +198,28 @@ export interface Database {
           currency: Currency;
           is_demo: boolean;
           rank: number;
+        }[];
+      };
+      /**
+       * Redeem a voucher — V-04, V-05.
+       *
+       * A database function rather than application code (AD-03): it takes `SELECT … FOR UPDATE`
+       * on the voucher row, so two scanners hitting the same voucher simultaneously cannot both
+       * succeed. `original_redeemed_at` and `original_scanner` are populated only for
+       * `already_redeemed`, which is what lets the scanner show the FIRST scan rather than just
+       * refusing the second one.
+       */
+      redeem_voucher: {
+        Args: {
+          p_token: string;
+          p_scanner_name: string;
+        };
+        Returns: {
+          result: RedemptionResult;
+          voucher_id: string | null;
+          redeemed_at: string | null;
+          original_redeemed_at: string | null;
+          original_scanner: string | null;
         }[];
       };
     };

@@ -2,7 +2,7 @@
   "name": "caribbean-vip",
   "version": "0.1.0",
   "private": true,
-  "description": "Caribbean VIP — regional tourism marketplace. One platform. Every island.",
+  "description": "Caribbean VIP \u2014 regional tourism marketplace. One platform. Every island.",
   "engines": {
     "node": ">=20"
   },
@@ -37,14 +37,13 @@
   },
   "packageManager": "pnpm@9.15.9",
   "pnpm": {
-    "//": "Expo SDK 52 targets React 18 while Next 15 targets React 19. pnpm keeps the runtimes isolated, but the React Navigation type packages resolve @types/react 19 and leak an incompatible ReactNode into the mobile app. Pin their type dependency to 18.x; the Next apps keep 19.",
-    "overrides": {
-      "@react-navigation/bottom-tabs>@types/react": "^18.3.12",
-      "@react-navigation/native-stack>@types/react": "^18.3.12",
-      "@react-navigation/native>@types/react": "^18.3.12",
-      "@react-navigation/elements>@types/react": "^18.3.12",
-      "expo-router>@types/react": "^18.3.12",
-      "react-native>@types/react": "^18.3.12"
+    "//": "hoist-pattern[]=!@types/react in .npmrc keeps React 19's types out of the shared hoist directory, which is what stops them leaking into the mobile type-check (AD-01). The cost is that a third-party package whose own .d.ts does `import * as React from \"react\"` has nowhere to resolve React's types from, so React.PureComponent degrades to an error and surfaces as \"cannot be used as a JSX component\" at the call site, a long way from the cause. Declaring the types dependency the package should have had puts a copy inside its own node_modules. Prefer this over re-hoisting, which fixes one package and re-breaks every app.",
+    "packageExtensions": {
+      "react-native-qrcode-svg": {
+        "dependencies": {
+          "@types/react": "~18.3.12"
+        }
+      }
     }
   }
 }

@@ -46,7 +46,7 @@ for f in "$ROOT"/supabase/migrations/*.sql; do
   "${PSQL[@]}" -f "$f" >/dev/null
 done
 
-echo "==> Seeding Jamaica demo content"
+echo "==> Seeding demo content"
 "${PSQL[@]}" -f "$ROOT/supabase/seed/seed.sql" >/dev/null
 
 echo "==> Verifying"

@@ -12,12 +12,12 @@ Status values: `complete` · `partial` · `blocked` · `deferred` · `not starte
 | T-01 | Browse Jamaica content without an account | M1–M2 | `apps/mobile/lib/session.tsx` guest state; `experiences_public_read` policy | `rls_public_read.test.sql` (guest reads islands, destinations, catalogue) | **complete** |
 | T-02 | Select/change island and destination manually | M2 | `apps/mobile/lib/island.tsx`; `app/select-destination.tsx`; `profiles.selected_island_id` | `discovery.test.sql` (destination filter partitions the catalogue and narrows it); `rls_public_read.test.sql` (inactive islands hidden) | **complete** |
 | T-03 | Search/filters return only active approved listings | M2 | `search_experiences()` (NOT security definer); `experiences_public_read` (AD-10); `app/search.tsx` | `search.test.sql`: draft and unapproved-vendor listings unfindable by exact title, plus an assertion that the function is not `security definer`; `search.test.ts` (27 unit tests) | **complete** |
-| T-04 | Date/time/party selection shows calculated total | M3 | `packages/types/pricing.ts`; `quote` Edge Fn | `pricing.test.ts` (table-driven) | not started |
-| T-05 | Stripe test payment creates a booking exactly once | M3 | `supabase/functions/checkout-session`, `stripe-webhook`; unique `payments.stripe_event_id` | `webhook-idempotency.test.ts` (replay same event) | not started |
-| T-06 | Paid booking in Trips with scannable QR voucher | M3 | `voucher.ts` codec; Trips screens | `voucher-codec.test.ts`; e2e `book-and-view-voucher` | not started |
+| T-04 | Date/time/party selection shows calculated total | M3 | `packages/types/pricing.ts`; `apps/mobile/app/book/[id].tsx` re-quotes on every change | `pricing.test.ts` (table-driven); demo store quote tests | **complete in demo mode** — the live path needs the `quote`/`checkout-session` Edge Functions, which are not deployed |
+| T-05 | Stripe test payment creates a booking exactly once | M3 | `supabase/functions/checkout-session`, `stripe-webhook`; unique `payments.stripe_event_id` | `webhook-idempotency.test.ts` (replay same event); demo capacity-hold test | **partial** — booking, capacity hold and confirmation work end to end in demo mode; **no Stripe payment has ever been taken**, because the Edge Function adapters are not built |
+| T-06 | Paid booking in Trips with scannable QR voucher | M3 | `voucher.ts` codec; `app/(tabs)/trips.tsx`, `app/voucher/[id].tsx` (`react-native-qrcode-svg`) | `voucher.test.ts`; demo booking-to-voucher test; walked in a browser | **complete in demo mode** |
 | T-07 | Geofenced notifications only after consent | M6 | `profiles.location_consent` + `offer_consent`; `mayTriggerGeofencedOffer()`; Profile switches | `states.test.ts` (both flags required); `nearby-offers` Edge Fn in M6 | **partial** |
 | T-08 | Save an offer voucher without booking | M6 | `vouchers` state `saved`; offer wallet | `voucher-state-machine.test.ts` | not started |
-| T-09 | Cancel per policy, see status/refund result | M3 | cancellation policy eval; refund path | `cancellation-policy.test.ts` | not started |
+| T-09 | Cancel per policy, see status/refund result | M3 | `cancellationDeadline()` in `lib/booking.ts`; confirmation screen | demo cancel-invalidates-voucher test | **partial** — cancelling releases capacity and voids the voucher; **no refund is issued**, because there is no payment to refund |
 
 ## Vendor requirements (PRD §6)
 
@@ -26,8 +26,8 @@ Status values: `complete` · `partial` · `blocked` · `deferred` · `not starte
 | V-01 | Submit onboarding application with documents | M4 | `apps/vendor-web/onboarding`; `vendor_documents` + private bucket | e2e `vendor-onboarding`; `signed-url-ownership.test.ts` | not started |
 | V-02 | Only approved vendors publish public listings | M4–M5 | `experiences_public_read` joined to `vendor_organizations.status` | `rls_public_read.test.sql` (approved listing under pending vendor stays invisible) | **partial** (portal UI in M4) |
 | V-03 | Capacity/availability by date-time, no oversell | M4 | `reserve_availability()` with `SELECT … FOR UPDATE` (AD-03) | `atomicity.test.sql`; **`db-concurrency-test.sh`: 16 racers, 1 winner** | **partial** (UI in M4) |
-| V-04 | Scan and validate a QR voucher | M4 | `redeem_voucher()` Postgres fn; scanner UI in M4 | `atomicity.test.sql` happy path | **partial** |
-| V-05 | Second scan rejected with original timestamp | M4 | `redeem_voucher()` row lock; terminal `redeemed` state enforced by trigger | `atomicity.test.sql` (2nd and 3rd scan return the ORIGINAL timestamp); **concurrency: 1 ok / 15 already_redeemed** | **partial** (UI in M4) |
+| V-04 | Scan and validate a QR voucher | M3 | `redeem_voucher()` Postgres fn; `apps/vendor-web/components/Scanner.tsx` (camera + paste fallback) | `atomicity.test.sql` happy path; demo scanner tests; walked in a browser | **complete in demo mode** |
+| V-05 | Second scan rejected with original timestamp | M3 | `redeem_voucher()` row lock; terminal `redeemed` state enforced by trigger; scanner renders the original scan | `atomicity.test.sql` (2nd and 3rd scan return the ORIGINAL timestamp); **concurrency: 1 ok / 15 already_redeemed**; demo scanner test; walked in a browser | **complete in demo mode** |
 | V-06 | Geofenced promotion with expiry and rules | M6 | `promotions` + `geofences` | `geofence-eligibility.test.ts` | not started |
 | V-07 | Dashboard separates gross, fee, net | M4 | `bookings` fee columns; vendor dashboard | `vendor-earnings.test.ts` (reconciles to payments) | not started |
 

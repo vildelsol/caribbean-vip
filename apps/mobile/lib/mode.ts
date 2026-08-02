@@ -29,6 +29,16 @@ export const isDemoMode = !hasSupabase && !isProduction && !explicitlyDisabled;
 export const isLiveMode = hasSupabase;
 
 /**
+ * Whether there is a catalogue to read at all, from either source.
+ *
+ * Screens must gate on this rather than on `isSupabaseConfigured`. Gating on Supabase alone was a
+ * real bug: `catalogue.ts` dispatched correctly to the demo backend, but every screen returned
+ * early before calling it, so demo mode rendered an empty app with a "no backend configured"
+ * notice — the one thing demo mode exists to prevent.
+ */
+export const hasCatalogue = hasSupabase || isDemoMode;
+
+/**
  * The one state neither mode can serve: production with no backend. Kept explicit so the UI can
  * say so plainly instead of silently showing an empty catalogue.
  */

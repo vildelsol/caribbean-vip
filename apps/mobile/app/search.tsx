@@ -13,7 +13,7 @@ import {
   type SearchFilters,
   type SortOption,
 } from '@cvip/types';
-import { isSupabaseConfigured } from '../lib/supabase';
+import { hasCatalogue } from '../lib/mode';
 import { useIsland } from '../lib/island';
 import { useSaved } from '../lib/saved';
 import { searchCatalogue, type CatalogueItem } from '../lib/catalogue';
@@ -40,12 +40,12 @@ export default function Search() {
     categories: params.category ? [params.category as ExperienceCategory] : [],
   });
   const [items, setItems] = useState<CatalogueItem[]>([]);
-  const [loading, setLoading] = useState(isSupabaseConfigured);
+  const [loading, setLoading] = useState(hasCatalogue);
   const [error, setError] = useState<string | null>(null);
   const [filtersOpen, setFiltersOpen] = useState(false);
 
   const load = useCallback(async () => {
-    if (!isSupabaseConfigured) {
+    if (!hasCatalogue) {
       setLoading(false);
       return;
     }
@@ -155,7 +155,7 @@ export default function Search() {
 
       <SortRow value={filters.sort} onChange={(sort) => setFilters({ ...filters, sort })} />
 
-      {!isSupabaseConfigured ? (
+      {!hasCatalogue ? (
         <Notice
           tone="alert"
           title="No backend configured"

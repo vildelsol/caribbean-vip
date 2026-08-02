@@ -15,8 +15,10 @@
 
 import {
   calculateBookingTotal,
+  formatBookingReference,
   hashVoucherToken,
   signVoucherToken,
+  verifyVoucherToken,
   VOUCHER_TOKEN_VERSION,
   type Currency,
   type PriceBreakdown,
@@ -160,9 +162,17 @@ class DemoBackend {
     );
   }
 
-  /** Mirrors the RLS policy: approved listing AND approved vendor. */
-  visibleExperiences(): DemoExperience[] {
-    return DEMO_EXPERIENCES.filter(isPubliclyVisibleDemo);
+  /**
+   * Mirrors the RLS policy: approved listing AND approved vendor.
+   *
+   * The island filter is applied here rather than by the caller so that a screen which forgets to
+   * pass an island shows every island's listings — visibly wrong — instead of silently showing
+   * Jamaica's catalogue under a Barbados heading.
+   */
+  visibleExperiences(islandId?: string): DemoExperience[] {
+    return DEMO_EXPERIENCES.filter(
+      (e) => isPubliclyVisibleDemo(e) && (islandId === undefined || e.islandId === islandId),
+    );
   }
 
   experience(id: string): DemoExperience | null {
@@ -292,7 +302,10 @@ class DemoBackend {
     }
 
     const b = quoted.breakdown;
-    const reference = demoReference();
+    // The reference is island-prefixed by the same helper production uses (VIPJ / VIPK / VIPB), so
+    // a demo reference is shaped exactly like a real one rather than being Jamaican everywhere.
+    const island = DEMO_ISLANDS.find((i) => i.id === exp.islandId);
+    const reference = formatBookingReference(island?.code ?? 'J', demoVoucherId());
     const promo = input.applyPromotion ? this.promotionFor(input.experienceId) : null;
 
     const booking: DemoBooking = {
@@ -431,6 +444,58 @@ class DemoBackend {
     };
   }
 
+  /**
+   * Redeem a token that arrived from somewhere else — the vendor scanner's entry point.
+   *
+   * The vendor portal is a separate app in a separate browser, so it does not share this process's
+   * memory with the tourist app: a voucher issued on the phone is genuinely unknown here. Rejecting
+   * it as `unknown_token` would be technically true and would also make the flagship journey
+   * (book on a phone, scan at the vendor) undemonstrable.
+   *
+   * So a token that is *cryptographically valid* and has never been seen is adopted as an active
+   * voucher and redeemed. That is the only concession, and it is a narrow one:
+   *
+   *   - The HMAC is genuinely verified against the same secret and by the same codec, so a
+   *     tampered or fabricated QR still fails with `bad_signature` before anything is stored.
+   *   - Everything after adoption is the real state machine. A second scan of the same token hits
+   *     `already_redeemed` and reports the ORIGINAL timestamp and scanner, which is V-05's
+   *     acceptance criterion and the thing the demo most needs to show.
+   *
+   * A real deployment never takes this path: `redeem_voucher()` looks the hash up in the database,
+   * and an unknown hash is an unknown voucher.
+   */
+  async redeemScannedToken(token: string, scannerName: string): Promise<DemoRedemption> {
+    const verified = await verifyVoucherToken(token.trim(), DEMO_VOUCHER_SECRET);
+    if (!verified.ok) {
+      const result: RedemptionResult =
+        verified.error.code === 'BAD_SIGNATURE' ? 'bad_signature' : 'unknown_token';
+      this.redemptionLog.push({
+        tokenHash: token.slice(-12),
+        result,
+        at: new Date().toISOString(),
+      });
+      return blank(result);
+    }
+
+    const hash = await hashVoucherToken(token.trim());
+    if (![...this.vouchers.values()].some((v) => v.tokenHash === hash)) {
+      const adopted: DemoVoucher = {
+        id: nextId('voucher'),
+        token: token.trim(),
+        tokenHash: hash,
+        bookingId: 'scanned-elsewhere',
+        vendorId: 'scanned-elsewhere',
+        state: 'active',
+        validUntil: new Date(Date.now() + 86_400_000).toISOString(),
+        redeemedAt: null,
+        redeemedBy: null,
+      };
+      this.vouchers.set(adopted.id, adopted);
+    }
+
+    return this.redeem(token.trim(), scannerName);
+  }
+
   // -- Saved items --------------------------------------------------------
 
   isSaved(experienceId: string): boolean {
@@ -449,13 +514,6 @@ class DemoBackend {
 
 function blank(result: RedemptionResult, voucherId: string | null = null): DemoRedemption {
   return { result, voucherId, redeemedAt: null, originalRedeemedAt: null, originalScanner: null };
-}
-
-function demoReference(): string {
-  const alphabet = '0123456789ABCDEFGHJKMNPQRSTVWXYZ';
-  let out = '';
-  for (let i = 0; i < 8; i++) out += alphabet[Math.floor(Math.random() * alphabet.length)];
-  return `VIPJ-${out.slice(0, 4)}-${out.slice(4)}`;
 }
 
 function demoVoucherId(): string {

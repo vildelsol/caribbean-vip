@@ -4,8 +4,17 @@ import { Link } from 'expo-router';
 import { radius, semantic, spacing, typography } from '@cvip/ui';
 import type { ProfileRow } from '@cvip/supabase';
 import { supabase, isSupabaseConfigured } from '../../lib/supabase';
+import { isDemoMode } from '../../lib/mode';
 import { useSession } from '../../lib/session';
 import { useIsland } from '../../lib/island';
+
+/**
+ * Bottom padding that clears the floating tab bar.
+ *
+ * The Irie AI button sits proud of the bar (PRD §16 puts it at the centre of five tabs), so
+ * without this the last card is partly underneath it — unreadable and untappable.
+ */
+const TAB_BAR_CLEARANCE = spacing.xxl * 2;
 
 /**
  * Profile, preferences and privacy controls.
@@ -37,7 +46,7 @@ export default function Profile() {
   return (
     <ScrollView
       style={{ flex: 1, backgroundColor: semantic.background }}
-      contentContainerStyle={{ padding: spacing.lg, gap: spacing.lg }}
+      contentContainerStyle={{ padding: spacing.lg, gap: spacing.lg, paddingBottom: TAB_BAR_CLEARANCE }}
     >
       <View style={{ gap: spacing.xs }}>
         <Text style={{ ...typography.caption, color: semantic.textMuted }}>{islandBrand}</Text>
@@ -122,7 +131,9 @@ export default function Profile() {
 
       {!isSupabaseConfigured ? (
         <Text style={{ ...typography.caption, color: semantic.alert }}>
-          No backend configured — preferences cannot be saved in this build.
+          {isDemoMode
+            ? 'Demo mode — preferences last until you reload.'
+            : 'No backend configured — preferences cannot be saved in this build.'}
         </Text>
       ) : null}
     </ScrollView>

@@ -24,8 +24,14 @@ begin
   select count(*) into n from islands where code = 'JM';
   perform test.eq(n, 1, 'T-01: guest can read the active Jamaica island row');
 
-  select count(*) into n from destinations;
+  select count(*) into n
+    from destinations d join islands i on i.id = d.island_id
+    where i.code = 'JM';
   perform test.eq(n, 6, 'T-01: guest sees all six seeded Jamaica destinations');
+
+  -- Every active island is browsable, not just the launch market.
+  select count(*) into n from islands where is_active;
+  perform test.eq(n, 3, 'T-01: guest can read all three populated islands');
 
   select count(*) into n from experiences;
   perform test.ok(n >= 14, format('T-01: guest sees the approved catalogue (%s listings)', n));
@@ -37,8 +43,14 @@ do $$
 declare
   n integer;
 begin
-  select count(*) into n from islands where code in ('KY', 'BB');
-  perform test.eq(n, 0, 'inactive islands (Cayman, Barbados) are invisible to guests');
+  -- Antigua is seeded inactive precisely so this rule has a subject to be tested against.
+  select count(*) into n from islands where code = 'AG';
+  perform test.eq(n, 0, 'an inactive island is invisible to guests');
+
+  -- And no destination leaks from behind it either.
+  select count(*) into n from destinations d
+    where not exists (select 1 from islands i where i.id = d.island_id);
+  perform test.eq(n, 0, 'no destination is visible whose island is not');
 end
 $$;
 
@@ -183,7 +195,9 @@ begin
 
   set local role service_role;
   select count(*) into remaining from destinations;
-  perform test.eq(remaining, 6, 'all six destinations survive the attempted delete');
+  -- Counted as service_role, so this covers destinations on inactive islands too — the delete must
+  -- have touched nothing at all, not merely nothing the guest could see.
+  perform test.ok(remaining >= 17, format('every destination survives the attempted delete (%s)', remaining));
   set local role anon;
 end
 $$;

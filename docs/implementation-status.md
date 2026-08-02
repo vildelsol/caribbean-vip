@@ -3,7 +3,7 @@
 Per operating rule 6: no requirement is silently omitted. Every requirement is marked
 `complete` · `partial` · `blocked` · `deferred` · `not started`.
 
-**Last updated:** 2026-08-02 · **Current milestone:** M0–M2 complete, M3 in progress
+**Last updated:** 2026-08-02 · **Current milestone:** M0–M2 complete, M3 complete in demo mode
 
 ---
 
@@ -15,7 +15,7 @@ Per operating rule 6: no requirement is silently omitted. Every requirement is m
 | M0 — Repository foundation | complete | pnpm monorepo, shared config, `@cvip/types` with 38 unit tests, `@cvip/ui` tokens with 9 contrast tests, three app shells building, CI, env templates. All gates green — see verification log. |
 | M1 — Auth and domain foundation | complete | 11 migrations covering all 24 PRD entities plus 3 additions; RLS on all 29 tables; `reserve_availability` and `redeem_voucher`; Jamaica seed; auth in all three apps; 5 SQL test files plus a concurrency suite. |
 | M2 — Tourist discovery | complete | Full-text search with filters and sort, Explore sections, Nearby list with distance, experience detail, saved items, maps/location adapters. 7 SQL test files; 98 unit tests. |
-| M3 — Booking, Stripe and redemption | in progress | `packages/payments` core complete (44 tests). Scope revised: vendor QR scanner moved here from M4. Remaining: Edge Function adapters, booking UI, Trips, voucher display, scanner. |
+| M3 — Booking, Stripe and redemption | **complete in demo mode** | Booking, confirmation, Trips, QR voucher and the vendor scanner are all built and walked end to end in a browser. `packages/payments` core complete (44 tests). **Not complete against a real backend:** the `checkout-session` and `stripe-webhook` Edge Function adapters are not built, so no Stripe payment has ever been taken. |
 | M4 — Vendor portal | not started | |
 | M5 — Admin console | not started | |
 | M6 — Geofenced offers | not started | |
@@ -26,9 +26,16 @@ Per operating rule 6: no requirement is silently omitted. Every requirement is m
 
 Detailed per-requirement status lives in [`traceability.md`](traceability.md).
 
-After M2: **T-01, T-02, T-03 complete**; V-02, V-03, V-05 **partial** (enforced and tested in the
-database, awaiting the vendor UI in M4); T-07 **partial** (both consent flags and their controls
-exist; the geofence trigger is M6); the rest `not started`. None are deferred or dropped.
+After M3: **T-01, T-02, T-03 complete**. **T-04, T-06, V-04, V-05 complete in demo mode** — the
+screens exist, the real pricing, voucher codec and state machines run behind them, and the whole
+journey has been walked in a browser. **T-05 and T-09 partial**: booking, capacity hold, cancellation
+and voucher invalidation all work, but no Stripe payment has ever been taken and no refund has ever
+been issued, because the Edge Function adapters are not built. T-07 **partial** (both consent flags
+and their controls exist; the geofence trigger is M6). The rest `not started`. None are deferred or
+dropped.
+
+"Complete in demo mode" is deliberately not the same as "complete". Demo mode proves the flows;
+it does not prove the integration. See "Known gaps" in [`HANDOVER.md`](HANDOVER.md).
 
 ## Security findings fixed during M1
 
@@ -71,6 +78,13 @@ Per operating rule 5, no feature is claimed to work without a recorded command a
 | 2026-08-02 | `pnpm test` (payments core) | **142 passed**, 10 files — 44 of them new in `@cvip/payments` |
 | 2026-08-02 | `./scripts/db-push.sh` against an empty local DB | 29 tables, RLS enabled everywhere, 16 approved listings, 6 destinations |
 | 2026-08-02 | `./scripts/db-push.sh` against a non-empty DB | correctly refused rather than half-applying |
+| 2026-08-02 | `pnpm verify` (after M3 demo build) | typecheck 8/8 · lint clean · **174 unit tests, 11 files** · **7/7 SQL files** |
+| 2026-08-02 | `pnpm db:concurrency` | 1 of 16 reservations won; 1 of 16 scans redeemed, 15 already_redeemed |
+| 2026-08-02 | `pnpm bundle:mobile` | iOS bundle exported, 4.33 MB |
+| 2026-08-02 | `pnpm --filter @cvip/vendor-web build` | Next production build clean, 196 kB first load |
+| 2026-08-02 | `python3 scripts/seed-media/fetch.py` | 57 photographs, all licences verified free, 14 MB, credits regenerated |
+| 2026-08-02 | Browser walkthrough at `localhost:8081` (Expo web) | Explore → detail → book → pay → confirmation → QR voucher, on Jamaica and Barbados |
+| 2026-08-02 | Browser walkthrough at `localhost:3001` (vendor portal) | Pasted the token from the phone: 1st scan `ok`, 2nd `already_redeemed` **with the original timestamp and scanner**, tampered signature `bad_signature` |
 
 Not yet verified: the mobile app running on a simulator or device (bundling and type-checking are
 verified, launch is not), and anything that needs a real Supabase instance — see Known limitations.
@@ -122,6 +136,24 @@ Per operating rule 4, none of these block the build; each sits behind an env var
 - **No map is rendered.** The maps provider is undecided (OD-05), so `MAPS_PROVIDER` defaults to
   `mock` and Nearby ships as a distance-sorted list with an explicit "map view unavailable"
   notice. This is a working fallback, not a finished map.
-- Media is stored as paths only; no image rendering or signed-URL fetching yet.
+- **Demo photography is bundled with the app; live media is still unrendered.** Demo images resolve
+  from `apps/mobile/assets/demo` through a static require map. Real listings store Supabase Storage
+  paths, and no signed-URL fetching exists — with no hosted project there is nothing to fetch, so a
+  live card renders its text-only layout rather than a broken image.
 - Six commercial/legal decisions remain open — see [`open-decisions.md`](open-decisions.md). None
   block M0–M8; all block accepting real payments or real vendors.
+
+## Added during the M3 demo build
+
+- **Demo mode rendered an empty app.** `catalogue.ts` dispatched to the demo backend correctly, but
+  every screen returned early on `isSupabaseConfigured`, which is false in demo mode. Screens now
+  gate on `hasCatalogue`. The vendor portal had the same shape of bug in its `AuthGate`.
+- **Photography.** 57 freely-licensed Wikimedia Commons photographs, downloaded and recompressed by
+  `scripts/seed-media/fetch.py`, which refuses any licence outside CC0 / CC BY / CC BY-SA / public
+  domain. Author, licence and true subject are recorded in `packages/demo/src/credits.ts` and
+  rendered under every image. Full list in [`media-credits.md`](media-credits.md).
+- **Three live islands.** Cayman and Barbados are populated and active, with their own destinations,
+  vendors and listings. An inactive island (Antigua) is seeded as a negative fixture so the RLS rule
+  that hides unlaunched markets still has a subject to be tested against.
+- **Web support for the mobile app** (`react-native-web`), so the demo runs in a browser without a
+  simulator. This is also how the journey above was verified.

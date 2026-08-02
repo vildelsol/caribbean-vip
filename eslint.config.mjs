@@ -33,7 +33,13 @@ export default tseslint.config(
   },
   {
     // Metro's config is loaded by Node as CommonJS before any bundler runs.
-    files: ['**/metro.config.js', '**/babel.config.js', '**/*.cjs'],
+    files: [
+      '**/metro.config.js',
+      '**/babel.config.js',
+      '**/*.cjs',
+      // Resolved by Metro as a CommonJS module, not compiled by the app's TypeScript build.
+      'apps/mobile/lib/emptyModule.js',
+    ],
     languageOptions: {
       globals: {
         require: 'readonly',
@@ -42,6 +48,15 @@ export default tseslint.config(
         process: 'readonly',
       },
     },
+    rules: {
+      '@typescript-eslint/no-require-imports': 'off',
+    },
+  },
+  {
+    // Metro resolves bundled assets at build time from a *static* `require` — an ESM import or a
+    // computed path silently produces nothing. This is the one file that maps demo media keys to
+    // image files, so `require` there is the platform's requirement, not a style lapse.
+    files: ['apps/mobile/lib/demoMedia.ts'],
     rules: {
       '@typescript-eslint/no-require-imports': 'off',
     },

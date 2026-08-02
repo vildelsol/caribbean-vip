@@ -18,4 +18,20 @@ config.resolver.nodeModulesPaths = [
   path.resolve(workspaceRoot, 'node_modules'),
 ];
 
+// `@supabase/supabase-js` has an OPTIONAL dependency on `@opentelemetry/api` for tracing. Node and
+// bundlers with `optionalDependencies` support skip it; Metro does not — it walks every import it
+// finds and fails the whole bundle on a package that was never installed.
+//
+// Stubbed rather than installed, because installing it would ship a tracing SDK we do not use into
+// the app bundle to satisfy an import that is only ever reached when tracing is configured.
+const stub = path.resolve(projectRoot, 'lib/emptyModule.js');
+const OPTIONAL_ABSENT = new Set(['@opentelemetry/api']);
+
+config.resolver.resolveRequest = (context, moduleName, platform) => {
+  if (OPTIONAL_ABSENT.has(moduleName)) {
+    return { type: 'sourceFile', filePath: stub };
+  }
+  return context.resolveRequest(context, moduleName, platform);
+};
+
 module.exports = config;

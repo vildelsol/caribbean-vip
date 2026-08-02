@@ -38,6 +38,9 @@ export default function RootLayout() {
           />
           <Stack.Screen name="search" options={{ title: 'Search' }} />
           <Stack.Screen name="experience/[id]" options={{ title: 'Experience' }} />
+          <Stack.Screen name="book/[id]" options={{ title: 'Book' }} />
+          <Stack.Screen name="booking/[id]" options={{ title: 'Your booking' }} />
+          <Stack.Screen name="voucher/[id]" options={{ title: 'Your voucher' }} />
         </Stack>
         </SavedProvider>
       </IslandProvider>

@@ -1,6 +1,6 @@
 # Handover — Caribbean VIP
 
-**Written:** 2026-08-02 · **Last commit:** `17fcb69` · **Working tree:** clean, all gates green
+**Written:** 2026-08-02 · **Working tree:** all gates green
 
 Read this first, then [`PRD.md`](PRD.md) (product source of truth) and
 [`architecture.md`](architecture.md) (the numbered decisions and why they were made).
@@ -11,7 +11,7 @@ Read this first, then [`PRD.md`](PRD.md) (product source of truth) and
 
 Caribbean VIP — a mobile-first Caribbean tourism marketplace. Tourists discover and book verified
 local excursions, receive geofenced offers, and hold QR vouchers that vendors scan to validate.
-Jamaica is the populated launch market; the architecture is island-aware from day one.
+Jamaica is the deepest market; the Cayman Islands and Barbados are populated too.
 
 **This is a separate project** from EGES/ComplyIQ and from Villaggio del Sol. Do not mix them.
 
@@ -20,14 +20,55 @@ The parent folder also holds the source PDF and a mockup image.
 
 ### The founder's standing instruction on the mockup
 
-`ChatGPT Image Aug 2, 2026…png` is a **colour-scheme reference only**. Its VIP Cayman branding, its
-four-tab navigation and its screen inventory are **not** requirements. The PRD governs: Jamaica
-first, five tabs with **Irie AI as the centre item**. The palette was sampled from it and lives in
+`ChatGPT Image Aug 2, 2026….png` is a **colour-scheme reference only**. Its VIP Cayman branding, its
+four-tab navigation and its screen inventory are **not** requirements. The PRD governs: five tabs
+with **Irie AI as the centre item**. The palette was sampled from it and lives in
 `packages/ui/src/tokens.ts`.
 
 ---
 
-## 2. Where the build has got to
+## 2. Run the demo
+
+No credentials, no Docker, no Supabase. Demo mode engages automatically when Supabase is
+unconfigured.
+
+```bash
+npx pnpm@9 install
+```
+
+Tourist app in a browser (the easiest thing to put in front of someone):
+
+```bash
+npx pnpm@9 --filter @cvip/mobile web --port 8081
+```
+
+Vendor scanner, in a second terminal:
+
+```bash
+npx pnpm@9 --filter @cvip/vendor-web dev
+```
+
+### The walkthrough that shows the most in five minutes
+
+1. **Explore** at `localhost:8081` — photography, prices, categories, all labelled demo.
+2. **Choose a destination** → switch to Cayman or Barbados. The whole catalogue changes; the app
+   name never does (PRD §3: one product, localized island brands).
+3. Open a listing → **Check availability** → change the party size and watch the total re-quote.
+   Every departure's remaining capacity is real, and the first future departure of every listing is
+   deliberately seeded with **one seat**, so the sold-out path is always reachable.
+4. **Pay** → confirmation with a booking reference → **Show my voucher** → QR.
+5. Tap **"QR will not scan? Show the code"**, copy the token.
+6. Paste it into the vendor portal at `localhost:3001` → **Valid — admit the guest**.
+7. Paste it again → **Already redeemed**, showing the original time and who scanned it. This is
+   V-05, and it is the single most convincing thing in the demo.
+8. Change one character of the token → **Invalid signature**. The HMAC is genuinely checked.
+
+**Reloading resets everything.** Demo state is in memory on purpose: a demo that accumulated
+yesterday's bookings would stop being a clean walkthrough.
+
+---
+
+## 3. Where the build has got to
 
 | Milestone | Status |
 |---|---|
@@ -35,75 +76,46 @@ first, five tabs with **Irie AI as the centre item**. The palette was sampled fr
 | M0 — Repository foundation | complete |
 | M1 — Auth and domain foundation | complete |
 | M2 — Tourist discovery | complete |
-| **M3 — Booking, Stripe, redemption** | **in progress** — payment core done, UI not started |
+| **M3 — Booking, Stripe, redemption** | **complete in demo mode** — see the gap below |
 | M4–M8 | not started |
 
-Requirements: **T-01, T-02, T-03 complete.** V-02, V-03, V-04, V-05 enforced and tested in the
-database, awaiting UI. T-07 partial (both consent flags and their controls exist; the geofence
-trigger is M6). Full per-requirement detail in [`traceability.md`](traceability.md).
+**T-01, T-02, T-03 complete. T-04, T-06, V-04, V-05 complete in demo mode. T-05 and T-09 partial:**
+booking, capacity hold, cancellation and voucher invalidation all work, but **no Stripe payment has
+ever been taken and no refund has ever been issued**, because the Edge Function adapters do not
+exist. Full detail in [`traceability.md`](traceability.md).
 
-### Commits
-
-```
-17fcb69  Demo mode: run the whole app with no backend
-66f9173  M3 (part 1): payment core, plus three decisions recorded
-2147725  M2: tourist discovery — search, filters, Nearby, detail and saved items
-49391f8  M1: schema, RLS, atomicity functions, Jamaica seed and auth
-a809a16  M0: repository foundation and first-deliverable documentation
-```
+Current gates: **174 unit tests (11 files), 7/7 SQL files, concurrency green, iOS bundle 4.33 MB,
+both Next apps build.**
 
 ---
 
-## 3. Pick up here
+## 4. Pick up here
 
-Tasks 17–19 from the previous session, in order. All three are wiring over logic that already
-exists and is tested.
+### First: the Edge Function adapters — this is what "demo mode" is standing in for
 
-### Next: the booking flow (T-04, T-05, T-06)
+`supabase/functions/checkout-session` and `stripe-webhook`. Per **AD-02** these stay thin: parse the
+request, build the real dependencies, call `@cvip/payments`, serialize the result. Tens of lines
+each. If you find yourself adding branching logic to an adapter, it belongs in the core.
 
-Screens to build in `apps/mobile`:
+Then point `apps/mobile/lib/booking.ts` at them. That file is already shaped for it: the demo path
+is complete and the live path returns one honest "not deployed" error from a single constant, so
+there is exactly one place to change.
 
-1. `app/book/[id].tsx` — date/departure picker, party and add-on selection, live quote.
-2. Confirmation screen after payment.
-3. `app/voucher/[id].tsx` — human-readable reference plus a scannable QR.
-4. `app/(tabs)/trips.tsx` — currently still a `MilestoneScreen` placeholder. Needs upcoming /
-   completed / cancelled / saved.
+### Then: M4, the vendor portal proper
 
-**Two route declarations were removed from `app/_layout.tsx`** because they pointed at screens that
-did not exist yet. Add them back when you create the screens:
+Onboarding, listings, availability, payouts. The scanner is already there and already the landing
+page. **OD-02 blocks this** — see §7.
 
-```tsx
-<Stack.Screen name="book/[id]" options={{ title: 'Book' }} />
-<Stack.Screen name="voucher/[id]" options={{ title: 'Your voucher' }} />
-```
+### Do not rewrite these — they exist and are tested
 
-**Do not write new pricing or voucher logic.** It exists:
-
-- Demo path: `demoBackend.quote()` and `demoBackend.book()` in `packages/demo/src/store.ts`.
-- Live path: `quoteBooking()` and `startCheckout()` in `packages/payments/src/checkout.ts`.
-
-Dispatch between them the same way `apps/mobile/lib/catalogue.ts` already does, on `isDemoMode`.
-
-QR rendering needs a library — `react-native-qrcode-svg` is the usual choice and works on web.
-
-### Then: the vendor scanner (closes Journey A)
-
-In `apps/vendor-web`. A camera scanner (`html5-qrcode` or `@zxing/browser`) plus a paste-a-token
-fallback, which is what makes it demoable on a laptop with no camera. It must render **every**
-outcome from `RedemptionResult`, and `already_redeemed` must show the original timestamp and
-scanner — that is V-05's acceptance criterion, not a nicety.
-
-Demo path: `demoBackend.redeem(token)`. Live path: the `redeem_voucher()` Postgres function.
-
-### Then: Edge Function adapters
-
-`supabase/functions/checkout-session` and `stripe-webhook`. Per **AD-02** these must stay thin —
-parse the request, build the real dependencies, call `@cvip/payments`, serialize the result. Tens
-of lines each. If you find yourself adding branching logic to an adapter, it belongs in the core.
+- Pricing: `calculateBookingTotal` in `@cvip/types`. The booking screen never sums anything itself.
+- Vouchers: `signVoucherToken` / `verifyVoucherToken` / `hashVoucherToken` in `@cvip/types`.
+- Redemption: `redeem_voucher()` in Postgres, and `demoBackend.redeemScannedToken` for the demo.
+- Demo dispatch: everything routes on `isDemoMode`, the same way `lib/catalogue.ts` always has.
 
 ---
 
-## 4. Things that will bite you if you don't know them
+## 5. Things that will bite you if you don't know them
 
 ### pnpm is mandatory. npm will not work.
 
@@ -112,18 +124,31 @@ two majors collide three different ways (details in AD-01). Two `.npmrc` setting
 and must not be removed:
 
 - `node-linker=isolated`
-- `hoist-pattern[]=!@types/react` and `!@types/react-dom` — otherwise pnpm hoists React 19's types
-  into `.pnpm/node_modules`, TypeScript finds them when resolving from React Navigation's real
-  paths, and an incompatible `ReactNode` leaks into the mobile type-check.
+- `hoist-pattern[]=!@types/react` and `!@types/react-dom`
 
-Shared packages need an explicit `@babel/runtime` dependency because Metro transpiles them and
-isolated linking will not let them borrow it from an app.
+That second one has a **sharp edge**: a third-party package whose own `.d.ts` does
+`import * as React from "react"` then has nowhere to resolve React's types from, and the failure
+surfaces as "cannot be used as a JSX component" at *your* call site, a long way from the cause.
+`react-native-qrcode-svg` hit this. The fix is the `pnpm.packageExtensions` block in the root
+`package.json` — declare the types dependency the package should have had. Do **not** re-hoist:
+that fixes one package and re-breaks every app.
 
-### There is no Docker on this machine, and the tests don't need it.
+### Metro resolves optional dependencies that were never installed
+
+`@supabase/supabase-js` optionally imports `@opentelemetry/api`. Node skips it; Metro walks it and
+fails the whole bundle. `metro.config.js` resolves it to `lib/emptyModule.js`. Add to
+`OPTIONAL_ABSENT` if another one appears.
+
+### Bundled images need a frame, not an `aspectRatio`
+
+A required asset carries intrinsic dimensions, and react-native-web writes those onto the element as
+a pixel height that **beats** `aspectRatio` — a 1400×930 photo rendered a 930px-tall card. Put the
+ratio on a wrapping `View` and let the `Image` fill it. Already done everywhere; copy the pattern.
+
+### There is no Docker on this machine, and the tests don't need it
 
 `supabase start` will not run. The database suite uses plain PostgreSQL 17 plus
-`supabase/tests/_harness.sql`, which stubs `auth.users`, `auth.uid()` and the Supabase roles. This
-also means CI needs no Docker service.
+`supabase/tests/_harness.sql`, which stubs `auth.users`, `auth.uid()` and the Supabase roles.
 
 ```bash
 brew services start postgresql@17   # if psql cannot connect
@@ -132,7 +157,7 @@ export PATH="/opt/homebrew/opt/postgresql@17/bin:$PATH"
 
 It is **not** a Supabase emulator. Storage policies and real Auth behaviour are not covered.
 
-### RLS is the security boundary, not a convention.
+### RLS is the security boundary, not a convention
 
 Queries deliberately do **not** filter on `status = 'approved'`. `experiences_public_read` joins
 through to the vendor's approval status (AD-10), so a forgotten filter cannot leak a draft. If you
@@ -142,53 +167,49 @@ add a query, do not "helpfully" add the filter back — instead make sure a nega
 `prosecdef = false`. Making it a definer function would make every draft searchable while every
 existing test still passed.
 
-### Two guards you must not remove
+### Three guards you must not remove
 
-- `guard_profile_privileges()` — stops a tourist setting their own `role` and walking into the
-  admin console. RLS is per-row, and `role` lives on the row the user is allowed to edit.
+- `guard_profile_privileges()` — stops a tourist setting their own `role`.
 - The unique index on `payments.stripe_event_id` — this, not handler discipline, is what makes
   T-05's "exactly once" true.
+- The **negative fixtures**: a draft listing, an approved listing under an unapproved vendor, and an
+  inactive island (Antigua). Each exists so a security test has a subject. Deleting one makes its
+  test pass vacuously — which is worse than deleting the test.
 
-### Demo mode
+### The demo dataset and the SQL seed are kept in step deliberately
 
-Engages automatically when Supabase is unconfigured. Guard rails: real configuration always wins,
-`APP_ENV=production` refuses it, and a banner sits above every screen. It runs the real pricing,
-the real HMAC voucher codec and the real state machines — only storage differs.
+`packages/demo/src/dataset.ts` and `supabase/seed/seed.sql` carry the same islands, vendors,
+listings and photography. Change one, change the other, so that switching between demo mode and a
+real backend changes where the data comes from and not what the app shows.
 
-**It is not verification.** M3 is not done because the demo works.
+### Demo mode is not verification
 
----
+It engages automatically when Supabase is unconfigured. Guard rails: real configuration always wins,
+`APP_ENV=production` refuses it, and a banner sits above every screen. It runs the real pricing, the
+real HMAC voucher codec and the real state machines — only storage differs.
 
-## 5. Commands
-
-```bash
-npx pnpm@9 install
-```
-
-```bash
-pnpm verify
-```
-
-`verify` = typecheck + lint + test + db:test. Others: `pnpm db:concurrency` (16-way races on
-`reserve_availability` and `redeem_voucher` — run after touching either), `pnpm bundle:mobile`,
-`pnpm mobile`, `pnpm vendor` (:3001), `pnpm admin` (:3002).
-
-Current state: **161 unit tests (11 files), 7/7 SQL files, concurrency green, both Next apps build,
-iOS bundle 1004 modules.**
+**M3 is not done because the demo works.** No payment has been taken.
 
 ---
 
-## 6. Decisions already made — do not relitigate
+## 6. Photography — read before adding any
 
-| ID | Decision |
-|---|---|
-| **OD-09** | **Display localized, settle in USD.** Every `*_minor` column is USD. Locked before M3 because reversing it later touches every monetary column. |
-| **AD-01** | pnpm, not npm workspaces. |
-| **AD-02** | Fat testable core (`packages/payments`) + thin Deno adapters. Refined, not reversed. |
-| **AD-03** | `reserve_availability()` and `redeem_voucher()` are Postgres functions with `SELECT … FOR UPDATE`. Never move this into application code. |
-| **AD-04** | QR carries only a version byte and a random 128-bit id, HMAC-signed. The DB stores `sha256(token)`, never the token. |
-| **AD-10** | Public visibility is an RLS policy, not a query convention. |
-| — | M3 scope includes the vendor QR scanner (moved from M4) so Journey A closes a milestone earlier. |
+All 57 images are Wikimedia Commons files under CC0 / CC BY / CC BY-SA / public domain, downloaded
+into `apps/mobile/assets/demo` by `scripts/seed-media/fetch.py`. To add or change one, edit
+`scripts/seed-media/manifest.json` and re-run the script. It **refuses to write anything** if a
+licence is outside the accepted list.
+
+Two rules that are not optional:
+
+- **Attribution ships with the image.** CC BY and CC BY-SA require credit wherever the work appears,
+  so the author and licence render on the card and under the gallery — not only in
+  [`media-credits.md`](media-credits.md). A test fails if a media key has no credit.
+- **`subject` says what the photograph actually shows.** Some listings are illustrated with a
+  representative photograph of the right island rather than of that exact operator. Naming the true
+  subject on screen is what keeps that honest.
+
+This is demonstration content. Sourcing commissioned or licensed photography of the actual vendors
+is still an open task before anything ships to the public.
 
 ---
 
@@ -198,46 +219,62 @@ iOS bundle 1004 modules.**
 Connect, vendor onboarding must embed the account-link and KYC flow. Escalated from "before first
 payout" to "before M4" because discovering it mid-milestone means rebuilding the onboarding UI.
 
-**Waiting on the founder:** the **hosted Supabase project**. They agreed to provision it; it had not
-been done when this session ended. Instructions and a one-command script are ready:
-[`supabase-provisioning.md`](supabase-provisioning.md) and `./scripts/db-push.sh`. The script
-refuses a non-empty database rather than half-applying.
+**Waiting on the founder:** the **hosted Supabase project**. Instructions and a one-command script
+are ready: [`supabase-provisioning.md`](supabase-provisioning.md) and `./scripts/db-push.sh`. The
+script refuses a non-empty database rather than half-applying. Nothing blocks the demo — but
+everything about *real* payments blocks on this.
 
-Still open: OD-01 (legal entity/MoR), OD-03 (tiers and commission), OD-04 (privacy and consent
-copy — all placeholder text is marked `TODO-LEGAL`), OD-05 (maps and notification providers),
-OD-06 (app-store vs Expo pilot). See [`open-decisions.md`](open-decisions.md).
+Still open: OD-01 (legal entity/MoR), OD-03 (tiers and commission), OD-04 (privacy and consent copy
+— all placeholder text is marked `TODO-LEGAL`), OD-05 (maps and notification providers), OD-06
+(app-store vs Expo pilot). See [`open-decisions.md`](open-decisions.md).
 
 ---
 
 ## 8. Known gaps — do not claim these work
 
+- **No payment has ever been taken.** The whole Stripe path is untested against Stripe.
 - **No hosted Supabase project.** Nothing has run end to end against a real backend.
 - **Storage bucket policies unverified.** The storage migration no-ops outside Supabase.
 - **Real Auth unverified.** The harness stubs `auth.users` and `auth.uid()`.
 - **The PostgREST embedded-select in `loadExperience()` is unverified.** Only a real Supabase can
-  execute that nested syntax. The relationships and their RLS are covered as plain SQL joins.
-- **The mobile app has never been launched.** Bundling and type-checking are verified; a simulator
-  run is not.
-- **No images anywhere.** Media is stored as paths only. Sourcing properly-licensed Caribbean
-  photography is an unstarted task with real legal exposure, and the release gate expects the seed
-  to support an investor demonstration.
-- **No map renders.** OD-05 is open, so `MAPS_PROVIDER` defaults to `mock` and Nearby ships as a
-  distance-sorted list with an explicit notice.
-- `pnpm audit` findings are all transitive **build-time** Expo dependencies, none in the shipped
-  runtime path. Tracked for M8.
+  execute that nested syntax.
+- **Live media does not render.** Demo images are bundled; real listings store Storage paths and
+  there is no signed-URL fetching, so a live card renders text-only rather than a broken image.
+- **The mobile app has never been launched on a device or simulator.** It bundles, type-checks, and
+  runs in a browser — that is all.
+- **The vendor demo scanner adopts an unknown-but-validly-signed token.** It has to: the portal runs
+  in a different browser from the phone, so a real voucher is genuinely unknown to it. The signature
+  is really checked and the terminal-state machine is really run; only the "have I seen this before"
+  lookup is local. A real deployment never takes that path. See the comment on
+  `redeemScannedToken`.
+- **No map renders.** OD-05 is open, so `MAPS_PROVIDER` defaults to `mock`.
+- `pnpm audit` findings are all transitive **build-time** Expo dependencies. Tracked for M8.
 
 ---
 
-## 9. Working agreement that has served this build well
+## 9. Commands
+
+```bash
+pnpm verify
+```
+
+`verify` = typecheck + lint + test + db:test. Others: `pnpm db:concurrency` (16-way races on
+`reserve_availability` and `redeem_voucher` — run after touching either), `pnpm bundle:mobile`,
+`pnpm mobile`, `pnpm vendor` (:3001), `pnpm admin` (:3002).
+
+---
+
+## 10. Working agreement that has served this build well
 
 From the PRD's operating rules, and worth keeping:
 
 - **Never claim something works without running it.** Every milestone records commands and results
   in the verification log in [`implementation-status.md`](implementation-status.md).
-- **Write the negative tests in the milestone that introduces the schema.** Both security holes
-  found so far — the privilege escalation and the search bypass — were caught by tests, not review.
+- **Write the negative tests in the milestone that introduces the schema.** Every security hole
+  found so far was caught by tests, not review.
 - **Nothing is silently omitted.** Every requirement is `complete` / `partial` / `blocked` /
-  `deferred` / `not started` in the traceability table.
+  `deferred` / `not started` in the traceability table — and "complete in demo mode" is written out
+  in full rather than shortened to "complete".
 - **Seeded content is labelled demo everywhere it appears**, including on cards and in screenshots.
 - When a documented decision does not survive contact with reality, **change it and record why**
   (see AD-01 and AD-02).

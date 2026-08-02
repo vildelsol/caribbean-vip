@@ -1,5 +1,5 @@
 import type { SearchFilters } from '@cvip/types';
-import { demoBackend, demoOptionsFor } from '@cvip/demo';
+import { demoBackend, demoMediaCredit, demoOptionsFor } from '@cvip/demo';
 import { supabase } from './supabase';
 import { isDemoMode } from './mode';
 
@@ -24,6 +24,14 @@ export interface CatalogueItem {
   fromAmountMinor: number;
   currency: string;
   isDemo: boolean;
+  /**
+   * Key into the bundled demo photography, or null.
+   *
+   * Null in live mode: real listings store media as Supabase Storage paths, and nothing has been
+   * uploaded to a hosted project yet, so a card renders its text-only layout rather than a broken
+   * image. See `apps/mobile/lib/demoMedia.ts`.
+   */
+  heroMediaKey: string | null;
 }
 
 interface SearchRow {
@@ -53,6 +61,7 @@ function toItem(row: SearchRow): CatalogueItem {
     fromAmountMinor: Number(row.from_amount_minor),
     currency: row.currency,
     isDemo: row.is_demo,
+    heroMediaKey: null,
   };
 }
 
@@ -69,7 +78,7 @@ export async function searchCatalogue(
     const q = filters.query.trim().toLowerCase();
 
     const items = demoBackend
-      .visibleExperiences()
+      .visibleExperiences(filters.islandId)
       .filter((e) => {
         if (q && !`${e.title} ${e.summary}`.toLowerCase().includes(q)) return false;
         if (filters.destinationId) {
@@ -106,6 +115,7 @@ export async function searchCatalogue(
           fromAmountMinor: e.fromAmountMinor,
           currency: 'USD',
           isDemo: true,
+          heroMediaKey: e.media[0] ?? null,
         };
       });
 
@@ -185,6 +195,7 @@ export async function loadExperience(id: string): Promise<{
         fromAmountMinor: exp.fromAmountMinor,
         currency: 'USD',
         isDemo: true,
+        heroMediaKey: exp.media[0] ?? null,
         inclusions: exp.inclusions,
         exclusions: [],
         pickupInfo: exp.pickupInfo,
@@ -192,7 +203,14 @@ export async function loadExperience(id: string): Promise<{
         cancellationPolicy: { free_cancellation_hours: exp.cancellationHours },
         vendorName: vendor?.tradingName ?? null,
         destinationName: dest?.name ?? null,
-        media: [],
+        // In demo mode `storagePath` carries the media KEY rather than a Storage path — the UI
+        // resolves it through `demoImage()`. `altText` is the photograph's true subject, which is
+        // both the accessible description and half of the required attribution.
+        media: exp.media.map((key) => ({
+          id: key,
+          storagePath: key,
+          altText: demoMediaCredit(key)?.subject ?? null,
+        })),
         options: demoOptionsFor(exp).map((o) => ({
           id: o.id,
           kind: o.kind,
@@ -297,6 +315,7 @@ export async function loadExperience(id: string): Promise<{
       fromAmountMinor: Number(r.from_amount_minor),
       currency: String(r.currency),
       isDemo: Boolean(r.is_demo),
+      heroMediaKey: null,
       inclusions: (r.inclusions as string[]) ?? [],
       exclusions: (r.exclusions as string[]) ?? [],
       pickupInfo: (r.pickup_info as string | null) ?? null,
@@ -319,7 +338,7 @@ export async function loadVendorLocations(islandId: string): Promise<
 > {
   if (isDemoMode) {
     return demoBackend
-      .visibleExperiences()
+      .visibleExperiences(islandId)
       .map((e) => demoBackend.vendor(e.vendorId))
       .filter((v): v is NonNullable<typeof v> => v !== null)
       .filter((v, i, arr) => arr.findIndex((x) => x.id === v.id) === i)

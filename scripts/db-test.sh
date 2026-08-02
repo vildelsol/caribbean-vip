@@ -32,7 +32,7 @@ for f in "$ROOT"/supabase/migrations/*.sql; do
   "${PSQL[@]}" -d "$DB_NAME" -f "$f" >/dev/null
 done
 
-echo "==> Seeding Jamaica demo content"
+echo "==> Seeding demo content"
 "${PSQL[@]}" -d "$DB_NAME" -f "$ROOT/supabase/seed/seed.sql" >/dev/null
 
 echo "==> Running tests"

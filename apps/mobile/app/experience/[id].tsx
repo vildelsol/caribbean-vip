@@ -1,10 +1,11 @@
 import { useEffect, useState } from 'react';
-import { ActivityIndicator, Pressable, ScrollView, Text, View } from 'react-native';
+import { ActivityIndicator, Image, Pressable, ScrollView, Text, View } from 'react-native';
 import { Stack, router, useLocalSearchParams } from 'expo-router';
 import { radius, semantic, spacing, typography } from '@cvip/ui';
-import { isSupabaseConfigured } from '../../lib/supabase';
+import { hasCatalogue } from '../../lib/mode';
 import { useSaved } from '../../lib/saved';
 import { loadExperience, type ExperienceDetail } from '../../lib/catalogue';
+import { demoImage, demoImageCredit } from '../../lib/demoMedia';
 import { formatDuration, formatFrom } from '../../components/ExperienceCard';
 import { Notice } from '../../components/Notice';
 import { categoryLabel } from '../(tabs)/index';
@@ -28,7 +29,7 @@ export default function ExperienceDetailScreen() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!id || !isSupabaseConfigured) {
+    if (!id || !hasCatalogue) {
       setLoading(false);
       return;
     }
@@ -75,6 +76,9 @@ export default function ExperienceDetailScreen() {
   const saved = isSaved(detail.id);
   const cancellation = describeCancellation(detail.cancellationPolicy);
   const rating = averageRating(detail.reviews);
+  // Every published departure is full, or none are published. Either way there is nothing to book,
+  // and a live "Check availability" button leading to an empty picker is worse than saying so.
+  const soldOut = detail.upcomingSlots.every((s) => s.capacity - s.bookedCount <= 0);
 
   return (
     <>
@@ -113,11 +117,7 @@ export default function ExperienceDetailScreen() {
           ) : null}
         </View>
 
-        {detail.media.length > 0 ? (
-          <Text style={{ ...typography.caption, color: semantic.textMuted }}>
-            {detail.media.length} {detail.media.length === 1 ? 'photo' : 'photos'}
-          </Text>
-        ) : null}
+        <Gallery media={detail.media} />
 
         {detail.description ? (
           <Section title="About">
@@ -279,23 +279,90 @@ export default function ExperienceDetailScreen() {
             </Text>
           </Pressable>
 
-          {/* Booking arrives in M3. Saying so beats a button that does nothing. */}
-          <View
+          <Pressable
+            onPress={() =>
+              router.push({ pathname: '/book/[id]', params: { id: detail.id } })
+            }
+            disabled={soldOut}
+            accessibilityRole="button"
+            accessibilityLabel={soldOut ? 'No departures available' : `Book ${detail.title}`}
             style={{
               flex: 1,
-              backgroundColor: semantic.surfaceSunken,
+              backgroundColor: soldOut ? semantic.surfaceSunken : semantic.brand,
               borderRadius: radius.md,
               padding: spacing.md,
               alignItems: 'center',
             }}
           >
-            <Text style={{ ...typography.bodyStrong, color: semantic.textMuted }}>
-              Booking opens in M3
+            <Text
+              style={{
+                ...typography.bodyStrong,
+                color: soldOut ? semantic.textMuted : semantic.textOnDark,
+              }}
+            >
+              {soldOut ? 'No departures' : 'Check availability'}
             </Text>
-          </View>
+          </Pressable>
         </View>
       </ScrollView>
     </>
+  );
+}
+
+/**
+ * Horizontal photo gallery.
+ *
+ * Renders nothing when no image resolves, which is the live-mode case: real listings store Supabase
+ * Storage paths and no hosted project exists yet, so there is nothing to fetch. Silence beats a row
+ * of broken image icons.
+ */
+function Gallery({ media }: { media: ExperienceDetail['media'] }) {
+  const images = media
+    .map((m) => ({ ...m, source: demoImage(m.storagePath), credit: demoImageCredit(m.storagePath) }))
+    .filter((m): m is typeof m & { source: NonNullable<typeof m.source> } => m.source !== null);
+
+  if (images.length === 0) return null;
+
+  return (
+    <View style={{ gap: spacing.xs }}>
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        contentContainerStyle={{ gap: spacing.sm }}
+      >
+        {images.map((m) => (
+          // The frame carries the ratio and the Image fills it: a bundled asset's intrinsic
+          // dimensions are written onto the element by react-native-web and beat `aspectRatio`.
+          <View
+            key={m.id}
+            style={{
+              width: images.length === 1 ? 320 : 280,
+              aspectRatio: 4 / 3,
+              borderRadius: radius.md,
+              overflow: 'hidden',
+              backgroundColor: semantic.surfaceSunken,
+            }}
+          >
+            <Image
+              source={m.source}
+              style={{ width: '100%', height: '100%' }}
+              resizeMode="cover"
+              accessible
+              accessibilityRole="image"
+              {...(m.altText ? { accessibilityLabel: m.altText } : {})}
+            />
+          </View>
+        ))}
+      </ScrollView>
+      {/* Attribution for every photograph on screen — CC BY and CC BY-SA both require it. */}
+      {images.map((m) =>
+        m.credit ? (
+          <Text key={`${m.id}-credit`} style={{ ...typography.caption, fontSize: 12, color: semantic.textMuted }}>
+            {m.credit}
+          </Text>
+        ) : null,
+      )}
+    </View>
   );
 }
 

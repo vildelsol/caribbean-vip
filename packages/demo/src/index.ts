@@ -8,3 +8,4 @@
  */
 export * from './dataset';
 export * from './store';
+export * from './credits';

@@ -24,11 +24,15 @@ begin
   select count(*) into n from search_experiences();
   perform test.ok(n >= 14, format('an empty query returns the catalogue (%s rows)', n));
 
+  -- Several islands now sell a catamaran trip, so the count is not the point; matching is.
   select count(*) into n from search_experiences('catamaran');
-  perform test.eq(n, 1, 'a full-text query finds the catamaran cruise');
+  perform test.ok(n >= 1, format('a full-text query finds the catamaran cruises (%s)', n));
 
-  select count(*) into n from search_experiences('CATAMARAN');
-  perform test.eq(n, 1, 'search is case-insensitive');
+  perform test.eq(
+    (select count(*) from search_experiences('CATAMARAN')),
+    (select count(*) from search_experiences('catamaran')),
+    'search is case-insensitive'
+  );
 
   -- English stemming: "rafting" must find "Rafting", and "climb" must find "Climb".
   select count(*) into n from search_experiences('rafting');

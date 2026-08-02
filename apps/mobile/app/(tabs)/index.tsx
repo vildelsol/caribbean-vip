@@ -3,7 +3,7 @@ import { ActivityIndicator, Pressable, ScrollView, Text, TextInput, View } from 
 import { Link, router } from 'expo-router';
 import { radius, semantic, spacing, typography } from '@cvip/ui';
 import { EXPERIENCE_CATEGORIES, type ExperienceCategory } from '@cvip/types';
-import { isSupabaseConfigured } from '../../lib/supabase';
+import { hasCatalogue } from '../../lib/mode';
 import { useIsland } from '../../lib/island';
 import { useSession } from '../../lib/session';
 import { useSaved } from '../../lib/saved';
@@ -24,12 +24,12 @@ export default function Explore() {
   const { isSaved, toggle, requiresSignIn } = useSaved();
 
   const [items, setItems] = useState<CatalogueItem[]>([]);
-  const [loading, setLoading] = useState(isSupabaseConfigured);
+  const [loading, setLoading] = useState(hasCatalogue);
   const [error, setError] = useState<string | null>(null);
   const [query, setQuery] = useState('');
 
   const load = useCallback(async () => {
-    if (!isSupabaseConfigured || !island) {
+    if (!hasCatalogue || !island) {
       setLoading(false);
       return;
     }
@@ -60,7 +60,13 @@ export default function Explore() {
   return (
     <ScrollView
       style={{ flex: 1, backgroundColor: semantic.background }}
-      contentContainerStyle={{ padding: spacing.lg, gap: spacing.lg }}
+      contentContainerStyle={{
+        padding: spacing.lg,
+        gap: spacing.lg,
+        // Clears the floating tab bar. Without it the last card sits underneath the
+        // Irie AI button and cannot be read or tapped.
+        paddingBottom: spacing.xxl * 2,
+      }}
       keyboardShouldPersistTaps="handled"
     >
       <View style={{ gap: spacing.xs }}>
@@ -106,7 +112,7 @@ export default function Explore() {
         </Pressable>
       </Link>
 
-      {!isSupabaseConfigured ? (
+      {!hasCatalogue ? (
         <Notice
           tone="alert"
           title="No backend configured"
@@ -122,7 +128,7 @@ export default function Explore() {
         <ActivityIndicator color={semantic.brandActive} style={{ marginTop: spacing.xl }} />
       ) : null}
 
-      {!loading && isSupabaseConfigured && items.length === 0 && !error ? (
+      {!loading && hasCatalogue && items.length === 0 && !error ? (
         <Notice
           tone="muted"
           title="Nothing here yet"

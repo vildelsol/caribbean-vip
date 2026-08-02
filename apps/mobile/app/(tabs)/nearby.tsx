@@ -10,7 +10,7 @@ import {
   type LocationPermission,
   type MapMarker,
 } from '@cvip/types';
-import { isSupabaseConfigured } from '../../lib/supabase';
+import { hasCatalogue } from '../../lib/mode';
 import { locationProvider, mapProvider } from '../../lib/location';
 import { useIsland } from '../../lib/island';
 import { useSession } from '../../lib/session';
@@ -18,6 +18,14 @@ import { useSaved } from '../../lib/saved';
 import { loadVendorLocations, searchCatalogue, type CatalogueItem } from '../../lib/catalogue';
 import { ExperienceCard } from '../../components/ExperienceCard';
 import { Notice } from '../../components/Notice';
+
+/**
+ * Bottom padding that clears the floating tab bar.
+ *
+ * The Irie AI button sits proud of the bar (PRD §16 puts it at the centre of five tabs), so
+ * without this the last card is partly underneath it — unreadable and untappable.
+ */
+const TAB_BAR_CLEARANCE = spacing.xxl * 2;
 
 /**
  * Nearby — list and map, with manual discovery as a first-class fallback.
@@ -41,7 +49,7 @@ export default function Nearby() {
   const [vendorPins, setVendorPins] = useState<
     { vendorOrgId: string; name: string; lat: number; lng: number }[]
   >([]);
-  const [loading, setLoading] = useState(isSupabaseConfigured);
+  const [loading, setLoading] = useState(hasCatalogue);
   const [error, setError] = useState<string | null>(null);
 
   // Reads the CURRENT permission without requesting it. Prompting on mount would be a permission
@@ -51,7 +59,7 @@ export default function Nearby() {
   }, []);
 
   const load = useCallback(async () => {
-    if (!isSupabaseConfigured || !island) {
+    if (!hasCatalogue || !island) {
       setLoading(false);
       return;
     }
@@ -134,7 +142,7 @@ export default function Nearby() {
   return (
     <ScrollView
       style={{ flex: 1, backgroundColor: semantic.background }}
-      contentContainerStyle={{ padding: spacing.lg, gap: spacing.md }}
+      contentContainerStyle={{ padding: spacing.lg, gap: spacing.md, paddingBottom: TAB_BAR_CLEARANCE }}
     >
       <Text style={{ ...typography.display, color: semantic.textPrimary }}>Nearby</Text>
 

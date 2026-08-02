@@ -1,15 +1,17 @@
 import { semantic, spacing, radius } from '@cvip/ui';
+import { Scanner } from '../components/Scanner';
 
 /**
- * M0 shell. The vendor portal is a separate web experience, not a section of the tourist app
- * (PRD §6), and must stay usable in a phone browser because that is where QR scanning happens.
+ * Vendor portal home.
+ *
+ * The scanner is the landing page rather than a section inside a dashboard, because the moment a
+ * vendor opens this on their phone they are standing in front of a guest holding up a QR code
+ * (PRD §6). Everything else can wait a tap.
  */
-const milestones = [
+const remaining = [
   { id: 'V-01', text: 'Submit an onboarding application with documents', milestone: 'M4' },
   { id: 'V-02', text: 'Publish listings once approved', milestone: 'M4' },
   { id: 'V-03', text: 'Define capacity and availability by date and time', milestone: 'M4' },
-  { id: 'V-04', text: 'Scan and validate a QR voucher from this browser', milestone: 'M4' },
-  { id: 'V-05', text: 'Reject a second scan, showing the original redemption time', milestone: 'M4' },
   { id: 'V-06', text: 'Create a geofenced promotion with expiry and rules', milestone: 'M6' },
   { id: 'V-07', text: 'See gross, platform fee and estimated net separately', milestone: 'M4' },
 ];
@@ -21,12 +23,18 @@ export default function VendorHome() {
       <h1 style={{ color: semantic.brand, margin: `${spacing.xs}px 0 ${spacing.sm}px` }}>
         Vendor Portal
       </h1>
+
+      <h2 style={{ color: semantic.textPrimary, marginTop: spacing.lg }}>Redeem a voucher</h2>
       <p style={{ color: semantic.textMuted, marginTop: 0 }}>
-        Onboarding, listings, availability, bookings, promotions and voucher redemption.
+        Scan the guest&rsquo;s QR code, or type the code they read out. A voucher can only be
+        redeemed once.
       </p>
 
+      <Scanner />
+
+      <h2 style={{ color: semantic.textPrimary, marginTop: spacing.xxl }}>Still to come</h2>
       <ul style={{ listStyle: 'none', padding: 0, display: 'grid', gap: spacing.sm }}>
-        {milestones.map((m) => (
+        {remaining.map((m) => (
           <li
             key={m.id}
             style={{

@@ -22,14 +22,29 @@ export function AuthGate({ children }: { children: ReactNode }) {
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
 
+  // Demo mode. With no backend there is no account to sign into, and refusing to render anything
+  // made the portal undemonstrable — which is a problem, because the vendor half of Journey A (a
+  // guest's QR being scanned) is the single most important thing to be able to show.
+  //
+  // Nothing is unlocked by this: there is no vendor data to protect when there is no backend, and
+  // `redeem.ts` routes to the in-memory demo backend rather than to anyone's real vouchers. Once
+  // credentials exist, `isSupabaseConfigured` is true and the real gate below applies as before.
   if (!isSupabaseConfigured) {
     return (
-      <Panel title="No backend configured">
-        <p style={{ color: semantic.textMuted }}>
-          Set <code>NEXT_PUBLIC_SUPABASE_URL</code> and <code>NEXT_PUBLIC_SUPABASE_ANON_KEY</code>{' '}
-          in <code>apps/vendor-web/.env</code>. See <code>docs/setup.md</code>.
-        </p>
-      </Panel>
+      <>
+        <div
+          style={{
+            background: semantic.premium,
+            color: semantic.brand,
+            padding: `6px ${spacing.md}px`,
+            textAlign: 'center',
+            fontSize: 14,
+          }}
+        >
+          DEMO MODE · sample data, no real vendor account, nothing is charged
+        </div>
+        {children}
+      </>
     );
   }
 
