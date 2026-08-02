@@ -10,8 +10,8 @@ Status values: `complete` · `partial` · `blocked` · `deferred` · `not starte
 | ID | Requirement | Milestone | Code area | Test | Status |
 |---|---|---|---|---|---|
 | T-01 | Browse Jamaica content without an account | M1–M2 | `apps/mobile/lib/session.tsx` guest state; `experiences_public_read` policy | `rls_public_read.test.sql` (guest reads islands, destinations, catalogue) | **complete** |
-| T-02 | Select/change island and destination manually | M2 | `apps/mobile/lib/island.tsx`; `app/select-destination.tsx`; `profiles.selected_island_id` | `rls_public_read.test.sql` (inactive islands hidden); UI e2e pending M2 | **partial** |
-| T-03 | Search/filters return only active approved listings | M2 | `experiences_public_read` policy joining vendor status (AD-10) | `rls_public_read.test.sql`: draft listing hidden, listing under unapproved vendor hidden, child rows hidden | **partial** (search UI in M2) |
+| T-02 | Select/change island and destination manually | M2 | `apps/mobile/lib/island.tsx`; `app/select-destination.tsx`; `profiles.selected_island_id` | `discovery.test.sql` (destination filter partitions the catalogue and narrows it); `rls_public_read.test.sql` (inactive islands hidden) | **complete** |
+| T-03 | Search/filters return only active approved listings | M2 | `search_experiences()` (NOT security definer); `experiences_public_read` (AD-10); `app/search.tsx` | `search.test.sql`: draft and unapproved-vendor listings unfindable by exact title, plus an assertion that the function is not `security definer`; `search.test.ts` (27 unit tests) | **complete** |
 | T-04 | Date/time/party selection shows calculated total | M3 | `packages/types/pricing.ts`; `quote` Edge Fn | `pricing.test.ts` (table-driven) | not started |
 | T-05 | Stripe test payment creates a booking exactly once | M3 | `supabase/functions/checkout-session`, `stripe-webhook`; unique `payments.stripe_event_id` | `webhook-idempotency.test.ts` (replay same event) | not started |
 | T-06 | Paid booking in Trips with scannable QR voucher | M3 | `voucher.ts` codec; Trips screens | `voucher-codec.test.ts`; e2e `book-and-view-voucher` | not started |
@@ -45,6 +45,22 @@ Status values: `complete` · `partial` · `blocked` · `deferred` · `not starte
 | Geofenced offers need consent + cooldown + fallback | `nearby-offers`; `promotion_impressions` | `consent-gate.test.ts`, `cooldown.test.ts` | not started |
 | Irie AI recommends only approved inventory | Retrieval restricted to approved rows | `irie-grounding.test.ts` (asks for absent vendor) | not started |
 | Admin actions and redemptions audit logged | `audit_status_change()` triggers; every scan writes `voucher_redemptions` | `append_only_and_seed.test.sql` | **partial** (M5 adds the rest of the admin actions) |
+
+## Additional guarantees added in M2
+
+| Guarantee | Enforced by | Test | Status |
+|---|---|---|---|
+| Search cannot bypass RLS | `search_experiences` runs as the caller; a test asserts `prosecdef = false` | `search.test.sql` | **complete** |
+| Ratings come only from moderated reviews | `experience_ratings` view is `security_invoker` | `search.test.sql`, `discovery.test.sql` | **complete** |
+| Saving requires an account | `saved_items` RLS; no `anon` policy | `discovery.test.sql` | **complete** |
+| One tourist cannot read or delete another's saved items | per-user RLS | `discovery.test.sql` | **complete** |
+| An experience cannot be saved twice | unique `(user_id, item_type, item_id)` | `discovery.test.sql` | **complete** |
+| A hidden listing's detail page is indistinguishable from a missing one | RLS returns no row; UI renders one state for both | `discovery.test.sql` (options and slots hidden too) | **complete** |
+| Location is never requested on mount | `getPermission()` on mount, `requestPermission()` only on press | `providers.test.ts` (mock defaults to denied) | **complete** |
+| No background or continuous tracking (PRD §9) | `LocationProvider` exposes no watch/background method | `providers.test.ts` asserts the interface surface | **complete** |
+| Nearby works with location denied | manual destination fallback | `providers.test.ts`; degraded-mode e2e pending M8 | **partial** |
+| Sorting is total and stable | every comparator falls back to title | `search.test.ts` | **complete** |
+| Distance display never implies false precision | coarse rounding in `formatDistance` | `search.test.ts` | **complete** |
 
 ## Additional guarantees added in M1
 

@@ -156,8 +156,50 @@ export interface Database {
     };
     // `{ [_ in never]: never }`, not `Record<string, never>`. The latter claims EVERY key
     // exists, so `from('islands')` resolves against Views first and collapses to `never`.
-    Views: { [_ in never]: never };
-    Functions: { [_ in never]: never };
+    Views: {
+      /** Published-review aggregate. `security_invoker`, so review RLS still applies. */
+      experience_ratings: {
+        Row: {
+          experience_id: string;
+          average_rating: number | null;
+          review_count: number;
+        };
+        Relationships: [];
+      };
+    };
+    Functions: {
+      /**
+       * Public catalogue search. Runs as the caller, so RLS decides visibility (T-03, V-02).
+       * A null argument means "no constraint" for that dimension.
+       */
+      search_experiences: {
+        Args: {
+          p_query?: string;
+          p_island_id?: string | null;
+          p_destination_id?: string | null;
+          p_categories?: ExperienceCategory[] | null;
+          p_min_price_minor?: number | null;
+          p_max_price_minor?: number | null;
+          p_max_duration_min?: number | null;
+          p_limit?: number;
+          p_offset?: number;
+        };
+        Returns: {
+          id: string;
+          vendor_org_id: string;
+          island_id: string;
+          destination_id: string;
+          category: ExperienceCategory;
+          title: string;
+          summary: string | null;
+          duration_minutes: number;
+          from_amount_minor: number;
+          currency: Currency;
+          is_demo: boolean;
+          rank: number;
+        }[];
+      };
+    };
     Enums: { [_ in never]: never };
     CompositeTypes: { [_ in never]: never };
   };

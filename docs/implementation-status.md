@@ -3,7 +3,7 @@
 Per operating rule 6: no requirement is silently omitted. Every requirement is marked
 `complete` · `partial` · `blocked` · `deferred` · `not started`.
 
-**Last updated:** 2026-08-02 · **Current milestone:** M0 and M1 complete, M2 not started
+**Last updated:** 2026-08-02 · **Current milestone:** M0–M2 complete, M3 not started
 
 ---
 
@@ -14,7 +14,7 @@ Per operating rule 6: no requirement is silently omitted. Every requirement is m
 | First deliverable (docs) | complete | PRD, build prompt, architecture, plan, status, setup, test plan, ERD, traceability, open decisions written. |
 | M0 — Repository foundation | complete | pnpm monorepo, shared config, `@cvip/types` with 38 unit tests, `@cvip/ui` tokens with 9 contrast tests, three app shells building, CI, env templates. All gates green — see verification log. |
 | M1 — Auth and domain foundation | complete | 11 migrations covering all 24 PRD entities plus 3 additions; RLS on all 29 tables; `reserve_availability` and `redeem_voucher`; Jamaica seed; auth in all three apps; 5 SQL test files plus a concurrency suite. |
-| M2 — Tourist discovery | not started | |
+| M2 — Tourist discovery | complete | Full-text search with filters and sort, Explore sections, Nearby list with distance, experience detail, saved items, maps/location adapters. 7 SQL test files; 98 unit tests. |
 | M3 — Booking and Stripe | not started | |
 | M4 — Vendor portal | not started | |
 | M5 — Admin console | not started | |
@@ -26,8 +26,9 @@ Per operating rule 6: no requirement is silently omitted. Every requirement is m
 
 Detailed per-requirement status lives in [`traceability.md`](traceability.md).
 
-After M1: **T-01 complete**; T-02, T-03, V-02, V-03, V-05 **partial** (enforced and tested in the
-database, awaiting their UI); the rest `not started`. None are deferred or dropped.
+After M2: **T-01, T-02, T-03 complete**; V-02, V-03, V-05 **partial** (enforced and tested in the
+database, awaiting the vendor UI in M4); T-07 **partial** (both consent flags and their controls
+exist; the geofence trigger is M6); the rest `not started`. None are deferred or dropped.
 
 ## Security findings fixed during M1
 
@@ -63,9 +64,13 @@ Per operating rule 5, no feature is claimed to work without a recorded command a
 | 2026-08-02 | `pnpm test` (after M1) | **59 passed**, 6 files |
 | 2026-08-02 | `pnpm typecheck` / `pnpm lint` (after M1) | exit 0 across all six workspaces |
 | 2026-08-02 | Both Next builds + `expo export` (after M1) | exit 0 / exit 0 / iOS bundle 982 modules |
+| 2026-08-02 | `pnpm test` (after M2) | **98 passed**, 8 files |
+| 2026-08-02 | `./scripts/db-test.sh` (after M2) | **7/7 SQL test files pass** on a fresh database |
+| 2026-08-02 | `pnpm typecheck` / `pnpm lint` (after M2) | exit 0 |
+| 2026-08-02 | Both Next builds + `expo export` (after M2) | exit 0 / exit 0 / iOS bundle 999 modules |
 
-Not yet verified: the mobile app running on a simulator or device (bundling is verified, launch is
-not); anything requiring a database, since M1 has not started.
+Not yet verified: the mobile app running on a simulator or device (bundling and type-checking are
+verified, launch is not), and anything that needs a real Supabase instance — see Known limitations.
 
 ### M0 deviation from plan
 
@@ -107,5 +112,13 @@ Per operating rule 4, none of these block the build; each sits behind an env var
 - No hosted Supabase project exists yet, so no app has been run end-to-end against a real backend.
 - `packages/supabase/src/database.types.ts` is hand-written, not generated. It types only the
   tables M1–M2 read; the rest are loosely typed until the milestone that reads them.
+- **The detail page's PostgREST embedded-select is not verified.** `loadExperience()` uses
+  PostgREST's nested-relation syntax, which only a real Supabase instance can execute. The
+  underlying relationships and their RLS are covered by `discovery.test.sql` as plain SQL joins,
+  but the query string itself is unproven until a hosted project exists.
+- **No map is rendered.** The maps provider is undecided (OD-05), so `MAPS_PROVIDER` defaults to
+  `mock` and Nearby ships as a distance-sorted list with an explicit "map view unavailable"
+  notice. This is a working fallback, not a finished map.
+- Media is stored as paths only; no image rendering or signed-URL fetching yet.
 - Six commercial/legal decisions remain open — see [`open-decisions.md`](open-decisions.md). None
   block M0–M8; all block accepting real payments or real vendors.

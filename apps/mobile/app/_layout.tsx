@@ -3,6 +3,7 @@ import { StatusBar } from 'expo-status-bar';
 import { semantic } from '@cvip/ui';
 import { SessionProvider } from '../lib/session';
 import { IslandProvider } from '../lib/island';
+import { SavedProvider } from '../lib/saved';
 
 /**
  * Root layout.
@@ -15,6 +16,7 @@ export default function RootLayout() {
   return (
     <SessionProvider>
       <IslandProvider>
+        <SavedProvider>
         <StatusBar style="light" />
         <Stack
           screenOptions={{
@@ -32,7 +34,10 @@ export default function RootLayout() {
             name="select-destination"
             options={{ title: 'Choose your destination', presentation: 'modal' }}
           />
+          <Stack.Screen name="search" options={{ title: 'Search' }} />
+          <Stack.Screen name="experience/[id]" options={{ title: 'Experience' }} />
         </Stack>
+        </SavedProvider>
       </IslandProvider>
     </SessionProvider>
   );

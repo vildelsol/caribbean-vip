@@ -105,15 +105,17 @@ key, the Stripe webhook secret and `VOUCHER_HMAC_SECRET` belong only to Edge Fun
 `packages/types/src/env.ts` splits the two schemas so the boundary is enforced rather than
 remembered. `pnpm test` asserts it.
 
-## What works today (M0 + M1)
+## What works today (M0–M2)
 
 - `packages/types` — money, pricing, voucher codec, state machines, env schemas, all unit-tested.
 - `packages/ui` — Caribbean VIP design tokens with contrast tests.
 - `packages/supabase` — client factories that refuse a service-role key in a client bundle.
 - `supabase/` — the full schema for all 24 PRD entities, RLS on every table, the two atomicity
   functions, and seeded Jamaica demo content.
-- `apps/mobile` — Expo app with guest browsing (T-01), island/destination switching (T-02), a live
-  Explore list, and the privacy controls PRD §14 requires.
+- `apps/mobile` — Expo app with guest browsing (T-01), island/destination switching (T-02),
+  Explore with destination-aware sections, full-text search with filters and sort (T-03), Nearby
+  with distance sorting and a manual fallback, experience detail, saved items, and the privacy
+  controls PRD §14 requires.
 - `apps/vendor-web` — membership-gated portal shell.
 - `apps/admin-web` — role-gated console shell.
 
@@ -146,3 +148,15 @@ context:
 ```sql
 update profiles set role = 'super_admin' where id = '<the user uuid>';
 ```
+
+## Optional providers
+
+Everything runs on mocks by default, so no third-party account is needed.
+
+| Variable | Default | Effect |
+|---|---|---|
+| `EXPO_PUBLIC_MAPS_PROVIDER` | `mock` | `mock` renders Nearby as a distance-sorted list with an explicit "map view unavailable" notice. Set to `google` or `mapbox` (with `EXPO_PUBLIC_MAPS_PUBLIC_KEY`) to enable the map. The provider is still an open decision — see OD-05. |
+
+The mock location provider deliberately reports permission as **denied**. That means the
+location-denied path — an explicit PRD §14 requirement — is the one you exercise by default,
+rather than the one nobody sees until release.

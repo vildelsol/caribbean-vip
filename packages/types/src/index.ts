@@ -10,4 +10,7 @@ export * from './pricing';
 export * from './voucher';
 export * from './states';
 export * from './domain';
+export * from './geo';
+export * from './search';
+export * from './providers';
 export * from './env';
