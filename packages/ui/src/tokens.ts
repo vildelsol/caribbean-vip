@@ -18,20 +18,36 @@ export const palette = {
   sandDeep: '#F3E6D2',
   sandRaised: '#FFFFFF',
 
-  /** Deep Caribbean green — primary brand, headers, bottom navigation. */
-  green900: '#073A32',
-  green700: '#0B5A53',
+  /**
+   * Deep Caribbean green — primary brand, headers, bottom navigation.
+   *
+   * Darkened from the first sampling to match the customer-journey mockups, whose crest and header
+   * green is nearly black. The luxe reading depends on that depth: at the original #073A32 the gold
+   * sat too close in value and the whole thing read tropical rather than premium.
+   */
+  green950: '#04211C',
+  green900: '#052D27',
+  green700: '#0B4E46',
   green500: '#1F5C54',
 
   turquoise: '#10828A',
   turquoiseLight: '#97CFE4',
 
-  /** Gold — premium accent. Only on dark surfaces; use `goldDeep` for text on sand. */
-  gold: '#DBAA50',
-  goldDeep: '#9E8541',
+  /**
+   * Gold — premium accent. Only on dark surfaces; use `goldDeep` for text on sand.
+   *
+   * A classic metallic gold rather than the softer sand-gold, again to match the mockups' crest.
+   * `goldDeep` stays darker because gold on a light background is the one pairing that fails
+   * contrast, and `tokens.test.ts` asserts it rather than trusting the eye.
+   */
+  gold: '#D4AF37',
+  goldDeep: '#8F7628',
 
   /** chosen, not sampled — restrained accent for expiry, alerts, destructive actions. */
   coral: '#D9694F',
+
+  /** Warm ivory, closer to the mockups' card and voucher surfaces than pure white. */
+  ivory: '#FBF7EE',
 
   ink: '#12211D',
   inkMuted: '#4A5A55',
@@ -57,12 +73,13 @@ export const semantic = {
   textAccent: palette.goldDeep,
 
   brand: palette.green900,
+  brandDeep: palette.green950,
   brandActive: palette.green700,
   accent: palette.turquoise,
   premium: palette.gold,
   alert: palette.coral,
 
-  navBackground: palette.green900,
+  navBackground: palette.green950,
   navActive: palette.gold,
   navInactive: '#8FB0A8',
 } as const;

@@ -12,7 +12,7 @@ import { searchCatalogue, type CatalogueItem } from '../../lib/catalogue';
 import { demoImage } from '../../lib/demoMedia';
 import { ExperienceCard } from '../../components/ExperienceCard';
 import { Notice } from '../../components/Notice';
-import { Card, Chip, Photo, SectionHeader } from '../../components/kit';
+import { Card, Chip, Crest, Photo, SectionHeader } from '../../components/kit';
 
 /**
  * Bottom padding that clears the floating tab bar.
@@ -34,6 +34,20 @@ const TAB_BAR_CLEARANCE = spacing.xxl * 2;
  * nothing here can surface a listing that is not publicly visible. No query in this file filters on
  * approval status: that is the database's job (AD-10), and the negative tests prove it.
  */
+
+/**
+ * The Cayman mockup's "Categories" row.
+ *
+ * Four broad tiles rather than the PRD's twelve raw categories, because twelve is a wall on a phone
+ * and a tourist does not think in the taxonomy. Each tile maps onto real categories, so tapping one
+ * runs the same RLS-governed search as everything else.
+ */
+const CATEGORY_TILES: { icon: string; label: string; categories: ExperienceCategory[] }[] = [
+  { icon: '⛵', label: 'Boat Tours', categories: ['water_sports', 'day_trips'] },
+  { icon: '🤿', label: 'Snorkel & Dive', categories: ['adventure', 'water_sports'] },
+  { icon: '🏖', label: 'Beach & Relax', categories: ['beaches', 'wellness'] },
+  { icon: '🍽', label: 'Food & Culture', categories: ['food', 'culture', 'nightlife'] },
+];
 
 /** The mockups' filter row. Each maps onto the PRD's twelve categories. */
 const QUICK_FILTERS: { label: string; categories: ExperienceCategory[] }[] = [
@@ -121,6 +135,7 @@ export default function Explore() {
     >
       {/* Greeting and current destination — the mockups' header. */}
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.md }}>
+        <Crest island={island?.name ?? null} size="sm" />
         <View style={{ flex: 1, gap: 2 }}>
           <Text style={{ ...typography.caption, color: semantic.textMuted }}>
             {greeting()}
@@ -247,6 +262,59 @@ export default function Explore() {
             </View>
           </View>
         </Pressable>
+      ) : null}
+
+      {/* "Categories" — the Cayman mockup's icon tiles. */}
+      {!loading && visible.length > 0 ? (
+        <View style={{ gap: spacing.sm }}>
+          <SectionHeader title="Categories" onAction={() => router.push('/search')} />
+          <View style={{ flexDirection: 'row', gap: spacing.sm }}>
+            {CATEGORY_TILES.map((tile) => (
+              <Pressable
+                key={tile.label}
+                onPress={() =>
+                  router.push({
+                    pathname: '/search',
+                    params: { category: tile.categories[0] as string },
+                  })
+                }
+                accessibilityRole="button"
+                accessibilityLabel={`Browse ${tile.label}`}
+                style={{
+                  flex: 1,
+                  alignItems: 'center',
+                  gap: 4,
+                  paddingVertical: spacing.md,
+                  backgroundColor: semantic.surface,
+                  borderWidth: 1,
+                  borderColor: semantic.border,
+                  borderRadius: radius.md,
+                }}
+              >
+                <Text style={{ fontSize: 22 }}>{tile.icon}</Text>
+                <Text
+                  numberOfLines={2}
+                  style={{
+                    ...typography.caption,
+                    fontSize: 11,
+                    textAlign: 'center',
+                    color: semantic.textPrimary,
+                  }}
+                >
+                  {tile.label}
+                </Text>
+              </Pressable>
+            ))}
+          </View>
+        </View>
+      ) : null}
+
+      {/* "Nearby Discoveries" — the wide card with a distance pill. */}
+      {!loading && nearYou ? (
+        <View style={{ gap: spacing.sm }}>
+          <SectionHeader title="Nearby Discoveries" onAction={() => router.push('/nearby')} />
+          <ExperienceCard item={nearYou} variant="hero" />
+        </View>
       ) : null}
 
       {/* "Recommended for You" — two-up cards. */}

@@ -19,11 +19,82 @@ import { palette, radius, semantic, spacing, typography } from '@cvip/ui';
 // ---------------------------------------------------------------------------
 
 /**
- * The Caribbean VIP wordmark: script "Caribbean" over a heavy gold "VIP".
+ * The VIP crest — a gold ring on deep green, "VIP" in the middle, the island beneath.
  *
- * Drawn in type rather than shipped as an image so it stays crisp at any size, recolours for dark
- * and light backgrounds, and adds nothing to the bundle. PRD §3: the product is always "Caribbean
- * VIP" — the island only ever changes the sub-brand, never this.
+ * Drawn in type and views rather than shipped as an image so it stays crisp at any size, recolours
+ * for light and dark surfaces, and adds nothing to the bundle.
+ *
+ * PRD §3 says the product is never renamed per island, and the crest honours that by construction:
+ * the mark is always the same, and only the small word underneath localizes — "JAMAICA", "CAYMAN",
+ * "BARBADOS". That is what lets the mockups' VIP Cayman crest exist without the app becoming a
+ * different product in each market.
+ */
+export function Crest({
+  island,
+  size = 'md',
+  onDark = false,
+}: {
+  /** Island name, upper-cased beneath the mark. Omit for the unbranded product mark. */
+  island?: string | null;
+  size?: 'sm' | 'md' | 'lg';
+  onDark?: boolean;
+}) {
+  const diameter = size === 'lg' ? 168 : size === 'sm' ? 64 : 112;
+  const scale = diameter / 112;
+
+  return (
+    <View
+      accessible
+      accessibilityRole="header"
+      accessibilityLabel={island ? `Caribbean VIP, ${island}` : 'Caribbean VIP'}
+      style={{
+        width: diameter,
+        height: diameter,
+        borderRadius: diameter / 2,
+        backgroundColor: onDark ? 'rgba(4,33,28,0.72)' : palette.green950,
+        borderWidth: Math.max(2, 3 * scale),
+        borderColor: palette.gold,
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: 2 * scale,
+      }}
+    >
+      <Text style={{ fontSize: 12 * scale, color: palette.gold, letterSpacing: 2 * scale }}>
+        ✦ ✦ ✦
+      </Text>
+      <Text
+        style={{
+          fontSize: 40 * scale,
+          lineHeight: 44 * scale,
+          fontWeight: '700',
+          color: palette.gold,
+          letterSpacing: 3 * scale,
+        }}
+      >
+        VIP
+      </Text>
+      {island ? (
+        <Text
+          style={{
+            fontSize: 11 * scale,
+            fontWeight: '600',
+            color: palette.gold,
+            letterSpacing: 3 * scale,
+          }}
+          numberOfLines={1}
+        >
+          {island.toUpperCase()}
+        </Text>
+      ) : null}
+    </View>
+  );
+}
+
+/**
+ * The product name as type, for places a crest is too heavy — headers and dark hero panels.
+ *
+ * "CARIBBEAN" letterspaced above a heavier gold "VIP", echoing the mockups' serif caps treatment
+ * without shipping a font.
  */
 export function Wordmark({
   size = 'md',
@@ -32,28 +103,27 @@ export function Wordmark({
   size?: 'sm' | 'md' | 'lg';
   onDark?: boolean;
 }) {
-  const scale = size === 'lg' ? 1.6 : size === 'sm' ? 0.62 : 1;
+  const scale = size === 'lg' ? 1.5 : size === 'sm' ? 0.62 : 1;
   return (
     <View accessible accessibilityRole="header" accessibilityLabel="Caribbean VIP">
       <Text
         style={{
-          fontSize: 34 * scale,
-          lineHeight: 40 * scale,
-          fontStyle: 'italic',
-          fontWeight: '600',
+          fontSize: 22 * scale,
+          lineHeight: 26 * scale,
+          fontWeight: '500',
+          letterSpacing: 6 * scale,
           color: onDark ? '#FFFFFF' : palette.green900,
         }}
       >
-        Caribbean
+        CARIBBEAN
       </Text>
       <Text
         style={{
           fontSize: 30 * scale,
           lineHeight: 34 * scale,
           fontWeight: '800',
-          letterSpacing: 3 * scale,
+          letterSpacing: 10 * scale,
           color: palette.gold,
-          marginTop: -4 * scale,
         }}
       >
         VIP
@@ -99,6 +169,7 @@ export function PrimaryButton({
       <Text
         style={{
           ...typography.bodyStrong,
+          letterSpacing: 0.8,
           color: disabled ? semantic.textMuted : semantic.textOnDark,
         }}
       >

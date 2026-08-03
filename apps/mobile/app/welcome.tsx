@@ -3,7 +3,7 @@ import { Stack, router } from 'expo-router';
 import { palette, semantic, spacing, typography } from '@cvip/ui';
 import { demoImage } from '../lib/demoMedia';
 import { markOnboardingSeen } from '../lib/onboarding';
-import { PrimaryButton, SecondaryButton, Wordmark } from '../components/kit';
+import { Crest, PrimaryButton, SecondaryButton } from '../components/kit';
 
 /**
  * Welcome — mockup screen 1.
@@ -38,7 +38,7 @@ export default function Welcome() {
 
         {/* Scrim: the tagline has to stay readable over whatever the photograph is doing, and PRD
             §16 makes outdoor readability a hard constraint rather than a preference. */}
-        <View style={{ ...fill, backgroundColor: 'rgba(7,58,50,0.55)' }} />
+        <View style={{ ...fill, backgroundColor: 'rgba(4,33,28,0.62)' }} />
 
         <View
           style={{
@@ -49,12 +49,35 @@ export default function Welcome() {
             gap: spacing.lg,
           }}
         >
-          <View style={{ gap: spacing.sm }}>
-            <Wordmark size="lg" onDark />
-            <Text style={{ ...typography.title, color: semantic.textOnDark, marginTop: spacing.md }}>
+          <View style={{ gap: spacing.md, alignItems: 'center' }}>
+            <Crest island="Jamaica" size="lg" />
+            <Text
+              style={{
+                ...typography.caption,
+                color: palette.gold,
+                letterSpacing: 3,
+                marginTop: spacing.sm,
+              }}
+            >
+              DISCOVER. BOOK. EXPERIENCE.
+            </Text>
+            <Text
+              style={{
+                ...typography.title,
+                color: semantic.textOnDark,
+                textAlign: 'center',
+              }}
+            >
               Your Caribbean Adventure Starts Here
             </Text>
-            <Text style={{ ...typography.body, color: semantic.textOnDark, opacity: 0.92 }}>
+            <Text
+              style={{
+                ...typography.body,
+                color: semantic.textOnDark,
+                opacity: 0.92,
+                textAlign: 'center',
+              }}
+            >
               Authentic experiences. Verified local operators. Unforgettable memories.
             </Text>
           </View>
