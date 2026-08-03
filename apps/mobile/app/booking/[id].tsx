@@ -232,9 +232,9 @@ export default function BookingScreen() {
                         }}
                       >
                         {cancelling ? (
-                          <ActivityIndicator color="#FFFFFF" />
+                          <ActivityIndicator color={semantic.textOnDark} />
                         ) : (
-                          <Text style={{ ...typography.bodyStrong, color: '#FFFFFF' }}>
+                          <Text style={{ ...typography.bodyStrong, color: semantic.textOnDark }}>
                             Yes, cancel it
                           </Text>
                         )}

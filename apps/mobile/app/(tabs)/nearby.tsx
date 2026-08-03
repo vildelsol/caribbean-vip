@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { ActivityIndicator, Pressable, ScrollView, Text, View } from 'react-native';
+import { ScrollView, Text, View } from 'react-native';
 import { router } from 'expo-router';
 import { radius, semantic, spacing, typography } from '@cvip/ui';
 import {
@@ -17,6 +17,7 @@ import { useSession } from '../../lib/session';
 import { useSaved } from '../../lib/saved';
 import { loadVendorLocations, searchCatalogue, type CatalogueItem } from '../../lib/catalogue';
 import { ExperienceCard } from '../../components/ExperienceCard';
+import { Chip, EmptyState, ListSkeleton, ScreenTitle } from '../../components/kit';
 import { Notice } from '../../components/Notice';
 
 /**
@@ -142,38 +143,23 @@ export default function Nearby() {
   return (
     <ScrollView
       style={{ flex: 1, backgroundColor: semantic.background }}
-      contentContainerStyle={{ padding: spacing.lg, gap: spacing.md, paddingBottom: TAB_BAR_CLEARANCE }}
+      contentContainerStyle={{ padding: spacing.lg, gap: spacing.sm + 4, paddingBottom: TAB_BAR_CLEARANCE }}
     >
-      <Text style={{ ...typography.display, color: semantic.textPrimary }}>Nearby</Text>
-
-      <Text style={{ ...typography.caption, color: semantic.textMuted }}>
-        {origin
-          ? 'Sorted by distance from where you are now.'
-          : `Showing ${destination?.name ?? island?.name ?? 'this island'}. Share your location to sort by distance — or keep browsing by destination.`}
-      </Text>
+      <ScreenTitle
+        title="Nearby"
+        subtitle={
+          origin
+            ? 'Sorted by distance from where you are now.'
+            : `Showing ${destination?.name ?? island?.name ?? 'this island'}. Share your location to sort by distance, or keep browsing by destination.`
+        }
+      />
 
       {!origin ? (
         <View style={{ flexDirection: 'row', gap: spacing.sm, flexWrap: 'wrap' }}>
           {permission !== 'denied' ? (
-            <Pressable
-              onPress={() => void useMyLocation()}
-              accessibilityRole="button"
-              style={primaryChip}
-            >
-              <Text style={{ ...typography.caption, color: semantic.textOnDark }}>
-                Use my location
-              </Text>
-            </Pressable>
+            <Chip label="Use my location" selected onPress={() => void useMyLocation()} />
           ) : null}
-          <Pressable
-            onPress={() => router.push('/select-destination')}
-            accessibilityRole="button"
-            style={outlineChip}
-          >
-            <Text style={{ ...typography.caption, color: semantic.accent }}>
-              Choose a destination
-            </Text>
-          </Pressable>
+          <Chip label="Choose a destination" onPress={() => router.push('/select-destination')} />
         </View>
       ) : null}
 
@@ -222,16 +208,19 @@ export default function Nearby() {
       {error ? (
         <Notice tone="alert" title="Could not load nearby" body={error} onRetry={load} />
       ) : null}
-      {loading ? <ActivityIndicator color={semantic.brandActive} /> : null}
+      {loading ? <ListSkeleton count={3} /> : null}
 
       {!loading && ranked.length === 0 && !error ? (
-        <Notice
-          tone="muted"
+        <EmptyState
+          icon="map-pin"
           title="Nothing nearby"
-          body="No approved experiences here yet. Try another destination."
+          body="No approved experiences around here yet. Another destination will have more."
+          actionLabel="Choose a destination"
+          onAction={() => router.push('/select-destination')}
         />
       ) : null}
 
+      {/* One card per line, thumbnail left — the same row card the rest of the app lists with. */}
       {ranked.map(({ item, distance }) => (
         <ExperienceCard
           key={item.id}
@@ -251,19 +240,3 @@ export default function Nearby() {
     </ScrollView>
   );
 }
-
-const primaryChip = {
-  backgroundColor: semantic.brandActive,
-  borderRadius: radius.pill,
-  paddingVertical: spacing.sm,
-  paddingHorizontal: spacing.md,
-} as const;
-
-const outlineChip = {
-  backgroundColor: semantic.surface,
-  borderWidth: 1,
-  borderColor: semantic.border,
-  borderRadius: radius.pill,
-  paddingVertical: spacing.sm,
-  paddingHorizontal: spacing.md,
-} as const;

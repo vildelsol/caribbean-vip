@@ -11,7 +11,15 @@ import { useSaved } from '../../lib/saved';
 import { demoImage } from '../../lib/demoMedia';
 import { ExperienceCard } from '../../components/ExperienceCard';
 import { Notice } from '../../components/Notice';
-import { Badge, Photo, PrimaryButton, SectionHeader, formatUsd } from '../../components/kit';
+import {
+  Badge,
+  Divider,
+  FactRow,
+  Photo,
+  PrimaryButton,
+  SectionHeader,
+  formatUsd,
+} from '../../components/kit';
 
 /**
  * Bottom padding that clears the floating tab bar.
@@ -119,15 +127,11 @@ export default function Trips() {
         </Text>
       </View>
 
-      {/* Segmented control, as the mockup draws it: one track, the active segment filled. */}
-      <View
-        style={{
-          flexDirection: 'row',
-          backgroundColor: semantic.surfaceSunken,
-          borderRadius: radius.pill,
-          padding: 4,
-        }}
-      >
+      {/* The mockup's tab row: plain labels on the ivory, the active one bold above a short deep
+          green rule, with a hairline running the full width beneath. It was a filled pill inside a
+          sand track — a heavier control than the mockup uses, and one that fought the segmented
+          look of the trip cards below it. */}
+      <View style={{ flexDirection: 'row', borderBottomWidth: 1, borderBottomColor: semantic.border }}>
         {TABS.map((t) => {
           const active = t.key === tab;
           return (
@@ -139,17 +143,18 @@ export default function Trips() {
               accessibilityLabel={`${t.label}, ${counts[t.key]} items`}
               style={{
                 flex: 1,
-                paddingVertical: spacing.sm,
-                borderRadius: radius.pill,
+                paddingVertical: spacing.sm + 2,
                 alignItems: 'center',
-                backgroundColor: active ? semantic.brand : 'transparent',
+                borderBottomWidth: 3,
+                borderBottomColor: active ? semantic.brand : 'transparent',
+                marginBottom: -1,
               }}
             >
               <Text
                 style={{
-                  ...typography.caption,
-                  fontWeight: active ? '700' : '400',
-                  color: active ? semantic.textOnDark : semantic.textPrimary,
+                  ...(active ? typography.bodyStrong : typography.caption),
+                  fontSize: 14,
+                  color: active ? semantic.textPrimary : semantic.textMuted,
                 }}
               >
                 {t.label}
@@ -239,29 +244,54 @@ function BookingRow({ booking, showVoucher }: { booking: BookingSummary; showVou
         opacity: cancelled ? 0.6 : 1,
       }}
     >
-      {hero ? <Photo source={hero} height={130} radius={0} /> : null}
+      {/* Photo, then a status pill floated on its top-left corner — the mockup's "UPCOMING"
+          badge. It was a pill in the text block competing with the title. */}
+      {hero ? (
+        <View>
+          <Photo source={hero} height={150} radius={0} />
+          <View style={{ position: 'absolute', top: spacing.sm + 2, left: spacing.sm + 2 }}>
+            <Badge
+              label={
+                cancelled
+                  ? booking.status === 'refunded'
+                    ? 'Refunded'
+                    : 'Cancelled'
+                  : showVoucher
+                    ? 'Upcoming'
+                    : 'Completed'
+              }
+              tone={cancelled ? 'pending' : 'brand'}
+            />
+          </View>
+        </View>
+      ) : null}
 
-      <View style={{ padding: spacing.md, gap: spacing.xs }}>
-        <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.sm }}>
-          <Text style={{ ...typography.heading, color: semantic.textPrimary, flex: 1 }}>
-            {booking.experienceTitle}
-          </Text>
-          <Badge
-            label={cancelled ? (booking.status === 'refunded' ? 'Refunded' : 'Cancelled') : 'Confirmed'}
-            tone={cancelled ? 'pending' : 'success'}
-          />
+      <View style={{ padding: spacing.md, gap: spacing.sm }}>
+        <Text style={{ ...typography.title, fontSize: 21, color: semantic.textPrimary }}>
+          {booking.experienceTitle}
+        </Text>
+
+        <View style={{ gap: spacing.sm + 2, marginTop: 2 }}>
+          {booking.startsAt ? (
+            <FactRow icon="calendar">
+              <Text style={{ ...typography.caption, color: semantic.textPrimary }}>
+                {formatWhen(booking.startsAt)}
+              </Text>
+            </FactRow>
+          ) : null}
+          <FactRow icon="users">
+            <Text style={{ ...typography.caption, color: semantic.textPrimary }}>
+              {`${booking.seats} ${booking.seats === 1 ? 'guest' : 'guests'}`}
+            </Text>
+          </FactRow>
+          <FactRow icon="tag">
+            <Text style={{ ...typography.caption, color: semantic.textPrimary }}>
+              Booking Ref: {booking.reference}
+            </Text>
+          </FactRow>
         </View>
 
-        {booking.startsAt ? (
-          <IconRow icon="📅" text={formatWhen(booking.startsAt)} />
-        ) : null}
-        <IconRow
-          icon="👥"
-          text={`${booking.seats} ${booking.seats === 1 ? 'guest' : 'guests'}`}
-        />
-        <IconRow icon="🎟" text={booking.reference} />
-
-        <View style={{ flexDirection: 'row', alignItems: 'baseline', marginTop: spacing.xs }}>
+        <View style={{ flexDirection: 'row', alignItems: 'baseline' }}>
           <Text style={{ ...typography.caption, color: semantic.textMuted, flex: 1 }}>
             Total paid
           </Text>
@@ -271,25 +301,17 @@ function BookingRow({ booking, showVoucher }: { booking: BookingSummary; showVou
         </View>
 
         {showVoucher ? (
-          <View style={{ marginTop: spacing.sm }}>
+          <>
+            <Divider />
             <PrimaryButton
               label="View Ticket"
               onPress={() => router.push({ pathname: '/voucher/[id]', params: { id: booking.id } })}
               accessibilityLabel={`Show voucher for ${booking.experienceTitle}`}
             />
-          </View>
+          </>
         ) : null}
       </View>
     </Pressable>
-  );
-}
-
-function IconRow({ icon, text }: { icon: string; text: string }) {
-  return (
-    <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.sm }}>
-      <Text style={{ fontSize: 13 }}>{icon}</Text>
-      <Text style={{ ...typography.caption, color: semantic.textMuted, flex: 1 }}>{text}</Text>
-    </View>
   );
 }
 

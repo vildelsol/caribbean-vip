@@ -3,6 +3,7 @@ import type { Session } from '@supabase/supabase-js';
 import type { ProfileRow } from '@cvip/supabase';
 import { isSupabaseConfigured, supabase } from './supabase';
 import { isDemoMode } from './mode';
+import { DEMO_ACCOUNT_PROFILE, matchesDemoCredentials } from './demoAccount';
 
 /**
  * Session and profile context for the tourist app.
@@ -21,6 +22,11 @@ interface SessionContextValue {
   profile: ProfileRow | null;
   /** False when no Supabase credentials are configured; the UI says so rather than failing. */
   configured: boolean;
+  /**
+   * Signs in the demonstration persona. Demo mode only — returns false anywhere else, including
+   * when a real backend is configured, so it can never stand in for real authentication.
+   */
+  signInWithDemoAccount: (email: string, password: string) => boolean;
   signOut: () => Promise<void>;
   refreshProfile: () => Promise<void>;
 }
@@ -100,6 +106,15 @@ export function SessionProvider({ children }: { children: ReactNode }) {
       session,
       profile,
       configured: isSupabaseConfigured || isDemoMode,
+      signInWithDemoAccount: (email: string, password: string) => {
+        // Hard gate. With a real backend configured this always refuses, which is what stops a
+        // demonstration credential ever becoming a way into a live environment.
+        if (!isDemoMode || isSupabaseConfigured) return false;
+        if (!matchesDemoCredentials(email, password)) return false;
+        setProfile(DEMO_ACCOUNT_PROFILE);
+        setState('authenticated');
+        return true;
+      },
       signOut: async () => {
         // Signing out returns the user to GUEST, not to a login wall — browsing still works.
         if (isDemoMode) {

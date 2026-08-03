@@ -1,18 +1,29 @@
 import { useCallback, useMemo, useState } from 'react';
-import { ActivityIndicator, Pressable, ScrollView, Text, TextInput, View } from 'react-native';
+import { Pressable, ScrollView, Text, View } from 'react-native';
 import { Redirect, router, useFocusEffect } from 'expo-router';
-import { radius, semantic, spacing, typography } from '@cvip/ui';
+import { palette, radius, semantic, spacing, typography } from '@cvip/ui';
 import { EXPERIENCE_CATEGORIES, type ExperienceCategory } from '@cvip/types';
 import { hasCatalogue } from '../../lib/mode';
 import { hasSeenOnboarding } from '../../lib/onboarding';
+import { rankByInterest } from '../../lib/interests';
 import { useIsland } from '../../lib/island';
 import { useSession } from '../../lib/session';
 import { useSaved } from '../../lib/saved';
 import { searchCatalogue, type CatalogueItem } from '../../lib/catalogue';
-import { demoImage } from '../../lib/demoMedia';
 import { ExperienceCard } from '../../components/ExperienceCard';
 import { Notice } from '../../components/Notice';
-import { Card, Chip, Crest, Photo, SectionHeader } from '../../components/kit';
+import {
+  Card,
+  Chip,
+  EmptyState,
+  Icon,
+  IrieStars,
+  ListSkeleton,
+  SearchField,
+  SectionHeader,
+  Skeleton,
+  type IconName,
+} from '../../components/kit';
 
 /**
  * Bottom padding that clears the floating tab bar.
@@ -42,15 +53,31 @@ const TAB_BAR_CLEARANCE = spacing.xxl * 2;
  * and a tourist does not think in the taxonomy. Each tile maps onto real categories, so tapping one
  * runs the same RLS-governed search as everything else.
  */
-const CATEGORY_TILES: { icon: string; label: string; categories: ExperienceCategory[] }[] = [
-  { icon: '⛵', label: 'Boat Tours', categories: ['water_sports', 'day_trips'] },
-  { icon: '🤿', label: 'Snorkel & Dive', categories: ['adventure', 'water_sports'] },
-  { icon: '🏖', label: 'Beach & Relax', categories: ['beaches', 'wellness'] },
-  { icon: '🍽', label: 'Food & Culture', categories: ['food', 'culture', 'nightlife'] },
+const CATEGORY_TILES: {
+  icon: IconName;
+  label: string;
+  categories: ExperienceCategory[];
+  /** Gold rather than green, alternating down the row as the mockup does. */
+  accent?: boolean;
+}[] = [
+  { icon: 'anchor', label: 'Boat Tours', categories: ['water_sports', 'day_trips'] },
+  { icon: 'life-buoy', label: 'Snorkel & Dive', categories: ['adventure', 'water_sports'] },
+  { icon: 'umbrella', label: 'Beach & Relax', categories: ['beaches', 'wellness'], accent: true },
+  {
+    icon: 'coffee',
+    label: 'Food & Culture',
+    categories: ['food', 'culture', 'nightlife'],
+    accent: true,
+  },
 ];
 
-/** The mockups' filter row. Each maps onto the PRD's twelve categories. */
-const QUICK_FILTERS: { label: string; categories: ExperienceCategory[] }[] = [
+/**
+ * The mockups' filter row. Each maps onto the PRD's twelve categories.
+ *
+ * Exported because Search draws the same row — the mockup uses one chip vocabulary across both
+ * screens, and two copies would drift the moment a category is added.
+ */
+export const QUICK_FILTERS: { label: string; categories: ExperienceCategory[] }[] = [
   { label: 'All', categories: [] },
   { label: 'Activities', categories: ['adventure', 'water_sports', 'wellness', 'family'] },
   { label: 'Attractions', categories: ['waterfalls', 'beaches', 'culture'] },
@@ -103,13 +130,28 @@ export default function Explore() {
   );
 
   // Highest-rated first for "Recommended", so the section means something rather than being the
-  // first rows of the same list under a different heading.
+  // first rows of the same list under a different heading — then anything matching an onboarding
+  // interest floats to the top of that. Ranking, never filtering: nothing is hidden by a tile the
+  // guest tapped on their first screen.
   const recommended = useMemo(
-    () => [...visible].sort((a, b) => b.ratingAverage - a.ratingAverage).slice(0, 4),
+    () =>
+      rankByInterest([...visible].sort((a, b) => b.ratingAverage - a.ratingAverage)).slice(0, 4),
     [visible],
   );
   const nearYou = visible[0] ?? null;
-  const availableToday = useMemo(() => visible.slice(4, 10), [visible]);
+
+  /**
+   * Whatever "Recommended" did not take.
+   *
+   * Derived by exclusion rather than by `slice(4, 10)`: Recommended sorts and ranks before it
+   * slices, so a positional slice of the *unranked* list put the same experience in both sections
+   * as soon as interest ranking moved anything. Two identical cards a screen apart reads as a bug
+   * in the catalogue, not in the layout.
+   */
+  const availableToday = useMemo(() => {
+    const taken = new Set(recommended.map((i) => i.id));
+    return visible.filter((i) => !taken.has(i.id)).slice(0, 6);
+  }, [visible, recommended]);
 
   // Mockup screen 1 is the first thing a new arrival sees. A redirect rather than a navigation
   // effect, so it happens before Explore paints and there is no flash of the wrong screen.
@@ -119,8 +161,6 @@ export default function Explore() {
   // dismissed.
   if (!hasSeenOnboarding()) return <Redirect href="/welcome" />;
 
-  const heroKey = island?.hero_media_path ?? null;
-  const heroImage = demoImage(heroKey);
   const place = destination?.name ?? island?.name ?? '';
 
   return (
@@ -133,46 +173,50 @@ export default function Explore() {
       }}
       keyboardShouldPersistTaps="handled"
     >
-      {/* Greeting and current destination — the mockups' header. */}
-      <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.md }}>
-        <Crest island={island?.name ?? null} size="sm" />
-        <View style={{ flex: 1, gap: 2 }}>
-          <Text style={{ ...typography.caption, color: semantic.textMuted }}>
-            {greeting()}
-            {profile?.display_name ? `, ${profile.display_name}` : ''}
-          </Text>
+      {/* Greeting and current destination — the mockup's header: a small muted line, the place
+          name large in the display serif, and a bell on the right. No crest. The crest belongs to
+          the welcome screen; repeating it at 60px beside the greeting shrank the one piece of
+          brand furniture the design has into an illegible token. */}
+      <View style={{ flexDirection: 'row', alignItems: 'flex-start', gap: spacing.md }}>
+        <View style={{ flex: 1, gap: 1 }}>
+          {/* Irie's gold star leads the greeting, exactly as the mockup opens the screen. The
+              concierge is present from the first line of the journey, not only on its own tab. */}
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+            <IrieStars size={14} color={palette.gold} />
+            <Text style={{ ...typography.caption, color: semantic.textMuted }}>
+              {greeting()}
+              {profile?.display_name ? `, ${profile.display_name}` : ''}
+            </Text>
+          </View>
           <Pressable
             onPress={() => router.push('/select-destination')}
             accessibilityRole="button"
             accessibilityLabel={`Change destination. Currently ${place}`}
-            style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}
+            style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}
           >
-            <Text style={{ ...typography.title, color: semantic.textPrimary }}>{place}</Text>
-            <Text style={{ fontSize: 14, color: semantic.textMuted }}>▾</Text>
+            {/* Deep green, not ink — the mockup sets the destination in the brand colour, which
+                is what makes it read as the one thing on the header you can change. */}
+            <Text style={{ ...typography.display, fontSize: 29, color: semantic.brand }}>
+              {place}
+            </Text>
+            <Icon name="chevron-down" size={19} color={semantic.brand} />
           </Pressable>
         </View>
+        <Pressable
+          onPress={() => router.push('/trips')}
+          hitSlop={10}
+          accessibilityRole="button"
+          accessibilityLabel="Notifications"
+          style={{ paddingTop: 6 }}
+        >
+          <Icon name="bell" size={22} color={semantic.textPrimary} />
+        </Pressable>
       </View>
 
-      <TextInput
+      <SearchField
         value={query}
         onChangeText={setQuery}
-        onSubmitEditing={() =>
-          router.push({ pathname: '/search', params: query ? { q: query } : {} })
-        }
-        returnKeyType="search"
-        placeholder="What would you like to explore?"
-        placeholderTextColor={semantic.textMuted}
-        accessibilityLabel="Search experiences"
-        style={{
-          backgroundColor: semantic.surface,
-          borderWidth: 1,
-          borderColor: semantic.border,
-          borderRadius: radius.pill,
-          paddingVertical: spacing.sm + 4,
-          paddingHorizontal: spacing.md,
-          fontSize: typography.body.size,
-          color: semantic.textPrimary,
-        }}
+        onSubmit={() => router.push({ pathname: '/search', params: query ? { q: query } : {} })}
       />
 
       <ScrollView
@@ -202,66 +246,39 @@ export default function Explore() {
         <Notice tone="alert" title="Could not load experiences" body={error} onRetry={load} />
       ) : null}
 
+{/* A skeleton in the shape of what is coming, not a centred spinner: the screen keeps
+          its height and nothing jumps when the data lands. */}
       {islandLoading || loading ? (
-        <ActivityIndicator color={semantic.brandActive} style={{ marginTop: spacing.xl }} />
+        <View style={{ gap: spacing.lg }}>
+          <Skeleton height={150} radius={radius.lg} />
+          <ListSkeleton count={3} />
+        </View>
       ) : null}
 
       {!loading && hasCatalogue && visible.length === 0 && !error ? (
-        <Notice
-          tone="muted"
+        <EmptyState
+          icon="compass"
           title="Nothing here yet"
           body={
             filter === 'All'
-              ? 'No approved experiences for this destination. Try another part of the island.'
-              : `No ${filter.toLowerCase()} here. Try another filter or destination.`
+              ? 'No approved experiences for this destination yet. Try another part of the island.'
+              : `No ${filter.toLowerCase()} here. Try another filter, or a different destination.`
           }
+          {...(filter === 'All'
+            ? { actionLabel: 'Change destination', onAction: () => router.push('/select-destination') }
+            : { actionLabel: 'Show everything', onAction: () => setFilter('All') })}
         />
       ) : null}
 
-      {/* "Near You Now" — a dark hero over the island photograph. */}
+      {/* "Nearby Discoveries" — the mockup's wide photo card, sitting directly under the search
+          field. It used to come *after* Categories, behind a second near-identical "Near You Now"
+          hero built from the same photograph. The mockup has one hero, here, and the duplicate is
+          gone rather than restyled. */}
       {!loading && nearYou ? (
-        <Pressable
-          onPress={() => router.push('/nearby')}
-          accessibilityRole="button"
-          accessibilityLabel="Near you now. Discover experiences nearby."
-        >
-          <View style={{ borderRadius: radius.lg, overflow: 'hidden' }}>
-            {heroImage ? (
-              <Photo source={heroImage} ratio={16 / 7} radius={0} />
-            ) : (
-              <View style={{ height: 150, backgroundColor: semantic.brand }} />
-            )}
-            <View
-              style={{
-                ...overlay,
-                backgroundColor: 'rgba(7,58,50,0.55)',
-                padding: spacing.lg,
-                justifyContent: 'flex-end',
-                gap: spacing.sm,
-              }}
-            >
-              <Text style={{ ...typography.heading, color: semantic.textOnDark }}>
-                Near You Now
-              </Text>
-              <Text style={{ ...typography.caption, color: semantic.textOnDark }}>
-                Discover experiences close to you in {place}
-              </Text>
-              <View
-                style={{
-                  backgroundColor: '#FFFFFF',
-                  borderRadius: radius.pill,
-                  paddingVertical: spacing.sm,
-                  paddingHorizontal: spacing.md,
-                  alignSelf: 'flex-start',
-                }}
-              >
-                <Text style={{ ...typography.caption, fontWeight: '700', color: semantic.brand }}>
-                  View all
-                </Text>
-              </View>
-            </View>
-          </View>
-        </Pressable>
+        <View style={{ gap: spacing.sm }}>
+          <SectionHeader title="Nearby Discoveries" onAction={() => router.push('/nearby')} />
+          <ExperienceCard item={nearYou} variant="hero" />
+        </View>
       ) : null}
 
       {/* "Categories" — the Cayman mockup's icon tiles. */}
@@ -280,23 +297,37 @@ export default function Explore() {
                 }
                 accessibilityRole="button"
                 accessibilityLabel={`Browse ${tile.label}`}
-                style={{
-                  flex: 1,
-                  alignItems: 'center',
-                  gap: 4,
-                  paddingVertical: spacing.md,
-                  backgroundColor: semantic.surface,
-                  borderWidth: 1,
-                  borderColor: semantic.border,
-                  borderRadius: radius.md,
-                }}
+                style={{ flex: 1, alignItems: 'center', gap: 6 }}
               >
-                <Text style={{ fontSize: 22 }}>{tile.icon}</Text>
+                {/* Mockup: a square sand tile holding a line icon, with the label *below* the
+                    tile rather than inside it. The label sat inside a white card here, which is
+                    why four two-word categories could not fit across a phone. */}
+                <View
+                  style={{
+                    width: '100%',
+                    aspectRatio: 1,
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    backgroundColor: semantic.surfaceSunken,
+                    borderWidth: 1,
+                    borderColor: semantic.border,
+                    borderRadius: radius.md,
+                  }}
+                >
+                  {/* The mockup alternates the tile icons between deep green and gold rather than
+                      running four of the same colour, which is what gives the row its rhythm. */}
+                  <Icon
+                    name={tile.icon}
+                    size={26}
+                    color={tile.accent ? palette.goldDeep : semantic.accent}
+                  />
+                </View>
                 <Text
                   numberOfLines={2}
                   style={{
                     ...typography.caption,
-                    fontSize: 11,
+                    fontSize: 12,
+                    lineHeight: 16,
                     textAlign: 'center',
                     color: semantic.textPrimary,
                   }}
@@ -309,56 +340,44 @@ export default function Explore() {
         </View>
       ) : null}
 
-      {/* "Nearby Discoveries" — the wide card with a distance pill. */}
-      {!loading && nearYou ? (
-        <View style={{ gap: spacing.sm }}>
-          <SectionHeader title="Nearby Discoveries" onAction={() => router.push('/nearby')} />
-          <ExperienceCard item={nearYou} variant="hero" />
-        </View>
-      ) : null}
-
-      {/* "Recommended for You" — two-up cards. */}
+{/* "Recommended for You" — one card per line.
+          Two 48%-wide cards side by side left a phone with two columns of clipped titles and
+          thumbnails too small to read, so both of these lists are single column now. The row card
+          gives each listing the full width for its title, rating and price. */}
       {recommended.length > 0 ? (
-        <View style={{ gap: spacing.sm }}>
+        <View style={{ gap: spacing.sm + 4 }}>
           <SectionHeader
             title="Recommended for You"
             subtitle="Curated just for your vibe"
             onAction={() => router.push('/search')}
           />
-          <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm }}>
-            {recommended.map((item) => (
-              <View key={item.id} style={{ width: '48%', flexGrow: 1 }}>
-                <ExperienceCard
-                  item={item}
-                  variant="grid"
-                  saved={isSaved(item.id)}
-                  {...(requiresSignIn ? {} : { onToggleSave: () => void toggle(item.id) })}
-                />
-              </View>
-            ))}
-          </View>
+          {recommended.map((item) => (
+            <ExperienceCard
+              key={item.id}
+              item={item}
+              saved={isSaved(item.id)}
+              {...(requiresSignIn ? {} : { onToggleSave: () => void toggle(item.id) })}
+            />
+          ))}
         </View>
       ) : null}
 
-      {/* "Available Today" — a horizontal row of the rest. */}
+      {/* "Available Today" — also one per line, for the same reason. */}
       {availableToday.length > 0 ? (
-        <View style={{ gap: spacing.sm }}>
+        <View style={{ gap: spacing.sm + 4 }}>
           <SectionHeader
             title="Available Today"
             subtitle="Book last-minute experiences"
             onAction={() => router.push('/search')}
           />
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={{ gap: spacing.sm, paddingRight: spacing.lg }}
-          >
-            {availableToday.map((item) => (
-              <View key={item.id} style={{ width: 190 }}>
-                <ExperienceCard item={item} variant="grid" />
-              </View>
-            ))}
-          </ScrollView>
+          {availableToday.map((item) => (
+            <ExperienceCard
+              key={item.id}
+              item={item}
+              saved={isSaved(item.id)}
+              {...(requiresSignIn ? {} : { onToggleSave: () => void toggle(item.id) })}
+            />
+          ))}
         </View>
       ) : null}
 
@@ -374,14 +393,6 @@ export default function Explore() {
     </ScrollView>
   );
 }
-
-const overlay = {
-  position: 'absolute' as const,
-  top: 0,
-  left: 0,
-  right: 0,
-  bottom: 0,
-};
 
 function greeting(): string {
   const hour = new Date().getHours();

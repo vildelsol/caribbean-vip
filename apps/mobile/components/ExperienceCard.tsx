@@ -1,17 +1,19 @@
 import { Pressable, Text, View } from 'react-native';
 import { Link } from 'expo-router';
-import { radius, semantic, spacing, typography } from '@cvip/ui';
+import { elevation, palette, radius, semantic, spacing, typography } from '@cvip/ui';
 import { formatDistance } from '@cvip/types';
 import type { CatalogueItem } from '../lib/catalogue';
 import { demoImage, demoImageCredit, demoMediaCredit } from '../lib/demoMedia';
-import { Badge, Card, Photo, Rating, formatUsd } from './kit';
+import { Card, Icon, Photo, PhotoScrim, Rating, formatUsd } from './kit';
 
 /**
  * One listing, in the three shapes the mockups use.
  *
- * - `grid`   — the two-up "Recommended for You" card: photo on top, title, rating, from-price.
- * - `row`    — the search-result and "Other Bookings" row: thumbnail left, detail right.
- * - `hero`   — the wide "Near You in Ocho Rios" card with the photo behind the text.
+ * - `row`    — **the default.** Thumbnail left, detail right, one per line. Every list of
+ *              experiences in the app uses this: Explore, Search, Nearby, Saved.
+ * - `hero`   — the wide "Nearby Discoveries" card with the photo behind the text. One per screen.
+ * - `grid`   — photo on top, kept only for the Irie AI answer carousel, where three small cards
+ *              scrolling sideways is the point rather than an accident of layout.
  *
  * One component rather than three because the content and its accessibility labelling are
  * identical; only the arrangement differs, and keeping them together is what stops the price or the
@@ -22,7 +24,7 @@ import { Badge, Card, Photo, Rating, formatUsd } from './kit';
  */
 export function ExperienceCard({
   item,
-  variant = 'grid',
+  variant = 'row',
   distanceMetres,
   saved,
   onToggleSave,
@@ -51,102 +53,182 @@ export function ExperienceCard({
       accessibilityRole="button"
       accessibilityLabel={saved ? 'Remove from saved' : 'Save this experience'}
     >
-      <Text style={{ fontSize: 20, color: saved ? semantic.premium : semantic.textMuted }}>
-        {saved ? '★' : '☆'}
-      </Text>
+      {/* The mockup saves with a heart, not a star — the star is the rating mark, and using it
+          for two different meanings on the same card is the sort of thing that reads as "nearly
+          right" without anyone being able to say why. */}
+      <Icon name="heart" size={18} color={saved ? palette.gold : semantic.textMuted} />
     </Pressable>
   ) : null;
 
   // -- Row ------------------------------------------------------------------
+  //
+  // The mockup's search-result card, and now the default everywhere an experience is listed.
+  //
+  // A square thumbnail on the left, then title, one line of summary, the rating and the price
+  // stacked in the remaining width, with the save heart in the top-right corner. Single column by
+  // design: two 48%-wide cards side by side is a desktop grid habit that leaves a phone with two
+  // columns of clipped titles and unreadable thumbnails.
   if (variant === 'row') {
     return (
       <Link href={{ pathname: '/experience/[id]', params: { id: item.id } }} asChild>
         <Pressable accessibilityRole="button" accessibilityLabel={label}>
-          <Card padded={false}>
-            <View style={{ flexDirection: 'row', gap: spacing.md, padding: spacing.sm }}>
-              {hero ? (
-                <View style={{ width: 96 }}>
-                  <Photo source={hero} ratio={1} radius={radius.md} {...(alt ? { accessibilityLabel: alt } : {})} />
-                </View>
-              ) : null}
-              <View style={{ flex: 1, gap: 3, paddingVertical: 2 }}>
-                <View style={{ flexDirection: 'row', gap: spacing.sm }}>
-                  <Text
-                    style={{ ...typography.bodyStrong, color: semantic.textPrimary, flex: 1 }}
-                    numberOfLines={2}
-                  >
-                    {item.title}
-                  </Text>
-                  {SaveButton}
-                </View>
-                {item.summary ? (
-                  <Text
-                    style={{ ...typography.caption, color: semantic.textMuted }}
-                    numberOfLines={1}
-                  >
-                    {item.summary}
-                  </Text>
-                ) : null}
-                <Rating average={item.ratingAverage} count={item.ratingCount} compact />
-                <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.sm }}>
-                  <Text style={{ ...typography.caption, fontWeight: '700', color: semantic.textAccent }}>
-                    from {price}
-                  </Text>
-                  {distanceMetres !== undefined ? (
-                    <Text style={{ ...typography.caption, fontSize: 12, color: semantic.textMuted }}>
-                      {formatDistance(distanceMetres)}
-                    </Text>
+          {({ pressed }: { pressed: boolean }) => (
+            <View style={{ opacity: pressed ? 0.85 : 1 }}>
+              <Card padded={false}>
+                <View style={{ flexDirection: 'row', gap: spacing.md, padding: spacing.sm + 2 }}>
+                  {hero ? (
+                    <View style={{ width: 92 }}>
+                      <Photo
+                        source={hero}
+                        ratio={1}
+                        radius={radius.md}
+                        {...(alt ? { accessibilityLabel: alt } : {})}
+                      />
+                    </View>
                   ) : null}
+
+                  {/* Sized to sit level with the 92pt thumbnail. Four tight lines — title,
+                      summary, rating, price — is what the mockup's row holds, and every one of
+                      them earns its height. */}
+                  <View style={{ flex: 1, gap: 2, paddingVertical: 1 }}>
+                    <View style={{ flexDirection: 'row', gap: spacing.sm, alignItems: 'flex-start' }}>
+                      <Text
+                        style={{
+                          ...typography.bodyStrong,
+                          fontSize: 15,
+                          lineHeight: 19,
+                          color: semantic.textPrimary,
+                          flex: 1,
+                        }}
+                        numberOfLines={2}
+                      >
+                        {item.title}
+                      </Text>
+                      {SaveButton}
+                    </View>
+
+                    {item.summary ? (
+                      <Text
+                        style={{
+                          ...typography.caption,
+                          fontSize: 12.5,
+                          lineHeight: 16,
+                          color: semantic.textMuted,
+                        }}
+                        numberOfLines={1}
+                      >
+                        {item.summary}
+                      </Text>
+                    ) : null}
+
+                    <Rating average={item.ratingAverage} count={item.ratingCount} compact />
+
+                    <View
+                      style={{ flexDirection: 'row', alignItems: 'baseline', gap: 6, marginTop: 1 }}
+                    >
+                      {/* Green, as the mockup sets it. The price is the figure a guest scans a
+                          card for; in ink it is indistinguishable from the title above it. */}
+                      <Text
+                        style={{ ...typography.bodyStrong, fontSize: 15, color: semantic.price }}
+                      >
+                        {price}
+                      </Text>
+                      <Text
+                        style={{ ...typography.caption, fontSize: 12, color: semantic.textMuted }}
+                      >
+                        per person
+                      </Text>
+                      {distanceMetres !== undefined ? (
+                        <Text
+                          style={{ ...typography.caption, fontSize: 12, color: semantic.textMuted }}
+                        >
+                          · {formatDistance(distanceMetres)}
+                        </Text>
+                      ) : null}
+                      {/* Operating rule 9 still applies, but as a two-letter mark on the price
+                          line rather than a full sentence. The sentence added a fifth line to
+                          every card in the app and made each row half again as tall as the
+                          mockup's. The detail page states it in full. */}
+                      {item.isDemo ? (
+                        <Text
+                          style={{
+                            ...typography.overline,
+                            fontSize: 9.5,
+                            letterSpacing: 0.6,
+                            color: semantic.alert,
+                          }}
+                        >
+                          DEMO
+                        </Text>
+                      ) : null}
+                    </View>
+                  </View>
                 </View>
-                {item.isDemo ? <DemoLabel compact /> : null}
-              </View>
+              </Card>
             </View>
-          </Card>
+          )}
         </Pressable>
       </Link>
     );
   }
 
   // -- Hero -----------------------------------------------------------------
+  //
+  // The mockup's "Nearby Discoveries" card is a photograph with the title and distance sitting
+  // *on* it under a gradient — not a photograph stacked above a block of text, which is what this
+  // was. The photo is the card.
   if (variant === 'hero') {
     return (
       <Link href={{ pathname: '/experience/[id]', params: { id: item.id } }} asChild>
         <Pressable accessibilityRole="button" accessibilityLabel={label}>
-          <Card padded={false}>
+          <View style={{ borderRadius: radius.lg, overflow: 'hidden', ...elevation.card }}>
             {hero ? (
-              <View>
-                <Photo
-                  source={hero}
-                  ratio={2}
-                  radius={0}
-                  {...(alt ? { accessibilityLabel: alt } : {})}
-                />
-                {credit ? <CreditStrip text={credit} /> : null}
-              </View>
-            ) : null}
-            <View style={{ padding: spacing.md, gap: spacing.xs }}>
-              <View style={{ flexDirection: 'row', gap: spacing.sm, flexWrap: 'wrap' }}>
-                {distanceMetres !== undefined ? (
-                  <Badge label={formatDistance(distanceMetres)} tone="success" />
-                ) : null}
-                {item.isDemo ? <Badge label="Demo listing" tone="offer" /> : null}
-              </View>
-              <Text style={{ ...typography.heading, color: semantic.textPrimary }}>
+              <Photo
+                source={hero}
+                ratio={2.4}
+                radius={0}
+                {...(alt ? { accessibilityLabel: alt } : {})}
+              />
+            ) : (
+              <View style={{ height: 150, backgroundColor: semantic.brand }} />
+            )}
+            <PhotoScrim />
+            <View
+              style={{
+                position: 'absolute',
+                left: 0,
+                right: 0,
+                bottom: 0,
+                paddingHorizontal: spacing.md,
+                paddingTop: spacing.md,
+                // Clears the attribution strip pinned to the card's foot. Without this the
+                // subtitle sits underneath the credit and both become unreadable.
+                paddingBottom: credit ? spacing.lg + 2 : spacing.md,
+                gap: 5,
+              }}
+            >
+              <Text
+                numberOfLines={1}
+                style={{ ...typography.heading, fontSize: 20, color: semantic.textOnDark }}
+              >
                 {item.title}
               </Text>
-              {item.summary ? (
-                <Text style={{ ...typography.body, color: semantic.textMuted }} numberOfLines={2}>
-                  {item.summary}
-                </Text>
-              ) : null}
-              <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.md }}>
-                <Rating average={item.ratingAverage} count={item.ratingCount} />
-                <Text style={{ ...typography.bodyStrong, color: semantic.textAccent }}>
-                  from {price}
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 5 }}>
+                <Icon name="map-pin" size={13} color={palette.goldLight} />
+                <Text
+                  numberOfLines={1}
+                  style={{ ...typography.caption, fontSize: 13, flex: 1, color: semantic.textOnDark }}
+                >
+                  {distanceMetres !== undefined
+                    ? `${formatDistance(distanceMetres)} away`
+                    : (item.summary ?? `from ${price}`)}
                 </Text>
               </View>
             </View>
-          </Card>
+            {/* Attribution still has to be visible over the photograph — CC BY requires it
+                wherever the work appears, and a hero card is exactly where it gets forgotten. */}
+            {credit ? <CreditStrip text={credit} /> : null}
+          </View>
         </Pressable>
       </Link>
     );
@@ -161,7 +243,7 @@ export function ExperienceCard({
             <View>
               <Photo
                 source={hero}
-                ratio={4 / 3}
+                ratio={3 / 2}
                 radius={0}
                 {...(alt ? { accessibilityLabel: alt } : {})}
               />
@@ -185,23 +267,47 @@ export function ExperienceCard({
               ) : null}
             </View>
           ) : null}
+          {/* The card foot, sized for the 180pt carousel it now lives in: title, rating, then the
+              price on one line with "per person" beside it rather than stacked beneath. */}
           <View style={{ padding: spacing.sm + 2, gap: 3 }}>
             <Text
-              style={{ ...typography.bodyStrong, fontSize: 15, color: semantic.textPrimary }}
+              style={{
+                ...typography.bodyStrong,
+                fontSize: 14,
+                lineHeight: 18,
+                color: semantic.textPrimary,
+              }}
               numberOfLines={2}
             >
               {item.title}
             </Text>
             <Rating average={item.ratingAverage} count={item.ratingCount} compact />
-            <Text style={{ ...typography.caption, fontWeight: '700', color: semantic.textAccent }}>
-              from {price}
-            </Text>
+            <View style={{ flexDirection: 'row', alignItems: 'baseline', gap: 5, flexWrap: 'wrap' }}>
+              <Text style={{ ...typography.bodyStrong, fontSize: 15, color: semantic.price }}>
+                {price}
+              </Text>
+              <Text style={{ ...typography.caption, fontSize: 11, color: semantic.textMuted }}>
+                per person
+              </Text>
+              {/* Operating rule 9 as a mark, not a sentence — see the row variant. */}
+              {item.isDemo ? (
+                <Text
+                  style={{
+                    ...typography.overline,
+                    fontSize: 9.5,
+                    letterSpacing: 0.6,
+                    color: semantic.alert,
+                  }}
+                >
+                  DEMO
+                </Text>
+              ) : null}
+            </View>
             {distanceMetres !== undefined ? (
-              <Text style={{ ...typography.caption, fontSize: 12, color: semantic.accent }}>
-                {formatDistance(distanceMetres)}
+              <Text style={{ ...typography.caption, fontSize: 11, color: semantic.textMuted }}>
+                {formatDistance(distanceMetres)} away
               </Text>
             ) : null}
-            {item.isDemo ? <DemoLabel compact /> : null}
           </View>
         </Card>
       </Pressable>
@@ -233,20 +339,6 @@ function CreditStrip({ text }: { text: string }) {
       }}
     >
       {text}
-    </Text>
-  );
-}
-
-function DemoLabel({ compact }: { compact?: boolean }) {
-  return (
-    <Text
-      style={{
-        ...typography.caption,
-        fontSize: compact ? 11 : 14,
-        color: semantic.alert,
-      }}
-    >
-      Demo listing — not live pricing
     </Text>
   );
 }

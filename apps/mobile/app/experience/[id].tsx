@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, Text, View } from 'react-native';
 import { Stack, router, useLocalSearchParams } from 'expo-router';
-import { palette, radius, semantic, spacing, typography } from '@cvip/ui';
+import { radius, semantic, spacing, typography } from '@cvip/ui';
 import { hasCatalogue } from '../../lib/mode';
 import { useIsland } from '../../lib/island';
 import { useSaved } from '../../lib/saved';
@@ -14,9 +14,13 @@ import { OfferSheet } from '../../components/OfferSheet';
 import {
   Badge,
   Card,
+  Divider,
+  Icon,
+  IncludedRow,
   Photo,
   PrimaryButton,
   Rating,
+  RoundIconButton,
   StatRow,
   StatTile,
   formatLocalApprox,
@@ -125,6 +129,8 @@ export default function ExperienceDetailScreen() {
               <View style={{ height: 220, backgroundColor: semantic.brand }} />
             )}
 
+            {/* The mockup's floating controls: dark translucent discs with white line icons, not
+                white discs with a text arrow. Back on the left, save on the right. */}
             <View
               style={{
                 position: 'absolute',
@@ -135,15 +141,16 @@ export default function ExperienceDetailScreen() {
                 alignItems: 'center',
               }}
             >
-              <RoundButton
-                symbol="←"
-                label="Go back"
+              <RoundIconButton
+                icon="arrow-left"
+                accessibilityLabel="Go back"
                 onPress={() => (router.canGoBack() ? router.back() : router.replace('/'))}
               />
               <View style={{ flex: 1 }} />
-              <RoundButton
-                symbol={saved ? '♥' : '♡'}
-                label={saved ? 'Remove from saved' : 'Save this experience'}
+              <RoundIconButton
+                icon="heart"
+                active={saved}
+                accessibilityLabel={saved ? 'Remove from saved' : 'Save this experience'}
                 onPress={() => (requiresSignIn ? router.push('/sign-in') : void toggle(detail.id))}
               />
             </View>
@@ -169,15 +176,52 @@ export default function ExperienceDetailScreen() {
             ) : null}
           </View>
 
-          <View style={{ padding: spacing.lg, gap: spacing.lg }}>
-            <View style={{ gap: spacing.xs }}>
-              <Text style={{ ...typography.title, color: semantic.textPrimary }}>
-                {detail.title}
-              </Text>
-              <Text style={{ ...typography.caption, color: semantic.textMuted }}>
-                {categoryLabel(detail.category)}
-                {detail.destinationName ? ` · ${detail.destinationName}` : ''}
-              </Text>
+          {/* The content sits on a rounded sheet pulled up over the photograph, which is how the
+              mockup joins the two — a butt join between a square photo and a flat background is
+              the single tell that gives away a stock layout. */}
+          <View
+            style={{
+              marginTop: -spacing.lg,
+              borderTopLeftRadius: radius.xl,
+              borderTopRightRadius: radius.xl,
+              backgroundColor: semantic.background,
+              padding: spacing.lg,
+              gap: spacing.lg,
+            }}
+          >
+            <View style={{ gap: spacing.sm }}>
+              {/* The mockup's badge pair sits above the title. */}
+              <View style={{ flexDirection: 'row', gap: spacing.sm, flexWrap: 'wrap' }}>
+                {detail.ratingAverage >= 4.5 ? <Badge label="Top Rated" tone="offer" /> : null}
+                {detail.vendorVerified ? <Badge label="Verified Operator" tone="success" /> : null}
+                <Badge label={categoryLabel(detail.category)} tone="info" />
+              </View>
+
+              {/* Title left, price right — the mockup pairs them on one baseline so the two facts
+                  a guest decides on are read together. */}
+              <View style={{ flexDirection: 'row', alignItems: 'flex-end', gap: spacing.md }}>
+                <Text style={{ ...typography.title, fontSize: 26, flex: 1, color: semantic.textPrimary }}>
+                  {detail.title}
+                </Text>
+                <View style={{ alignItems: 'flex-end' }}>
+                  <Text style={{ ...typography.title, fontSize: 22, color: semantic.price }}>
+                    {formatUsd(detail.fromAmountMinor)}
+                  </Text>
+                  <Text style={{ ...typography.caption, fontSize: 12, color: semantic.textMuted }}>
+                    per person
+                  </Text>
+                  {/* OD-09: display localized, settle in USD. Always approximate, never used in
+                      a calculation that leads to a charge. */}
+                  {local ? (
+                    <Text
+                      numberOfLines={1}
+                      style={{ ...typography.caption, fontSize: 12, color: semantic.textMuted }}
+                    >
+                      {local}
+                    </Text>
+                  ) : null}
+                </View>
+              </View>
 
               <View
                 style={{
@@ -185,11 +229,17 @@ export default function ExperienceDetailScreen() {
                   alignItems: 'center',
                   gap: spacing.md,
                   flexWrap: 'wrap',
-                  marginTop: 2,
                 }}
               >
                 <Rating average={detail.ratingAverage} count={detail.ratingCount} />
-                {detail.vendorVerified ? <Badge label="✓ Verified Operator" tone="success" /> : null}
+                {detail.destinationName ? (
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+                    <Icon name="map-pin" size={13} color={semantic.textMuted} />
+                    <Text style={{ ...typography.caption, fontSize: 13, color: semantic.textMuted }}>
+                      {detail.destinationName}
+                    </Text>
+                  </View>
+                ) : null}
               </View>
 
               {detail.vendorName ? (
@@ -199,18 +249,24 @@ export default function ExperienceDetailScreen() {
               ) : null}
             </View>
 
+            <Divider />
+
             {/* Three facts, the mockup's stat row. */}
             <StatRow>
-              <StatTile icon="⏱" label="Duration" value={formatDuration(detail.durationMinutes)} />
               <StatTile
-                icon="🎟"
-                label="Entry"
-                value={detail.inclusions.some((i) => /entry|fee|ticket/i.test(i)) ? 'Included' : 'Guided'}
+                icon="clock"
+                label="Duration"
+                value={formatDuration(detail.durationMinutes)}
               />
               <StatTile
-                icon="🚐"
-                label="Pickup"
-                value={/pickup/i.test(detail.pickupInfo ?? '') ? 'Available' : 'Meet there'}
+                icon="calendar"
+                label="Departs"
+                value={detail.upcomingSlots.length > 3 ? 'Daily' : 'Selected days'}
+              />
+              <StatTile
+                icon="users"
+                label="Group Size"
+                value={maxGroup > 0 ? `Up to ${maxGroup}` : 'Small group'}
               />
             </StatRow>
 
@@ -249,28 +305,11 @@ export default function ExperienceDetailScreen() {
             ) : null}
 
             {detail.inclusions.length > 0 ? (
-              <Section title="What's included">
+              <Section title="What's Included">
                 {detail.inclusions.map((line) => (
-                  <View
-                    key={line}
-                    style={{ flexDirection: 'row', gap: spacing.sm, alignItems: 'flex-start' }}
-                  >
-                    <Text style={{ color: palette.success, fontSize: 15 }}>✓</Text>
-                    <Text style={{ ...typography.body, color: semantic.textPrimary, flex: 1 }}>
-                      {line}
-                    </Text>
-                  </View>
+                  <IncludedRow key={line} label={line} />
                 ))}
-                {detail.promotion ? (
-                  <View style={{ flexDirection: 'row', gap: spacing.sm, alignItems: 'flex-start' }}>
-                    <Text style={{ fontSize: 15 }}>🍹</Text>
-                    <Text
-                      style={{ ...typography.body, color: semantic.textAccent, flex: 1, fontWeight: '600' }}
-                    >
-                      {detail.promotion.title}
-                    </Text>
-                  </View>
-                ) : null}
+                {detail.promotion ? <IncludedRow label={detail.promotion.title} /> : null}
               </Section>
             ) : null}
 
@@ -374,52 +413,39 @@ export default function ExperienceDetailScreen() {
           </View>
         </ScrollView>
 
-        {/* Sticky price bar — the mockup keeps the price and the action on screen throughout. */}
+        {/* The sticky action. The mockup's is a single full-width button; this carried a second
+            copy of the price beside it, which pushed the label onto two lines and repeated a
+            figure already set large at the top of the page. The price is stated once.
+
+            Hidden while the offer popup is open: react-native-web renders a Modal into the page's
+            own stacking context, so an absolutely-positioned bar paints straight over it. Removing
+            the bar is also the honest behaviour — there is nothing to press behind a modal. */}
+        {offerOpen ? null : (
         <View
           style={{
             position: 'absolute',
             left: 0,
             right: 0,
             bottom: 0,
-            flexDirection: 'row',
-            alignItems: 'center',
-            gap: spacing.md,
             padding: spacing.md,
             paddingBottom: spacing.lg,
-            backgroundColor: semantic.surface,
+            backgroundColor: semantic.background,
             borderTopWidth: 1,
             borderTopColor: semantic.border,
           }}
         >
-          <View style={{ flex: 1 }}>
-            <Text style={{ ...typography.caption, color: semantic.textMuted }}>From</Text>
-            <Text style={{ ...typography.heading, color: semantic.textPrimary }}>
-              {formatUsd(detail.fromAmountMinor)}
-            </Text>
-            <Text
-              numberOfLines={1}
-              style={{ ...typography.caption, fontSize: 12, color: semantic.textMuted }}
-            >
-              per person
-            </Text>
-            {local ? (
-              <Text
-                numberOfLines={1}
-                style={{ ...typography.caption, fontSize: 12, color: semantic.textMuted }}
-              >
-                {local}
-              </Text>
-            ) : null}
-          </View>
-          <View style={{ flex: 1.1 }}>
-            <PrimaryButton
-              label={soldOut ? 'No departures' : 'Check Availability'}
-              disabled={soldOut}
-              onPress={() => router.push({ pathname: '/book/[id]', params: { id: detail.id } })}
-              accessibilityLabel={soldOut ? 'No departures available' : `Book ${detail.title}`}
-            />
-          </View>
+          <PrimaryButton
+            label={soldOut ? 'No departures' : 'Check Availability'}
+            disabled={soldOut}
+            onPress={() => router.push({ pathname: '/book/[id]', params: { id: detail.id } })}
+            accessibilityLabel={
+              soldOut
+                ? 'No departures available'
+                : `Check availability for ${detail.title}, from ${formatUsd(detail.fromAmountMinor)} per person`
+            }
+          />
         </View>
+        )}
       </View>
 
       {detail.promotion ? (
@@ -438,34 +464,6 @@ export default function ExperienceDetailScreen() {
         />
       ) : null}
     </>
-  );
-}
-
-function RoundButton({
-  symbol,
-  label,
-  onPress,
-}: {
-  symbol: string;
-  label: string;
-  onPress: () => void;
-}) {
-  return (
-    <Pressable
-      onPress={onPress}
-      accessibilityRole="button"
-      accessibilityLabel={label}
-      style={{
-        width: 40,
-        height: 40,
-        borderRadius: radius.pill,
-        backgroundColor: 'rgba(255,255,255,0.92)',
-        alignItems: 'center',
-        justifyContent: 'center',
-      }}
-    >
-      <Text style={{ fontSize: 18, color: semantic.brand }}>{symbol}</Text>
-    </Pressable>
   );
 }
 

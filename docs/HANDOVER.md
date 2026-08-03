@@ -1,6 +1,6 @@
 # Handover — Caribbean VIP
 
-**Written:** 2026-08-02 · **Branch:** `master` · **Gates:** all green
+**Written:** 2026-08-02 · **Updated:** 2026-08-03 (design pass) · **Branch:** `master` · **Gates:** all green
 
 Read this first, then [`PRD.md`](PRD.md) (product source of truth),
 [`architecture.md`](architecture.md) (the numbered decisions), and
@@ -74,8 +74,8 @@ and scanning.
 booking, capacity hold, cancellation and voucher invalidation all work, but **no Stripe payment has
 ever been taken and no refund has ever been issued**. Detail in [`traceability.md`](traceability.md).
 
-Gates: **174 unit tests (11 files), 7/7 SQL files, concurrency green, iOS bundle 4.33 MB, both Next
-apps build.**
+Gates: **203 unit tests (14 files), 7/7 SQL files, typecheck and lint clean across 9 workspaces,
+iOS bundle 4.46 MB.**
 
 ---
 
@@ -109,20 +109,92 @@ applies** and has been superseded. The mockups now drive layout and visual langu
 
 ## 5. Pick up here
 
-### Still to bring up to the mockups
+### The 2026-08-03 design pass — what changed
 
-These screens work but are not yet drawn to the mockups. Roughly in value order:
+The build had drifted a long way from the mockup and the whole visual layer was redone against it.
+Full detail in [`design.md`](design.md); the four that mattered most:
 
-1. **Irie AI** (`app/(tabs)/irie.tsx`) — still a milestone placeholder. Mockups show a full chat UI:
-   mascot header, greeting bubble, suggestion chips (Under $50, Family Fun, Rainy Day), result
-   cards, an "Irie Tip" callout, and an itinerary builder. It is the centre tab and currently the
-   emptiest screen in the app.
-2. **Search results** — restyle to the mockups' row cards with hearts and a filter bar.
-3. **Select Destination** — the mockups' "Where are you going?" with photo rows and "Use My
-   Location".
-4. **Interests** — the eight-tile onboarding step between Welcome and Explore. Not built at all.
-5. **Nearby / Map** — blocked on OD-05; ships as a distance-sorted list with an explicit notice.
-6. **Vendor portal** — functional but has none of the visual language.
+1. **No font size or weight had ever been applied.** `typography` tokens exposed `size`/`weight`,
+   which React Native ignores in silence, and they are spread into `Text` styles in ~180 places.
+   Every screen rendered at the platform default. This one defect accounts for most of the distance
+   between the build and the mockup, and there is now a regression test for it.
+2. **The chrome was green; the mockup's is ivory** (`#FCF9F4`) — nav bar, status bar, backgrounds.
+3. **The palette was averaged, not sampled.** Every colour is re-derived from the mockup by modal
+   sampling of flat regions.
+4. **Turquoise is not in the mockup's interface.** `semantic.accent` is deep green now.
+
+Also: Playfair Display and DM Sans are bundled; the crest is translucent with a double gold ring and
+serif lettering; icons are Feather line icons rather than emoji and text glyphs; the demo-mode
+banner is a hairline strip rather than a two-line gold slab.
+
+**One real bug was found and fixed by this work:** the welcome screen's gradient scrim passed
+`pointerEvents` as a prop. react-native-web deprecated that form and `expo-linear-gradient` does not
+forward it, so the scrim covered the screen and swallowed every tap — both buttons were dead. It is
+a style, never a prop. See §6.
+
+### The second design pass — the remaining screens
+
+Every tourist screen is now drawn to the mockups. Built in this pass:
+
+- **Interests** (`app/interests.tsx`) — the eight-tile step between Welcome and Explore. It
+  **ranks, it does not filter** (`lib/interests.ts`), and there is a test for that: a first-run
+  screen that quietly removes half the catalogue is a trap the guest cannot diagnose.
+- **Select Destination** — "Where are you going?", the tinted Use My Location card, photo rows.
+  It hands off to Nearby rather than running its own permission flow (PRD §14).
+- **Search** — pill field with a filter control, category chips, result count, single-column rows.
+  Sort moved inside Filters, where the mockup puts it.
+- **Irie AI** — the full chat UI. **There is no model behind it**; see below.
+- **Nearby** — skeletons, an empty state, and the same row card. Still blocked on OD-05 for a map.
+
+**Single column everywhere.** Ro's call, and the right one: two 48%-wide cards side by side left a
+phone with two columns of clipped titles and thumbnails too small to read. `ExperienceCard`'s
+default variant is now `row`. `grid` survives only inside an Irie AI answer, where a sideways
+carousel of three small cards is the intent rather than an accident of layout.
+
+**Irie AI is gold-on-green, everywhere.** The concierge's mark is a cluster of gold four-point
+stars on deep green, and it is the motif that carries Irie across the whole journey rather than
+only on its own tab: `IrieStars` and `IrieAvatar` in the kit, the centre nav badge (green disc, gold
+ring, gold stars, gold label *inside* the circle), the gold star that opens the greeting on Explore,
+the avatar beside every assistant bubble, and the star on an "Irie Tip". The badge was built
+inverted — a gold disc with a green sparkle — which threw the motif away. Gold on green, never the
+reverse. The selected tab also carries a gold hairline ring, as the mockup draws it.
+
+**Chat bubbles:** assistant turns are white, bordered, avatared; user turns are deep green, right
+aligned, unavatared. That asymmetry is what makes the transcript readable at a glance.
+
+**Green is an accent, not just chrome.** The mockup sets prices, "View All" and the selected tab in
+a saturated `#1F7A5C` — 5.0:1 on ivory. "View All" was gold text at 2.3:1, which was a muddy smear;
+it is now a green outlined pill. Rating stars are true amber `#FFA100` (decorative — the numeric
+rating beside them carries the meaning).
+
+### Irie AI is a guided demo, not a model
+
+`app/(tabs)/irie.tsx` + `lib/irie.ts`. Answers are matched by rule and every card comes from the
+same RLS-governed catalogue query as the rest of the app, so it cannot name a listing that does not
+exist or invent a price — the M7 requirements hold by construction rather than by prompt. The
+screen says **GUIDED DEMO** in its header, every time it is opened. When the real model lands it
+goes *in front* of this, and this stays behind it as the "falls back to normal search" path.
+
+### Where this stopped
+
+Both design passes are **committed** as of 2026-08-03, after a review pass that pulled five
+hand-mixed tint colours out of three screens and into tokens. Bringing them under `tokens.test.ts`
+found three of them failing AA — see the tints section of [`design.md`](design.md). Gates after:
+**203 tests (14 files), 7/7 SQL, typecheck and lint clean.**
+
+Ideas raised but not started, in the order I would take them:
+
+1. **Irie's itinerary builder** (mockup screen "Irie AI — Itinerary Builder"): timed rows with
+   thumbnails and a running "Estimated Total". Buildable now against the demo catalogue, and it is
+   what makes the AI tab read as a product rather than a chatbot.
+2. **An "Ask Irie" affordance on the experience detail page**, so the concierge is reachable at the
+   moment a guest is deciding — the one point in the journey where it is currently absent.
+3. **Commissioned photography** — see §8. The biggest single gap between this and a product.
+
+### Still not drawn to the mockups
+
+1. **Vendor portal** — functional, no visual language. Next up, per Ro.
+2. **Map view** — blocked on OD-05; ships as a distance-sorted list with an explicit notice.
 
 ### Then: the Edge Function adapters
 
@@ -149,9 +221,26 @@ Expo SDK 52 is React 18; Next 15 is React 19 (AD-01). Two `.npmrc` settings are 
 
 That second one has a sharp edge: a third-party package whose own `.d.ts` does
 `import * as React from "react"` then cannot resolve React's types, and it surfaces as "cannot be
-used as a JSX component" at *your* call site. `react-native-qrcode-svg` hit this. Fix is the
-`pnpm.packageExtensions` block in the root `package.json`. Do **not** re-hoist — that fixes one
-package and re-breaks every app.
+used as a JSX component" at *your* call site. `react-native-qrcode-svg` hit this, and so did
+`expo-linear-gradient`. Fix is the `pnpm.packageExtensions` block in the root `package.json` — add
+the package there and re-install. Do **not** re-hoist — that fixes one package and re-breaks every
+app.
+
+Related: `pnpm add` resolves to the package's latest major, which for Expo modules is wrong. Install
+`expo-font@~13.0.4` and `expo-linear-gradient@~14.0.2` for SDK 52; the unpinned versions install
+`57.x`, which bundles and then renders nothing.
+
+### `pointerEvents` is a style, not a prop
+
+react-native-web deprecated `props.pointerEvents`, and `expo-linear-gradient` does not forward it.
+A full-bleed `<LinearGradient pointerEvents="none">` therefore sits over the screen and swallows
+every tap beneath it, with no error and only a deprecation warning in the console. This shipped on
+the welcome screen and made both buttons dead. Always `style={{ ..., pointerEvents: 'none' }}`.
+
+### react-native-web renders a Modal into the page's own stacking context
+
+An absolutely-positioned bar on the screen behind will paint *over* a modal. The experience detail
+page hides its sticky action bar while the offer popup is open rather than fighting z-index.
 
 ### Metro resolves optional dependencies that were never installed
 
@@ -211,6 +300,14 @@ that leads to a charge.
 ---
 
 ## 7. Open — the founder's calls, not yours
+
+**A presentation login exists, and it is not a backend.** `lib/demoAccount.ts` —
+`demo@caribbeanvip.test` / `IrieDemo2026`, printed on the sign-in screen with a one-tap button. It
+signs in a *persona* (`Alex Bennett`) so the walkthrough can show the authenticated half of the
+product. There is no server to authenticate against; the credentials unlock an in-memory object.
+The path is hard-gated on `isDemoMode && !isSupabaseConfigured`, so it can never stand in for real
+auth once a backend exists, and `demoAccount.test.ts` asserts both that gate and that the persona is
+a tourist rather than a vendor or admin.
 
 **Blocking a real MVP**, all three needed together:
 

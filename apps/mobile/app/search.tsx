@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { ActivityIndicator, Pressable, ScrollView, Text, TextInput, View } from 'react-native';
+import { Pressable, ScrollView, Text, View } from 'react-native';
 import { useLocalSearchParams } from 'expo-router';
 import { radius, semantic, spacing, typography } from '@cvip/ui';
 import {
@@ -11,7 +11,6 @@ import {
   searchAndSort,
   type ExperienceCategory,
   type SearchFilters,
-  type SortOption,
 } from '@cvip/types';
 import { hasCatalogue } from '../lib/mode';
 import { useIsland } from '../lib/island';
@@ -19,7 +18,14 @@ import { useSaved } from '../lib/saved';
 import { searchCatalogue, type CatalogueItem } from '../lib/catalogue';
 import { ExperienceCard, formatFrom } from '../components/ExperienceCard';
 import { Notice } from '../components/Notice';
-import { categoryLabel } from './(tabs)/index';
+import {
+  Chip,
+  EmptyState,
+  Icon,
+  ListSkeleton,
+  SearchField,
+} from '../components/kit';
+import { QUICK_FILTERS, categoryLabel } from './(tabs)/index';
 
 /**
  * Search results with filters and sort — T-03.
@@ -103,57 +109,70 @@ export default function Search() {
   return (
     <ScrollView
       style={{ flex: 1, backgroundColor: semantic.background }}
-      contentContainerStyle={{ padding: spacing.lg, gap: spacing.md }}
+      contentContainerStyle={{ padding: spacing.lg, gap: spacing.sm + 4, paddingBottom: spacing.xxl }}
       keyboardShouldPersistTaps="handled"
     >
-      <TextInput
+      {/* The mockup's header: the pill search field with a filter control beside it, then a chip
+          row, then the result count. */}
+      <SearchField
         value={query}
         onChangeText={setQuery}
-        onSubmitEditing={() => setSubmitted(query)}
-        returnKeyType="search"
+        onSubmit={() => setSubmitted(query)}
+        placeholder="Search experiences"
         autoFocus={!params.q && !params.category}
-        placeholder="Search experiences, tours, locations"
-        placeholderTextColor={semantic.textMuted}
-        accessibilityLabel="Search experiences"
-        style={{
-          backgroundColor: semantic.surface,
-          borderWidth: 1,
-          borderColor: semantic.border,
-          borderRadius: radius.pill,
-          paddingVertical: spacing.sm + 2,
-          paddingHorizontal: spacing.md,
-          fontSize: typography.body.size,
-          color: semantic.textPrimary,
-        }}
+        trailing={
+          <Pressable
+            onPress={() => setFiltersOpen((v) => !v)}
+            accessibilityRole="button"
+            accessibilityLabel={`Filters${filterCount > 0 ? `, ${filterCount} active` : ''}`}
+            style={({ pressed }) => ({
+              width: 46,
+              height: 46,
+              borderRadius: radius.pill,
+              alignItems: 'center',
+              justifyContent: 'center',
+              backgroundColor: filterCount > 0 ? semantic.brand : semantic.surface,
+              borderWidth: 1,
+              borderColor: filterCount > 0 ? semantic.brand : semantic.border,
+              opacity: pressed ? 0.85 : 1,
+            })}
+          >
+            <Icon
+              name="sliders"
+              size={18}
+              color={filterCount > 0 ? semantic.textOnDark : semantic.textPrimary}
+            />
+          </Pressable>
+        }
       />
 
-      <View style={{ flexDirection: 'row', gap: spacing.sm }}>
-        <Pressable
-          onPress={() => setFiltersOpen((v) => !v)}
-          accessibilityRole="button"
-          style={chip(filterCount > 0)}
-        >
-          <Text style={{ ...typography.caption, color: semantic.accent }}>
-            Filters{filterCount > 0 ? ` (${filterCount})` : ''}
-          </Text>
-        </Pressable>
-
-        {filterCount > 0 ? (
-          <Pressable
-            onPress={() => setFilters({ ...EMPTY_FILTERS, sort: filters.sort })}
-            accessibilityRole="button"
-            style={chip(false)}
-          >
-            <Text style={{ ...typography.caption, color: semantic.alert }}>Clear</Text>
-          </Pressable>
-        ) : null}
-      </View>
+      {/* The mockup's chip row is the broad category cut — All / Activities / Attractions /
+          Tours — with sort tucked inside Filters, not competing with it in the same row. */}
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        contentContainerStyle={{ gap: spacing.sm }}
+      >
+        {QUICK_FILTERS.map((f) => {
+          const selected =
+            f.categories.length === 0
+              ? filters.categories.length === 0
+              : f.categories.every((c) => filters.categories.includes(c)) &&
+                filters.categories.length === f.categories.length;
+          return (
+            <Chip
+              key={f.label}
+              label={f.label}
+              selected={selected}
+              onPress={() => setFilters({ ...filters, categories: f.categories })}
+            />
+          );
+        })}
+      </ScrollView>
 
       {filtersOpen ? (
         <FilterPanel filters={filters} onChange={setFilters} />
       ) : null}
-
-      <SortRow value={filters.sort} onChange={(sort) => setFilters({ ...filters, sort })} />
 
       {!hasCatalogue ? (
         <Notice
@@ -165,31 +184,31 @@ export default function Search() {
 
       {error ? <Notice tone="alert" title="Search failed" body={error} onRetry={load} /> : null}
 
-      {loading ? <ActivityIndicator color={semantic.brandActive} /> : null}
+      {loading ? <ListSkeleton count={4} /> : null}
 
       {!loading && !error && results.length === 0 ? (
-        <Notice
-          tone="muted"
+        <EmptyState
+          icon="search"
           title="No matches"
           body={
             filterCount > 0
-              ? 'Nothing matches all of these filters. Try removing one.'
-              : 'Nothing matched that search. Try a different word.'
+              ? 'Nothing matches all of these filters at once. Try removing one.'
+              : `Nothing matched ${submitted ? `"${submitted}"` : 'that search'}. Try a broader word.`
           }
           {...(filterCount > 0
             ? {
-                action: {
-                  label: 'Clear filters',
-                  onPress: () => setFilters({ ...EMPTY_FILTERS, sort: filters.sort }),
-                },
+                actionLabel: 'Clear filters',
+                onAction: () => setFilters({ ...EMPTY_FILTERS, sort: filters.sort }),
               }
             : {})}
         />
       ) : null}
 
+      {/* "23 results in Ocho Rios" — the mockup names the place, so the count means something. */}
       {!loading && results.length > 0 ? (
         <Text style={{ ...typography.caption, color: semantic.textMuted }}>
-          {results.length} {results.length === 1 ? 'experience' : 'experiences'}
+          {results.length} {results.length === 1 ? 'result' : 'results'}
+          {destination?.name ? ` in ${destination.name}` : island?.name ? ` in ${island.name}` : ''}
         </Text>
       ) : null}
 
@@ -205,31 +224,6 @@ export default function Search() {
           />
         );
       })}
-    </ScrollView>
-  );
-}
-
-function SortRow({
-  value,
-  onChange,
-}: {
-  value: SortOption;
-  onChange: (s: SortOption) => void;
-}) {
-  return (
-    <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: spacing.sm }}>
-      {SORT_OPTIONS.filter((s) => s !== 'distance').map((s) => (
-        <Pressable key={s} onPress={() => onChange(s)} accessibilityRole="button" style={chip(s === value)}>
-          <Text
-            style={{
-              ...typography.caption,
-              color: s === value ? semantic.textOnDark : semantic.textMuted,
-            }}
-          >
-            {SORT_LABELS[s]}
-          </Text>
-        </Pressable>
-      ))}
     </ScrollView>
   );
 }
@@ -273,6 +267,27 @@ function FilterPanel({
         gap: spacing.md,
       }}
     >
+      <FilterGroup label="Sort by">
+        {SORT_OPTIONS.filter((o) => o !== 'distance').map((o) => (
+          <Pressable
+            key={o}
+            onPress={() => onChange({ ...filters, sort: o })}
+            accessibilityRole="button"
+            accessibilityState={{ selected: o === filters.sort }}
+            style={chip(o === filters.sort)}
+          >
+            <Text
+              style={{
+                ...typography.caption,
+                color: o === filters.sort ? semantic.textOnDark : semantic.textMuted,
+              }}
+            >
+              {SORT_LABELS[o]}
+            </Text>
+          </Pressable>
+        ))}
+      </FilterGroup>
+
       <FilterGroup label="Category">
         {EXPERIENCE_CATEGORIES.map((c) => (
           <Pressable

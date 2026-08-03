@@ -1,7 +1,7 @@
 import { Modal, Pressable, ScrollView, Text, View } from 'react-native';
 import QRCode from 'react-native-qrcode-svg';
 import { palette, radius, semantic, spacing, typography } from '@cvip/ui';
-import { Badge, PrimaryButton } from './kit';
+import { GoldButton, Icon, PrimaryButton, TextLink } from './kit';
 
 /**
  * The "Special Offer Unlocked" popup — mockup screen 4, and PRD §8's saved-offer flow.
@@ -46,38 +46,70 @@ export function OfferSheet({
       <View
         style={{
           flex: 1,
-          backgroundColor: 'rgba(18,33,29,0.55)',
+          backgroundColor: 'rgba(12,43,37,0.62)',
           justifyContent: 'center',
           padding: spacing.lg,
+          // react-native-web renders a Modal into the same stacking context as the page, so the
+          // detail screen's absolutely-positioned action bar paints over the popup without this.
+          zIndex: 100,
         }}
       >
         <View
           style={{
-            backgroundColor: semantic.surface,
-            borderRadius: radius.lg,
+            backgroundColor: palette.ivory,
+            borderRadius: radius.xl,
             maxHeight: '88%',
             overflow: 'hidden',
           }}
         >
           <ScrollView contentContainerStyle={{ padding: spacing.lg, gap: spacing.md }}>
             <View style={{ flexDirection: 'row', alignItems: 'flex-start' }}>
-              <View style={{ flex: 1, gap: spacing.xs }}>
-                <Badge label="Special Offer Unlocked" tone="offer" />
-              </View>
+              <View style={{ flex: 1 }} />
               <Pressable
                 onPress={onDismiss}
                 hitSlop={12}
                 accessibilityRole="button"
                 accessibilityLabel="Close this offer"
               >
-                <Text style={{ fontSize: 22, color: semantic.textMuted }}>×</Text>
+                <Icon name="x" size={20} color={semantic.textMuted} />
               </Pressable>
             </View>
 
-            <View style={{ alignItems: 'center', gap: spacing.xs }}>
-              <Text style={{ fontSize: 40 }}>🍹</Text>
+            {/* The mockup's masthead: a gold-ringed disc, then "TODAY ONLY!" in small gold caps,
+                then the offer itself set large in the display serif. The serif is the point — it
+                is the only place in the app where a headline is allowed to be this loud. */}
+            <View style={{ alignItems: 'center', gap: spacing.sm, marginTop: -spacing.sm }}>
+              <View
+                style={{
+                  width: 72,
+                  height: 72,
+                  borderRadius: radius.pill,
+                  borderWidth: 2,
+                  borderColor: palette.gold,
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                }}
+              >
+                <Icon name="gift" size={30} color={palette.gold} />
+              </View>
               <Text
-                style={{ ...typography.title, color: semantic.textPrimary, textAlign: 'center' }}
+                style={{
+                  ...typography.overline,
+                  fontSize: 12,
+                  color: palette.goldDeep,
+                  textAlign: 'center',
+                }}
+              >
+                TODAY ONLY!
+              </Text>
+              <Text
+                style={{
+                  ...typography.display,
+                  fontSize: 27,
+                  lineHeight: 34,
+                  color: palette.green950,
+                  textAlign: 'center',
+                }}
               >
                 {title}
               </Text>
@@ -100,10 +132,10 @@ export function OfferSheet({
                 padding: spacing.lg,
               }}
             >
-              <Text style={{ ...typography.caption, color: palette.inkMuted }}>
+              <Text style={{ ...typography.caption, fontSize: 13, color: palette.inkMuted }}>
                 Show this code at check-in
               </Text>
-              <QRCode value="cvip-offer:rum-punch" size={132} color={palette.ink} backgroundColor="#FFFFFF" />
+              <QRCode value="cvip-offer:rum-punch" size={104} color={palette.ink} backgroundColor="#FFFFFF" />
               <Text
                 style={{ ...typography.bodyStrong, color: palette.ink, letterSpacing: 2 }}
                 selectable
@@ -115,22 +147,26 @@ export function OfferSheet({
               </Text>
             </View>
 
-            <Text style={{ ...typography.caption, fontSize: 12, color: semantic.textMuted }}>
+            {/* The terms are not optional — this is a real offer with real conditions — but they
+                are set small and last, as the mockup does. */}
+            <Text
+              style={{
+                ...typography.caption,
+                fontSize: 11,
+                lineHeight: 16,
+                color: semantic.textMuted,
+              }}
+            >
               {terms}
             </Text>
 
-            <PrimaryButton
-              label={saved ? 'Saved to My Vouchers' : 'Save to My Vouchers'}
-              onPress={onSave}
-              disabled={saved}
-            />
-            <Pressable
-              onPress={onDismiss}
-              accessibilityRole="button"
-              style={{ alignItems: 'center', paddingVertical: spacing.sm }}
-            >
-              <Text style={{ ...typography.body, color: semantic.textMuted }}>Maybe later</Text>
-            </Pressable>
+            {/* The mockup's action is the gold pill, with an underlined "Maybe Later" beneath. */}
+            {saved ? (
+              <PrimaryButton label="Saved to My Vouchers" onPress={onSave} disabled />
+            ) : (
+              <GoldButton label="Save Voucher" onPress={onSave} />
+            )}
+            <TextLink label="Maybe Later" onPress={onDismiss} />
           </ScrollView>
         </View>
       </View>

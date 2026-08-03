@@ -44,6 +44,11 @@
         "dependencies": {
           "@types/react": "~18.3.12"
         }
+      },
+      "expo-linear-gradient": {
+        "dependencies": {
+          "@types/react": "~18.3.12"
+        }
       }
     }
   }
