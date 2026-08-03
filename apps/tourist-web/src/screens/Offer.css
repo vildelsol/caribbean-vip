@@ -1,0 +1,203 @@
+.offer {
+  background: var(--green-950);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding-top: 26px;
+}
+
+/* Proximity rings behind the voucher — the same language as the Nearby map. */
+.offer__rings {
+  position: absolute;
+  top: 96px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 160px;
+  height: 160px;
+  pointer-events: none;
+}
+
+.offer__ring {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  border-radius: 50%;
+}
+
+.offer__ring--out {
+  width: 160px;
+  height: 160px;
+  border: 1.5px dashed rgba(227, 194, 113, 0.45);
+}
+
+.offer__ring--in {
+  width: 74px;
+  height: 74px;
+  background: rgba(227, 194, 113, 0.14);
+}
+
+.offer__dot {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: var(--gold-light);
+  border: 4px solid rgba(251, 246, 236, 0.9);
+}
+
+.offer__eyebrow {
+  position: relative;
+  z-index: 2;
+  color: rgba(227, 194, 113, 0.92);
+  font-size: 11px;
+  letter-spacing: 0.18em;
+  text-align: center;
+}
+
+/* --- The voucher ------------------------------------------------------------- */
+
+.voucher {
+  position: relative;
+  z-index: 2;
+  margin: 150px var(--s-md) 0;
+  background: var(--ivory-ticket);
+  border-radius: var(--r-xxl);
+  box-shadow: var(--e-modal);
+  color: var(--ink);
+  width: calc(100% - var(--s-md) * 2);
+}
+
+.voucher__close {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background: var(--ivory-sunken);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--ink-muted);
+  z-index: 2;
+}
+
+.voucher__top {
+  padding: 24px 22px 16px;
+  text-align: center;
+}
+
+.voucher__mark {
+  width: 40px;
+  height: 40px;
+  border-radius: var(--r-md);
+  background: var(--gold);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.voucher__eyebrow {
+  margin-top: 14px;
+  letter-spacing: 0.14em;
+}
+
+.voucher__place {
+  margin-top: 8px;
+}
+
+.voucher__walk {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  margin-top: 10px;
+  padding: 7px 12px;
+  border-radius: var(--r-pill);
+  background: var(--aqua-soft);
+  color: var(--green-900);
+}
+
+.voucher__photo {
+  padding: 0 14px;
+}
+
+/* --- Perforation --------------------------------------------------------------- */
+
+.voucher__perf,
+.stub__perf {
+  position: relative;
+  height: 1px;
+  margin-top: 18px;
+  border-top: 1.5px dashed var(--border-strong);
+  margin-inline: 14px;
+}
+
+.voucher__notch,
+.stub__notch {
+  position: absolute;
+  top: -9px;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--green-950);
+}
+
+.voucher__notch--l,
+.stub__notch--l {
+  left: -23px;
+}
+
+.voucher__notch--r,
+.stub__notch--r {
+  right: -23px;
+}
+
+/* --- Bottom half ------------------------------------------------------------------ */
+
+.voucher__bottom {
+  padding: 20px 22px 22px;
+  text-align: center;
+}
+
+.voucher__label {
+  color: var(--gold-text);
+  font-size: 11px;
+  letter-spacing: 0.16em;
+}
+
+.voucher__headline {
+  margin-top: 10px;
+}
+
+.voucher__expiry {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 12px;
+  color: var(--coral-text);
+}
+
+.voucher__expiry-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--coral);
+}
+
+.voucher__actions {
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+  margin-top: 18px;
+}
+
+.voucher__terms {
+  margin-top: 14px;
+  color: var(--ink-faint);
+  text-align: left;
+  line-height: 1.45;
+}

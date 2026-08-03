@@ -157,3 +157,8 @@
   padding: 7px 10px;
   border-radius: var(--r-xs);
 }
+
+.irie-pick__open {
+  text-align: left;
+  color: var(--ink);
+}

@@ -1,0 +1,260 @@
+import { useNavigate, useParams } from 'react-router-dom';
+import {
+  creditFor,
+  experienceById,
+  formatKm,
+  heroUrl,
+  isWalkable,
+  qualifiesForRumPunch,
+  simulatedPosition,
+  travelFrom,
+  vendorFor,
+  destinationBySlug,
+} from '../data/catalogue';
+import { distanceMetres } from '@cvip/types';
+import { firstBookableDay, slotsFor } from '../data/availability';
+import { useStore } from '../state/store';
+import { Icon } from '../components/Icon';
+import {
+  Badge,
+  DemoNote,
+  EmptyState,
+  Photo,
+  PrimaryButton,
+  Rating,
+  RoundButton,
+  formatUsd,
+} from '../components/kit';
+import './ExperienceDetail.css';
+
+/**
+ * Experience detail — "what it is, why now, what it costs, answered before scrolling".
+ *
+ * The design puts the price, the rating and today's hours in one card directly under the title,
+ * above everything else, and keeps a sticky action bar at the foot. That ordering is the screen's
+ * argument: a guest deciding in the street should not have to scroll to find the two numbers the
+ * decision turns on.
+ */
+export function ExperienceDetail() {
+  const { id } = useParams<{ id: string }>();
+  const navigate = useNavigate();
+  const { state, dispatch } = useStore();
+
+  const experience = id ? experienceById(id) : undefined;
+
+  if (!experience) {
+    return (
+      <main className="screen">
+        <EmptyState
+          icon="search"
+          title="That listing is not available"
+          body="It may have been removed, or it belongs to another island. Everything else is still here."
+          action="Back to Explore"
+          onAction={() => navigate('/')}
+        />
+      </main>
+    );
+  }
+
+  const vendor = vendorFor(experience);
+  const destination = destinationBySlug(state.destinationSlug);
+  const metres =
+    vendor && destination
+      ? distanceMetres(simulatedPosition(destination), {
+          lat: vendor.location.lat,
+          lng: vendor.location.lng,
+        })
+      : null;
+  const travel = metres !== null ? travelFrom(metres) : null;
+
+  const saved = state.savedExperienceIds.includes(experience.id);
+  const day = firstBookableDay(experience);
+  const slots = day ? slotsFor(experience, day.iso) : [];
+  const soonest = slots.find((s) => s.capacityRemaining > 0);
+  const credit = creditFor(experience.media[0]);
+
+  const facts = [
+    { label: 'Duration', value: durationLabel(experience.durationMinutes) },
+    { label: 'Hotel pickup', value: experience.pickupInfo ? 'Included' : 'Not included' },
+    { label: 'Group', value: 'Small group' },
+    { label: 'Cancellation', value: `Free until ${experience.cancellationHours} hrs before` },
+  ];
+
+  return (
+    <main className="screen detail">
+      {/* ---------------- Hero ---------------- */}
+      <header className="detail__hero">
+        <Photo
+          src={heroUrl(experience)}
+          mediaKey={experience.media[0]}
+          alt={experience.title}
+          ratio="390 / 308"
+          radius="0"
+        />
+        <span className="detail__scrim" />
+
+        <div className="detail__hero-controls">
+          <RoundButton icon="chevron-left" label="Back" onClick={() => navigate(-1)} />
+          <div className="row" style={{ gap: 9 }}>
+            <RoundButton
+              icon="heart"
+              label={saved ? `Remove ${experience.title} from saved` : `Save ${experience.title}`}
+              active={saved}
+              onClick={() => dispatch({ type: 'toggleSaved', experienceId: experience.id })}
+            />
+          </div>
+        </div>
+
+        <div className="detail__hero-flags">
+          <Badge tone="brand">Open Now</Badge>
+          {day ? <Badge tone="plain">Available {day.iso === todayISO() ? 'today' : day.weekday}</Badge> : null}
+          {qualifiesForRumPunch(experience) ? <Badge tone="sand">Offer attached</Badge> : null}
+        </div>
+
+        {credit ? (
+          <span className="detail__credit" title={credit.subject}>
+            {credit.author} · {credit.licence}
+          </span>
+        ) : null}
+      </header>
+
+      {/* ---------------- Sheet ---------------- */}
+      <div className="detail__sheet">
+        <h1 className="t-display-md">{experience.title}</h1>
+
+        <div className="detail__meta">
+          <span className="row detail__place">
+            <Icon name="pin" size={13} color="var(--teal-text)" strokeWidth={2} />
+            {vendor?.location.name ?? ''}
+          </span>
+          {vendor?.status === 'approved' ? (
+            <Badge tone="aqua">
+              <Icon name="shield-check" size={12} color="var(--green-900)" strokeWidth={2.2} />
+              Verified operator
+            </Badge>
+          ) : null}
+        </div>
+
+        <p className="t-caption c-muted detail__summary">{experience.summary}</p>
+
+        {/* The two numbers the decision turns on, together, above the fold. */}
+        <section className="detail__price-card">
+          <div>
+            <p className="t-micro c-faint detail__from">FROM</p>
+            <p className="t-amount c-brand">
+              {formatUsd(experience.fromAmountMinor)}
+              <span className="t-micro c-muted"> / adult</span>
+            </p>
+          </div>
+          <div className="detail__price-right">
+            <Rating average={experience.ratingAverage} count={experience.ratingCount} />
+            {soonest && day ? (
+              <p className="t-micro-strong c-locator detail__next">
+                Next {day.iso === todayISO() ? 'today' : day.weekday} {soonest.label}
+              </p>
+            ) : (
+              <p className="t-micro-strong c-urgent detail__next">No departures in the next two weeks</p>
+            )}
+          </div>
+        </section>
+
+        {travel && metres !== null ? (
+          <p className="detail__travel t-micro">
+            <Icon name={travel.mode === 'walk' ? 'walk' : 'car'} size={14} color="var(--teal-text)" />
+            {formatKm(metres)} from {destination?.name} · {travel.minutes} min {travel.mode}
+            {isWalkable(metres) ? '' : ' · pickup available'}
+          </p>
+        ) : null}
+
+        <section className="detail__facts">
+          {facts.map((f) => (
+            <div key={f.label} className="fact">
+              <p className="t-micro c-faint fact__label">{f.label.toUpperCase()}</p>
+              <p className="t-caption-strong">{f.value}</p>
+            </div>
+          ))}
+        </section>
+
+        <section className="detail__block">
+          <h2 className="t-section">About this experience</h2>
+          <p className="t-caption c-muted detail__body">{experience.description}</p>
+        </section>
+
+        {experience.inclusions.length > 0 ? (
+          <section className="detail__block">
+            <h2 className="t-section">What&rsquo;s included</h2>
+            <ul className="detail__included">
+              {experience.inclusions.map((inc) => (
+                <li key={inc} className="t-caption">
+                  <span className="detail__tick">
+                    <Icon name="check" size={11} color="var(--green-900)" strokeWidth={2.6} />
+                  </span>
+                  {inc}
+                </li>
+              ))}
+            </ul>
+          </section>
+        ) : null}
+
+        {experience.pickupInfo ? (
+          <section className="detail__tip">
+            <span className="detail__tip-mark t-micro-strong">TIP</span>
+            <p className="t-caption">{experience.pickupInfo}</p>
+          </section>
+        ) : null}
+
+        <section className="detail__block">
+          <h2 className="t-section">Ask Irie AI</h2>
+          <button type="button" className="detail__irie" onClick={() => navigate('/irie')}>
+            <span className="detail__irie-mark">
+              <Icon name="sparkle" size={19} color="var(--gold-light)" />
+            </span>
+            <span className="grow detail__irie-text">
+              <span className="t-caption-strong">Would this fit my afternoon?</span>
+              <span className="t-micro c-locator">Ask the concierge about timing and pickup</span>
+            </span>
+            <Icon name="chevron-right" size={16} color="var(--green-900)" strokeWidth={2.2} />
+          </button>
+        </section>
+
+        <DemoNote>Demo listing · sample operator data</DemoNote>
+      </div>
+
+      {/* ---------------- Sticky action ---------------- */}
+      <div className="detail__action">
+        <div className="detail__action-price">
+          <p className="t-amount-sm c-brand">{formatUsd(experience.fromAmountMinor)}</p>
+          {soonest ? (
+            soonest.capacityRemaining <= 6 ? (
+              <p className="t-micro c-urgent">Nearly full · {soonest.capacityRemaining} left</p>
+            ) : (
+              <p className="t-micro c-muted">{soonest.capacityRemaining} places left</p>
+            )
+          ) : (
+            <p className="t-micro c-muted">Check other dates</p>
+          )}
+        </div>
+        <PrimaryButton
+          onClick={() => navigate(`/checkout/${experience.id}`)}
+          disabled={!day}
+          aria-label={`Check availability for ${experience.title}`}
+        >
+          Check Availability
+        </PrimaryButton>
+      </div>
+    </main>
+  );
+}
+
+function durationLabel(minutes: number): string {
+  if (minutes < 60) return `${minutes} min`;
+  const h = Math.floor(minutes / 60);
+  const m = minutes % 60;
+  const upper = h + (m > 0 ? 1 : 0);
+  return m > 0 ? `${h}–${upper} hours` : `${h} hour${h === 1 ? '' : 's'}`;
+}
+
+function todayISO(): string {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+}

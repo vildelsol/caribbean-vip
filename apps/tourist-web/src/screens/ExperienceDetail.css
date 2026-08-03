@@ -1,0 +1,275 @@
+/* The sticky action bar sits above the nav, so the sheet reserves room for both. */
+.detail {
+  padding-bottom: calc(var(--nav-clearance) + 76px);
+}
+
+/* --- Hero ---------------------------------------------------------------- */
+
+.detail__hero {
+  position: relative;
+  isolation: isolate;
+}
+
+.detail__scrim {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    180deg,
+    rgba(7, 40, 33, 0.5) 0%,
+    rgba(7, 40, 33, 0) 40%,
+    rgba(7, 40, 33, 0.5) 100%
+  );
+  pointer-events: none;
+}
+
+.detail__hero-controls {
+  position: absolute;
+  top: 16px;
+  left: var(--s-md);
+  right: var(--s-md);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.detail__hero-flags {
+  position: absolute;
+  left: var(--s-md);
+  bottom: 40px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  max-width: calc(100% - var(--s-md) * 2);
+}
+
+.detail__credit {
+  position: absolute;
+  right: 8px;
+  bottom: 40px;
+  padding: 3px 6px;
+  border-radius: 5px;
+  background: rgba(7, 40, 33, 0.62);
+  color: rgba(255, 253, 247, 0.95);
+  font-size: 9.5px;
+  font-weight: 600;
+  pointer-events: none;
+}
+
+/* --- Sheet ---------------------------------------------------------------- */
+
+.detail__sheet {
+  position: relative;
+  margin-top: -24px;
+  background: var(--ivory);
+  border-radius: var(--r-xxl) var(--r-xxl) 0 0;
+  padding: 22px var(--s-md) 0;
+  z-index: 2;
+}
+
+.detail__meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.detail__place {
+  gap: 5px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--teal-text);
+}
+
+.detail__summary {
+  margin-top: 14px;
+}
+
+/* --- Price card ------------------------------------------------------------ */
+
+.detail__price-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  margin-top: 18px;
+  padding: 14px 16px;
+  background: var(--ivory-raised);
+  border-radius: var(--r-lg);
+  box-shadow: var(--e-card);
+}
+
+.detail__from {
+  letter-spacing: 0.1em;
+}
+
+.detail__price-right {
+  text-align: right;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 6px;
+}
+
+.detail__next {
+  white-space: nowrap;
+}
+
+.detail__travel {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  margin-top: 12px;
+  padding: 10px 12px;
+  border-radius: var(--r-md);
+  background: var(--aqua-soft);
+  color: var(--green-900);
+}
+
+.detail__travel svg {
+  flex: none;
+}
+
+/* --- Facts ------------------------------------------------------------------ */
+
+.detail__facts {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-top: 16px;
+}
+
+.fact {
+  background: var(--ivory-raised);
+  border-radius: var(--r-md);
+  padding: 13px 14px;
+}
+
+.fact__label {
+  letter-spacing: 0.1em;
+  margin-bottom: 6px;
+}
+
+/* --- Blocks ------------------------------------------------------------------ */
+
+.detail__block {
+  margin-top: 26px;
+}
+
+.detail__block .t-section {
+  margin-bottom: 11px;
+}
+
+.detail__body {
+  white-space: pre-line;
+}
+
+.detail__included {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.detail__included li {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  color: var(--ink-muted);
+}
+
+.detail__tick {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--aqua);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  margin-top: 2px;
+}
+
+.detail__tip {
+  display: flex;
+  gap: 12px;
+  margin-top: 22px;
+  padding: 14px 15px;
+  border-radius: var(--r-lg);
+  background: var(--aqua);
+  color: var(--ink);
+}
+
+.detail__tip-mark {
+  color: var(--teal-text);
+  letter-spacing: 0.1em;
+  flex: none;
+}
+
+/* --- Ask Irie ------------------------------------------------------------------ */
+
+.detail__irie {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  padding: 14px;
+  border-radius: var(--r-lg);
+  background: var(--ivory-raised);
+  border: 1.5px dashed var(--border-cool);
+  text-align: left;
+}
+
+.detail__irie:active {
+  transform: scale(0.99);
+}
+
+.detail__irie-mark {
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  background: var(--green-900);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+}
+
+.detail__irie-text {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+/* --- Sticky action bar ------------------------------------------------------------ */
+
+.detail__action {
+  position: fixed;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 100%;
+  max-width: var(--app-width);
+  bottom: calc(var(--nav-height) + env(safe-area-inset-bottom, 0px));
+  z-index: 30;
+
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 12px var(--s-md);
+  background: rgba(251, 246, 236, 0.97);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border-top: 1px solid var(--border);
+}
+
+.detail__action-price {
+  flex: none;
+}
+
+.detail__action .btn {
+  flex: 1;
+  min-height: 48px;
+}

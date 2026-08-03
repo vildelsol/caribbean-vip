@@ -51,7 +51,8 @@ body {
 
 img,
 svg,
-video {
+video,
+canvas {
   max-width: 100%;
   display: block;
 }
@@ -105,7 +106,12 @@ a {
 .saved-row__remove,
 .section-head__action,
 .irie-pick__btn,
-.map-pin {
+.map-pin,
+.stepper__btn,
+.ticket__back,
+.voucher__close,
+.irie__reset,
+button.badge {
   position: relative;
 }
 
@@ -116,7 +122,12 @@ a {
 .saved-row__remove::after,
 .section-head__action::after,
 .irie-pick__btn::after,
-.map-pin::after {
+.map-pin::after,
+.stepper__btn::after,
+.ticket__back::after,
+.voucher__close::after,
+.irie__reset::after,
+button.badge::after {
   content: '';
   position: absolute;
   left: 50%;
@@ -365,4 +376,25 @@ a {
     transition-duration: 0.001ms !important;
     scroll-behavior: auto !important;
   }
+}
+
+/* ---------------------------------------------------------------------------
+   QR
+   --------------------------------------------------------------------------- */
+
+/* The canvas is drawn at 2× and scaled down, so `image-rendering` must stay smooth — pixelating it
+   would harden the module edges and is exactly what makes a small code fail to scan. */
+.qr {
+  display: block;
+}
+
+.qr--failed {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 12px;
+  border: 1.5px dashed var(--border-strong);
+  border-radius: var(--r-md);
+  color: var(--ink-faint);
 }

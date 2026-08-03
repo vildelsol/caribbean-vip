@@ -1,0 +1,202 @@
+.ticket {
+  background: var(--green-950);
+}
+
+.ticket__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 20px var(--s-md) 0;
+}
+
+.ticket__back {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: rgba(251, 246, 236, 0.16);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+}
+
+.ticket__brand {
+  color: var(--gold-light);
+  font-size: 11px;
+  letter-spacing: 0.16em;
+  text-align: center;
+}
+
+.ticket__spacer {
+  width: 34px;
+  flex: none;
+}
+
+/* --- The stub ------------------------------------------------------------------ */
+
+.stub {
+  margin: 20px var(--s-md) 0;
+  background: var(--ivory-ticket);
+  border-radius: var(--r-xxl);
+  color: var(--ink);
+  overflow: visible;
+}
+
+.stub--void {
+  opacity: 0.72;
+}
+
+.stub__top {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 20px 20px 0;
+}
+
+.stub__island {
+  letter-spacing: 0.12em;
+}
+
+.stub__title {
+  margin-top: 9px;
+}
+
+.stub__crest {
+  width: 46px;
+  height: 46px;
+  flex: none;
+  border-radius: 50%;
+  border: 1.5px solid var(--gold);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.stub__crest-vip {
+  font-family: var(--font-display);
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--green-900);
+  letter-spacing: 0.04em;
+}
+
+.stub__crest-island {
+  font-size: 6px;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  color: var(--gold-text);
+  margin-top: 2px;
+}
+
+.stub__grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px 10px;
+  margin: 0;
+  padding: 18px 20px 0;
+}
+
+.stub__grid dt {
+  letter-spacing: 0.1em;
+}
+
+.stub__grid dd {
+  margin: 6px 0 0;
+}
+
+.stub__qr {
+  padding: 20px 20px 0;
+  text-align: center;
+}
+
+.stub__qr-frame {
+  display: inline-block;
+  background: #ffffff;
+  border: 1px solid var(--border);
+  border-radius: var(--r-md);
+  padding: 14px;
+}
+
+.stub__ref {
+  margin-top: 11px;
+  letter-spacing: 0.06em;
+}
+
+/* --- Foot ------------------------------------------------------------------------ */
+
+.stub__foot {
+  padding: 18px 20px 20px;
+}
+
+.stub__voucher {
+  gap: 12px;
+}
+
+.stub__voucher-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: var(--r-sm);
+  background: var(--gold);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+}
+
+.stub__state {
+  padding: 7px 9px;
+  border-radius: var(--r-xs);
+  font-size: 11px;
+  font-weight: 800;
+  text-transform: capitalize;
+  flex: none;
+}
+
+.stub__state--available,
+.stub__state--attached {
+  background: var(--aqua-soft);
+  color: var(--green-900);
+}
+
+.stub__state--redeemed {
+  background: var(--green-900);
+  color: var(--on-dark);
+}
+
+.stub__state--expired {
+  background: var(--ivory-sunken);
+  color: var(--ink-faint);
+}
+
+.stub__states {
+  display: flex;
+  gap: 6px;
+  margin-top: 14px;
+}
+
+.stub__pip {
+  flex: 1;
+  text-align: center;
+  padding: 7px 4px;
+  border-radius: var(--r-xs);
+  background: var(--ivory-sunken);
+  color: var(--ink-faint);
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: capitalize;
+}
+
+.stub__pip.is-on {
+  background: var(--green-900);
+  color: var(--on-dark);
+}
+
+.stub__redeemed {
+  margin-top: 12px;
+}
+
+.ticket__actions {
+  padding: 20px var(--s-md) 0;
+}

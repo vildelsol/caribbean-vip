@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import {
   ISLANDS,
   byDistanceFrom,
@@ -15,6 +15,7 @@ import {
   formatKm,
   type DemoExperience,
 } from '../data/catalogue';
+import { useNavigate } from 'react-router-dom';
 import { useStore } from '../state/store';
 import { Icon } from '../components/Icon';
 import {
@@ -62,6 +63,7 @@ function greeting(): string {
 
 export function Explore() {
   const { state, dispatch } = useStore();
+  const navigate = useNavigate();
   const [islandOpen, setIslandOpen] = useState(false);
   const [mood, setMood] = useState<string | null>(null);
 
@@ -100,6 +102,25 @@ export function Explore() {
     if (!destination) return [];
     return byDistanceFrom(simulatedPosition(destination), ranked).slice(0, 6);
   }, [destination, ranked]);
+
+  /**
+   * The simulated geofence.
+   *
+   * Fires once per island, a few seconds after Explore settles — long enough that it reads as
+   * "you have walked near something" rather than as a launch interstitial. `offerShownForIslands`
+   * is persisted, so it does not re-fire on every visit or after a refresh.
+   *
+   * The trigger is the only simulated part. See `Offer.tsx` for why a real geolocation prompt is
+   * deliberately not used in a demonstration.
+   */
+  useEffect(() => {
+    if (state.offerShownForIslands.includes(state.islandId)) return;
+    const t = setTimeout(() => {
+      dispatch({ type: 'markOfferShown', islandId: state.islandId });
+      navigate('/offer');
+    }, 6000);
+    return () => clearTimeout(t);
+  }, [state.islandId, state.offerShownForIslands, dispatch, navigate]);
 
   const hero = ranked[0];
   const nearYou = nearby.slice(1, 4);
@@ -200,7 +221,7 @@ export function Explore() {
 
       {/* ---------------- Search ---------------- */}
       <div className="pad">
-        <button type="button" className="search-pill" onClick={() => setMood(null)}>
+        <button type="button" className="search-pill" onClick={() => navigate('/nearby')}>
           <Icon name="search" size={17} color="var(--green-900)" strokeWidth={2} />
           <span className="grow t-caption c-muted">Search experiences, food, beaches</span>
           <Icon name="filter" size={17} color="var(--gold)" strokeWidth={2} />
@@ -266,7 +287,7 @@ export function Explore() {
       {evening ? (
         <section className="pad ex-section">
           <SectionHeader title="Tonight Near You" />
-          <article className="tonight">
+          <button type="button" className="tonight" onClick={() => navigate(`/experience/${evening.id}`)}>
             <div className="grow">
               <Badge tone="sand">7:30 PM · 3 tables left</Badge>
               <h3 className="t-display-sm c-on-dark tonight__title">{evening.title}</h3>
@@ -280,7 +301,7 @@ export function Explore() {
               radius="var(--r-md)"
               className="tonight__photo"
             />
-          </article>
+          </button>
         </section>
       ) : null}
 
@@ -293,6 +314,7 @@ export function Explore() {
 
 function FeatureCard({ experience }: { experience: DemoExperience }) {
   const { state, dispatch } = useStore();
+  const navigate = useNavigate();
   const saved = state.savedExperienceIds.includes(experience.id);
   const vendor = vendorFor(experience);
 
@@ -334,7 +356,13 @@ function FeatureCard({ experience }: { experience: DemoExperience }) {
               <Price minor={experience.fromAmountMinor} size="lg" />
             </div>
           </div>
-          <span className="badge badge--brand feature__cta">View Experience</span>
+          <button
+            type="button"
+            className="badge badge--brand feature__cta"
+            onClick={() => navigate(`/experience/${experience.id}`)}
+          >
+            View Experience
+          </button>
         </div>
       </div>
     </Card>
@@ -343,8 +371,9 @@ function FeatureCard({ experience }: { experience: DemoExperience }) {
 
 function NearCard({ experience, metres }: { experience: DemoExperience; metres: number }) {
   const travel = travelFrom(metres);
+  const navigate = useNavigate();
   return (
-    <Card className="near">
+    <Card className="near" onClick={() => navigate(`/experience/${experience.id}`)} label={experience.title}>
       <div className="near__media">
         <Photo src={heroUrl(experience)} mediaKey={experience.media[0]} alt={experience.title} ratio="206 / 112" radius="0" />
         <span className="near__flag">
@@ -366,8 +395,9 @@ function NearCard({ experience, metres }: { experience: DemoExperience; metres: 
 }
 
 function GemCard({ experience }: { experience: DemoExperience }) {
+  const navigate = useNavigate();
   return (
-    <article className="gem">
+    <button type="button" className="gem" onClick={() => navigate(`/experience/${experience.id}`)}>
       <Photo src={heroUrl(experience)} mediaKey={experience.media[0]} alt={experience.title} ratio="163 / 132" radius="var(--r-lg)" />
       <span className="gem__scrim" />
       <div className="gem__body">
@@ -376,6 +406,6 @@ function GemCard({ experience }: { experience: DemoExperience }) {
           {`US$${Math.round(experience.fromAmountMinor / 100)}`} · Small group
         </p>
       </div>
-    </article>
+    </button>
   );
 }

@@ -6,13 +6,18 @@ import { Nearby } from './screens/Nearby';
 import { Irie } from './screens/Irie';
 import { Trips } from './screens/Trips';
 import { Profile } from './screens/Profile';
+import { ExperienceDetail } from './screens/ExperienceDetail';
+import { Checkout } from './screens/Checkout';
+import { Confirmation } from './screens/Confirmation';
+import { Ticket } from './screens/Ticket';
+import { Offer } from './screens/Offer';
+import { Redeem } from './screens/Redeem';
 
 /**
  * Routes and the app frame.
  *
  * The frame is a fixed phone-width column: every screen in the source design is composed for
- * 390pt, so a desktop letterboxes around it rather than stretching a layout that was never drawn
- * at that width.
+ * 390pt, so a desktop letterboxes around it rather than stretching a layout nobody drew.
  */
 export function App() {
   const { pathname } = useLocation();
@@ -31,6 +36,14 @@ export function App() {
         <Route path="/irie" element={<Irie />} />
         <Route path="/trips" element={<Trips />} />
         <Route path="/profile" element={<Profile />} />
+
+        <Route path="/experience/:id" element={<ExperienceDetail />} />
+        <Route path="/checkout/:id" element={<Checkout />} />
+        <Route path="/confirmation/:bookingId" element={<Confirmation />} />
+        <Route path="/ticket/:bookingId" element={<Ticket />} />
+        <Route path="/offer" element={<Offer />} />
+        <Route path="/redeem" element={<Redeem />} />
+
         {/* An unknown hash route lands on Explore rather than a blank frame. */}
         <Route path="*" element={<Explore />} />
       </Routes>

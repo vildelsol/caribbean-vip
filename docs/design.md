@@ -176,8 +176,10 @@ style is the exact failure the design's own notes call out.
 | Irie AI | built as a **guided demo** — context chips, rule-matched answers with stated reasons |
 | Trips | built — day timeline, next-up card, day total |
 | Profile | built — crest, island switching, voucher wallet, saved, simulation disclosure |
-| Experience detail | **not built** |
-| Geofenced offer | **not built** |
-| Checkout | **not built** |
-| Confirmation | **not built** |
-| QR ticket | **not built** |
+| Experience detail | built — hero with floating controls, rounded sheet, price card, facts, sticky action bar |
+| Geofenced offer | built — notched voucher on a dark screen, save-to-wallet, simulated trigger |
+| Checkout | built — day strip, departure slots with live capacity, steppers, itemised total, simulated payment |
+| Confirmation | built — reference, QR, and one next idea for the same day |
+| QR ticket | built — ticket stock, a genuinely scannable QR, the four voucher states |
+| Redemption | built — signature checked before lookup; second scan is terminal |
+| Search | **not built** — Nearby filters by category instead |

@@ -46,10 +46,10 @@ Individually, if you prefer: `pnpm tourist` and `pnpm vendor`.
 
 ### The walkthrough
 
-> **Out of date.** This describes the retired Expo app. The web app's journey is being rebuilt
-> milestone by milestone — Explore, Nearby, Irie AI, Trips and Profile work today; experience
-> detail, the offer, checkout, confirmation and the QR ticket do not yet exist. §5 has the
-> current position.
+> **Out of date.** This describes the retired Expo app. The web app's journey now runs end to
+> end: Explore → island switch → Nearby → simulated geofenced offer → save voucher → detail →
+> date/party selection → simulated payment → confirmation → Trips → QR ticket → redemption →
+> second scan refused. Search is the one screen not rebuilt. §5 has the current position.
 
 1. **Welcome** — crest, "Continue as Guest".
 2. **Explore** — greeting, destination selector, category tiles, Nearby Discoveries, rated cards.

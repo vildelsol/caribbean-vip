@@ -1,0 +1,161 @@
+.confirm__hero {
+  position: relative;
+  background: var(--green-950);
+  isolation: isolate;
+}
+
+.confirm__scrim {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, rgba(7, 40, 33, 0.55), rgba(7, 40, 33, 0.92));
+  pointer-events: none;
+}
+
+.confirm__hero-body {
+  position: absolute;
+  left: var(--s-md);
+  right: var(--s-md);
+  bottom: 34px;
+}
+
+.confirm__flag {
+  gap: 8px;
+  color: var(--gold-light);
+}
+
+.confirm__title {
+  margin-top: 12px;
+  color: var(--on-dark);
+}
+
+/* --- Receipt card ---------------------------------------------------------- */
+
+.confirm__card {
+  margin: -20px var(--s-md) 0;
+  width: auto;
+  position: relative;
+  z-index: 3;
+  box-shadow: 0 12px 30px rgba(7, 40, 33, 0.14);
+}
+
+.confirm__card-inner {
+  gap: 16px;
+  padding: 18px;
+  align-items: flex-start;
+}
+
+.confirm__key {
+  letter-spacing: 0.1em;
+}
+
+.confirm__val {
+  margin: 7px 0 14px;
+}
+
+.confirm__ref {
+  margin-top: 7px;
+  letter-spacing: 0.04em;
+}
+
+.confirm__pickup {
+  margin-top: 12px;
+}
+
+.confirm__voucher {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  margin-top: 14px;
+  padding: 10px 11px;
+  border-radius: var(--r-sm);
+  background: var(--sand);
+  border: 1px solid var(--sand-border);
+  color: var(--gold-text);
+}
+
+.confirm__voucher-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--gold);
+  flex: none;
+}
+
+.confirm__qr {
+  width: 112px;
+  flex: none;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+
+.confirm__qr .qr {
+  background: var(--ivory);
+  border-radius: var(--r-md);
+  padding: 8px;
+}
+
+/* --- Actions ----------------------------------------------------------------- */
+
+.confirm__actions {
+  display: flex;
+  gap: 9px;
+  padding: 16px var(--s-md) 0;
+}
+
+.confirm__actions .btn {
+  flex: 1;
+}
+
+.confirm__total {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 20px var(--s-md) 0;
+  padding-top: 14px;
+  border-top: 1px solid var(--border);
+}
+
+/* --- Next idea ---------------------------------------------------------------- */
+
+.confirm__next {
+  padding: 28px var(--s-md) 0;
+}
+
+.confirm__next .t-section {
+  margin-bottom: 11px;
+}
+
+.next-idea {
+  border-radius: var(--r-lg);
+}
+
+.next-idea__inner {
+  gap: 13px;
+  padding: 12px;
+  align-items: flex-start;
+}
+
+.next-idea__photo {
+  width: 82px;
+  flex: none;
+}
+
+.next-idea__title {
+  margin-top: 7px;
+}
+
+.next-idea__foot {
+  margin-top: 9px;
+  justify-content: space-between;
+}
+
+.confirm__plan {
+  display: block;
+  width: 100%;
+  margin-top: 12px;
+  padding: 12px;
+  min-height: 44px;
+  text-align: center;
+}

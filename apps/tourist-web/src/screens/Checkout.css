@@ -1,0 +1,283 @@
+.checkout__head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 20px var(--s-md) 0;
+}
+
+.checkout__listing {
+  display: flex;
+  align-items: center;
+  gap: 13px;
+  padding: 22px var(--s-md) 0;
+}
+
+.checkout__thumb {
+  width: 76px;
+  flex: none;
+}
+
+.checkout__where {
+  margin-top: 6px;
+}
+
+.checkout__block {
+  padding: 26px var(--s-md) 0;
+}
+
+.checkout__label {
+  margin-bottom: 11px;
+}
+
+/* --- Day strip -------------------------------------------------------------- */
+
+.day-strip {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  scrollbar-width: none;
+  /* The strip bleeds to the screen edge so the last day is not visually trapped. */
+  margin-inline: calc(var(--s-md) * -1);
+  padding-inline: var(--s-md);
+  padding-bottom: 4px;
+}
+
+.day-strip::-webkit-scrollbar {
+  display: none;
+}
+
+.day {
+  flex: none;
+  width: 58px;
+  min-height: 74px;
+  border-radius: var(--r-md);
+  border: 1.5px solid var(--border-strong);
+  background: var(--ivory-raised);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  transition: background-color 0.14s ease, border-color 0.14s ease, transform 0.12s ease;
+}
+
+.day--on {
+  background: var(--green-900);
+  border-color: var(--green-900);
+  color: var(--on-dark);
+}
+
+.day--full {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.day:active:not(:disabled) {
+  transform: scale(0.97);
+}
+
+.day__weekday {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  opacity: 0.75;
+}
+
+.day__num {
+  font-size: 19px;
+  font-weight: 800;
+  line-height: 1.1;
+}
+
+.day__month {
+  font-size: 10px;
+  font-weight: 600;
+  opacity: 0.7;
+}
+
+/* --- Time slots --------------------------------------------------------------- */
+
+.time-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.slot {
+  flex: 1 1 calc(50% - 8px);
+  min-width: 120px;
+  min-height: 56px;
+  padding: 10px 12px;
+  border-radius: var(--r-md);
+  border: 1.5px solid var(--border-strong);
+  background: var(--ivory-raised);
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 3px;
+  transition: background-color 0.14s ease, border-color 0.14s ease;
+}
+
+.slot--on {
+  background: var(--green-900);
+  border-color: var(--green-900);
+  color: var(--on-dark);
+}
+
+.slot--full {
+  opacity: 0.42;
+  cursor: not-allowed;
+}
+
+.slot__left {
+  opacity: 0.78;
+}
+
+.checkout__pickup {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  margin-top: 12px;
+}
+
+/* --- Party ---------------------------------------------------------------------- */
+
+.checkout__steppers {
+  background: var(--ivory-raised);
+  border-radius: var(--r-lg);
+  padding: 4px 14px;
+}
+
+.checkout__steppers .stepper + .stepper,
+.checkout__steppers .addon {
+  border-top: 1px solid var(--border);
+}
+
+.addon {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 0;
+  cursor: pointer;
+  min-height: 44px;
+}
+
+.addon input {
+  width: 22px;
+  height: 22px;
+  flex: none;
+  accent-color: var(--green-900);
+  cursor: pointer;
+}
+
+/* --- Voucher strip ---------------------------------------------------------------- */
+
+.checkout__voucher {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  margin: 22px var(--s-md) 0;
+  padding: 13px 14px;
+  border-radius: var(--r-md);
+  background: var(--sand);
+  border: 1px solid var(--sand-border);
+}
+
+.checkout__voucher-icon {
+  width: 34px;
+  height: 34px;
+  border-radius: var(--r-sm);
+  background: var(--gold);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+}
+
+/* --- Summary ------------------------------------------------------------------------ */
+
+.summary {
+  margin: 0;
+  padding: 0;
+}
+
+.summary__row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 7px 0;
+}
+
+.summary__row dd {
+  margin: 0;
+  font-variant-numeric: tabular-nums;
+}
+
+.summary__row--total {
+  margin-top: 10px;
+  padding-top: 14px;
+  border-top: 1px solid var(--border);
+  align-items: center;
+}
+
+.checkout__policy {
+  margin-top: 12px;
+}
+
+.checkout__error {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 14px;
+  border-radius: var(--r-md);
+  background: #fbeeea;
+  color: var(--coral-text);
+}
+
+/* --- Payment ------------------------------------------------------------------------- */
+
+.card-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 15px 14px;
+  border-radius: var(--r-md);
+  border: 1.5px solid var(--border-strong);
+  background: var(--ivory-raised);
+}
+
+.card-row__chip {
+  width: 34px;
+  height: 22px;
+  border-radius: 4px;
+  background: var(--ink);
+  flex: none;
+}
+
+.sim-strip {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  margin-top: 10px;
+  padding: 11px 13px;
+  border-radius: var(--r-sm);
+  background: var(--ivory-sunken);
+  color: var(--ink-muted);
+}
+
+.sim-strip svg {
+  flex: none;
+}
+
+/* --- Pay ------------------------------------------------------------------------------ */
+
+.checkout__pay {
+  padding: 26px var(--s-md) 0;
+}
+
+.checkout__reassure {
+  margin-top: 10px;
+  text-align: center;
+}

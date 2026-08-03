@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   byDistanceFrom,
   destinationBySlug,
@@ -88,6 +89,7 @@ interface Turn {
 
 export function Irie() {
   const { state, dispatch } = useStore();
+  const navigate = useNavigate();
   const [turns, setTurns] = useState<Turn[]>([]);
 
   const island = islandById(state.islandId);
@@ -181,7 +183,13 @@ export function Irie() {
                       className="irie-pick__photo"
                     />
                     <div className="grow">
-                      <h3 className="t-caption-strong">{experience.title}</h3>
+                      <button
+                        type="button"
+                        className="irie-pick__open t-caption-strong"
+                        onClick={() => navigate(`/experience/${experience.id}`)}
+                      >
+                        {experience.title}
+                      </button>
                       <p className="t-micro c-locator irie-pick__meta">
                         {`US$${Math.round(experience.fromAmountMinor / 100)}`} ·{' '}
                         {formatKm(metres)} · {travelFrom(metres).minutes} min{' '}

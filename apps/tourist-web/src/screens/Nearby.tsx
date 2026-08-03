@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   byDistanceFrom,
   destinationBySlug,
@@ -39,6 +40,7 @@ const CATEGORY_FOR: Record<string, string[]> = {
 
 export function Nearby() {
   const { state } = useStore();
+  const navigate = useNavigate();
   const [filter, setFilter] = useState<string>('All');
   const [selected, setSelected] = useState<string | null>(null);
 
@@ -120,7 +122,12 @@ export function Nearby() {
             {results.map(({ experience, metres }) => {
               const travel = travelFrom(metres);
               return (
-              <Card key={experience.id} className="near-row" onClick={() => setSelected(experience.id)}>
+              <Card
+                key={experience.id}
+                className="near-row"
+                label={experience.title}
+                onClick={() => navigate(`/experience/${experience.id}`)}
+              >
                 <div className="row near-row__inner">
                   <Photo
                     src={heroUrl(experience)}

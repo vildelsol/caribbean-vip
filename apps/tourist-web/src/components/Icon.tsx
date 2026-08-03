@@ -56,7 +56,8 @@ const STROKE: Partial<Record<IconName, string>> = {
   bell: 'M18 15.5V10a6 6 0 1 0-12 0v5.5L4.5 18h15zM10 20.5h4',
   clock: 'M12 7.5V12l3 2',
   car: 'M5 17.5h14M7.5 17.5V12l2-4h5l2 4v5.5',
-  walk: 'M9 20l6-16M6 9h13M5 15h13',
+  // A walking figure. The first attempt was three crossing strokes, which at 13px read as "≠".
+  walk: 'M10 21l1.3-5.6L9 13l1-4.6 3.3 1.9 2.4 1.5M12.9 15.4L15.2 21',
   lock: 'M8 10.5V8a4 4 0 0 1 8 0v2.5',
   bookmark: 'M6.5 3.5h11v17l-5.5-4-5.5 4z',
   refresh: 'M4 5.5v5h5M4.6 10.5a8 8 0 1 1 2.2 7.6',
@@ -165,6 +166,13 @@ export function Icon({ name, size = 20, color = 'currentColor', strokeWidth = 1.
         <svg {...common} fill="none" stroke={color} strokeWidth={strokeWidth} strokeLinecap="round">
           <rect x="3.5" y="8.5" width="17" height="12" rx="2" />
           <path d={STROKE.ticket} />
+        </svg>
+      );
+    case 'walk':
+      return (
+        <svg {...common} fill="none" stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="round">
+          <circle cx="12.6" cy="4.2" r="1.9" />
+          <path d={STROKE.walk} />
         </svg>
       );
     default: {
