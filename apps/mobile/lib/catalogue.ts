@@ -32,6 +32,11 @@ export interface CatalogueItem {
    * image. See `apps/mobile/lib/demoMedia.ts`.
    */
   heroMediaKey: string | null;
+  /** Demo rating. Zero means "no rating to show", not "rated zero" — the UI omits it entirely. */
+  ratingAverage: number;
+  ratingCount: number;
+  /** The vendor passed approval. Rendered as the mockups' "Verified Operator" mark. */
+  vendorVerified: boolean;
 }
 
 interface SearchRow {
@@ -62,6 +67,12 @@ function toItem(row: SearchRow): CatalogueItem {
     currency: row.currency,
     isDemo: row.is_demo,
     heroMediaKey: null,
+    // Live ratings aggregate over the `reviews` table; `search_experiences` does not return them
+    // yet, so a live card shows no rating rather than a fabricated one.
+    ratingAverage: 0,
+    ratingCount: 0,
+    // RLS already guarantees a visible listing belongs to an approved vendor (AD-10).
+    vendorVerified: true,
   };
 }
 
@@ -106,7 +117,7 @@ export async function searchCatalogue(
         return {
           id: e.id,
           vendorOrgId: e.vendorId,
-          islandId: 'island-jm',
+          islandId: e.islandId,
           destinationId: dest?.id ?? '',
           category: e.category,
           title: e.title,
@@ -116,6 +127,9 @@ export async function searchCatalogue(
           currency: 'USD',
           isDemo: true,
           heroMediaKey: e.media[0] ?? null,
+          ratingAverage: e.ratingAverage,
+          ratingCount: e.ratingCount,
+          vendorVerified: demoBackend.vendor(e.vendorId)?.status === 'approved',
         };
       });
 
@@ -185,7 +199,7 @@ export async function loadExperience(id: string): Promise<{
       detail: {
         id: exp.id,
         vendorOrgId: exp.vendorId,
-        islandId: 'island-jm',
+        islandId: exp.islandId,
         destinationId: dest?.id ?? '',
         category: exp.category,
         title: exp.title,
@@ -196,6 +210,9 @@ export async function loadExperience(id: string): Promise<{
         currency: 'USD',
         isDemo: true,
         heroMediaKey: exp.media[0] ?? null,
+        ratingAverage: exp.ratingAverage,
+        ratingCount: exp.ratingCount,
+        vendorVerified: vendor?.status === 'approved',
         inclusions: exp.inclusions,
         exclusions: [],
         pickupInfo: exp.pickupInfo,
@@ -316,6 +333,9 @@ export async function loadExperience(id: string): Promise<{
       currency: String(r.currency),
       isDemo: Boolean(r.is_demo),
       heroMediaKey: null,
+      ratingAverage: 0,
+      ratingCount: 0,
+      vendorVerified: true,
       inclusions: (r.inclusions as string[]) ?? [],
       exclusions: (r.exclusions as string[]) ?? [],
       pickupInfo: (r.pickup_info as string | null) ?? null,

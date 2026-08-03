@@ -20,7 +20,8 @@
     "db:test": "./scripts/db-test.sh",
     "db:concurrency": "./scripts/db-concurrency-test.sh",
     "verify": "pnpm typecheck && pnpm lint && pnpm test && pnpm db:test",
-    "db:push": "./scripts/db-push.sh"
+    "db:push": "./scripts/db-push.sh",
+    "demo": "./scripts/demo.sh"
   },
   "devDependencies": {
     "@eslint/js": "^9.17.0",

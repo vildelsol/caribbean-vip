@@ -87,6 +87,15 @@ export interface DemoExperience {
   cancellationHours: number;
   /** Keys into `apps/mobile/assets/demo`. First entry is the hero image. */
   media: string[];
+  /**
+   * Demo rating, shown on cards and the detail page.
+   *
+   * Demo-only, and deliberately not a column on `experiences`: a real rating is an aggregate over
+   * the `reviews` table, computed from guests who actually completed a booking. These stand in for
+   * that aggregate so the UI can be built and shown before there are any real reviews to average.
+   */
+  ratingAverage: number;
+  ratingCount: number;
 }
 
 const JM = 'island-jm';
@@ -329,6 +338,8 @@ export const DEMO_EXPERIENCES: DemoExperience[] = [
     status: 'approved',
     cancellationHours: 24,
     media: ['jm-dunns-1', 'jm-dunns-2', 'jm-dunns-3'],
+    ratingAverage: 4.8,
+    ratingCount: 1285,
   },
   {
     id: 'exp-mystic-mountain',
@@ -347,6 +358,8 @@ export const DEMO_EXPERIENCES: DemoExperience[] = [
     status: 'approved',
     cancellationHours: 24,
     media: ['jm-mystic-1', 'jm-blue-mountains'],
+    ratingAverage: 4.8,
+    ratingCount: 2314,
   },
   {
     id: 'exp-white-river',
@@ -365,6 +378,8 @@ export const DEMO_EXPERIENCES: DemoExperience[] = [
     status: 'approved',
     cancellationHours: 24,
     media: ['jm-white-river-1', 'jm-white-river-2'],
+    ratingAverage: 4.6,
+    ratingCount: 612,
   },
   {
     id: 'exp-blue-hole',
@@ -383,6 +398,8 @@ export const DEMO_EXPERIENCES: DemoExperience[] = [
     status: 'approved',
     cancellationHours: 48,
     media: ['jm-blue-hole-1', 'jm-blue-hole-2'],
+    ratingAverage: 4.7,
+    ratingCount: 864,
   },
   {
     id: 'exp-catamaran',
@@ -401,6 +418,8 @@ export const DEMO_EXPERIENCES: DemoExperience[] = [
     status: 'approved',
     cancellationHours: 24,
     media: ['jm-catamaran-1', 'jm-negril-bay'],
+    ratingAverage: 4.6,
+    ratingCount: 956,
   },
   {
     id: 'exp-beach-pass',
@@ -419,6 +438,8 @@ export const DEMO_EXPERIENCES: DemoExperience[] = [
     status: 'approved',
     cancellationHours: 12,
     media: ['jm-seven-mile-1', 'jm-seven-mile-2'],
+    ratingAverage: 4.4,
+    ratingCount: 318,
   },
   {
     id: 'exp-west-end',
@@ -437,6 +458,8 @@ export const DEMO_EXPERIENCES: DemoExperience[] = [
     status: 'approved',
     cancellationHours: 24,
     media: ['jm-west-end-1', 'jm-west-end-2'],
+    ratingAverage: 4.5,
+    ratingCount: 442,
   },
   {
     id: 'exp-coffee',
@@ -455,6 +478,8 @@ export const DEMO_EXPERIENCES: DemoExperience[] = [
     status: 'approved',
     cancellationHours: 48,
     media: ['jm-coffee-1', 'jm-coffee-2', 'jm-coffee-3'],
+    ratingAverage: 4.9,
+    ratingCount: 731,
   },
   {
     id: 'exp-music',
@@ -473,6 +498,8 @@ export const DEMO_EXPERIENCES: DemoExperience[] = [
     status: 'approved',
     cancellationHours: 48,
     media: ['jm-music-1', 'jm-music-2'],
+    ratingAverage: 4.8,
+    ratingCount: 508,
   },
   {
     id: 'exp-craft',
@@ -491,6 +518,8 @@ export const DEMO_EXPERIENCES: DemoExperience[] = [
     status: 'approved',
     cancellationHours: 24,
     media: ['jm-craft-1'],
+    ratingAverage: 4.3,
+    ratingCount: 187,
   },
   {
     id: 'exp-rafting',
@@ -509,6 +538,8 @@ export const DEMO_EXPERIENCES: DemoExperience[] = [
     status: 'approved',
     cancellationHours: 24,
     media: ['jm-rafting-1', 'jm-rafting-2'],
+    ratingAverage: 4.9,
+    ratingCount: 1102,
   },
   {
     id: 'exp-reach',
@@ -527,6 +558,8 @@ export const DEMO_EXPERIENCES: DemoExperience[] = [
     status: 'approved',
     cancellationHours: 24,
     media: ['jm-reach-1'],
+    ratingAverage: 4.7,
+    ratingCount: 396,
   },
   {
     id: 'exp-blue-lagoon',
@@ -545,6 +578,8 @@ export const DEMO_EXPERIENCES: DemoExperience[] = [
     status: 'approved',
     cancellationHours: 24,
     media: ['jm-blue-lagoon-1'],
+    ratingAverage: 4.8,
+    ratingCount: 673,
   },
   {
     id: 'exp-transfer',
@@ -563,6 +598,8 @@ export const DEMO_EXPERIENCES: DemoExperience[] = [
     status: 'approved',
     cancellationHours: 12,
     media: ['jm-mobay-1'],
+    ratingAverage: 4.7,
+    ratingCount: 2044,
   },
   {
     id: 'exp-daytrip',
@@ -581,6 +618,8 @@ export const DEMO_EXPERIENCES: DemoExperience[] = [
     status: 'approved',
     cancellationHours: 48,
     media: ['jm-negril-bay', 'jm-west-end-2'],
+    ratingAverage: 4.6,
+    ratingCount: 289,
   },
   {
     id: 'exp-rose-hall',
@@ -599,6 +638,8 @@ export const DEMO_EXPERIENCES: DemoExperience[] = [
     status: 'approved',
     cancellationHours: 24,
     media: ['jm-rose-hall-1'],
+    ratingAverage: 4.5,
+    ratingCount: 921,
   },
   {
     id: 'exp-yoga',
@@ -617,6 +658,8 @@ export const DEMO_EXPERIENCES: DemoExperience[] = [
     status: 'approved',
     cancellationHours: 12,
     media: ['jm-treasure-1', 'jm-south-coast-1'],
+    ratingAverage: 4.9,
+    ratingCount: 214,
   },
   {
     id: 'exp-seafood',
@@ -635,6 +678,8 @@ export const DEMO_EXPERIENCES: DemoExperience[] = [
     status: 'approved',
     cancellationHours: 24,
     media: ['jm-black-river-1'],
+    ratingAverage: 4.7,
+    ratingCount: 486,
   },
 
   // ==================================================== Cayman Islands ====
@@ -655,6 +700,8 @@ export const DEMO_EXPERIENCES: DemoExperience[] = [
     status: 'approved',
     cancellationHours: 24,
     media: ['ky-stingray-1', 'ky-stingray-2'],
+    ratingAverage: 4.9,
+    ratingCount: 3187,
   },
   {
     id: 'exp-ky-barrier-reef',
@@ -673,6 +720,8 @@ export const DEMO_EXPERIENCES: DemoExperience[] = [
     status: 'approved',
     cancellationHours: 24,
     media: ['ky-sail-1', 'ky-stingray-2'],
+    ratingAverage: 4.7,
+    ratingCount: 742,
   },
   {
     id: 'exp-ky-seven-mile',
@@ -691,6 +740,8 @@ export const DEMO_EXPERIENCES: DemoExperience[] = [
     status: 'approved',
     cancellationHours: 12,
     media: ['ky-seven-mile-1', 'ky-hero'],
+    ratingAverage: 4.6,
+    ratingCount: 528,
   },
   {
     id: 'exp-ky-sail',
@@ -709,6 +760,8 @@ export const DEMO_EXPERIENCES: DemoExperience[] = [
     status: 'approved',
     cancellationHours: 24,
     media: ['ky-sail-1', 'ky-sunset-1'],
+    ratingAverage: 4.8,
+    ratingCount: 634,
   },
   {
     id: 'exp-ky-camana',
@@ -727,6 +780,8 @@ export const DEMO_EXPERIENCES: DemoExperience[] = [
     status: 'approved',
     cancellationHours: 24,
     media: ['ky-camana-1'],
+    ratingAverage: 4.7,
+    ratingCount: 291,
   },
   {
     id: 'exp-ky-turtle',
@@ -745,6 +800,8 @@ export const DEMO_EXPERIENCES: DemoExperience[] = [
     status: 'approved',
     cancellationHours: 24,
     media: ['ky-turtle-1', 'ky-turtle-2'],
+    ratingAverage: 4.5,
+    ratingCount: 1409,
   },
   {
     id: 'exp-ky-hell',
@@ -763,6 +820,8 @@ export const DEMO_EXPERIENCES: DemoExperience[] = [
     status: 'approved',
     cancellationHours: 24,
     media: ['ky-hell-1'],
+    ratingAverage: 4.2,
+    ratingCount: 806,
   },
   {
     id: 'exp-ky-rum-point',
@@ -781,6 +840,8 @@ export const DEMO_EXPERIENCES: DemoExperience[] = [
     status: 'approved',
     cancellationHours: 24,
     media: ['ky-rum-point-1', 'ky-kaibo-1'],
+    ratingAverage: 4.8,
+    ratingCount: 1173,
   },
   {
     id: 'exp-ky-bio-bay',
@@ -799,6 +860,8 @@ export const DEMO_EXPERIENCES: DemoExperience[] = [
     status: 'approved',
     cancellationHours: 48,
     media: ['ky-sunset-1'],
+    ratingAverage: 4.9,
+    ratingCount: 458,
   },
 
   // ========================================================= Barbados ====
@@ -819,6 +882,8 @@ export const DEMO_EXPERIENCES: DemoExperience[] = [
     status: 'approved',
     cancellationHours: 24,
     media: ['bb-harrisons-1', 'bb-harrisons-2'],
+    ratingAverage: 4.7,
+    ratingCount: 1642,
   },
   {
     id: 'exp-bb-east-coast',
@@ -837,6 +902,8 @@ export const DEMO_EXPERIENCES: DemoExperience[] = [
     status: 'approved',
     cancellationHours: 24,
     media: ['bb-bathsheba-1', 'bb-bathsheba-2'],
+    ratingAverage: 4.6,
+    ratingCount: 384,
   },
   {
     id: 'exp-bb-turtles',
@@ -855,6 +922,8 @@ export const DEMO_EXPERIENCES: DemoExperience[] = [
     status: 'approved',
     cancellationHours: 24,
     media: ['bb-carlisle-1', 'bb-carlisle-2'],
+    ratingAverage: 4.9,
+    ratingCount: 1878,
   },
   {
     id: 'exp-bb-catamaran',
@@ -873,6 +942,8 @@ export const DEMO_EXPERIENCES: DemoExperience[] = [
     status: 'approved',
     cancellationHours: 48,
     media: ['bb-west-coast-1', 'bb-hero'],
+    ratingAverage: 4.8,
+    ratingCount: 1265,
   },
   {
     id: 'exp-bb-oistins',
@@ -891,6 +962,8 @@ export const DEMO_EXPERIENCES: DemoExperience[] = [
     status: 'approved',
     cancellationHours: 24,
     media: ['bb-oistins-1', 'bb-south-coast-1'],
+    ratingAverage: 4.8,
+    ratingCount: 967,
   },
   {
     id: 'exp-bb-south-beach',
@@ -909,6 +982,8 @@ export const DEMO_EXPERIENCES: DemoExperience[] = [
     status: 'approved',
     cancellationHours: 12,
     media: ['bb-oistins-1'],
+    ratingAverage: 4.4,
+    ratingCount: 276,
   },
   {
     id: 'exp-bb-animal-flower',
@@ -927,6 +1002,8 @@ export const DEMO_EXPERIENCES: DemoExperience[] = [
     status: 'approved',
     cancellationHours: 24,
     media: ['bb-animal-flower-1', 'bb-animal-flower-2'],
+    ratingAverage: 4.7,
+    ratingCount: 715,
   },
   {
     id: 'exp-bb-rum',
@@ -945,6 +1022,8 @@ export const DEMO_EXPERIENCES: DemoExperience[] = [
     status: 'approved',
     cancellationHours: 48,
     media: ['bb-rum-1'],
+    ratingAverage: 4.8,
+    ratingCount: 823,
   },
   {
     id: 'exp-bb-bridgetown',
@@ -963,6 +1042,8 @@ export const DEMO_EXPERIENCES: DemoExperience[] = [
     status: 'approved',
     cancellationHours: 24,
     media: ['bb-bridgetown-1'],
+    ratingAverage: 4.5,
+    ratingCount: 402,
   },
 
   // ================================================ Negative fixtures ====
@@ -983,6 +1064,8 @@ export const DEMO_EXPERIENCES: DemoExperience[] = [
     status: 'draft',
     cancellationHours: 12,
     media: [],
+    ratingAverage: 0,
+    ratingCount: 0,
   },
   // An APPROVED listing under an UNAPPROVED vendor. Must never be visible (V-02).
   {
@@ -1001,6 +1084,8 @@ export const DEMO_EXPERIENCES: DemoExperience[] = [
     status: 'approved',
     cancellationHours: 24,
     media: [],
+    ratingAverage: 0,
+    ratingCount: 0,
   },
 ];
 

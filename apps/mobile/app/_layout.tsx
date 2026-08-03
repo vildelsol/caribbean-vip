@@ -28,6 +28,7 @@ export default function RootLayout() {
           }}
         >
           <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+          <Stack.Screen name="welcome" options={{ headerShown: false }} />
           <Stack.Screen
             name="sign-in"
             options={{ title: 'Sign in', presentation: 'modal' }}

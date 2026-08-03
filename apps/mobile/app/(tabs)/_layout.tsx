@@ -6,8 +6,11 @@ import { semantic, radius } from '@cvip/ui';
  * Tourist app primary navigation — PRD §5.
  *
  * Five tabs, in this order, with Irie AI as the CENTRE item (build prompt §16: "Irie AI is the
- * centre bottom-navigation item"). The supplied mockup shows a different four-tab arrangement;
- * per the founder it is a colour reference only, so the PRD ordering governs here.
+ * centre bottom-navigation item").
+ *
+ * The first mockup showed a four-tab VIP Cayman bar with no Irie AI; the later Caribbean VIP
+ * mockups show exactly this five-tab arrangement with the gold Irie badge raised in the middle, so
+ * the mockups and the PRD now agree and this is drawn to match them.
  */
 
 function TabIcon({ label, focused }: { label: string; focused: boolean }) {
@@ -35,12 +38,15 @@ function IrieIcon({ focused }: { focused: boolean }) {
         borderRadius: radius.pill,
         alignItems: 'center',
         justifyContent: 'center',
-        backgroundColor: focused ? semantic.premium : semantic.brandActive,
-        borderWidth: 2,
+        // Gold in both states, as the mockups draw it: this is the product's hero action, and a
+        // centre item that dims when unselected stops reading as one.
+        backgroundColor: semantic.premium,
+        borderWidth: 3,
         borderColor: semantic.navBackground,
+        opacity: focused ? 1 : 0.92,
       }}
     >
-      <Text style={{ fontSize: 20 }}>✦</Text>
+      <Text style={{ fontSize: 22, color: semantic.brand }}>✦</Text>
     </View>
   );
 }

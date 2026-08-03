@@ -1,5 +1,5 @@
 import { useCallback, useState } from 'react';
-import { ActivityIndicator, Image, Pressable, ScrollView, Text, View } from 'react-native';
+import { ActivityIndicator, Pressable, ScrollView, Text, View } from 'react-native';
 import { router, useFocusEffect } from 'expo-router';
 import { radius, semantic, spacing, typography } from '@cvip/ui';
 import { loadBookings, type BookingSummary } from '../../lib/booking';
@@ -9,8 +9,9 @@ import { useSession } from '../../lib/session';
 import { useIsland } from '../../lib/island';
 import { useSaved } from '../../lib/saved';
 import { demoImage } from '../../lib/demoMedia';
-import { ExperienceCard, formatFrom } from '../../components/ExperienceCard';
+import { ExperienceCard } from '../../components/ExperienceCard';
 import { Notice } from '../../components/Notice';
+import { Badge, Photo, PrimaryButton, SectionHeader, formatUsd } from '../../components/kit';
 
 /**
  * Bottom padding that clears the floating tab bar.
@@ -110,7 +111,7 @@ export default function Trips() {
       contentContainerStyle={{ padding: spacing.lg, gap: spacing.lg, paddingBottom: TAB_BAR_CLEARANCE }}
     >
       <View style={{ gap: spacing.xs }}>
-        <Text style={{ ...typography.display, color: semantic.textPrimary }}>Trips</Text>
+        <Text style={{ ...typography.display, color: semantic.textPrimary }}>My Trips</Text>
         <Text style={{ ...typography.caption, color: semantic.textMuted }}>
           {state === 'guest'
             ? 'Your bookings and saved experiences will live here.'
@@ -118,7 +119,15 @@ export default function Trips() {
         </Text>
       </View>
 
-      <View style={{ flexDirection: 'row', gap: spacing.sm, flexWrap: 'wrap' }}>
+      {/* Segmented control, as the mockup draws it: one track, the active segment filled. */}
+      <View
+        style={{
+          flexDirection: 'row',
+          backgroundColor: semantic.surfaceSunken,
+          borderRadius: radius.pill,
+          padding: 4,
+        }}
+      >
         {TABS.map((t) => {
           const active = t.key === tab;
           return (
@@ -129,22 +138,22 @@ export default function Trips() {
               accessibilityState={{ selected: active }}
               accessibilityLabel={`${t.label}, ${counts[t.key]} items`}
               style={{
+                flex: 1,
                 paddingVertical: spacing.sm,
-                paddingHorizontal: spacing.md,
                 borderRadius: radius.pill,
-                backgroundColor: active ? semantic.brand : semantic.surface,
-                borderWidth: 1,
-                borderColor: active ? semantic.brand : semantic.border,
+                alignItems: 'center',
+                backgroundColor: active ? semantic.brand : 'transparent',
               }}
             >
               <Text
                 style={{
                   ...typography.caption,
+                  fontWeight: active ? '700' : '400',
                   color: active ? semantic.textOnDark : semantic.textPrimary,
                 }}
               >
                 {t.label}
-                {counts[t.key] > 0 ? ` · ${counts[t.key]}` : ''}
+                {counts[t.key] > 0 ? ` ${counts[t.key]}` : ''}
               </Text>
             </Pressable>
           );
@@ -155,6 +164,10 @@ export default function Trips() {
         <Notice tone="alert" title="Could not load your trips" body={error} onRetry={load} />
       ) : null}
       {loading ? <ActivityIndicator color={semantic.brandActive} /> : null}
+
+      {!loading && tab === 'upcoming' && upcoming.length > 0 ? (
+        <SectionHeader title="Upcoming trips" />
+      ) : null}
 
       {!loading && tab === 'upcoming' ? (
         upcoming.length === 0 ? (
@@ -226,59 +239,57 @@ function BookingRow({ booking, showVoucher }: { booking: BookingSummary; showVou
         opacity: cancelled ? 0.6 : 1,
       }}
     >
-      {hero ? (
-        <Image
-          source={hero}
-          style={{ width: '100%', height: 120, backgroundColor: semantic.surfaceSunken }}
-          resizeMode="cover"
-          accessible={false}
-        />
-      ) : null}
+      {hero ? <Photo source={hero} height={130} radius={0} /> : null}
 
       <View style={{ padding: spacing.md, gap: spacing.xs }}>
-        <Text style={{ ...typography.heading, color: semantic.textPrimary }}>
-          {booking.experienceTitle}
-        </Text>
-        {booking.startsAt ? (
-          <Text style={{ ...typography.body, color: semantic.textMuted }}>
-            {formatWhen(booking.startsAt)}
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.sm }}>
+          <Text style={{ ...typography.heading, color: semantic.textPrimary, flex: 1 }}>
+            {booking.experienceTitle}
           </Text>
+          <Badge
+            label={cancelled ? (booking.status === 'refunded' ? 'Refunded' : 'Cancelled') : 'Confirmed'}
+            tone={cancelled ? 'pending' : 'success'}
+          />
+        </View>
+
+        {booking.startsAt ? (
+          <IconRow icon="📅" text={formatWhen(booking.startsAt)} />
         ) : null}
-        <View style={{ flexDirection: 'row', gap: spacing.sm, alignItems: 'baseline' }}>
+        <IconRow
+          icon="👥"
+          text={`${booking.seats} ${booking.seats === 1 ? 'guest' : 'guests'}`}
+        />
+        <IconRow icon="🎟" text={booking.reference} />
+
+        <View style={{ flexDirection: 'row', alignItems: 'baseline', marginTop: spacing.xs }}>
           <Text style={{ ...typography.caption, color: semantic.textMuted, flex: 1 }}>
-            {booking.reference}
+            Total paid
           </Text>
           <Text style={{ ...typography.bodyStrong, color: semantic.textPrimary }}>
-            {formatFrom(booking.totalMinor, booking.currency)}
+            {formatUsd(booking.totalMinor)}
           </Text>
         </View>
 
-        {cancelled ? (
-          <Text style={{ ...typography.caption, color: semantic.alert }}>
-            {booking.status === 'refunded' ? 'Refunded' : 'Cancelled'}
-          </Text>
-        ) : null}
-
         {showVoucher ? (
-          <Pressable
-            onPress={() => router.push({ pathname: '/voucher/[id]', params: { id: booking.id } })}
-            accessibilityRole="button"
-            accessibilityLabel={`Show voucher for ${booking.experienceTitle}`}
-            style={{
-              marginTop: spacing.xs,
-              backgroundColor: semantic.brand,
-              borderRadius: radius.md,
-              paddingVertical: spacing.sm,
-              alignItems: 'center',
-            }}
-          >
-            <Text style={{ ...typography.bodyStrong, color: semantic.textOnDark }}>
-              Show voucher
-            </Text>
-          </Pressable>
+          <View style={{ marginTop: spacing.sm }}>
+            <PrimaryButton
+              label="View Ticket"
+              onPress={() => router.push({ pathname: '/voucher/[id]', params: { id: booking.id } })}
+              accessibilityLabel={`Show voucher for ${booking.experienceTitle}`}
+            />
+          </View>
         ) : null}
       </View>
     </Pressable>
+  );
+}
+
+function IconRow({ icon, text }: { icon: string; text: string }) {
+  return (
+    <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.sm }}>
+      <Text style={{ fontSize: 13 }}>{icon}</Text>
+      <Text style={{ ...typography.caption, color: semantic.textMuted, flex: 1 }}>{text}</Text>
+    </View>
   );
 }
 

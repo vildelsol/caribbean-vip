@@ -1,32 +1,53 @@
 import { useEffect, useState } from 'react';
-import { ActivityIndicator, Image, Pressable, ScrollView, Text, View } from 'react-native';
+import { ActivityIndicator, Pressable, ScrollView, Text, View } from 'react-native';
 import { Stack, router, useLocalSearchParams } from 'expo-router';
-import { radius, semantic, spacing, typography } from '@cvip/ui';
+import { palette, radius, semantic, spacing, typography } from '@cvip/ui';
 import { hasCatalogue } from '../../lib/mode';
+import { useIsland } from '../../lib/island';
 import { useSaved } from '../../lib/saved';
 import { loadExperience, type ExperienceDetail } from '../../lib/catalogue';
+import { approxLocalPerUsd } from '../../lib/localCurrency';
 import { demoImage, demoImageCredit } from '../../lib/demoMedia';
-import { formatDuration, formatFrom } from '../../components/ExperienceCard';
+import { formatDuration } from '../../components/ExperienceCard';
 import { Notice } from '../../components/Notice';
+import { OfferSheet } from '../../components/OfferSheet';
+import {
+  Badge,
+  Card,
+  Photo,
+  PrimaryButton,
+  Rating,
+  StatRow,
+  StatTile,
+  formatLocalApprox,
+  formatUsd,
+} from '../../components/kit';
 import { categoryLabel } from '../(tabs)/index';
 
 /**
- * Experience detail — PRD §5.
+ * Experience detail — PRD §5, laid out to the "Experience Detail" mockup.
  *
- * Shows media, price, duration, inclusions, pickup information, cancellation terms, reviews and
- * availability. Reachable by a guest (T-01): nothing here requires an account. Saving and booking
- * prompt for sign-in at the point they are used, rather than gating the page.
+ * Photo first with the controls floating on it, then title, location, rating and verification, a
+ * row of three facts, the offer, the overview, what's included, availability, and a sticky price
+ * bar with the primary action. The mockups' hierarchy note is the point: a guest decides on the
+ * photo, the rating and the price, so those come before the prose.
  *
- * A listing that is not publicly visible produces the SAME "not available" state as a
- * non-existent id — distinguishing them would confirm that a hidden listing exists.
+ * Reachable by a guest (T-01): nothing here requires an account. Saving and booking prompt for
+ * sign-in at the point they are used, rather than gating the page.
+ *
+ * A listing that is not publicly visible produces the SAME "not available" state as a non-existent
+ * id — distinguishing them would confirm that a hidden listing exists.
  */
 export default function ExperienceDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const { isSaved, toggle, requiresSignIn } = useSaved();
+  const { island } = useIsland();
 
   const [detail, setDetail] = useState<ExperienceDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [offerOpen, setOfferOpen] = useState(false);
+  const [offerSaved, setOfferSaved] = useState(false);
 
   useEffect(() => {
     if (!id || !hasCatalogue) {
@@ -40,6 +61,9 @@ export default function ExperienceDetailScreen() {
       setDetail(d);
       setError(err);
       setLoading(false);
+      // The mockups open the voucher popup on arrival when an offer applies — that is the whole
+      // point of a limited-time offer, and burying it below the fold defeats it.
+      if (d?.promotion) setOfferOpen(true);
     })();
     return () => {
       active = false;
@@ -74,295 +98,374 @@ export default function ExperienceDetailScreen() {
   }
 
   const saved = isSaved(detail.id);
-  const cancellation = describeCancellation(detail.cancellationPolicy);
-  const rating = averageRating(detail.reviews);
+  const hero = demoImage(detail.heroMediaKey);
+  const heroCredit = demoImageCredit(detail.heroMediaKey);
+  const gallery = detail.media
+    .map((m) => ({ ...m, source: demoImage(m.storagePath), credit: demoImageCredit(m.storagePath) }))
+    .filter((m): m is typeof m & { source: NonNullable<typeof m.source> } => m.source !== null);
   // Every published departure is full, or none are published. Either way there is nothing to book,
   // and a live "Check availability" button leading to an empty picker is worse than saying so.
   const soldOut = detail.upcomingSlots.every((s) => s.capacity - s.bookedCount <= 0);
+  const cancellationHours = describeCancellationHours(detail.cancellationPolicy);
+  const maxGroup = Math.max(...detail.upcomingSlots.map((s) => s.capacity), 0);
+  const local = island
+    ? formatLocalApprox(detail.fromAmountMinor, island.currency, approxLocalPerUsd(island.currency) ?? 0)
+    : null;
 
   return (
     <>
-      <Stack.Screen options={{ title: detail.title }} />
-      <ScrollView
-        style={{ flex: 1, backgroundColor: semantic.background }}
-        contentContainerStyle={{ padding: spacing.lg, gap: spacing.lg }}
-      >
-        <View style={{ gap: spacing.xs }}>
-          <Text style={{ ...typography.caption, color: semantic.accent }}>
-            {categoryLabel(detail.category)}
-            {detail.destinationName ? ` · ${detail.destinationName}` : ''}
-          </Text>
-          <Text style={{ ...typography.display, color: semantic.textPrimary }}>{detail.title}</Text>
-          {detail.vendorName ? (
-            <Text style={{ ...typography.caption, color: semantic.textMuted }}>
-              Operated by {detail.vendorName}
-            </Text>
-          ) : null}
-        </View>
+      <Stack.Screen options={{ headerShown: false }} />
+      <View style={{ flex: 1, backgroundColor: semantic.background }}>
+        <ScrollView contentContainerStyle={{ paddingBottom: 130 }}>
+          {/* Hero with floating controls, as the mockup shows. */}
+          <View>
+            {hero ? (
+              <Photo source={hero} ratio={4 / 3} radius={0} />
+            ) : (
+              <View style={{ height: 220, backgroundColor: semantic.brand }} />
+            )}
 
-        {/* Operating rule 9: never present seeded content as live. */}
-        {detail.isDemo ? (
-          <Notice
-            tone="alert"
-            title="Demo listing"
-            body="This is seeded demonstration content. Prices, availability, reviews and vendor verification are not live."
-          />
-        ) : null}
-
-        <View style={{ flexDirection: 'row', gap: spacing.md, flexWrap: 'wrap' }}>
-          <Fact label="From" value={formatFrom(detail.fromAmountMinor, detail.currency)} />
-          <Fact label="Duration" value={formatDuration(detail.durationMinutes)} />
-          {rating ? (
-            <Fact label="Rating" value={`${rating.toFixed(1)} (${detail.reviews.length})`} />
-          ) : null}
-        </View>
-
-        <Gallery media={detail.media} />
-
-        {detail.description ? (
-          <Section title="About">
-            <Text style={{ ...typography.body, color: semantic.textPrimary }}>
-              {detail.description}
-            </Text>
-          </Section>
-        ) : null}
-
-        {detail.inclusions.length > 0 ? (
-          <Section title="What's included">
-            {detail.inclusions.map((line) => (
-              <Text key={line} style={{ ...typography.body, color: semantic.textPrimary }}>
-                ✓ {line}
-              </Text>
-            ))}
-          </Section>
-        ) : null}
-
-        {detail.exclusions.length > 0 ? (
-          <Section title="Not included">
-            {detail.exclusions.map((line) => (
-              <Text key={line} style={{ ...typography.body, color: semantic.textMuted }}>
-                · {line}
-              </Text>
-            ))}
-          </Section>
-        ) : null}
-
-        {detail.pickupInfo || detail.meetingPoint ? (
-          <Section title="Getting there">
-            {detail.pickupInfo ? (
-              <Text style={{ ...typography.body, color: semantic.textPrimary }}>
-                {detail.pickupInfo}
-              </Text>
-            ) : null}
-            {detail.meetingPoint ? (
-              <Text style={{ ...typography.caption, color: semantic.textMuted }}>
-                Meet at {detail.meetingPoint}
-              </Text>
-            ) : null}
-          </Section>
-        ) : null}
-
-        <Section title="Price options">
-          {detail.options.length === 0 ? (
-            <Text style={{ ...typography.caption, color: semantic.textMuted }}>
-              Pricing is not published for this experience yet.
-            </Text>
-          ) : (
-            detail.options.map((o) => (
-              <View
-                key={o.id}
-                style={{ flexDirection: 'row', justifyContent: 'space-between', gap: spacing.md }}
-              >
-                <Text style={{ ...typography.body, color: semantic.textPrimary, flex: 1 }}>
-                  {o.label}
-                  {o.occupiesCapacity ? '' : ' (add-on)'}
-                </Text>
-                <Text style={{ ...typography.bodyStrong, color: semantic.textPrimary }}>
-                  {formatFrom(o.unitAmountMinor, o.currency)}
-                </Text>
-              </View>
-            ))
-          )}
-        </Section>
-
-        <Section title="Availability">
-          {detail.upcomingSlots.length === 0 ? (
-            <Text style={{ ...typography.caption, color: semantic.textMuted }}>
-              No upcoming departures published.
-            </Text>
-          ) : (
-            <>
-              {detail.upcomingSlots.slice(0, 6).map((s) => {
-                const remaining = s.capacity - s.bookedCount;
-                return (
-                  <View
-                    key={s.id}
-                    style={{
-                      flexDirection: 'row',
-                      justifyContent: 'space-between',
-                      gap: spacing.md,
-                    }}
-                  >
-                    <Text style={{ ...typography.body, color: semantic.textPrimary, flex: 1 }}>
-                      {formatSlot(s.startsAt)}
-                    </Text>
-                    <Text
-                      style={{
-                        ...typography.caption,
-                        color: remaining <= 2 ? semantic.alert : semantic.textMuted,
-                      }}
-                    >
-                      {remaining <= 0
-                        ? 'Sold out'
-                        : remaining <= 2
-                          ? `${remaining} left`
-                          : `${remaining} places`}
-                    </Text>
-                  </View>
-                );
-              })}
-              <Text style={{ ...typography.caption, color: semantic.textMuted }}>
-                Availability is confirmed at checkout.
-              </Text>
-            </>
-          )}
-        </Section>
-
-        <Section title="Cancellation">
-          <Text style={{ ...typography.body, color: semantic.textPrimary }}>{cancellation}</Text>
-        </Section>
-
-        {detail.reviews.length > 0 ? (
-          <Section title={`Reviews (${detail.reviews.length})`}>
-            {detail.reviews.slice(0, 5).map((r) => (
-              <View key={r.id} style={{ gap: 2 }}>
-                <Text style={{ ...typography.bodyStrong, color: semantic.textPrimary }}>
-                  {'★'.repeat(r.rating)}
-                  {'☆'.repeat(5 - r.rating)}
-                </Text>
-                {r.body ? (
-                  <Text style={{ ...typography.body, color: semantic.textMuted }}>{r.body}</Text>
-                ) : null}
-              </View>
-            ))}
-            <Text style={{ ...typography.caption, color: semantic.textMuted }}>
-              Only guests who completed a booking can leave a review.
-            </Text>
-          </Section>
-        ) : (
-          <Section title="Reviews">
-            <Text style={{ ...typography.caption, color: semantic.textMuted }}>
-              No reviews yet. Reviews come only from guests who completed a booking.
-            </Text>
-          </Section>
-        )}
-
-        <View style={{ flexDirection: 'row', gap: spacing.sm }}>
-          <Pressable
-            onPress={() =>
-              requiresSignIn ? router.push('/sign-in') : void toggle(detail.id)
-            }
-            accessibilityRole="button"
-            accessibilityLabel={saved ? 'Remove from saved' : 'Save this experience'}
-            style={{
-              flex: 1,
-              backgroundColor: semantic.surface,
-              borderWidth: 1,
-              borderColor: semantic.border,
-              borderRadius: radius.md,
-              padding: spacing.md,
-              alignItems: 'center',
-            }}
-          >
-            <Text style={{ ...typography.bodyStrong, color: semantic.accent }}>
-              {requiresSignIn ? 'Sign in to save' : saved ? '★ Saved' : '☆ Save'}
-            </Text>
-          </Pressable>
-
-          <Pressable
-            onPress={() =>
-              router.push({ pathname: '/book/[id]', params: { id: detail.id } })
-            }
-            disabled={soldOut}
-            accessibilityRole="button"
-            accessibilityLabel={soldOut ? 'No departures available' : `Book ${detail.title}`}
-            style={{
-              flex: 1,
-              backgroundColor: soldOut ? semantic.surfaceSunken : semantic.brand,
-              borderRadius: radius.md,
-              padding: spacing.md,
-              alignItems: 'center',
-            }}
-          >
-            <Text
+            <View
               style={{
-                ...typography.bodyStrong,
-                color: soldOut ? semantic.textMuted : semantic.textOnDark,
+                position: 'absolute',
+                top: spacing.lg,
+                left: spacing.md,
+                right: spacing.md,
+                flexDirection: 'row',
+                alignItems: 'center',
               }}
             >
-              {soldOut ? 'No departures' : 'Check availability'}
+              <RoundButton
+                symbol="←"
+                label="Go back"
+                onPress={() => (router.canGoBack() ? router.back() : router.replace('/'))}
+              />
+              <View style={{ flex: 1 }} />
+              <RoundButton
+                symbol={saved ? '♥' : '♡'}
+                label={saved ? 'Remove from saved' : 'Save this experience'}
+                onPress={() => (requiresSignIn ? router.push('/sign-in') : void toggle(detail.id))}
+              />
+            </View>
+
+            {heroCredit ? (
+              <Text
+                numberOfLines={1}
+                style={{
+                  ...typography.caption,
+                  fontSize: 11,
+                  color: semantic.textOnDark,
+                  backgroundColor: 'rgba(7,58,50,0.62)',
+                  paddingHorizontal: spacing.md,
+                  paddingVertical: 3,
+                  position: 'absolute',
+                  bottom: 0,
+                  left: 0,
+                  right: 0,
+                }}
+              >
+                {heroCredit}
+              </Text>
+            ) : null}
+          </View>
+
+          <View style={{ padding: spacing.lg, gap: spacing.lg }}>
+            <View style={{ gap: spacing.xs }}>
+              <Text style={{ ...typography.title, color: semantic.textPrimary }}>
+                {detail.title}
+              </Text>
+              <Text style={{ ...typography.caption, color: semantic.textMuted }}>
+                {categoryLabel(detail.category)}
+                {detail.destinationName ? ` · ${detail.destinationName}` : ''}
+              </Text>
+
+              <View
+                style={{
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                  gap: spacing.md,
+                  flexWrap: 'wrap',
+                  marginTop: 2,
+                }}
+              >
+                <Rating average={detail.ratingAverage} count={detail.ratingCount} />
+                {detail.vendorVerified ? <Badge label="✓ Verified Operator" tone="success" /> : null}
+              </View>
+
+              {detail.vendorName ? (
+                <Text style={{ ...typography.caption, color: semantic.textMuted }}>
+                  Operated by {detail.vendorName}
+                </Text>
+              ) : null}
+            </View>
+
+            {/* Three facts, the mockup's stat row. */}
+            <StatRow>
+              <StatTile icon="⏱" label="Duration" value={formatDuration(detail.durationMinutes)} />
+              <StatTile
+                icon="🎟"
+                label="Entry"
+                value={detail.inclusions.some((i) => /entry|fee|ticket/i.test(i)) ? 'Included' : 'Guided'}
+              />
+              <StatTile
+                icon="🚐"
+                label="Pickup"
+                value={/pickup/i.test(detail.pickupInfo ?? '') ? 'Available' : 'Meet there'}
+              />
+            </StatRow>
+
+            {/* Operating rule 9: never present seeded content as live. */}
+            {detail.isDemo ? (
+              <Notice
+                tone="alert"
+                title="Demo listing"
+                body="Seeded demonstration content. Prices, availability, reviews and vendor verification are not live."
+              />
+            ) : null}
+
+            {detail.promotion ? (
+              <Pressable onPress={() => setOfferOpen(true)} accessibilityRole="button">
+                <Card>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.md }}>
+                    <Text style={{ fontSize: 26 }}>🍹</Text>
+                    <View style={{ flex: 1, gap: 2 }}>
+                      <Badge label={offerSaved ? 'Saved to your vouchers' : 'Offer available'} tone="offer" />
+                      <Text style={{ ...typography.bodyStrong, color: semantic.textPrimary }}>
+                        {detail.promotion.title}
+                      </Text>
+                    </View>
+                    <Text style={{ color: semantic.accent, fontSize: 20 }}>›</Text>
+                  </View>
+                </Card>
+              </Pressable>
+            ) : null}
+
+            {detail.description ? (
+              <Section title="Overview">
+                <Text style={{ ...typography.body, color: semantic.textPrimary }}>
+                  {detail.description}
+                </Text>
+              </Section>
+            ) : null}
+
+            {detail.inclusions.length > 0 ? (
+              <Section title="What's included">
+                {detail.inclusions.map((line) => (
+                  <View
+                    key={line}
+                    style={{ flexDirection: 'row', gap: spacing.sm, alignItems: 'flex-start' }}
+                  >
+                    <Text style={{ color: palette.success, fontSize: 15 }}>✓</Text>
+                    <Text style={{ ...typography.body, color: semantic.textPrimary, flex: 1 }}>
+                      {line}
+                    </Text>
+                  </View>
+                ))}
+                {detail.promotion ? (
+                  <View style={{ flexDirection: 'row', gap: spacing.sm, alignItems: 'flex-start' }}>
+                    <Text style={{ fontSize: 15 }}>🍹</Text>
+                    <Text
+                      style={{ ...typography.body, color: semantic.textAccent, flex: 1, fontWeight: '600' }}
+                    >
+                      {detail.promotion.title}
+                    </Text>
+                  </View>
+                ) : null}
+              </Section>
+            ) : null}
+
+            {gallery.length > 1 ? (
+              <Section title="Photos">
+                <ScrollView
+                  horizontal
+                  showsHorizontalScrollIndicator={false}
+                  contentContainerStyle={{ gap: spacing.sm }}
+                >
+                  {gallery.map((m) => (
+                    <View key={m.id} style={{ width: 240 }}>
+                      <Photo
+                        source={m.source}
+                        ratio={4 / 3}
+                        {...(m.altText ? { accessibilityLabel: m.altText } : {})}
+                      />
+                    </View>
+                  ))}
+                </ScrollView>
+                {/* Attribution for every photograph on screen. */}
+                {gallery.map((m) =>
+                  m.credit ? (
+                    <Text
+                      key={`${m.id}-credit`}
+                      style={{ ...typography.caption, fontSize: 11, color: semantic.textMuted }}
+                    >
+                      {m.credit}
+                    </Text>
+                  ) : null,
+                )}
+              </Section>
+            ) : null}
+
+            <Section title="Getting there">
+              {detail.pickupInfo ? (
+                <Text style={{ ...typography.body, color: semantic.textPrimary }}>
+                  {detail.pickupInfo}
+                </Text>
+              ) : null}
+              {detail.meetingPoint ? (
+                <Text style={{ ...typography.caption, color: semantic.textMuted }}>
+                  Meet at {detail.meetingPoint}
+                </Text>
+              ) : null}
+            </Section>
+
+            <Section title="Availability">
+              {detail.upcomingSlots.length === 0 ? (
+                <Text style={{ ...typography.caption, color: semantic.textMuted }}>
+                  No upcoming departures published.
+                </Text>
+              ) : (
+                <>
+                  {detail.upcomingSlots.slice(0, 4).map((s) => {
+                    const remaining = s.capacity - s.bookedCount;
+                    return (
+                      <View
+                        key={s.id}
+                        style={{ flexDirection: 'row', justifyContent: 'space-between', gap: spacing.md }}
+                      >
+                        <Text style={{ ...typography.body, color: semantic.textPrimary, flex: 1 }}>
+                          {formatSlot(s.startsAt)}
+                        </Text>
+                        <Text
+                          style={{
+                            ...typography.caption,
+                            color: remaining <= 2 ? semantic.alert : semantic.textMuted,
+                          }}
+                        >
+                          {remaining <= 0
+                            ? 'Sold out'
+                            : remaining <= 2
+                              ? `${remaining} left`
+                              : `${remaining} places`}
+                        </Text>
+                      </View>
+                    );
+                  })}
+                  <Text style={{ ...typography.caption, color: semantic.textMuted }}>
+                    Group size up to {maxGroup}. Availability is confirmed at checkout.
+                  </Text>
+                </>
+              )}
+            </Section>
+
+            <Section title="Cancellation">
+              <Text style={{ ...typography.body, color: semantic.textPrimary }}>
+                Free cancellation up to {cancellationHours} hours before the experience starts. After
+                that the booking is non-refundable.
+              </Text>
+            </Section>
+
+            <Section title="Reviews">
+              <Text style={{ ...typography.caption, color: semantic.textMuted }}>
+                {detail.ratingCount > 0
+                  ? `${detail.ratingAverage.toFixed(1)} out of 5 from ${detail.ratingCount.toLocaleString()} demo reviews. Only guests who completed a booking can leave one.`
+                  : 'No reviews yet. Reviews come only from guests who completed a booking.'}
+              </Text>
+            </Section>
+          </View>
+        </ScrollView>
+
+        {/* Sticky price bar — the mockup keeps the price and the action on screen throughout. */}
+        <View
+          style={{
+            position: 'absolute',
+            left: 0,
+            right: 0,
+            bottom: 0,
+            flexDirection: 'row',
+            alignItems: 'center',
+            gap: spacing.md,
+            padding: spacing.md,
+            paddingBottom: spacing.lg,
+            backgroundColor: semantic.surface,
+            borderTopWidth: 1,
+            borderTopColor: semantic.border,
+          }}
+        >
+          <View style={{ flex: 1 }}>
+            <Text style={{ ...typography.caption, color: semantic.textMuted }}>From</Text>
+            <Text style={{ ...typography.heading, color: semantic.textPrimary }}>
+              {formatUsd(detail.fromAmountMinor)}
             </Text>
-          </Pressable>
+            <Text
+              numberOfLines={1}
+              style={{ ...typography.caption, fontSize: 12, color: semantic.textMuted }}
+            >
+              per person
+            </Text>
+            {local ? (
+              <Text
+                numberOfLines={1}
+                style={{ ...typography.caption, fontSize: 12, color: semantic.textMuted }}
+              >
+                {local}
+              </Text>
+            ) : null}
+          </View>
+          <View style={{ flex: 1.1 }}>
+            <PrimaryButton
+              label={soldOut ? 'No departures' : 'Check Availability'}
+              disabled={soldOut}
+              onPress={() => router.push({ pathname: '/book/[id]', params: { id: detail.id } })}
+              accessibilityLabel={soldOut ? 'No departures available' : `Book ${detail.title}`}
+            />
+          </View>
         </View>
-      </ScrollView>
+      </View>
+
+      {detail.promotion ? (
+        <OfferSheet
+          visible={offerOpen}
+          title={detail.promotion.title}
+          terms={detail.promotion.terms}
+          vendorName={detail.vendorName}
+          experienceTitle={detail.title}
+          saved={offerSaved}
+          onSave={() => {
+            setOfferSaved(true);
+            setOfferOpen(false);
+          }}
+          onDismiss={() => setOfferOpen(false)}
+        />
+      ) : null}
     </>
   );
 }
 
-/**
- * Horizontal photo gallery.
- *
- * Renders nothing when no image resolves, which is the live-mode case: real listings store Supabase
- * Storage paths and no hosted project exists yet, so there is nothing to fetch. Silence beats a row
- * of broken image icons.
- */
-function Gallery({ media }: { media: ExperienceDetail['media'] }) {
-  const images = media
-    .map((m) => ({ ...m, source: demoImage(m.storagePath), credit: demoImageCredit(m.storagePath) }))
-    .filter((m): m is typeof m & { source: NonNullable<typeof m.source> } => m.source !== null);
-
-  if (images.length === 0) return null;
-
+function RoundButton({
+  symbol,
+  label,
+  onPress,
+}: {
+  symbol: string;
+  label: string;
+  onPress: () => void;
+}) {
   return (
-    <View style={{ gap: spacing.xs }}>
-      <ScrollView
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        contentContainerStyle={{ gap: spacing.sm }}
-      >
-        {images.map((m) => (
-          // The frame carries the ratio and the Image fills it: a bundled asset's intrinsic
-          // dimensions are written onto the element by react-native-web and beat `aspectRatio`.
-          <View
-            key={m.id}
-            style={{
-              width: images.length === 1 ? 320 : 280,
-              aspectRatio: 4 / 3,
-              borderRadius: radius.md,
-              overflow: 'hidden',
-              backgroundColor: semantic.surfaceSunken,
-            }}
-          >
-            <Image
-              source={m.source}
-              style={{ width: '100%', height: '100%' }}
-              resizeMode="cover"
-              accessible
-              accessibilityRole="image"
-              {...(m.altText ? { accessibilityLabel: m.altText } : {})}
-            />
-          </View>
-        ))}
-      </ScrollView>
-      {/* Attribution for every photograph on screen — CC BY and CC BY-SA both require it. */}
-      {images.map((m) =>
-        m.credit ? (
-          <Text key={`${m.id}-credit`} style={{ ...typography.caption, fontSize: 12, color: semantic.textMuted }}>
-            {m.credit}
-          </Text>
-        ) : null,
-      )}
-    </View>
+    <Pressable
+      onPress={onPress}
+      accessibilityRole="button"
+      accessibilityLabel={label}
+      style={{
+        width: 40,
+        height: 40,
+        borderRadius: radius.pill,
+        backgroundColor: 'rgba(255,255,255,0.92)',
+        alignItems: 'center',
+        justifyContent: 'center',
+      }}
+    >
+      <Text style={{ fontSize: 18, color: semantic.brand }}>{symbol}</Text>
+    </Pressable>
   );
 }
 
@@ -375,47 +478,18 @@ function Section({ title, children }: { title: string; children: React.ReactNode
   );
 }
 
-function Fact({ label, value }: { label: string; value: string }) {
-  return (
-    <View
-      style={{
-        backgroundColor: semantic.surface,
-        borderWidth: 1,
-        borderColor: semantic.border,
-        borderRadius: radius.md,
-        paddingVertical: spacing.sm,
-        paddingHorizontal: spacing.md,
-        minWidth: 96,
-      }}
-    >
-      <Text style={{ ...typography.caption, color: semantic.textMuted }}>{label}</Text>
-      <Text style={{ ...typography.bodyStrong, color: semantic.textPrimary }}>{value}</Text>
-    </View>
-  );
-}
-
-function averageRating(reviews: { rating: number }[]): number | null {
-  if (reviews.length === 0) return null;
-  return reviews.reduce((sum, r) => sum + r.rating, 0) / reviews.length;
-}
-
 /**
  * Cancellation terms are stored as JSON so the vendor portal can offer structured options in M4.
- * Until then the shape may be empty — say so plainly rather than rendering "{}" or implying terms
- * that do not exist.
+ * Until then the shape may be empty — default to the platform's 24 hours rather than rendering
+ * "{}" or implying terms that do not exist.
  */
-function describeCancellation(policy: Record<string, unknown>): string {
+function describeCancellationHours(policy: Record<string, unknown>): number {
   const hours = policy.free_cancellation_hours;
-  if (typeof hours === 'number') {
-    return `Free cancellation up to ${hours} hours before the experience starts. After that the booking is non-refundable.`;
-  }
-  if (typeof policy.summary === 'string' && policy.summary.length > 0) return policy.summary;
-  return 'Cancellation terms have not been published for this experience yet. They will be shown in full before you pay.';
+  return typeof hours === 'number' ? hours : 24;
 }
 
 function formatSlot(iso: string): string {
-  const d = new Date(iso);
-  return d.toLocaleString('en-US', {
+  return new Date(iso).toLocaleString('en-US', {
     weekday: 'short',
     month: 'short',
     day: 'numeric',
