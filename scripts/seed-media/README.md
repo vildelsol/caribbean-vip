@@ -1,7 +1,7 @@
 # Demo photography
 
 `manifest.json` names every photograph the demo dataset uses; `fetch.py` downloads them into
-`apps/mobile/assets/demo` and regenerates both `packages/demo/src/credits.ts` and
+`apps/tourist-web/public/demo` and regenerates both `packages/demo/src/credits.ts` and
 `docs/media-credits.md`.
 
 ```bash

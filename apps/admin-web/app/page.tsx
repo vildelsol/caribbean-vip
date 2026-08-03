@@ -66,7 +66,7 @@ export default function AdminHome() {
           >
             <div style={{ display: 'flex', justifyContent: 'space-between', gap: spacing.md }}>
               <strong style={{ color: semantic.brand }}>{a.name}</strong>
-              <span style={{ color: semantic.textAccent, fontSize: 14 }}>{a.milestone}</span>
+              <span style={{ color: semantic.premiumText, fontSize: 14 }}>{a.milestone}</span>
             </div>
             <p style={{ margin: `${spacing.xs}px 0 0`, color: semantic.textMuted, fontSize: 14 }}>
               {a.detail}
@@ -75,7 +75,7 @@ export default function AdminHome() {
         ))}
       </ul>
 
-      <p style={{ color: semantic.alert, fontSize: 14 }}>
+      <p style={{ color: semantic.urgentText, fontSize: 14 }}>
         Demo build — seeded content only, no live vendor verification.
       </p>
     </main>

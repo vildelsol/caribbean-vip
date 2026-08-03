@@ -1,4 +1,4 @@
-import { existsSync, readFileSync } from 'node:fs';
+import { existsSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { demoBackend } from './store';
@@ -362,19 +362,18 @@ describe('photography is present and attributed', () => {
     }
   });
 
-  it('bundles an image file for every media key', () => {
-    // The dataset and `apps/mobile/lib/demoMedia.ts` must agree. They cannot be generated from one
-    // another — Metro needs a static `require` per file — so this is what keeps them in step, and
-    // turns a missing hero image into a red test rather than a blank card during a demonstration.
-    const assets = join(__dirname, '..', '..', '..', 'apps', 'mobile', 'assets', 'demo');
-    const resolver = readFileSync(
-      join(__dirname, '..', '..', '..', 'apps', 'mobile', 'lib', 'demoMedia.ts'),
-      'utf8',
-    );
+  it('ships an image file for every media key', () => {
+    // Turns a missing hero image into a red test rather than a blank card during a demonstration.
+    //
+    // This used to check two things: that the file existed under the Expo app's bundled assets,
+    // and that it appeared in `demoMedia.ts` — a hand-written static `require` map that Metro
+    // needed because it cannot resolve a dynamic path. The web app builds its URLs dynamically, so
+    // that second half no longer has a subject; the resolver it guarded does not exist any more.
+    // What remains is the half that always mattered: every credited key has a file behind it.
+    const assets = join(__dirname, '..', '..', '..', 'apps', 'tourist-web', 'public', 'demo');
 
     for (const key of Object.keys(DEMO_MEDIA_CREDITS)) {
       expect(existsSync(join(assets, `${key}.jpg`)), `${key}.jpg is missing`).toBe(true);
-      expect(resolver.includes(`'${key}'`), `${key} is not in demoMedia.ts`).toBe(true);
     }
   });
 });

@@ -12,6 +12,10 @@
  * exported from Claude Design. That design **supersedes the VIP Cayman mockup** which governed
  * until now; HANDOVER §4 records the change and what it overturned.
  *
+ * The only consumer is `apps/tourist-web`, which mirrors these values into CSS custom properties in
+ * `src/design/tokens.css` — with a test asserting the two agree, so there is one source of truth
+ * despite there being two representations of it.
+ *
  * Two of its rulings reverse earlier ones, deliberately:
  *
  *  - **Turquoise is back, as ocean teal.** The previous pass removed it on the grounds that it
@@ -37,33 +41,6 @@
  * sibling for **text**. The two read as the same hue at a glance; the difference only shows up
  * where it has to. `tokens.test.ts` asserts every text pairing, so this cannot quietly collapse.
  */
-
-/**
- * ---------------------------------------------------------------------------
- * MIGRATION SHIM — delete an entry as each screen stops using it
- * ---------------------------------------------------------------------------
- *
- * The Caribbean VIP Journey design replaces the VIP Cayman palette wholesale, and the React Native
- * screens drawn to the old one are being migrated a screen at a time. These aliases keep the app
- * compiling in between, and they map each retired token onto whichever new role it actually played
- * — so an unmigrated screen picks up the new palette rather than sitting at a stale colour.
- *
- * They are not a compatibility layer to keep. The migration is finished when this object is empty
- * and the spread below is gone; until then, `grep -rn 'goldDeep\|goldTop\|ratingStar'` is the list.
- */
-const deprecated = {
-  /** → `goldText`. Same role: the only gold that may carry text on ivory. */
-  goldDeep: '#7A6420',
-  /** → `goldLight` / `gold`. The old gold button gradient; the new design has no gold gradient. */
-  goldTop: '#E3C271',
-  goldBottom: '#B98D2F',
-  /** → `green900`. The success badge's foreground. */
-  success: '#0C4A3F',
-  /** → `goldText`. The pending badge's foreground. */
-  warning: '#7A6420',
-  /** → `gold`. The new design's rating star is the muted gold, not a separate amber. */
-  ratingStar: '#B98D2F',
-} as const;
 
 export const palette = {
   // -------------------------------------------------------------------------
@@ -175,9 +152,6 @@ export const palette = {
   mapWaterAlt: '#D3E6E4',
   mapGreen: '#DCE9E1',
   mapRoad: '#F3EBDA',
-
-  // Retired tokens, mapped onto their new roles. See the note above `deprecated`.
-  ...deprecated,
 } as const;
 
 export type PaletteToken = keyof typeof palette;
@@ -234,22 +208,6 @@ export const semantic = {
   navBorder: '#EAE1CE',
   navActive: palette.green900,
   navInactive: palette.inkFaint,
-
-  // --- MIGRATION SHIM. See `deprecated` above; delete each as its screens are redrawn. ---
-  /** → `locatorText`. Inline links and steppers are teal in the new design, not green. */
-  accent: palette.tealText,
-  /** → `urgentText`. */
-  alert: palette.coralText,
-  /** → `premiumText`. */
-  textAccent: palette.goldText,
-  /** → `locatorTintSoft`. */
-  tintBrand: palette.aquaSoft,
-  /** → `locatorTint`. */
-  tintSuccess: palette.aqua,
-  /** → `premiumTint`. */
-  tintPremium: palette.sand,
-  tintOffer: palette.sand,
-  tintWarning: palette.sand,
 } as const;
 
 export const spacing = {

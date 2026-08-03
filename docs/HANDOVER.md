@@ -1,6 +1,6 @@
 # Handover — Caribbean VIP
 
-**Written:** 2026-08-02 · **Updated:** 2026-08-03 (design pass) · **Branch:** `master` · **Gates:** all green
+**Written:** 2026-08-02 · **Updated:** 2026-08-03 (Journey design; Expo app retired) · **Branch:** `master` · **Gates:** all green
 
 Read this first, then [`PRD.md`](PRD.md) (product source of truth),
 [`architecture.md`](architecture.md) (the numbered decisions), and
@@ -34,13 +34,22 @@ npx pnpm@9 install
 npx pnpm@9 demo
 ```
 
-That starts both apps and prints their URLs: the tourist app on `http://localhost:8081` and the
+That starts both apps and prints their URLs: the tourist app on `http://localhost:5173` and the
 vendor scanner on `http://localhost:3001`. Ctrl+C stops both. Use your browser's phone viewport for
 the tourist app.
 
-Individually, if you prefer: `pnpm --filter @cvip/mobile web --port 8081` and `pnpm vendor`.
+Individually, if you prefer: `pnpm tourist` and `pnpm vendor`.
+
+> **The tourist app is `apps/tourist-web`** — React + TypeScript on Vite, deployable to Vercel or
+> Netlify. The Expo app that used to hold this role was retired on 2026-08-03; the reasoning is in
+> [`.archive/README.md`](../.archive/README.md).
 
 ### The walkthrough
+
+> **Out of date.** This describes the retired Expo app. The web app's journey is being rebuilt
+> milestone by milestone — Explore, Nearby, Irie AI, Trips and Profile work today; experience
+> detail, the offer, checkout, confirmation and the QR ticket do not yet exist. §5 has the
+> current position.
 
 1. **Welcome** — crest, "Continue as Guest".
 2. **Explore** — greeting, destination selector, category tiles, Nearby Discoveries, rated cards.
@@ -55,8 +64,9 @@ Individually, if you prefer: `pnpm --filter @cvip/mobile web --port 8081` and `p
    the most convincing thing in the demo.
 10. Change one character → **Invalid signature**.
 
-**Reloading resets everything.** Demo state is in memory on purpose. Don't reload between booking
-and scanning.
+**In the web app, reloading resets nothing.** State is persisted to LocalStorage on purpose, so a
+refresh mid-presentation cannot lose a booking. Profile → *Reset the demonstration* puts it back.
+(The retired Expo app worked the opposite way, and its walkthrough above says so.)
 
 ---
 
@@ -74,14 +84,23 @@ and scanning.
 booking, capacity hold, cancellation and voucher invalidation all work, but **no Stripe payment has
 ever been taken and no refund has ever been issued**. Detail in [`traceability.md`](traceability.md).
 
-Gates: **203 unit tests (14 files), 7/7 SQL files, typecheck and lint clean across 9 workspaces,
-iOS bundle 4.46 MB.**
+Gates: **214 unit tests (12 files), 7/7 SQL files, typecheck and lint clean across 9 workspaces.**
 
 ---
 
-## 4. The mockups — read this before touching UI
+## 4. The design — read this before touching UI
 
-There are four images in the parent folder and they do **not** all agree. Current standing:
+> **Superseded, 2026-08-03.** The governing design is now the **Caribbean VIP Journey**, archived
+> at [`design-source/Screen.dc.html`](design-source/Screen.dc.html) and documented in
+> [`design.md`](design.md). It replaces everything in this section, and reverses two of its
+> rulings on purpose: teal returns as *ocean teal* (location, distance, discovery), and
+> single-column-everywhere is relaxed to allow image-led two-up tiles. **Seven of the new
+> design's thirteen text pairings failed WCAG AA as drawn** — see design.md for the fill/text
+> split that resolves it.
+>
+> The rest of this section is kept as the record of what governed before, and why.
+
+There are four images in the parent folder and they do **not** all agree. Standing at the time:
 
 | Mockup | Status |
 |---|---|
@@ -98,7 +117,7 @@ applies** and has been superseded. The mockups now drive layout and visual langu
 - **Branding.** The VIP Cayman mockup renames the app per island. **Resolved: one crest, always the
   same mark, with the island name beneath it** — "VIP JAMAICA", "VIP CAYMAN". That satisfies the
   luxe treatment and PRD §3 ("the app is never renamed per island") at once. See `Crest` in
-  `apps/mobile/components/kit.tsx`.
+  `apps/tourist-web/src/components/kit.tsx`.
 - **Launch market.** **Jamaica is the MVP focus.** Cayman and Barbados stay populated and selectable
   because island-awareness is the thing an investor demonstration most needs to show, but they are
   not the MVP target.
@@ -199,7 +218,7 @@ Ideas raised but not started, in the order I would take them:
 ### Then: the Edge Function adapters
 
 `supabase/functions/checkout-session` and `stripe-webhook`. Per **AD-02** they stay thin: parse,
-build dependencies, call `@cvip/payments`, serialize. Then point `apps/mobile/lib/booking.ts` at
+build dependencies, call `@cvip/payments`, serialize. Then point the web app's booking path at
 them — the demo path is complete and the live path returns one honest "not deployed" error from a
 single constant, so there is exactly one place to change.
 
@@ -208,7 +227,7 @@ single constant, so there is exactly one place to change.
 - Pricing: `calculateBookingTotal` in `@cvip/types`. No screen sums a total itself.
 - Vouchers: `signVoucherToken` / `verifyVoucherToken` / `hashVoucherToken`.
 - Redemption: `redeem_voucher()` in Postgres; `demoBackend.redeemScannedToken` for the demo.
-- The UI kit: `apps/mobile/components/kit.tsx`. Add to it rather than restyling in a screen.
+- The UI kit: `apps/tourist-web/src/components/kit.tsx`. Add to it rather than restyling in a screen.
 
 ---
 
@@ -294,7 +313,8 @@ listings and photography. Change one, change the other.
 ### Money
 
 Every `*_minor` column is **USD** (OD-09). The "≈ JAM $11,700" figures are display only, live in
-`apps/mobile/lib/localCurrency.ts`, are never in the database, and never take part in a calculation
+`.archive/mobile/lib/localCurrency.ts` and are not yet reinstated in the web app, are never in the
+database, and never take part in a calculation
 that leads to a charge.
 
 ---

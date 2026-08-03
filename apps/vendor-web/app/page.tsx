@@ -47,14 +47,14 @@ export default function VendorHome() {
               alignItems: 'baseline',
             }}
           >
-            <strong style={{ color: semantic.accent, minWidth: 44 }}>{m.id}</strong>
+            <strong style={{ color: semantic.locatorText, minWidth: 44 }}>{m.id}</strong>
             <span style={{ flex: 1 }}>{m.text}</span>
-            <span style={{ color: semantic.textAccent, fontSize: 14 }}>{m.milestone}</span>
+            <span style={{ color: semantic.premiumText, fontSize: 14 }}>{m.milestone}</span>
           </li>
         ))}
       </ul>
 
-      <p style={{ color: semantic.alert, fontSize: 14 }}>
+      <p style={{ color: semantic.urgentText, fontSize: 14 }}>
         Demo build — not connected to a live payment account or verified vendor records.
       </p>
     </main>

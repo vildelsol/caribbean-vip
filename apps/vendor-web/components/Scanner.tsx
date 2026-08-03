@@ -96,7 +96,7 @@ export function Scanner() {
 
   const copy = outcome ? REDEMPTION_COPY[outcome.result] : null;
   const toneColour =
-    copy?.tone === 'ok' ? semantic.brand : copy?.tone === 'warn' ? '#B8791F' : semantic.alert;
+    copy?.tone === 'ok' ? semantic.brand : copy?.tone === 'warn' ? semantic.premiumText : semantic.urgentText;
 
   return (
     <section style={{ display: 'grid', gap: spacing.md }}>
@@ -141,7 +141,7 @@ export function Scanner() {
       {mode === 'camera' ? null : <div id={regionId} style={{ display: 'none' }} />}
 
       {cameraError ? (
-        <p style={{ color: semantic.alert, fontSize: 14, margin: 0 }}>{cameraError}</p>
+        <p style={{ color: semantic.urgentText, fontSize: 14, margin: 0 }}>{cameraError}</p>
       ) : null}
 
       <form
@@ -169,8 +169,8 @@ export function Scanner() {
       </form>
 
       {transportError ? (
-        <div style={{ ...resultBox, borderColor: semantic.alert }}>
-          <strong style={{ color: semantic.alert }}>Could not check this voucher</strong>
+        <div style={{ ...resultBox, borderColor: semantic.urgentText }}>
+          <strong style={{ color: semantic.urgentText }}>Could not check this voucher</strong>
           <p style={{ margin: 0, color: semantic.textMuted }}>{transportError}</p>
           <p style={{ margin: 0, color: semantic.textMuted, fontSize: 14 }}>
             This is a connection problem, not a decision about the voucher. Try again before turning
@@ -231,7 +231,7 @@ export function Scanner() {
       ) : null}
 
       {isDemoScanner ? (
-        <p style={{ fontSize: 13, color: semantic.alert, margin: 0 }}>
+        <p style={{ fontSize: 13, color: semantic.urgentText, margin: 0 }}>
           Demo scanner — no backend configured. The signature on every code is genuinely verified,
           and redemptions are remembered in this browser tab only, so a reload starts fresh.
         </p>

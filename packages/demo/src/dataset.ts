@@ -14,7 +14,7 @@
  *
  * ## Photography
  *
- * `media` holds keys into `apps/mobile/assets/demo`, populated by `scripts/seed-media/fetch.py`
+ * `media` holds keys into `apps/tourist-web/public/demo`, populated by `scripts/seed-media/fetch.py`
  * from freely-licensed Wikimedia Commons files. `credits.json` carries the author, the licence and
  * — importantly — the SUBJECT of each photograph, which the app renders under the image. Several
  * listings are illustrated with a representative photograph of the right island rather than of
@@ -85,7 +85,7 @@ export interface DemoExperience {
   fromAmountMinor: number;
   status: 'approved' | 'draft';
   cancellationHours: number;
-  /** Keys into `apps/mobile/assets/demo`. First entry is the hero image. */
+  /** Keys into `apps/tourist-web/public/demo`. First entry is the hero image. */
   media: string[];
   /**
    * Demo rating, shown on cards and the detail page.

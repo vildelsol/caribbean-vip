@@ -8,7 +8,7 @@ Caribbean VIP MVP. Derived from [`PRD.md`](PRD.md) §12–14 and the Section 16 
 
 ```
 ┌──────────────────┐   ┌──────────────────┐   ┌──────────────────┐
-│  apps/mobile     │   │ apps/vendor-web  │   │ apps/admin-web   │
+│ apps/tourist-web │   │ apps/vendor-web  │   │ apps/admin-web   │
 │  Expo RN         │   │ Next.js          │   │ Next.js          │
 │  Tourist app     │   │ Vendor portal    │   │ Admin console    │
 └────────┬─────────┘   └────────┬─────────┘   └────────┬─────────┘
@@ -184,7 +184,7 @@ guarantee rather than a query convention any developer could forget.
 
 | Path | Contents |
 |---|---|
-| `apps/mobile` | Expo Router tourist app. 5-tab navigation per PRD §5: Explore, Nearby, **Irie AI** (centre), Trips, Profile. |
+| `apps/tourist-web` | React + TypeScript tourist app on Vite. 5-tab navigation per PRD §5: Explore, Nearby, **Irie AI** (centre), Trips, Profile. Replaced the Expo app on 2026-08-03 — see `.archive/README.md`. |
 | `apps/vendor-web` | Next.js App Router vendor portal. Separate deployment per PRD §6. Camera QR scan works in a phone browser. |
 | `apps/admin-web` | Next.js App Router admin console per PRD §7. |
 | `packages/types` | Zod schemas, domain types, pure pricing, voucher payload codec, booking/voucher state machines. No I/O. Depended on by all three apps and by the Edge Functions. |

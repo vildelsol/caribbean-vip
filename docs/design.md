@@ -1,203 +1,183 @@
 # Design language
 
-Where the visual language comes from, and the rules that keep it consistent. Read
-[`HANDOVER.md`](HANDOVER.md) §4 first for which mockup governs and why.
+Where the visual language comes from, and the rules that keep it consistent.
 
 ## Provenance
 
-Four mockups exist. They do not all agree, and the resolution is recorded in HANDOVER §4:
+**The governing design is the Caribbean VIP Journey**, a nine-screen prototype exported from Claude
+Design and archived at [`design-source/Screen.dc.html`](design-source/Screen.dc.html). Read that file
+for pixel questions; read this one for the rules and the reasoning.
 
-- **`ChatGPT Image Aug 2, 2026, 12_45_42 AM.png`** (VIP Cayman) — the **aesthetic**: the circular
-  gold crest, the near-black forest green, the metallic gold, letterspaced caps, ivory card
-  surfaces.
-- **The three `07_39_*` images** (Caribbean VIP) — the **flow and screen inventory**: twelve
-  screens, Jamaica content, five-tab navigation with Irie AI centred.
+It **supersedes the VIP Cayman mockup** and the three Caribbean VIP images that governed until
+2026-08-03, and it reverses two earlier rulings deliberately:
 
-The earlier "colour reference only" ruling is superseded. The mockups now drive layout.
+- **Turquoise is back**, as *ocean teal*, with a specific job: location, distance and discovery. The
+  previous pass removed it because it appeared nowhere in the VIP Cayman interface. Here it is not
+  decoration — it is the colour that means "where", which is the role PRD §16 always implied.
+- **Green is darker and colder** — `#0C4A3F` against the old `#173A31` — and the display face is
+  Cormorant Garamond over Manrope, replacing Playfair Display over DM Sans.
+
+The design's own thesis, in its words: the product does not show a catalogue, it composes the best
+version of today. Every screen answers one question in sequence — where am I, what is worth doing
+right now, why should I trust it, how do I pay calmly, and what happens after the money leaves.
 
 ## Tokens
 
-All colour lives in `packages/ui/src/tokens.ts`. Components reference `semantic.*`, never a hex
-literal and never `palette.*` directly unless they genuinely need a raw brand colour.
+All colour lives in `packages/ui/src/tokens.ts`. The web app mirrors it into CSS custom properties
+in `apps/tourist-web/src/design/tokens.css`, and `tokens.test.ts` beside it fails if the two drift —
+so there is one source of truth despite there being two representations of it.
 
-**Every value is re-sampled from the VIP Cayman mockup** (2026-08-03). The first pass averaged
-pixels over regions, and an average taken across a card edge or a glyph returns a colour that
-appears nowhere in the image — which is why the palette read muddy and too dark. Sampling now takes
-the *modal* colour of a flat area, confirmed in several independent regions per token.
+Components reference `semantic.*`, never a hex literal.
 
 | Token | Value | Use |
 |---|---|---|
-| `ivory` | `#FCF9F4` | App background, **bottom navigation**, status bar |
-| `ivorySunken` | `#FAF5EC` | Category tiles, stat tiles, sunken strips |
-| `ivoryRaised` | `#FFFDF9` | Cards |
-| `green950` | `#0C2B25` | The crest — the darkest value in the design |
-| `green900` | `#173A31` | Primary buttons, badges, active nav item |
-| `green700` | `#215247` | Links, steppers, pressed brand |
-| `greenAccent` | `#1F7A5C` | **Prices, "View All", the selected tab, the location pin.** 5.0:1 on ivory |
-| `ratingStar` | `#FFA100` | The rating star. Decorative — the number beside it carries the meaning |
-| `gold` | `#C9A257` | Premium accent; the midpoint of the button gradient |
-| `goldTop`/`goldBottom` | `#E2BC70` / `#BB9347` | The gold button's vertical gradient |
-| `goldLight` | `#E4C173` | Crest ring, rating stars |
-| `goldDeep` | `#7E6118` | The only gold that may carry text — on ivory **and** on the gold tints |
-| `coral` | `#C2543A` | Alerts, expiry, destructive actions |
-| `turquoise` | `#10828A` | **Not used in the interface** — see below |
-| `tintGreen` / `tintSuccess` | `#F1F6F2` / `#E8F4ED` | "Use My Location", the success badge |
-| `tintGold` / `tintOffer` / `tintWarning` | `#F7EFDD` / `#F5E4BE` / `#F7EADA` | Irie Tip, "Top Rated", "Pending" |
+| `ivory` | `#FBF6EC` | App background |
+| `ivoryRaised` | `#FFFDF7` | Cards, and the bottom navigation |
+| `ivorySunken` | `#F4EFE4` | Sunken strips, disabled chips, "suggested" |
+| `ivoryTicket` | `#FDFAF1` | Voucher and ticket stock |
+| `green900` | `#0C4A3F` | Brand, primary action, prices. 9.4:1 on ivory |
+| `green950` | `#073229` | Full-bleed dark screens — offer, ticket, Irie |
+| `teal` | `#1E7F86` | Pins, proximity rings, the "you are here" dot |
+| `tealText` | `#1A6E74` | The same role, carrying copy. 5.1:1 on ivory |
+| `aqua` / `aquaSoft` | `#DDEDE8` / `#EAF3EF` | Selected and informational chips |
+| `gold` | `#B98D2F` | Offer fills, the rating star, the voucher tile |
+| `goldLight` | `#E3C271` | Gold on dark green — headings, sparkles, the crest ring |
+| `goldText` | `#7A6420` | The only gold that may carry text on ivory |
+| `sand` | `#FBF1DA` | The offer chip and the voucher-applied strip |
+| `coral` | `#CE5F44` | Scarcity and urgency **only** — never a general alert |
+| `coralText` | `#B04227` | The same role, carrying copy |
+| `ink` / `inkMuted` / `inkFaint` | `#16302A` / `#4A5F58` / `#5E7269` | Copy, in three weights |
+| `map*` | six values | The stylised map's land, water, greens and roads |
 
-### The tints
+### The fill/text split, and why it exists
 
-Pale washes behind badges, callouts and the "Use My Location" card. They were hand-mixed inline in
-`kit.tsx`, `irie.tsx` and `select-destination.tsx` — five one-off pale colours across three files,
-which is how a palette comes apart, and the vendor portal is about to need the same set.
+The source design is a web prototype rendered on a desktop display, and **seven of its thirteen text
+pairings fail WCAG AA** when measured:
 
-Pulling them into tokens brought them under `tokens.test.ts`, and **three of the five were failing
-AA** at 3.7–4.3:1. Badge labels are 11pt and Irie Tip body is 13pt, so neither qualifies for the
-3:1 large-text allowance. The fix was to darken the *ink*, not lighten the wash: `goldDeep` went
-`#8A6D24` → `#7E6118` and `warning` `#A06E1C` → `#905E0C`. Lightening the tints was tried first and
-rejected — it walked the mockup's sand up to a pale yellow. `goldDeep` also reads better on ivory
-now (5.5:1, was 4.6:1), so nothing regressed where it was already used.
+| Pairing | Measured |
+|---|---|
+| ocean teal on ivory | 4.40:1 |
+| muted gold on ivory | 2.82:1 |
+| soft coral on ivory | 3.65:1 |
+| its three greys on ivory/card | 4.18:1, 3.52:1, **2.74:1** |
 
-### Three corrections worth remembering
+None of the type carrying those colours is large enough for the 3:1 allowance — the design sets card
+meta at 10–12px and its demo labels at 9.5px. PRD §16 makes outdoor readability a hard constraint, so
+the raw values cannot carry text.
 
-1. **The chrome is ivory, not green.** The bottom navigation, the status bar and the surface behind
-   every screen are all `#FCF9F4`. The nav bar was a deep green slab. Putting the heaviest value in
-   the composition along the bottom edge of every screen inverted the design's value structure, and
-   it was the single largest reason the build did not look like the mockup.
+Rather than repaint the design, **each role keeps its colour for fills, icons, rings and decoration,
+and gains a darkened sibling for text**: `locator`/`locatorText`, `premium`/`premiumText`,
+`urgent`/`urgentText`. They read as the same hue at a glance; the difference only appears where it
+has to. Both halves are asserted — the fill must *fail* AA and still clear 3:1 as a UI boundary, the
+text sibling must pass — so the split cannot be quietly collapsed later by someone reaching for the
+"real" design colour.
 
-2. **Turquoise appears nowhere in the mockup's interface.** It is in the photography, which is where
-   a sea colour belongs. `semantic.accent` pointed at it, so every inline link, stepper and "Try
-   again" rendered turquoise on ivory and read as another product's UI dropped into this one.
-   `semantic.accent` is now `green700`; `palette.turquoise` remains for illustration.
+The worst of these deserves naming: the design sets **"DEMO INVENTORY · SAMPLE PRICING" in its
+faintest grey at 2.74:1**. That is the one line that must survive being photographed in sunlight,
+because it is what stops a screenshot being mistaken for live pricing.
 
-3. **Gold buttons carry deep green text, not white.** White on this gold is 2.4:1. This is the one
-   deliberate deviation from the mockup, and `tokens.test.ts` pins both halves of it.
-
-4. **Green carries information, it is not only chrome.** In the mockup the price on a card is
-   *green*, not ink; "View All" is a green outlined pill; the selected tab sits in a filled green
-   disc. `greenAccent` exists for exactly this and is deliberately lighter and more saturated than
-   the brand green — a price in `green900` is indistinguishable from the title above it and the card
-   loses its hierarchy. "View All" was previously gold text at 2.3:1, which was unreadable.
-
-**Contrast is tested, not eyeballed.** `tokens.test.ts` asserts the pairings that carry text against
-WCAG ratios, because PRD §16 makes outdoor readability a hard constraint. If you change a colour and
-that suite goes red, the colour is wrong — not the test.
+**Contrast is tested, not eyeballed.** If you change a colour and `tokens.test.ts` goes red, the
+colour is wrong — not the test.
 
 ## Type
 
-Two bundled faces, loaded by `useAppFonts` in `apps/mobile/lib/fonts.ts`:
+Two faces, loaded from Google Fonts in `apps/tourist-web/index.html`:
 
-- **Playfair Display** — the display serif. The crest's "VIP", the destination title on Explore,
-  "My Trips", the voucher headline. Nothing else.
-- **DM Sans** — everything else.
+- **Cormorant Garamond** — the editorial voice. Destination titles, experience names, the
+  celebration on the confirmation screen, "Wah Gwaan!". Nothing else.
+- **Manrope** — the interface. Cards, prices, navigation, and every number a guest acts on.
 
-They are bundled rather than named in a CSS stack so the demo renders identically wherever it is
-opened. A stack that falls back to Georgia is close enough to fool a glance and wrong enough to be
-obvious beside the mockup.
+Cormorant is a lighter, higher-contrast garalde than Playfair, and it is why the new screens read
+editorial rather than luxe-hotel. Manrope is squarer and more legible at small sizes than DM Sans,
+which matters because this design puts a great deal of meaning into small type.
 
-> **The defect that hid all of this.** `typography` tokens are spread straight into `Text` styles in
-> ~180 places, and they used to expose `size`/`weight`/`lineHeight`. React Native silently ignores
-> the first two, so **no font size or weight in the app was ever applied** — every screen rendered
-> at the platform default, and nothing surfaced it because a spread of unknown keys is not an error.
-> The tokens now expose real style props (`fontSize`, `fontWeight`, `fontFamily`, `letterSpacing`),
-> and `tokens.test.ts` has a regression guard for both halves.
+### The floor is 11px, and the design's is not
+
+The source goes down to **8.5px** for chip labels. That is not reproduced. PRD §16 requires the app
+to be usable one-handed, outdoors, in sun, and a 9px letterspaced cap fails that regardless of its
+contrast ratio. The design's *proportions* are kept; its floor is not. `tokens.test.ts` asserts that
+nothing in the scale is below 11.
+
+> **The defect that once hid everything.** `typography` tokens are spread straight into style objects,
+> and they used to expose `size`/`weight`/`lineHeight`. React Native silently ignores the first two,
+> so no font size or weight in the app was ever applied — every screen rendered at the platform
+> default, and nothing surfaced it, because a spread of unknown keys is not an error. The tokens now
+> expose real style props and there is a regression guard for both halves.
+>
+> It recurred in a second form on 2026-08-03: the tokens began naming `CormorantGaramond_*` and
+> `Manrope_*` while the Expo app still loaded Playfair and DM Sans, so every `Text` fell back to the
+> platform default — with type-check, lint and all tests green. A font family that resolves to
+> nothing is silent in both directions. That regression is part of why the Expo app was retired.
 
 ## Shape
 
-The mockup is rounder than the old scale allowed. `radius`: `sm` 10, `md` 14 (buttons, tiles),
-`lg` 18 (cards), `xl` 24 (modals, the detail page's content sheet), `pill` 999.
+`radius`: `xs` 6, `sm` 10, `md` 14 (buttons), `lg` 18, `xl` 22 (cards), `xxl` 26 (sheets, modals),
+`pill` 999. Chips and the search field are pills. Cards carry a soft, wide, nearly colourless shadow
+so they lift off the ivory rather than being outlined on it.
 
-Pills are for the welcome screen's two actions, chips, badges and the search field. Deep green
-actions inside a screen use `md`. Cards carry a hairline **and** a soft wide shadow (`elevation.card`)
-— the mockup's cards read as lifted off the ivory, not outlined on it.
+## Layout rules
+
+- **Tap targets are 44px minimum**, primary buttons 52px and full width.
+- **The frame is phone-width.** Every screen is composed for 390pt, so a desktop letterboxes around
+  a centred column rather than stretching a layout nobody drew.
+- **Wide content scrolls inside its own container.** The design's side-scrolling card rows are
+  `.rail`; the page itself must never scroll sideways.
+- **Nothing sits under the bottom navigation.** `.screen` reserves `--nav-clearance`, which is the
+  bar plus `env(safe-area-inset-bottom)`, so no screen has to remember.
+- **Attribution ships with the image.** Most of the photography is CC BY or CC BY-SA, which require
+  credit wherever the work appears — so it renders on the card, not only in `media-credits.md`.
+- **Demo content is labelled wherever it appears.** Operating rule 9, and a card in a screenshot is
+  exactly where it gets forgotten.
+
+### Grids are allowed here, and were not before
+
+The previous design ruled single-column everywhere, because two 48%-wide cards on a phone gave two
+columns of clipped titles. The Journey design uses two-up deliberately and at a size that works — the
+four mood tiles and the pair of hidden gems — alongside full-width feature cards and side-scrolling
+rails. The rule is now **one column for anything with a price and a title to read; two-up only for
+image-led tiles whose label is a single short phrase.**
 
 ## The crest
 
-`Crest` in `apps/mobile/components/kit.tsx`. Three details carry the mockup's version, and all
-three were missing:
+Drawn in type and views rather than shipped as an image, so it stays crisp at any size and costs
+nothing in the bundle. A deep green disc, a gold ring, "VIP" in the display serif, and the island
+beneath it in letterspaced caps.
 
-- **The disc is translucent** over a photograph — `rgba(12,43,37,0.86)`, so the water reads through
-  it. That is what stops it looking like a sticker pasted onto the image. Pass `onPhoto`. On an
-  ivory surface it goes opaque, because translucency over a flat background is just a lighter green.
-- **There are two rings** — a heavy outer one in `goldLight` and a hairline inset a few points
-  inside it.
-- **The lettering is Playfair**, not the UI sans.
-
-**The mark never changes; only the word underneath does.** "VIP JAMAICA", "VIP CAYMAN",
-"VIP BARBADOS". This is what lets the mockups' VIP Cayman crest exist without contradicting PRD §3,
+**The mark never changes; only the word underneath does** — "VIP JAMAICA", "VIP CAYMAN",
+"VIP BARBADOS". That is what lets the design's per-island lockup exist without contradicting PRD §3,
 which says the app is never renamed per island. Do not introduce a second crest, and do not remove
 the island line to "simplify" it — the localization is the point.
 
-Drawn in type and views rather than shipped as an image, so it stays crisp at any size, recolours
-for light and dark, and costs nothing in the bundle.
+## Irie AI is gold on green, always
+
+The concierge's mark is a gold sparkle on deep green: the raised centre nav badge, the header on its
+own tab, the prompt on Explore, the callout on Trips. Built the other way round — a gold disc with a
+green sparkle — it throws away the one motif that carries Irie across the whole journey.
+
+Its screen also carries a **GUIDED DEMO** label that the source design does not have. That is
+deliberate and is not a style choice: the design shows Irie giving contextual, reasoned answers, and
+it is the screen an audience is most likely to mistake for something it is not.
 
 ## The kit
 
-`apps/mobile/components/kit.tsx` holds everything the mockups repeat: crest, wordmark, the two
-button weights, filter chips, status badges, the star-rating row, stat tiles, section headers, the
-photo frame, the card surface, and the money formatters.
+`apps/tourist-web/src/components/kit.tsx` holds everything the design repeats — both button weights,
+chips, badges, the rating row, the photo frame and its credit, the card surface, skeletons, empty
+states, the stepper and the money formatters.
 
 **Add to the kit rather than restyling inside a screen.** Six screens each growing their own card
-style is the exact failure the mockups' own notes call out ("consistent bottom navigation", "better
-hierarchy and spacing").
+style is the exact failure the design's own notes call out.
 
-## Rules worth knowing
-
-- **Photos need a ratio frame.** Use `Photo`. A bundled asset carries intrinsic dimensions and
-  react-native-web writes those on as a pixel height that beats `aspectRatio` — a 1400×930 photo
-  once rendered a 930px-tall card.
-- **Attribution ships with the image.** Most photography is CC BY or CC BY-SA, which require credit
-  wherever the work appears — so it renders on the card, not only in `media-credits.md`. A test
-  fails if a referenced media key has no credit.
-- **Tap targets are 44pt minimum**, and primary buttons are 52pt and full width. PRD §16 wants this
-  usable one-handed, outdoors, in sun.
-- **Money is formatted "US$89"**, as the mockup does, never a bare "$89". `formatUsd(minor, true)`
-  spells out "USD" for the checkout summary. Local figures are always prefixed "≈" and are display
-  only (OD-09).
-- **Icons are Feather line icons**, via `Icon` in the kit. Not emoji and not text glyphs: emoji are
-  full-colour, differently shaped on every platform, and cannot take the brand colour.
-- **`pointerEvents` goes in the style, never as a prop.** react-native-web deprecated the prop form
-  and `expo-linear-gradient` does not forward it — a full-bleed scrim with the prop form silently
-  swallows every tap on the screen beneath it. This shipped on the welcome screen and made both
-  buttons dead.
-- **Demo content is labelled wherever it appears** — on cards, on the detail page, in the booking
-  flow. Operating rule 9, and a card in a screenshot is exactly where it gets forgotten.
-
-## Lists are single column
-
-`ExperienceCard`'s default variant is `row`: thumbnail left, detail right, one per line. Explore,
-Search, Nearby and Saved all use it.
-
-Two 48%-wide cards side by side is a desktop grid habit. On a phone it produces two columns of
-clipped titles and thumbnails too small to read, and it was the layout Explore shipped with. The
-`grid` variant survives in exactly one place — inside an Irie AI answer, where three small cards
-scrolling sideways is the intended shape rather than an accident of available width.
-
-Card height is worth guarding. The row is sized to sit level with its 92pt thumbnail, and the demo
-label is a two-letter `DEMO` mark on the price line rather than the sentence "Demo listing — not
-live pricing", which added a fifth line to every card in the app.
-
-## Loading and empty states
-
-`ListSkeleton` and `EmptyState` in the kit. A bare centred spinner tells you nothing about what is
-coming and makes the screen jump when it lands; a skeleton in the shape of the content holds the
-layout still. Every empty list gets an icon, a reason and one action — an empty list that says
-nothing reads as a bug.
-
-## Screens against the mockups
+## Screens against the design
 
 | Screen | State |
 |---|---|
-| Welcome | built to the mockup |
-| Explore Home | built — serif destination title, pill search, Nearby Discoveries hero, category tiles, rated cards |
-| Experience Detail | built — hero with floating controls, rounded content sheet, badge pair, stat tiles, single full-width action |
-| Voucher popup | built — gold ring, "TODAY ONLY!", serif headline, gold pill |
-| Date & Guests | built — day strip, time chips, steppers |
-| Review & Pay | built — summary card, itemized total, dual currency |
-| Booking Confirmation | built |
-| Trips | built — underlined tab row, photo cards with a status badge |
-| Search Results | built — pill field with filter control, category chips, result count, row cards |
-| Select Destination | built — Use My Location card, photo rows, island chips |
-| Interests | built — eight tiles, two across; ranks rather than filters |
-| Nearby | built — row cards, skeletons, empty state. **Map still blocked on OD-05** |
-| Irie AI | built as a **guided demo** — chat UI, real catalogue cards, no model behind it |
-| Vendor portal | **functional, unstyled** |
+| Explore | built — hero, island switcher, mood tiles, feature card, near-you rail, gems, tonight |
+| Nearby | built — stylised map with proximity rings, filters, distance-sorted list |
+| Irie AI | built as a **guided demo** — context chips, rule-matched answers with stated reasons |
+| Trips | built — day timeline, next-up card, day total |
+| Profile | built — crest, island switching, voucher wallet, saved, simulation disclosure |
+| Experience detail | **not built** |
+| Geofenced offer | **not built** |
+| Checkout | **not built** |
+| Confirmation | **not built** |
+| QR ticket | **not built** |

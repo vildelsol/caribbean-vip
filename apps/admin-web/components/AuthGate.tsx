@@ -71,7 +71,7 @@ export function AuthGate({ children }: { children: ReactNode }) {
           <button type="submit" disabled={busy} style={buttonStyle}>
             {busy ? 'Signing in…' : 'Sign in'}
           </button>
-          {message ? <p style={{ color: semantic.alert, fontSize: 14 }}>{message}</p> : null}
+          {message ? <p style={{ color: semantic.urgentText, fontSize: 14 }}>{message}</p> : null}
         </form>
       </Panel>
     );
