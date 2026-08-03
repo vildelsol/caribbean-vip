@@ -1,0 +1,32 @@
+# Netlify deployment for the tourist investor demo.
+#
+# Set the site's base directory to `apps/tourist-web`; the build runs from the repository root so
+# pnpm can resolve the workspace packages (@cvip/types, @cvip/demo, @cvip/ui) this app depends on.
+
+[build]
+  base = "apps/tourist-web"
+  command = "cd ../.. && pnpm install --frozen-lockfile && pnpm --filter @cvip/tourist-web build"
+  publish = "dist"
+
+[build.environment]
+  NODE_VERSION = "20"
+  # Corepack lets Netlify honour the `packageManager` field in the root package.json rather than
+  # installing whatever pnpm major happens to be current.
+  NPM_FLAGS = "--version"
+
+# The app uses hash routing, so a deep link never reaches the server as a path — but the rewrite is
+# here anyway so that a path-style URL someone types by hand still lands on the app instead of a 404.
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
+
+[[headers]]
+  for = "/demo/*"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"
+
+[[headers]]
+  for = "/assets/*"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"

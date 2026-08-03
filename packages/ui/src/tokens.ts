@@ -4,124 +4,180 @@
  * PRD §16: "clean, bright, premium but inclusive, warm neutral backgrounds, deep Caribbean green,
  * turquoise and restrained coral/gold accents. Keep the mobile interface readable outdoors."
  *
- * Every value below is sampled from the VIP Cayman customer-journey mockup, which HANDOVER §4
- * records as the governing aesthetic. Sampling was done per-region on the 2760px capture, taking
- * the modal (most frequent) colour of a flat area rather than an average, because averaging across
- * a card edge or a glyph returns a colour that appears nowhere in the image. The earlier palette
- * was averaged, and that is why it read muddy and too dark.
+ * ---------------------------------------------------------------------------
+ * Source: the "Caribbean VIP Journey" design (2026-08-03)
+ * ---------------------------------------------------------------------------
  *
- * The correction that matters most: the mockup's chrome is **ivory, not green**. The bottom
- * navigation, the status bar and the surface behind every screen are all `#FCF9F4`. Deep green
- * appears only on primary buttons, the crest and small badges. Reading the green as chrome
- * inverted the value structure of the whole design.
+ * Every value below is taken from `docs/design-source/Screen.dc.html`, the nine-screen prototype
+ * exported from Claude Design. That design **supersedes the VIP Cayman mockup** which governed
+ * until now; HANDOVER §4 records the change and what it overturned.
  *
- * Outdoor readability is a hard constraint, so the pairings that carry text are contrast-tested in
- * `tokens.test.ts` rather than eyeballed.
+ * Two of its rulings reverse earlier ones, deliberately:
+ *
+ *  - **Turquoise is back, as ocean teal.** The previous pass removed it on the grounds that it
+ *    appeared nowhere in the VIP Cayman mockup's interface. The new design gives it a specific job
+ *    — location, distance and discovery — which is exactly the role PRD §16 always implied. It is
+ *    not decoration here; it is the colour that means "where".
+ *  - **Green is darker and colder.** `#0C4A3F` against the old `#173A31`.
+ *
+ * ---------------------------------------------------------------------------
+ * Why some tokens have a `…Text` sibling
+ * ---------------------------------------------------------------------------
+ *
+ * The design is a web prototype rendered on a desktop display, and several of its colours are used
+ * for 9–12px text at ratios that fail WCAG AA on the ivory background:
+ *
+ *      ocean teal on ivory   4.40:1        muted #6C7F78   4.18:1
+ *      muted gold on ivory   2.82:1        muted #7A8B85   3.52:1
+ *      soft coral on ivory   3.65:1        muted #8A9A93   2.74:1
+ *
+ * PRD §16 makes outdoor readability a hard constraint and none of these sizes qualify for the 3:1
+ * large-text allowance, so the raw values cannot carry text. Rather than repaint the design, each
+ * role keeps the design's colour for **fills, icons, rings and decoration** and gains a darkened
+ * sibling for **text**. The two read as the same hue at a glance; the difference only shows up
+ * where it has to. `tokens.test.ts` asserts every text pairing, so this cannot quietly collapse.
  */
 
+/**
+ * ---------------------------------------------------------------------------
+ * MIGRATION SHIM — delete an entry as each screen stops using it
+ * ---------------------------------------------------------------------------
+ *
+ * The Caribbean VIP Journey design replaces the VIP Cayman palette wholesale, and the React Native
+ * screens drawn to the old one are being migrated a screen at a time. These aliases keep the app
+ * compiling in between, and they map each retired token onto whichever new role it actually played
+ * — so an unmigrated screen picks up the new palette rather than sitting at a stale colour.
+ *
+ * They are not a compatibility layer to keep. The migration is finished when this object is empty
+ * and the spread below is gone; until then, `grep -rn 'goldDeep\|goldTop\|ratingStar'` is the list.
+ */
+const deprecated = {
+  /** → `goldText`. Same role: the only gold that may carry text on ivory. */
+  goldDeep: '#7A6420',
+  /** → `goldLight` / `gold`. The old gold button gradient; the new design has no gold gradient. */
+  goldTop: '#E3C271',
+  goldBottom: '#B98D2F',
+  /** → `green900`. The success badge's foreground. */
+  success: '#0C4A3F',
+  /** → `goldText`. The pending badge's foreground. */
+  warning: '#7A6420',
+  /** → `gold`. The new design's rating star is the muted gold, not a separate amber. */
+  ratingStar: '#B98D2F',
+} as const;
+
 export const palette = {
+  // -------------------------------------------------------------------------
+  // Surfaces
+  // -------------------------------------------------------------------------
+
+  /** Warm ivory — the app background and the surface behind every screen. */
+  ivory: '#FBF6EC',
+  /** Cards and the bottom navigation. Fractionally above the background. */
+  ivoryRaised: '#FFFDF7',
+  /** Sunken strips, disabled chips, the "suggested" state. */
+  ivorySunken: '#F4EFE4',
+  /** The checkout sheet, which is deliberately the calmest surface in the app. */
+  ivoryCalm: '#FFFDFA',
+  /** The voucher and ticket stock — a shade warmer than a card, as printed stock is. */
+  ivoryTicket: '#FDFAF1',
+
+  // -------------------------------------------------------------------------
+  // Green — brand and primary action
+  // -------------------------------------------------------------------------
+
+  /** Deep Caribbean green. Brand, primary action, the raised Irie disc. 9.4:1 on ivory. */
+  green900: '#0C4A3F',
+  /** The darkest value in the design — full-bleed backgrounds for Offer, Ticket and Irie. */
+  green950: '#073229',
+  /** The phone bezel in the prototype, and the darkest ink. */
+  green980: '#101E1A',
+  /** Pressed and hover states for a green surface. */
+  green700: '#0F5F58',
+
+  // -------------------------------------------------------------------------
+  // Ocean teal — location, distance, discovery
+  // -------------------------------------------------------------------------
+
   /**
-   * Warm ivory — the app background, the bottom navigation and the status bar.
+   * The design's teal. Position markers, proximity rings, the "you are here" dot, inline links.
    *
-   * Sampled at `#FCF9F4` in five independent flat regions (the nav bar on three screens, the sheet
-   * behind the detail page, the voucher modal). It is much lighter than the `#FBF1E3` sand it
-   * replaces: the mockup's warmth comes from a faint cream cast, not from a tan background.
+   * 4.40:1 on ivory — just under AA, so `tealText` carries the copy.
    */
-  ivory: '#FCF9F4',
-  /** One step down — category tiles, stat tiles, the strip behind a screen title. `#FAF5EC`. */
-  ivorySunken: '#FAF5EC',
-  /** Cards sit fractionally above the background; the separation is carried by the hairline. */
-  ivoryRaised: '#FFFDF9',
+  teal: '#1E7F86',
+  /** Darkened for text: distances, "See all", "4 MIN AWAY", availability lines. 5.1:1 on ivory. */
+  tealText: '#1A6E74',
+  /** Pale aqua — selected and informational chip fills. Carries `green900` at 8.4:1. */
+  aqua: '#DDEDE8',
+  /** The softer aqua of a "Confirmed" chip. */
+  aquaSoft: '#EAF3EF',
 
+  // -------------------------------------------------------------------------
+  // Gold — offers, ratings, rewards
+  // -------------------------------------------------------------------------
+
+  /** Muted gold. Fills, the rating star, the voucher icon tile, rings. Decorative only: 2.8:1. */
+  gold: '#B98D2F',
+  /** The brighter gold used on dark green — headings, sparkles, "BOOKING CONFIRMED". */
+  goldLight: '#E3C271',
+  /** The only gold that may carry text on ivory. 5.1:1 on the sand chip, 5.3:1 on ivory. */
+  goldText: '#7A6420',
+  /** Sand — the offer chip and voucher-applied strip. */
+  sand: '#FBF1DA',
+  /** The sand card's hairline. */
+  sandBorder: '#EBDFC0',
+
+  // -------------------------------------------------------------------------
+  // Coral — scarcity and urgency, never anything else
+  // -------------------------------------------------------------------------
+
+  /** Soft coral. Dots, badges, the notification pip. 3.65:1 — decorative. */
+  coral: '#CE5F44',
+  /** Darkened for text: "Nearly full · 6 spots left", "Leave by 8:25 AM". 4.9:1 on ivory. */
+  coralText: '#B04227',
+
+  // -------------------------------------------------------------------------
+  // Ink
+  // -------------------------------------------------------------------------
+
+  /** Headings and body copy. 13.1:1 on ivory. */
+  ink: '#16302A',
+  /** Secondary copy. Darkened from the design's #3C534C-and-lighter set to clear AA. */
+  inkMuted: '#4A5F58',
   /**
-   * The accent green — prices, "View All", the selected nav item, the location pin.
+   * The quietest ink that may still carry text — demo labels, field captions.
    *
-   * Lighter and far more saturated than the brand green, because in the mockup green is not only
-   * chrome: it is the colour that *carries* information on an ivory card. "from $25 USD" is green,
-   * not ink. At 5.0:1 on ivory it clears AA for text, which the near-black brand green does too but
-   * without reading as an accent at all — a price in `green900` is indistinguishable from the title
-   * above it, and the card loses its hierarchy.
+   * The design uses #8A9A93 here (2.74:1). That is the single largest readability problem in it:
+   * the "DEMO INVENTORY · SAMPLE PRICING" line is the one piece of copy that must survive being
+   * photographed in sunlight, because it is what stops a screenshot being mistaken for live
+   * pricing. Darkened to clear AA.
    */
-  greenAccent: '#1F7A5C',
+  inkFaint: '#5E7269',
+
+  /** Hairlines. */
+  border: '#EFE7D6',
+  borderStrong: '#E2D9C4',
+  borderCool: '#CFDCD6',
+
+  // -------------------------------------------------------------------------
+  // Map
+  // -------------------------------------------------------------------------
 
   /**
-   * Deep green — the crest, and the darkest value in the design.
+   * The stylised map's land, water and roads.
    *
-   * Not black. Sampled off the crest's opaque upper arc at `#0C2B25`.
+   * The design draws the map as abstract shapes rather than tiles, which is what makes the Nearby
+   * screen buildable while OD-05 is still open — no provider, no API key, no attribution. It is
+   * also why it must never be presented as a real map: it shows relative position, not geography.
    */
-  green950: '#0C2B25',
-  /**
-   * Primary buttons. Sampled at `#193B33` (Check Availability), `#183830` (View Ticket) and
-   * `#173730` (the Upcoming pill) — one colour used consistently, so this is their centre.
-   */
-  green900: '#173A31',
-  green700: '#215247',
-  green500: '#2E6A5D',
+  mapLand: '#E6EFEA',
+  mapLandAlt: '#DEEBE5',
+  mapWater: '#CFE4E4',
+  mapWaterAlt: '#D3E6E4',
+  mapGreen: '#DCE9E1',
+  mapRoad: '#F3EBDA',
 
-  turquoise: '#10828A',
-  turquoiseLight: '#97CFE4',
-
-  /**
-   * Gold.
-   *
-   * The mockup's gold buttons are a vertical gradient, sampled `#E2BC70` at the top and `#BB9347`
-   * at the bottom; `gold` is that gradient's midpoint and `goldTop`/`goldBottom` reproduce it.
-   * `goldLight` is the brighter metallic of the crest ring and the rating stars. `goldDeep` is the
-   * only gold that may carry text on ivory — the others fail contrast, and the token test asserts
-   * exactly that so the distinction cannot be quietly collapsed.
-   */
-  gold: '#C9A257',
-  goldTop: '#E2BC70',
-  goldBottom: '#BB9347',
-  goldLight: '#E4C173',
-  /**
-   * The only gold that may carry text — on ivory *and* on the gold tints.
-   *
-   * Darkened from `#8A6D24` when the tint contrast test went red: the old value cleared ivory but
-   * sat at 3.9:1 on the sand "Top Rated" badge and 4.3:1 inside an Irie Tip, both of which are
-   * 11–13pt and therefore need the full 4.5. Lightening the tints instead was tried and rejected —
-   * it walked the mockup's sand up to a pale yellow. It is the ink that was wrong, not the wash.
-   */
-  goldDeep: '#7E6118',
-
-  /**
-   * The rating star, sampled at `#FFA100`.
-   *
-   * True amber rather than the brand gold — the mockup's stars are noticeably brighter and warmer
-   * than its metallic gold, and at card size the two are not interchangeable. It is 1.9:1 on ivory
-   * and therefore decorative only: the numeric rating sits beside it in ink and carries the meaning,
-   * which is what keeps the pairing accessible.
-   */
-  ratingStar: '#FFA100',
-
-  /** chosen, not sampled — restrained accent for expiry, alerts, destructive actions. */
-  coral: '#C2543A',
-
-  /** Near-black warm neutral for headings and body copy. */
-  ink: '#1C1F1D',
-  inkMuted: '#5E6360',
-  /** The hairline that separates a card from the ivory behind it. Warm, and very close in value. */
-  border: '#EDE3D3',
-
-  /**
-   * Tints — the pale washes behind badges, callouts and the "Use My Location" card.
-   *
-   * These are the colours a screen is most tempted to write inline, because each one is used once
-   * or twice and reads as incidental. They are not: five different hand-mixed pale greens across
-   * five screens is exactly how a palette comes apart, and the vendor portal is about to need the
-   * same set. Each is its accent desaturated onto ivory, and each carries only the accent's own
-   * text colour — the pairings are contrast-tested in `tokens.test.ts`.
-   */
-  tintGreen: '#F1F6F2',
-  tintSuccess: '#E8F4ED',
-  tintGold: '#F7EFDD',
-  tintOffer: '#F5E4BE',
-  tintWarning: '#F7EADA',
-
-  success: '#1F7A5C',
-  /** Darkened alongside `goldDeep` so the "pending" badge clears AA on its own tint. */
-  warning: '#905E0C',
-  danger: '#A83A26',
+  // Retired tokens, mapped onto their new roles. See the note above `deprecated`.
+  ...deprecated,
 } as const;
 
 export type PaletteToken = keyof typeof palette;
@@ -131,49 +187,69 @@ export const semantic = {
   background: palette.ivory,
   surface: palette.ivoryRaised,
   surfaceSunken: palette.ivorySunken,
+  surfaceCalm: palette.ivoryCalm,
+  surfaceTicket: palette.ivoryTicket,
+  /** Full-bleed dark screens: the offer, the ticket, Irie. */
+  surfaceDeep: palette.green950,
+
   border: palette.border,
+  borderStrong: palette.borderStrong,
 
   textPrimary: palette.ink,
   textMuted: palette.inkMuted,
-  textOnDark: '#FFFFFF',
-  textAccent: palette.goldDeep,
+  textFaint: palette.inkFaint,
+  textOnDark: '#FFFDF7',
 
   brand: palette.green900,
   brandDeep: palette.green950,
   brandActive: palette.green700,
+
   /**
-   * The interactive accent — inline links, steppers, "Try again".
+   * Location, distance and discovery — the teal role.
    *
-   * Deep green, not turquoise. PRD §16 lists turquoise as a brand colour and it was wired up here
-   * as the accent, but the mockup uses **no turquoise anywhere in the interface**: it lives in the
-   * photography, which is where a sea colour belongs. Every link rendering turquoise on ivory read
-   * as a different product's UI dropped into this one. `palette.turquoise` stays available for
-   * illustration and charts.
+   * `locator` is the fill (pins, rings, dots); `locatorText` is the copy. They are different
+   * values only because the design's teal is 4.40:1 on ivory and the copy it carries is 10–12px.
    */
-  accent: palette.greenAccent,
-  /** Prices and other figures a guest scans for. Green in the mockup, not ink. */
-  price: palette.greenAccent,
+  locator: palette.teal,
+  locatorText: palette.tealText,
+  locatorTint: palette.aqua,
+  locatorTintSoft: palette.aquaSoft,
+
+  /** Offers, ratings and rewards — the gold role. Same fill/text split, same reason. */
   premium: palette.gold,
-  alert: palette.coral,
+  premiumOnDark: palette.goldLight,
+  premiumText: palette.goldText,
+  premiumTint: palette.sand,
+  premiumTintBorder: palette.sandBorder,
 
-  /** Tinted surfaces. Paired with their accent's text colour, never with muted ink. */
-  tintBrand: palette.tintGreen,
-  tintSuccess: palette.tintSuccess,
-  tintPremium: palette.tintGold,
-  tintOffer: palette.tintOffer,
-  tintWarning: palette.tintWarning,
+  /** Scarcity and urgency only. Never a general alert colour. */
+  urgent: palette.coral,
+  urgentText: palette.coralText,
 
-  /**
-   * The bottom navigation is ivory, matching the mockup, with a hairline above it and ink icons.
-   * It was deep green here, which is the single largest reason the app did not look like the
-   * design: it put the heaviest value in the composition along the bottom edge of every screen.
-   */
-  navBackground: palette.ivory,
-  navBorder: palette.border,
+  /** Prices are deep green in this design, not teal and not ink. */
+  price: palette.green900,
+
+  /** The bottom navigation is raised ivory with a hairline above it. */
+  navBackground: palette.ivoryRaised,
+  navBorder: '#EAE1CE',
   navActive: palette.green900,
-  navInactive: '#8C918D',
-  /** The filled disc behind the selected tab's icon. */
-  navActiveBadge: palette.greenAccent,
+  navInactive: palette.inkFaint,
+
+  // --- MIGRATION SHIM. See `deprecated` above; delete each as its screens are redrawn. ---
+  /** → `locatorText`. Inline links and steppers are teal in the new design, not green. */
+  accent: palette.tealText,
+  /** → `urgentText`. */
+  alert: palette.coralText,
+  /** → `premiumText`. */
+  textAccent: palette.goldText,
+  /** → `locatorTintSoft`. */
+  tintBrand: palette.aquaSoft,
+  /** → `locatorTint`. */
+  tintSuccess: palette.aqua,
+  /** → `premiumTint`. */
+  tintPremium: palette.sand,
+  tintOffer: palette.sand,
+  tintWarning: palette.sand,
 } as const;
 
 export const spacing = {
@@ -186,82 +262,117 @@ export const spacing = {
 } as const;
 
 /**
- * Corner radii, measured off the mockup at its rendered phone width.
+ * Corner radii, measured off the design at its 390pt phone width.
  *
- * The mockup is consistently rounder than the previous scale allowed: cards are 16, photo panels
- * and modals 24, and both button weights on the welcome screen are full pills.
+ * Rounder than the previous scale throughout: chips are pills, cards 18–22, sheets and modals 26.
  */
 export const radius = {
+  xs: 6,
   sm: 10,
   md: 14,
   lg: 18,
-  xl: 24,
+  xl: 22,
+  xxl: 26,
   pill: 999,
 } as const;
 
 /**
  * Type families.
  *
- * The mockup sets display copy — "Cayman Islands", "Free Rum Punch Included", the crest's "VIP" —
- * in a high-contrast didone serif, and everything else in a geometric sans. Playfair Display and
- * DM Sans are the closest freely licensed matches and are bundled via `expo-font`, so the demo does
- * not depend on what happens to be installed on the viewing machine.
+ * Cormorant Garamond carries the editorial voice — destination titles, experience names, the
+ * celebration on the confirmation screen, "Wah Gwaan!". Manrope carries the interface: cards,
+ * prices, navigation, every number a guest acts on.
  *
- * Screens reference `typography`, not these names directly.
+ * This replaces Playfair Display and DM Sans. Cormorant is a lighter, higher-contrast garalde and
+ * it is why the new screens read editorial rather than luxe-hotel; Manrope is squarer and more
+ * legible at 10–12px than DM Sans, which matters because this design puts a great deal of meaning
+ * into small type.
+ *
+ * Bundled via `expo-font` so the demo renders identically wherever it is opened.
  */
 export const fonts = {
-  display: 'PlayfairDisplay_700Bold',
-  displayMedium: 'PlayfairDisplay_600SemiBold',
-  sans: 'DMSans_400Regular',
-  sansMedium: 'DMSans_500Medium',
-  sansBold: 'DMSans_700Bold',
+  display: 'CormorantGaramond_600SemiBold',
+  displayLight: 'CormorantGaramond_500Medium',
+  sans: 'Manrope_500Medium',
+  sansRegular: 'Manrope_400Regular',
+  sansMedium: 'Manrope_600SemiBold',
+  sansBold: 'Manrope_700Bold',
+  sansHeavy: 'Manrope_800ExtraBold',
 } as const;
 
 /**
  * Text styles.
  *
- * These are spread directly into React Native `Text` styles in ~180 places, so the keys have to be
- * real style props. They were `size`/`weight`/`lineHeight`, and React Native silently ignores the
- * first two — which meant that until now **no font size or weight in the app was ever applied**.
- * Every screen rendered at the platform default. That single defect accounts for most of the
- * distance between the build and the mockup, and it is why the hierarchy read flat.
+ * These are spread directly into React Native `Text` styles, so every key has to be a real style
+ * prop. They were once `size`/`weight`/`lineHeight` — keys React Native ignores in silence, which
+ * meant no font size or weight in the app was ever applied. `tokens.test.ts` guards both halves.
  *
- * Minimum body size is 16 — smaller text is not reliably readable on a beach in direct sun, which
- * PRD §16 calls out explicitly, and the token test holds the line.
+ * The design uses type as small as 8.5px for chip labels. Those are **not** reproduced literally:
+ * `micro` floors at 11 and `overline` at 12. PRD §16 requires this to be usable one-handed,
+ * outdoors, in sun, and a 9px letterspaced cap fails that regardless of its contrast ratio. The
+ * design's proportions are kept; its floor is not.
  */
 export const typography = {
-  /** The serif display face. Screen titles, the crest, the voucher headline. */
+  /** The editorial serif. Destination titles, experience names, celebration copy. */
   display: {
     fontFamily: fonts.display,
-    fontSize: 32,
-    fontWeight: '700' as const,
-    lineHeight: 38,
+    fontSize: 33,
+    fontWeight: '600' as const,
+    lineHeight: 36,
     letterSpacing: -0.2,
+  },
+  displayMedium: {
+    fontFamily: fonts.display,
+    fontSize: 27,
+    fontWeight: '600' as const,
+    lineHeight: 30,
   },
   displaySmall: {
     fontFamily: fonts.display,
-    fontSize: 24,
-    fontWeight: '700' as const,
-    lineHeight: 30,
+    fontSize: 21,
+    fontWeight: '600' as const,
+    lineHeight: 26,
   },
+  /** Section headers — "Experience of the Day", "Hidden Gems", "Day timeline". */
+  sectionTitle: {
+    fontFamily: fonts.display,
+    fontSize: 21,
+    fontWeight: '600' as const,
+    lineHeight: 25,
+  },
+
   title: {
     fontFamily: fonts.sansBold,
-    fontSize: 24,
+    fontSize: 22,
     fontWeight: '700' as const,
-    lineHeight: 30,
+    lineHeight: 28,
     letterSpacing: -0.3,
   },
   heading: {
     fontFamily: fonts.sansBold,
-    fontSize: 19,
+    fontSize: 18,
     fontWeight: '700' as const,
-    lineHeight: 25,
+    lineHeight: 24,
     letterSpacing: -0.2,
   },
+  /** Prices and totals — the heaviest weight in the interface, as the design sets them. */
+  amount: {
+    fontFamily: fonts.sansHeavy,
+    fontSize: 22,
+    fontWeight: '800' as const,
+    lineHeight: 26,
+  },
+  amountSmall: {
+    fontFamily: fonts.sansHeavy,
+    fontSize: 16,
+    fontWeight: '800' as const,
+    lineHeight: 20,
+  },
+
   body: {
     fontFamily: fonts.sans,
     fontSize: 16,
-    fontWeight: '400' as const,
+    fontWeight: '500' as const,
     lineHeight: 24,
   },
   bodyStrong: {
@@ -273,44 +384,62 @@ export const typography = {
   caption: {
     fontFamily: fonts.sans,
     fontSize: 14,
-    fontWeight: '400' as const,
+    fontWeight: '500' as const,
     lineHeight: 20,
   },
   captionStrong: {
     fontFamily: fonts.sansMedium,
     fontSize: 14,
-    fontWeight: '500' as const,
+    fontWeight: '600' as const,
     lineHeight: 20,
   },
-  /** Small letterspaced caps — button labels, badges, "TODAY ONLY!", the nav labels. */
-  overline: {
+  /** The smallest type in the app. Chip labels, timeline times, card meta. */
+  micro: {
+    fontFamily: fonts.sansMedium,
+    fontSize: 11,
+    fontWeight: '600' as const,
+    lineHeight: 15,
+  },
+  microStrong: {
     fontFamily: fonts.sansBold,
-    fontSize: 12,
+    fontSize: 11,
     fontWeight: '700' as const,
-    lineHeight: 16,
-    letterSpacing: 1.4,
+    lineHeight: 15,
+  },
+  /** Letterspaced caps — "CARIBBEAN VIP", "NEXT UP", "DEMO INVENTORY", nav labels. */
+  overline: {
+    fontFamily: fonts.sansHeavy,
+    fontSize: 12,
+    fontWeight: '800' as const,
+    lineHeight: 15,
+    letterSpacing: 1.5,
   },
 } as const;
 
 export const elevation = {
-  /**
-   * The mockup's cards cast a soft, wide, almost colourless shadow — they read as lifted off the
-   * ivory rather than outlined on it. Paired with the hairline, not instead of it.
-   */
+  /** Cards — soft, wide and nearly colourless, so they lift off the ivory rather than outline. */
   card: {
-    shadowColor: '#3A2E1C',
-    shadowOpacity: 0.06,
-    shadowRadius: 14,
-    shadowOffset: { width: 0, height: 6 },
+    shadowColor: '#072821',
+    shadowOpacity: 0.07,
+    shadowRadius: 20,
+    shadowOffset: { width: 0, height: 8 },
     elevation: 2,
   },
-  /** Primary buttons and the raised Irie badge sit higher. */
+  /** Sheets that float over content: the selected map card, the search pill, the nav badge. */
   raised: {
-    shadowColor: '#1B2C22',
-    shadowOpacity: 0.18,
-    shadowRadius: 16,
-    shadowOffset: { width: 0, height: 8 },
+    shadowColor: '#072821',
+    shadowOpacity: 0.16,
+    shadowRadius: 28,
+    shadowOffset: { width: 0, height: 12 },
     elevation: 6,
+  },
+  /** Modals over a dark screen — the offer voucher. */
+  modal: {
+    shadowColor: '#031410',
+    shadowOpacity: 0.5,
+    shadowRadius: 60,
+    shadowOffset: { width: 0, height: 24 },
+    elevation: 16,
   },
 } as const;
 

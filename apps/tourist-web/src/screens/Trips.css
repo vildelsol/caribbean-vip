@@ -1,0 +1,180 @@
+.trips__head {
+  position: relative;
+  background: var(--green-900);
+  isolation: isolate;
+}
+
+.trips__head--bare {
+  padding: 28px var(--s-md) 24px;
+}
+
+.trips__head-photo {
+  border-radius: 0;
+  opacity: 0.5;
+}
+
+.trips__scrim {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, rgba(7, 40, 33, 0.62), rgba(7, 40, 33, 0.94));
+  pointer-events: none;
+}
+
+.trips__head-body {
+  position: absolute;
+  left: var(--s-md);
+  right: var(--s-md);
+  bottom: 34px;
+}
+
+.trips__brand {
+  color: var(--gold-light);
+  font-size: 11px;
+  letter-spacing: 0.16em;
+}
+
+.trips__head-row {
+  margin-top: 11px;
+  align-items: flex-end;
+  gap: 12px;
+}
+
+.trips__weather {
+  margin-top: 8px;
+  color: rgba(251, 246, 236, 0.8);
+}
+
+.trips__countdown {
+  text-align: right;
+  flex: none;
+}
+
+.trips__countdown-label {
+  color: rgba(227, 194, 113, 0.9);
+  letter-spacing: 0.1em;
+}
+
+/* --- Next up ---------------------------------------------------------------- */
+
+.next-up {
+  margin: -30px var(--s-md) 0;
+  width: auto;
+  position: relative;
+  z-index: 5;
+  box-shadow: 0 12px 28px rgba(7, 40, 33, 0.12);
+  border-radius: var(--r-xl);
+}
+
+.next-up__inner {
+  gap: 13px;
+  padding: 15px 16px;
+}
+
+.next-up__icon {
+  width: 44px;
+  height: 44px;
+  border-radius: var(--r-md);
+  background: var(--aqua);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+}
+
+.next-up__title {
+  margin-top: 6px;
+}
+
+.next-up__cta {
+  padding: 11px 13px;
+  border-radius: var(--r-sm);
+  flex: none;
+}
+
+/* --- Timeline ---------------------------------------------------------------- */
+
+.trips__timeline-wrap {
+  padding-top: 24px;
+}
+
+.timeline {
+  list-style: none;
+  margin: 0;
+  padding: 0 0 0 22px;
+  position: relative;
+}
+
+.timeline::before {
+  content: '';
+  position: absolute;
+  left: 5px;
+  top: 10px;
+  bottom: 16px;
+  width: 2px;
+  background: var(--border-strong);
+}
+
+.timeline__item {
+  position: relative;
+  margin-bottom: 10px;
+}
+
+.timeline__dot {
+  position: absolute;
+  left: -22px;
+  top: 16px;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  border: 3px solid var(--ivory);
+  z-index: 2;
+}
+
+.timeline__dot--confirmed {
+  background: var(--green-900);
+}
+
+.timeline__dot--suggested {
+  background: var(--ivory);
+  border-color: var(--border-cool);
+}
+
+.timeline__card {
+  border-radius: var(--r-lg);
+}
+
+.timeline__row {
+  gap: 12px;
+  padding: 12px;
+  align-items: flex-start;
+}
+
+.timeline__photo {
+  width: 62px;
+  flex: none;
+}
+
+.timeline__title {
+  margin-top: 6px;
+}
+
+.timeline__tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 7px;
+}
+
+/* --- Total --------------------------------------------------------------------- */
+
+.trips__total {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 12px;
+  padding-top: 16px;
+  padding-bottom: 4px;
+  border-top: 1px solid var(--border);
+  margin-inline: var(--s-md);
+  padding-inline: 0;
+}

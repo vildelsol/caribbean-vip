@@ -21,7 +21,9 @@
     "db:concurrency": "./scripts/db-concurrency-test.sh",
     "verify": "pnpm typecheck && pnpm lint && pnpm test && pnpm db:test",
     "db:push": "./scripts/db-push.sh",
-    "demo": "./scripts/demo.sh"
+    "demo": "./scripts/demo.sh",
+    "tourist": "pnpm --filter @cvip/tourist-web dev",
+    "tourist:build": "pnpm --filter @cvip/tourist-web build"
   },
   "devDependencies": {
     "@eslint/js": "^9.17.0",

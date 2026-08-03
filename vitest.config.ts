@@ -10,6 +10,7 @@ export default defineConfig({
       'packages/**/*.test.ts',
       'supabase/functions/**/*.test.ts',
       'apps/mobile/lib/**/*.test.ts',
+      'apps/tourist-web/src/**/*.test.ts',
     ],
     exclude: ['**/node_modules/**', '**/dist/**', '**/.next/**', '**/.expo/**'],
   },

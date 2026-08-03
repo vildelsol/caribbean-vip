@@ -1,0 +1,98 @@
+/**
+ * The bar is fixed to the app frame, not the viewport, so it stays inside the phone-width column
+ * on a desktop instead of spanning the whole window.
+ */
+.bottom-nav {
+  position: fixed;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 100%;
+  max-width: var(--app-width);
+  z-index: 40;
+
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-around;
+
+  height: calc(var(--nav-height) + env(safe-area-inset-bottom, 0px));
+  padding: 8px 6px env(safe-area-inset-bottom, 0px);
+
+  background: var(--ivory-raised);
+  border-top: 1px solid var(--nav-border);
+  box-shadow: 0 -6px 20px rgba(12, 74, 63, 0.05);
+}
+
+.bottom-nav__item {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  /* The whole column is the target, so the 44px minimum is met even though the glyph is 21px. */
+  min-height: 44px;
+  padding-top: 2px;
+  color: var(--ink-faint);
+  text-decoration: none;
+}
+
+.bottom-nav__icon {
+  width: 30px;
+  height: 30px;
+  border-radius: var(--r-pill);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+/* The selected tab sits in a filled green disc. Colour alone was carrying the selected state
+   before, and at this size a deep-green glyph beside a grey one is a difference you have to look
+   for rather than one you see. */
+.bottom-nav__icon.is-active {
+  background: var(--green-900);
+  color: var(--on-dark);
+}
+
+.bottom-nav__label {
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 1;
+  letter-spacing: 0.01em;
+  white-space: nowrap;
+}
+
+.bottom-nav__label.is-active {
+  color: var(--green-900);
+  font-weight: 700;
+}
+
+/* --- The centre badge ----------------------------------------------------- */
+
+.bottom-nav__item--centre {
+  gap: 5px;
+}
+
+.irie-badge {
+  width: 52px;
+  height: 52px;
+  margin-top: -20px;
+  border-radius: var(--r-pill);
+  background: var(--green-900);
+  border: 3px solid var(--ivory-raised);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 8px 18px rgba(12, 74, 63, 0.34);
+  transition: transform 0.15s ease;
+  /* Gold in both states: a centre item that dims when unselected stops reading as the hero action. */
+}
+
+.irie-badge--on {
+  transform: scale(1.04);
+}
+
+.bottom-nav__item--centre:active .irie-badge {
+  transform: scale(0.96);
+}

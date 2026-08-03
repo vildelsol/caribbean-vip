@@ -1,0 +1,918 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="anonymous" />
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=Manrope:wght@400;500;600;700;800&display=swap" />
+<script src="./image-slot.js"></script>
+<style>
+  a { color: #1E7F86; text-decoration: none; }
+  a:hover { color: #0C4A3F; }
+  .vip-scroll::-webkit-scrollbar { width: 0; height: 0; }
+  .vip-scroll { scrollbar-width: none; }
+</style>
+</helmet>
+<div style="width:404px;height:858px;border-radius:48px;background:#101E1A;padding:7px;box-shadow:0 26px 60px rgba(11,40,34,0.28),0 2px 0 rgba(255,255,255,0.25) inset;flex:none">
+<div style="position:relative;width:390px;height:844px;border-radius:41px;overflow:hidden;background:#FBF6EC;font-family:Manrope,sans-serif;color:#16302A">
+
+  <div style="position:absolute;top:0;left:0;right:0;height:46px;display:flex;align-items:center;justify-content:space-between;padding:0 24px;z-index:15;pointer-events:none;color: {{ statusColor }}">
+    <span style="font:700 13px/1 Manrope,sans-serif;letter-spacing:0.01em">9:41</span>
+    <div style="display:flex;align-items:center;gap:5px">
+      <div style="display:flex;align-items:flex-end;gap:2px"><div style="width:3px;height:5px;border-radius:1px;background:currentColor"></div><div style="width:3px;height:7px;border-radius:1px;background:currentColor"></div><div style="width:3px;height:9px;border-radius:1px;background:currentColor"></div><div style="width:3px;height:11px;border-radius:1px;background:currentColor"></div></div>
+      <svg width="15" height="11" viewBox="0 0 15 11" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M1 3.4A9 9 0 0 1 14 3.4M3.6 6A6 6 0 0 1 11.4 6"></path><circle cx="7.5" cy="9" r="1.1" fill="currentColor" stroke="none"></circle></svg>
+      <div style="width:22px;height:11px;border:1.5px solid currentColor;border-radius:3px;padding:1.5px;opacity:0.9"><div style="width:70%;height:100%;background:currentColor;border-radius:1px"></div></div>
+    </div>
+  </div>
+
+  <div class="vip-scroll" style="position:absolute;inset:0;overflow-y:auto;overflow-x:hidden">
+
+    <sc-if value="{{ isExplore }}" hint-placeholder-val="{{ true }}">
+      <div style="padding-bottom:96px">
+        <div style="position:relative;height:322px">
+          <div style="position:absolute;inset:0"><image-slot id="ex-hero" shape="rect" placeholder="Couple laughing on a rainforest zipline platform, Ocho Rios"></image-slot></div>
+          <div style="position:absolute;inset:0;background:linear-gradient(180deg,rgba(7,40,33,0.72) 0%,rgba(7,40,33,0.12) 42%,rgba(7,40,33,0.86) 100%);pointer-events:none"></div>
+          <div style="position:absolute;top:56px;left:16px;right:16px;display:flex;align-items:flex-start;justify-content:space-between;gap:10px">
+            <div onClick="{{ toggleIsland }}" style="display:flex;align-items:center;gap:7px;background:rgba(251,246,236,0.16);backdrop-filter:blur(6px);border:1px solid rgba(251,246,236,0.34);border-radius:999px;padding:7px 12px;cursor:pointer">
+              <span style="font:800 10px/1 Manrope,sans-serif;letter-spacing:0.16em;color:#E3C271">CARIBBEAN VIP</span>
+              <span style="width:1px;height:11px;background:rgba(251,246,236,0.4)"></span>
+              <span style="font:600 11.5px/1 Manrope,sans-serif;color:#FBF6EC">{{ islandLabel }}</span>
+              <svg width="10" height="10" viewBox="0 0 12 12" fill="none" stroke="#FBF6EC" stroke-width="1.8" stroke-linecap="round"><path d="M2.5 4.5 6 8l3.5-3.5"></path></svg>
+            </div>
+            <div style="width:34px;height:34px;border-radius:50%;background:rgba(251,246,236,0.16);border:1px solid rgba(251,246,236,0.34);display:flex;align-items:center;justify-content:center;position:relative;flex:none">
+              <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#FBF6EC" stroke-width="1.9" stroke-linecap="round"><path d="M18 15.5V10a6 6 0 1 0-12 0v5.5L4.5 18h15z"></path><path d="M10 20.5h4"></path></svg>
+              <span style="position:absolute;top:6px;right:7px;width:7px;height:7px;border-radius:50%;background:#CE5F44;border:1.5px solid #0C4A3F"></span>
+            </div>
+          </div>
+          <sc-if value="{{ islandOpen }}">
+            <div style="position:absolute;top:100px;left:16px;width:232px;background:#FFFDF7;border-radius:16px;padding:8px;box-shadow:0 18px 40px rgba(7,40,33,0.34);z-index:12">
+              <div style="font:800 9.5px/1 Manrope,sans-serif;letter-spacing:0.16em;color:#8A9A93;padding:7px 10px 8px">SWITCH DESTINATION</div>
+              <div onClick="{{ pickJamaica }}" style="display:flex;align-items:center;justify-content:space-between;padding:10px;border-radius:11px;background:#EAF3EF;cursor:pointer"><span style="font:700 12.5px/1 Manrope,sans-serif;color:#0C4A3F">VIP Jamaica · Ocho Rios</span><span style="width:7px;height:7px;border-radius:50%;background:#0C4A3F"></span></div>
+              <div onClick="{{ pickCayman }}" style="padding:10px;border-radius:11px;cursor:pointer;font:600 12.5px/1 Manrope,sans-serif;color:#3C534C">VIP Cayman · Seven Mile Beach</div>
+              <div onClick="{{ pickBarbados }}" style="padding:10px;border-radius:11px;cursor:pointer;font:600 12.5px/1 Manrope,sans-serif;color:#3C534C">VIP Barbados · Bridgetown</div>
+            </div>
+          </sc-if>
+          <div style="position:absolute;left:16px;right:16px;bottom:44px;pointer-events:none">
+            <div style="font:500 34px/1.05 'Cormorant Garamond',serif;color:#FFFDF7;letter-spacing:-0.005em">Good morning from<br /><span style="font-weight:600;font-size:40px">Ocho Rios</span></div>
+            <div style="margin-top:10px;font:600 13.5px/1.35 Manrope,sans-serif;color:rgba(251,246,236,0.9)">What kind of day are you in the mood for?</div>
+          </div>
+        </div>
+
+        <div style="margin:-26px 16px 0;position:relative;z-index:8;display:flex;align-items:center;gap:10px;background:#FFFDF7;border-radius:999px;padding:13px 16px;box-shadow:0 10px 26px rgba(7,40,33,0.16)">
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#0C4A3F" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="6.5"></circle><path d="m16 16 4.5 4.5"></path></svg>
+          <span style="flex:1;font:600 13.5px/1 Manrope,sans-serif;color:#6C7F78">Search experiences, food, beaches</span>
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#B98D2F" stroke-width="2" stroke-linecap="round"><path d="M4 7h16M7 12h10M10 17h4"></path></svg>
+        </div>
+
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:18px 16px 0">
+          <div style="position:relative;height:88px;border-radius:16px;overflow:hidden;border:2px solid #0C4A3F">
+            <image-slot id="ex-mood-1" shape="rect" placeholder="Friends rafting a river, action shot"></image-slot>
+            <div style="position:absolute;inset:0;background:linear-gradient(180deg,rgba(7,40,33,0.1),rgba(7,40,33,0.78));pointer-events:none"></div>
+            <span style="position:absolute;left:12px;bottom:11px;font:700 13.5px/1 Manrope,sans-serif;color:#FFFDF7;pointer-events:none">Adventure</span>
+            <span style="position:absolute;top:9px;right:9px;background:#FFFDF7;color:#0C4A3F;font:800 8.5px/1 Manrope,sans-serif;letter-spacing:0.1em;padding:5px 7px;border-radius:6px;pointer-events:none">PICKED</span>
+          </div>
+          <div style="position:relative;height:88px;border-radius:16px;overflow:hidden">
+            <image-slot id="ex-mood-2" shape="rect" placeholder="Couple relaxing in hammocks by the sea"></image-slot>
+            <div style="position:absolute;inset:0;background:linear-gradient(180deg,rgba(7,40,33,0.08),rgba(7,40,33,0.72));pointer-events:none"></div>
+            <span style="position:absolute;left:12px;bottom:11px;font:700 13.5px/1 Manrope,sans-serif;color:#FFFDF7;pointer-events:none">Relax &amp; Unwind</span>
+          </div>
+          <div style="position:relative;height:88px;border-radius:16px;overflow:hidden">
+            <image-slot id="ex-mood-3" shape="rect" placeholder="Local cook serving jerk chicken to smiling guests"></image-slot>
+            <div style="position:absolute;inset:0;background:linear-gradient(180deg,rgba(7,40,33,0.08),rgba(7,40,33,0.72));pointer-events:none"></div>
+            <span style="position:absolute;left:12px;bottom:11px;font:700 13.5px/1 Manrope,sans-serif;color:#FFFDF7;pointer-events:none">Taste Jamaica</span>
+          </div>
+          <div style="position:relative;height:88px;border-radius:16px;overflow:hidden">
+            <image-slot id="ex-mood-4" shape="rect" placeholder="Guide walking tourists through a craft market"></image-slot>
+            <div style="position:absolute;inset:0;background:linear-gradient(180deg,rgba(7,40,33,0.08),rgba(7,40,33,0.72));pointer-events:none"></div>
+            <span style="position:absolute;left:12px;bottom:11px;font:700 13.5px/1 Manrope,sans-serif;color:#FFFDF7;pointer-events:none">Explore Like a Local</span>
+          </div>
+        </div>
+
+        <div style="padding:26px 16px 0">
+          <div style="display:flex;align-items:baseline;justify-content:space-between;margin-bottom:11px">
+            <span style="font:600 21px/1 'Cormorant Garamond',serif;color:#16302A">Experience of the Day</span>
+            <span style="font:800 9.5px/1 Manrope,sans-serif;letter-spacing:0.12em;color:#B98D2F">TODAY ONLY</span>
+          </div>
+          <div onClick="{{ goDetail }}" style="background:#FFFDF7;border-radius:22px;overflow:hidden;box-shadow:0 10px 26px rgba(7,40,33,0.09);cursor:pointer">
+            <div style="position:relative;height:186px">
+              <image-slot id="ex-eotd" shape="rect" placeholder="Family cheering on the Mystic Mountain bobsled"></image-slot>
+              <div style="position:absolute;top:12px;left:12px;display:flex;gap:6px;pointer-events:none">
+                <span style="background:#0C4A3F;color:#FFFDF7;font:700 10px/1 Manrope,sans-serif;padding:6px 9px;border-radius:7px">Open Now</span>
+                <span style="background:rgba(251,246,236,0.94);color:#16302A;font:700 10px/1 Manrope,sans-serif;padding:6px 9px;border-radius:7px">Cruise-Friendly</span>
+              </div>
+              <div style="position:absolute;top:12px;right:12px;width:32px;height:32px;border-radius:50%;background:rgba(251,246,236,0.92);display:flex;align-items:center;justify-content:center">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#0C4A3F" stroke-width="2" stroke-linecap="round"><path d="M12 20s-7-4.6-7-9.3A4.2 4.2 0 0 1 12 7.6a4.2 4.2 0 0 1 7 3.1c0 4.7-7 9.3-7 9.3z"></path></svg>
+              </div>
+            </div>
+            <div style="padding:15px 16px 16px">
+              <div style="font:600 20px/1.15 'Cormorant Garamond',serif;font-size:21px;color:#16302A">Mystic Mountain Adventure Park</div>
+              <div style="margin-top:5px;display:flex;align-items:center;gap:7px;font:600 11.5px/1 Manrope,sans-serif;color:#1E7F86">
+                <span>Adventure</span><span style="opacity:0.45">·</span><span>Ocho Rios</span><span style="opacity:0.45">·</span><span style="color:#3C534C">12 min away</span>
+              </div>
+              <div style="margin-top:9px;font:500 12.5px/1.45 Manrope,sans-serif;color:#3C534C">Bobsled, rainforest canopy and panoramic views in one visit.</div>
+              <div style="margin-top:13px;display:flex;align-items:center;justify-content:space-between">
+                <div>
+                  <div style="display:flex;align-items:center;gap:5px;font:700 11.5px/1 Manrope,sans-serif;color:#16302A"><span style="color:#B98D2F">★</span>4.8<span style="font-weight:500;color:#6C7F78">· 1,240 reviews</span></div>
+                  <div style="margin-top:6px;font:800 17px/1 Manrope,sans-serif;color:#0C4A3F">From US$89</div>
+                </div>
+                <div style="background:#0C4A3F;color:#FFFDF7;font:700 12.5px/1 Manrope,sans-serif;padding:13px 18px;border-radius:12px">View Experience</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div onClick="{{ goOffer }}" style="margin:20px 16px 0;display:flex;align-items:center;gap:13px;background:linear-gradient(90deg,#FBF1DA,#FDF8EC);border:1px solid #EBD9AF;border-radius:18px;padding:14px 15px;cursor:pointer">
+          <div style="width:38px;height:38px;border-radius:11px;background:#B98D2F;display:flex;align-items:center;justify-content:center;flex:none">
+            <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="#FFFDF7" stroke-width="1.9" stroke-linecap="round"><rect x="3.5" y="8.5" width="17" height="12" rx="2"></rect><path d="M3.5 12.5h17M12 8.5v12M12 8.5S10.5 4 8 4.6 8 8.5 12 8.5zM12 8.5S13.5 4 16 4.6s0 3.9-4 3.9z"></path></svg>
+          </div>
+          <div style="flex:1">
+            <div style="font:700 13px/1.2 Manrope,sans-serif;color:#16302A">A little something nearby</div>
+            <div style="margin-top:4px;font:600 11.5px/1.3 Manrope,sans-serif;color:#7A6420">Complimentary rum punch · 0.4 km from you</div>
+          </div>
+          <svg width="16" height="16" viewBox="0 0 12 12" fill="none" stroke="#B98D2F" stroke-width="2" stroke-linecap="round"><path d="M4 2l4 4-4 4"></path></svg>
+        </div>
+
+        <div style="padding:26px 0 0">
+          <div style="display:flex;align-items:baseline;justify-content:space-between;padding:0 16px 11px">
+            <span style="font:600 21px/1 'Cormorant Garamond',serif;color:#16302A">Near You Now</span>
+            <span style="font:700 11px/1 Manrope,sans-serif;color:#1E7F86">See all</span>
+          </div>
+          <div style="display:flex;gap:12px;padding:0 16px;overflow:hidden">
+            <div style="width:206px;flex:none;background:#FFFDF7;border-radius:18px;overflow:hidden;box-shadow:0 8px 20px rgba(7,40,33,0.07)">
+              <div style="position:relative;height:112px"><image-slot id="ex-near-1" shape="rect" placeholder="Small group swimming at a secret blue hole"></image-slot>
+                <span style="position:absolute;left:10px;bottom:10px;background:rgba(251,246,236,0.94);font:700 9.5px/1 Manrope,sans-serif;color:#0C4A3F;padding:5px 7px;border-radius:6px">4 min away</span></div>
+              <div style="padding:12px 13px 14px">
+                <div style="font:700 13px/1.25 Manrope,sans-serif;color:#16302A">Blue Hole Secret Falls</div>
+                <div style="margin-top:5px;font:600 10.5px/1 Manrope,sans-serif;color:#1E7F86">Nature · 0.6 km · Walking distance</div>
+                <div style="margin-top:9px;display:flex;align-items:center;justify-content:space-between"><span style="font:800 14px/1 Manrope,sans-serif;color:#0C4A3F">US$45</span><span style="font:700 10px/1 Manrope,sans-serif;color:#B98D2F">★ 4.7</span></div>
+              </div>
+            </div>
+            <div style="width:206px;flex:none;background:#FFFDF7;border-radius:18px;overflow:hidden;box-shadow:0 8px 20px rgba(7,40,33,0.07)">
+              <div style="position:relative;height:112px"><image-slot id="ex-near-2" shape="rect" placeholder="Couple on a catamaran deck with drinks"></image-slot>
+                <span style="position:absolute;left:10px;bottom:10px;background:#CE5F44;font:700 9.5px/1 Manrope,sans-serif;color:#FFFDF7;padding:5px 7px;border-radius:6px">Starts in 90 min</span></div>
+              <div style="padding:12px 13px 14px">
+                <div style="font:700 13px/1.25 Manrope,sans-serif;color:#16302A">Catamaran Coast Cruise</div>
+                <div style="margin-top:5px;font:600 10.5px/1 Manrope,sans-serif;color:#1E7F86">Water · 2.1 km · Pickup available</div>
+                <div style="margin-top:9px;display:flex;align-items:center;justify-content:space-between"><span style="font:800 14px/1 Manrope,sans-serif;color:#0C4A3F">US$72</span><span style="font:700 10px/1 Manrope,sans-serif;color:#B98D2F">★ 4.9</span></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div style="padding:26px 16px 0">
+          <div style="font:600 21px/1 'Cormorant Garamond',serif;color:#16302A;margin-bottom:11px">Hidden Gems</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+            <div style="position:relative;height:132px;border-radius:18px;overflow:hidden">
+              <image-slot id="ex-gem-1" shape="rect" placeholder="Local guide showing a hillside coffee farm to two travellers"></image-slot>
+              <div style="position:absolute;inset:0;background:linear-gradient(180deg,rgba(7,40,33,0),rgba(7,40,33,0.82));pointer-events:none"></div>
+              <div style="position:absolute;left:11px;right:11px;bottom:11px;pointer-events:none">
+                <div style="font:700 12.5px/1.2 Manrope,sans-serif;color:#FFFDF7">Blue Mountain Coffee Walk</div>
+                <div style="margin-top:4px;font:600 10px/1 Manrope,sans-serif;color:rgba(251,246,236,0.82)">US$38 · Small group</div>
+              </div>
+            </div>
+            <div style="position:relative;height:132px;border-radius:18px;overflow:hidden">
+              <image-slot id="ex-gem-2" shape="rect" placeholder="Fisherman handing fresh catch to a young couple at a beach shack"></image-slot>
+              <div style="position:absolute;inset:0;background:linear-gradient(180deg,rgba(7,40,33,0),rgba(7,40,33,0.82));pointer-events:none"></div>
+              <div style="position:absolute;left:11px;right:11px;bottom:11px;pointer-events:none">
+                <div style="font:700 12.5px/1.2 Manrope,sans-serif;color:#FFFDF7">Fisherman's Cove Lunch</div>
+                <div style="margin-top:4px;font:600 10px/1 Manrope,sans-serif;color:rgba(251,246,236,0.82)">US$29 · 1.4 km</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div style="padding:26px 16px 0">
+          <div style="font:600 21px/1 'Cormorant Garamond',serif;color:#16302A;margin-bottom:11px">Tonight Near You</div>
+          <div style="display:flex;align-items:center;gap:14px;background:#0C4A3F;border-radius:20px;padding:14px;overflow:hidden">
+            <div style="flex:1">
+              <span style="display:inline-block;background:rgba(227,194,113,0.18);color:#E3C271;font:800 9px/1 Manrope,sans-serif;letter-spacing:0.12em;padding:5px 8px;border-radius:6px">7:30 PM · 3 TABLES LEFT</span>
+              <div style="margin-top:10px;font:600 18px/1.2 'Cormorant Garamond',serif;color:#FFFDF7">Dinner with a view at The Cliff</div>
+              <div style="margin-top:6px;font:600 11px/1.3 Manrope,sans-serif;color:rgba(251,246,236,0.72)">Live mento band · 8 min from your hotel</div>
+            </div>
+            <div style="width:96px;height:96px;border-radius:16px;overflow:hidden;flex:none"><image-slot id="ex-tonight" shape="rect" placeholder="Friends toasting at a cliffside restaurant at sunset"></image-slot></div>
+          </div>
+        </div>
+
+        <div onClick="{{ goIrieScreen }}" style="margin:20px 16px 0;display:flex;align-items:center;gap:12px;background:#FFFDF7;border:1.5px dashed #C9DAD3;border-radius:18px;padding:14px;cursor:pointer">
+          <div style="width:36px;height:36px;border-radius:50%;background:#0C4A3F;display:flex;align-items:center;justify-content:center;flex:none">
+            <svg width="19" height="19" viewBox="0 0 24 24" fill="#E3C271"><path d="M12 3l1.8 4.9L18.7 9.7l-4.9 1.8L12 16.4l-1.8-4.9L5.3 9.7l4.9-1.8z"></path></svg>
+          </div>
+          <div style="flex:1"><div style="font:700 12.5px/1.2 Manrope,sans-serif;color:#16302A">You have 3 free hours this afternoon</div>
+            <div style="margin-top:4px;font:600 11px/1 Manrope,sans-serif;color:#1E7F86">Ask Irie AI to plan it</div></div>
+          <svg width="16" height="16" viewBox="0 0 12 12" fill="none" stroke="#0C4A3F" stroke-width="2" stroke-linecap="round"><path d="M4 2l4 4-4 4"></path></svg>
+        </div>
+
+        <div onClick="{{ goNearbyScreen }}" style="margin:20px 16px 0;position:relative;height:128px;border-radius:20px;overflow:hidden;background:#E6EFEA;cursor:pointer">
+          <div style="position:absolute;left:-20px;top:-30px;width:200px;height:200px;border-radius:50%;background:#D3E6E4"></div>
+          <div style="position:absolute;right:-40px;bottom:-60px;width:220px;height:160px;border-radius:50% 50% 40% 40%;background:#CFE4E4"></div>
+          <div style="position:absolute;left:0;right:0;top:52px;height:9px;background:#F3EBDA;transform:rotate(-6deg)"></div>
+          <div style="position:absolute;left:40%;top:0;bottom:0;width:7px;background:#F3EBDA;transform:rotate(9deg)"></div>
+          <div style="position:absolute;left:96px;top:60px;width:56px;height:56px;border-radius:50%;border:1.5px dashed rgba(30,127,134,0.55);transform:translate(-50%,-50%)"></div>
+          <div style="position:absolute;left:96px;top:60px;width:14px;height:14px;border-radius:50%;background:#1E7F86;border:3px solid #FFFDF7;transform:translate(-50%,-50%);box-shadow:0 2px 6px rgba(7,40,33,0.3)"></div>
+          <div style="position:absolute;left:176px;top:36px;background:#0C4A3F;color:#FFFDF7;font:700 10px/1 Manrope,sans-serif;padding:6px 8px;border-radius:7px">US$89</div>
+          <div style="position:absolute;left:238px;top:78px;background:#FFFDF7;color:#0C4A3F;font:700 10px/1 Manrope,sans-serif;padding:6px 8px;border-radius:7px;box-shadow:0 3px 8px rgba(7,40,33,0.14)">US$45</div>
+          <div style="position:absolute;left:14px;bottom:12px;right:14px;display:flex;align-items:center;justify-content:space-between">
+            <span style="font:700 12px/1 Manrope,sans-serif;color:#16302A;background:rgba(255,253,247,0.9);padding:8px 10px;border-radius:9px">12 experiences within 5 km</span>
+            <span style="font:700 11.5px/1 Manrope,sans-serif;color:#FFFDF7;background:#1E7F86;padding:9px 12px;border-radius:9px">Open map</span>
+          </div>
+        </div>
+
+        <div style="padding:18px 16px 0;text-align:center;font:600 9.5px/1 Manrope,sans-serif;letter-spacing:0.1em;color:#9AA8A2">DEMO INVENTORY · SAMPLE PRICING</div>
+      </div>
+    </sc-if>
+
+    <sc-if value="{{ isNearby }}">
+      <div style="position:relative;height:844px;background:#E6EFEA">
+        <div style="position:absolute;left:-60px;top:-80px;width:420px;height:420px;border-radius:50%;background:#DEEBE5"></div>
+        <div style="position:absolute;right:-120px;top:120px;width:460px;height:520px;border-radius:46% 54% 40% 60%;background:#CFE4E4"></div>
+        <div style="position:absolute;left:-40px;bottom:120px;width:300px;height:220px;border-radius:50% 40% 60% 50%;background:#DCE9E1"></div>
+        <div style="position:absolute;left:0;right:0;top:300px;height:12px;background:#F3EBDA;transform:rotate(-8deg)"></div>
+        <div style="position:absolute;left:0;right:0;top:470px;height:8px;background:#F3EBDA;transform:rotate(5deg)"></div>
+        <div style="position:absolute;left:150px;top:120px;bottom:0;width:9px;background:#F3EBDA;transform:rotate(7deg)"></div>
+        <div style="position:absolute;left:270px;top:200px;bottom:0;width:6px;background:#F3EBDA;transform:rotate(-11deg)"></div>
+
+        <div style="position:absolute;left:176px;top:430px;width:300px;height:300px;border-radius:50%;border:1.5px dashed rgba(30,127,134,0.35);transform:translate(-50%,-50%)"></div>
+        <div style="position:absolute;left:176px;top:430px;width:190px;height:190px;border-radius:50%;border:1.5px dashed rgba(30,127,134,0.5);background:rgba(30,127,134,0.06);transform:translate(-50%,-50%)"></div>
+        <div style="position:absolute;left:176px;top:430px;width:92px;height:92px;border-radius:50%;background:rgba(30,127,134,0.12);transform:translate(-50%,-50%)"></div>
+        <div style="position:absolute;left:176px;top:430px;width:18px;height:18px;border-radius:50%;background:#1E7F86;border:4px solid #FFFDF7;transform:translate(-50%,-50%);box-shadow:0 3px 10px rgba(7,40,33,0.28)"></div>
+        <div style="position:absolute;left:196px;top:438px;font:700 10px/1 Manrope,sans-serif;color:#1E7F86">You are here</div>
+        <div style="position:absolute;left:176px;top:344px;transform:translateX(-50%);font:600 9px/1 Manrope,sans-serif;letter-spacing:0.1em;color:rgba(30,127,134,0.75)">1 KM</div>
+
+        <div style="position:absolute;left:120px;top:346px;display:flex;flex-direction:column;align-items:center;gap:0">
+          <div style="background:#0C4A3F;color:#FFFDF7;border:2px solid #FFFDF7;border-radius:11px;padding:8px 10px;box-shadow:0 6px 16px rgba(7,40,33,0.3);text-align:center">
+            <div style="font:800 11.5px/1 Manrope,sans-serif">US$89</div>
+            <div style="margin-top:3px;font:600 8.5px/1 Manrope,sans-serif;opacity:0.8">Mystic Mountain</div>
+          </div>
+          <div style="width:2px;height:10px;background:#FFFDF7"></div>
+        </div>
+        <div style="position:absolute;left:250px;top:398px;background:#FFFDF7;color:#0C4A3F;border-radius:10px;padding:7px 9px;box-shadow:0 5px 14px rgba(7,40,33,0.16)">
+          <div style="font:800 11px/1 Manrope,sans-serif">US$45</div><div style="margin-top:3px;font:600 8.5px/1 Manrope,sans-serif;color:#6C7F78">Blue Hole</div>
+        </div>
+        <div style="position:absolute;left:74px;top:520px;background:#FFFDF7;color:#0C4A3F;border-radius:10px;padding:7px 9px;box-shadow:0 5px 14px rgba(7,40,33,0.16)">
+          <div style="font:800 11px/1 Manrope,sans-serif">US$29</div><div style="margin-top:3px;font:600 8.5px/1 Manrope,sans-serif;color:#6C7F78">Scotchies</div>
+        </div>
+        <div style="position:absolute;left:262px;top:560px;background:#B98D2F;color:#FFFDF7;border-radius:10px;padding:7px 9px;box-shadow:0 5px 14px rgba(7,40,33,0.2)">
+          <div style="font:800 11px/1 Manrope,sans-serif">US$72</div><div style="margin-top:3px;font:600 8.5px/1 Manrope,sans-serif;opacity:0.85">Catamaran</div>
+        </div>
+
+        <div style="position:absolute;top:52px;left:16px;right:16px">
+          <div style="display:flex;align-items:center;gap:10px;background:#FFFDF7;border-radius:14px;padding:12px 14px;box-shadow:0 8px 22px rgba(7,40,33,0.12)">
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#0C4A3F" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="6.5"></circle><path d="m16 16 4.5 4.5"></path></svg>
+            <span style="flex:1;font:600 13px/1 Manrope,sans-serif;color:#16302A">Ocho Rios · 5 km radius</span>
+            <span style="font:800 9.5px/1 Manrope,sans-serif;letter-spacing:0.1em;color:#1E7F86">SEARCH THIS AREA</span>
+          </div>
+          <div style="display:flex;gap:8px;margin-top:10px;overflow:hidden">
+            <span style="background:#0C4A3F;color:#FFFDF7;font:700 11px/1 Manrope,sans-serif;padding:9px 12px;border-radius:999px;flex:none">All 12</span>
+            <span style="background:#FFFDF7;color:#16302A;font:600 11px/1 Manrope,sans-serif;padding:9px 12px;border-radius:999px;flex:none;box-shadow:0 3px 8px rgba(7,40,33,0.08)">Adventure</span>
+            <span style="background:#FFFDF7;color:#16302A;font:600 11px/1 Manrope,sans-serif;padding:9px 12px;border-radius:999px;flex:none;box-shadow:0 3px 8px rgba(7,40,33,0.08)">Food</span>
+            <span style="background:#FFFDF7;color:#16302A;font:600 11px/1 Manrope,sans-serif;padding:9px 12px;border-radius:999px;flex:none;box-shadow:0 3px 8px rgba(7,40,33,0.08)">Beach</span>
+            <span style="background:#FFFDF7;color:#16302A;font:600 11px/1 Manrope,sans-serif;padding:9px 12px;border-radius:999px;flex:none;box-shadow:0 3px 8px rgba(7,40,33,0.08)">Culture</span>
+          </div>
+        </div>
+
+        <div style="position:absolute;right:16px;top:168px;display:flex;flex-direction:column;background:#FFFDF7;border-radius:12px;overflow:hidden;box-shadow:0 6px 16px rgba(7,40,33,0.14)">
+          <span style="background:#0C4A3F;color:#FFFDF7;font:700 10.5px/1 Manrope,sans-serif;padding:10px 12px">Map</span>
+          <span style="color:#16302A;font:600 10.5px/1 Manrope,sans-serif;padding:10px 12px">List</span>
+        </div>
+
+        <div onClick="{{ goDetail }}" style="position:absolute;left:16px;right:16px;bottom:100px;background:#FFFDF7;border-radius:20px;padding:13px;display:flex;gap:13px;box-shadow:0 14px 32px rgba(7,40,33,0.18);cursor:pointer">
+          <div style="width:96px;height:96px;border-radius:14px;overflow:hidden;flex:none"><image-slot id="nb-sel" shape="rect" placeholder="Family cheering on the Mystic Mountain bobsled"></image-slot></div>
+          <div style="flex:1;min-width:0">
+            <div style="display:flex;align-items:center;gap:6px;font:800 9px/1 Manrope,sans-serif;letter-spacing:0.1em;color:#1E7F86"><span>4 MIN AWAY</span><span style="opacity:0.4">·</span><span>0.6 KM FROM YOU</span></div>
+            <div style="margin-top:7px;font:700 14px/1.2 Manrope,sans-serif;color:#16302A">Mystic Mountain Adventure Park</div>
+            <div style="margin-top:6px;display:flex;flex-wrap:wrap;gap:5px">
+              <span style="background:#DDEDE8;color:#0C4A3F;font:700 9.5px/1 Manrope,sans-serif;padding:5px 7px;border-radius:6px">Walking distance</span>
+              <span style="background:#FBF1DA;color:#7A6420;font:700 9.5px/1 Manrope,sans-serif;padding:5px 7px;border-radius:6px">Starts in 90 min</span>
+              <span style="background:#EAF3EF;color:#0C4A3F;font:700 9.5px/1 Manrope,sans-serif;padding:5px 7px;border-radius:6px">Pickup available</span>
+            </div>
+            <div style="margin-top:9px;display:flex;align-items:center;justify-content:space-between">
+              <span style="font:800 15px/1 Manrope,sans-serif;color:#0C4A3F">From US$89</span>
+              <span style="background:#0C4A3F;color:#FFFDF7;font:700 11.5px/1 Manrope,sans-serif;padding:10px 13px;border-radius:10px">View</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </sc-if>
+
+    <sc-if value="{{ isOffer }}">
+      <div style="position:relative;height:844px;background:#073229">
+        <div style="position:absolute;inset:0;opacity:0.28">
+          <div style="position:absolute;right:-100px;top:80px;width:420px;height:480px;border-radius:46% 54% 40% 60%;background:#0F5F58"></div>
+          <div style="position:absolute;left:-60px;bottom:60px;width:320px;height:300px;border-radius:50% 40% 60% 50%;background:#0E4A41"></div>
+          <div style="position:absolute;left:0;right:0;top:300px;height:12px;background:rgba(251,246,236,0.18);transform:rotate(-8deg)"></div>
+        </div>
+        <div style="position:absolute;left:195px;top:196px;width:150px;height:150px;border-radius:50%;border:1.5px dashed rgba(227,194,113,0.5);transform:translate(-50%,-50%)"></div>
+        <div style="position:absolute;left:195px;top:196px;width:70px;height:70px;border-radius:50%;background:rgba(227,194,113,0.14);transform:translate(-50%,-50%)"></div>
+        <div style="position:absolute;left:195px;top:196px;width:16px;height:16px;border-radius:50%;background:#E3C271;border:4px solid rgba(251,246,236,0.9);transform:translate(-50%,-50%)"></div>
+        <div style="position:absolute;left:0;right:0;top:70px;text-align:center;font:800 9.5px/1 Manrope,sans-serif;letter-spacing:0.18em;color:rgba(227,194,113,0.9)">CARIBBEAN VIP · NEARBY NOW</div>
+
+        <div style="position:absolute;left:20px;right:20px;top:290px;background:#FDFAF1;border-radius:26px;box-shadow:0 24px 60px rgba(3,20,16,0.5)">
+          <div onClick="{{ goExplore }}" style="position:absolute;top:14px;right:14px;width:30px;height:30px;border-radius:50%;background:#EFE7D6;display:flex;align-items:center;justify-content:center;cursor:pointer">
+            <svg width="13" height="13" viewBox="0 0 12 12" fill="none" stroke="#3C534C" stroke-width="2" stroke-linecap="round"><path d="M3 3l6 6M9 3l-6 6"></path></svg>
+          </div>
+          <div style="padding:26px 22px 18px;text-align:center">
+            <div style="width:40px;height:40px;border-radius:12px;background:#B98D2F;margin:0 auto;display:flex;align-items:center;justify-content:center">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#FFFDF7" stroke-width="1.9" stroke-linecap="round"><rect x="3.5" y="8.5" width="17" height="12" rx="2"></rect><path d="M3.5 12.5h17M12 8.5v12M12 8.5S10.5 4 8 4.6 8 8.5 12 8.5zM12 8.5S13.5 4 16 4.6s0 3.9-4 3.9z"></path></svg>
+            </div>
+            <div style="margin-top:14px;font:600 10px/1 Manrope,sans-serif;letter-spacing:0.14em;color:#7A8B85">YOU'RE NEAR</div>
+            <div style="margin-top:8px;font:600 30px/1.05 'Cormorant Garamond',serif;color:#16302A">Mystic Mountain</div>
+            <div style="margin-top:9px;display:inline-flex;align-items:center;gap:7px;background:#EAF3EF;border-radius:999px;padding:7px 12px">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#0C4A3F" stroke-width="2" stroke-linecap="round"><path d="M13 3.5a1.6 1.6 0 1 1-.01 0M11 8l3 2 1 4M8 21l3-6M14 14l2 7"></path></svg>
+              <span style="font:700 11.5px/1 Manrope,sans-serif;color:#0C4A3F">Adventure is only 0.4 km away</span>
+            </div>
+          </div>
+          <div style="padding:0 14px">
+            <div style="height:132px;border-radius:16px;overflow:hidden"><image-slot id="of-hero" shape="rect" placeholder="Bartender handing a rum punch to a smiling couple"></image-slot></div>
+          </div>
+          <div style="position:relative;margin-top:18px;height:1px">
+            <div style="position:absolute;left:-9px;top:-9px;width:18px;height:18px;border-radius:50%;background:#073229"></div>
+            <div style="position:absolute;right:-9px;top:-9px;width:18px;height:18px;border-radius:50%;background:#073229"></div>
+            <div style="position:absolute;left:14px;right:14px;top:0;border-top:1.5px dashed #DED2B5"></div>
+          </div>
+          <div style="padding:20px 22px 8px;text-align:center">
+            <div style="font:800 9.5px/1 Manrope,sans-serif;letter-spacing:0.16em;color:#B98D2F">A LITTLE SOMETHING NEARBY</div>
+            <div style="margin-top:10px;font:600 23px/1.2 'Cormorant Garamond',serif;color:#16302A">Complimentary rum punch<br />with today's booking</div>
+            <div style="margin-top:11px;display:flex;align-items:center;justify-content:center;gap:8px;font:600 11px/1 Manrope,sans-serif;color:#CE5F44">
+              <span style="width:6px;height:6px;border-radius:50%;background:#CE5F44"></span>Offer expires today at 6:00 PM
+            </div>
+          </div>
+          <div style="padding:18px 18px 20px;display:flex;flex-direction:column;gap:9px">
+            <div onClick="{{ goDetail }}" style="background:#0C4A3F;color:#FFFDF7;text-align:center;font:700 14px/1 Manrope,sans-serif;padding:16px;border-radius:14px;cursor:pointer">View Experience</div>
+            <div onClick="{{ saveOffer }}" style="background:#FDFAF1;border:1.5px solid #C6A55E;color:#7A6420;text-align:center;font:700 14px/1 Manrope,sans-serif;padding:15px;border-radius:14px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#7A6420" stroke-width="2" stroke-linecap="round"><path d="M6.5 3.5h11v17l-5.5-4-5.5 4z"></path></svg>{{ saveLabel }}
+            </div>
+            <div onClick="{{ goExplore }}" style="text-align:center;font:700 12.5px/1 Manrope,sans-serif;color:#7A8B85;padding:8px;cursor:pointer">Not now</div>
+          </div>
+        </div>
+        <div style="position:absolute;left:0;right:0;bottom:104px;text-align:center;font:600 9.5px/1 Manrope,sans-serif;letter-spacing:0.1em;color:rgba(251,246,236,0.5)">GEOFENCED DEMO OFFER · TRIGGERED WITHIN 500 M</div>
+      </div>
+    </sc-if>
+
+    <sc-if value="{{ isDetail }}">
+      <div style="padding-bottom:170px">
+        <div style="position:relative;height:308px">
+          <div style="position:absolute;inset:0"><image-slot id="dt-hero" shape="rect" placeholder="Family cheering mid-ride on the Mystic Mountain bobsled"></image-slot></div>
+          <div style="position:absolute;inset:0;background:linear-gradient(180deg,rgba(7,40,33,0.5) 0%,rgba(7,40,33,0) 40%,rgba(7,40,33,0.5) 100%);pointer-events:none"></div>
+          <div style="position:absolute;top:54px;left:16px;right:16px;display:flex;align-items:center;justify-content:space-between">
+            <div onClick="{{ goExplore }}" style="width:36px;height:36px;border-radius:50%;background:rgba(251,246,236,0.92);display:flex;align-items:center;justify-content:center;cursor:pointer">
+              <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#16302A" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 6l-6 6 6 6"></path></svg>
+            </div>
+            <div style="display:flex;gap:9px">
+              <div style="width:36px;height:36px;border-radius:50%;background:rgba(251,246,236,0.92);display:flex;align-items:center;justify-content:center">
+                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#16302A" stroke-width="2" stroke-linecap="round"><path d="M12 20s-7-4.6-7-9.3A4.2 4.2 0 0 1 12 7.6a4.2 4.2 0 0 1 7 3.1c0 4.7-7 9.3-7 9.3z"></path></svg>
+              </div>
+              <div style="width:36px;height:36px;border-radius:50%;background:rgba(251,246,236,0.92);display:flex;align-items:center;justify-content:center">
+                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#16302A" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 16V4M8 8l4-4 4 4M5 14v5a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-5"></path></svg>
+              </div>
+            </div>
+          </div>
+          <div style="position:absolute;left:16px;bottom:36px;display:flex;gap:6px;pointer-events:none">
+            <span style="background:#0C4A3F;color:#FFFDF7;font:700 10px/1 Manrope,sans-serif;padding:6px 9px;border-radius:7px">Open Now</span>
+            <span style="background:rgba(251,246,236,0.94);color:#16302A;font:700 10px/1 Manrope,sans-serif;padding:6px 9px;border-radius:7px">Available Today</span>
+            <span style="background:rgba(251,246,236,0.94);color:#16302A;font:700 10px/1 Manrope,sans-serif;padding:6px 9px;border-radius:7px">Rain-Friendly</span>
+          </div>
+        </div>
+
+        <div style="position:relative;margin-top:-22px;background:#FBF6EC;border-radius:26px 26px 0 0;padding:22px 16px 0">
+          <div style="font:600 27px/1.1 'Cormorant Garamond',serif;color:#16302A">Mystic Mountain Adventure Park</div>
+          <div style="margin-top:9px;display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+            <span style="display:flex;align-items:center;gap:5px;font:600 12px/1 Manrope,sans-serif;color:#1E7F86">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#1E7F86" stroke-width="2" stroke-linecap="round"><path d="M12 21s7-6.2 7-11a7 7 0 1 0-14 0c0 4.8 7 11 7 11z"></path><circle cx="12" cy="10" r="2.4"></circle></svg>Ocho Rios, Jamaica</span>
+            <span style="display:flex;align-items:center;gap:5px;background:#EAF3EF;border-radius:7px;padding:5px 8px;font:700 10.5px/1 Manrope,sans-serif;color:#0C4A3F">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#0C4A3F" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l7 3v5.5c0 4.4-3 8-7 9.5-4-1.5-7-5.1-7-9.5V6z"></path><path d="M9 12l2.2 2.2L15.5 10"></path></svg>Verified Operator</span>
+          </div>
+          <div style="margin-top:14px;font:500 14px/1.5 Manrope,sans-serif;color:#3C534C;text-wrap:pretty">Rainforest adventure, panoramic views and Jamaica's famous bobsled experience in one visit.</div>
+
+          <div style="margin-top:16px;display:flex;align-items:center;justify-content:space-between;background:#FFFDF7;border-radius:16px;padding:14px 16px;box-shadow:0 6px 16px rgba(7,40,33,0.07)">
+            <div>
+              <div style="font:600 10px/1 Manrope,sans-serif;letter-spacing:0.1em;color:#7A8B85">FROM</div>
+              <div style="margin-top:6px;font:800 22px/1 Manrope,sans-serif;color:#0C4A3F">US$89<span style="font:600 11px/1 Manrope,sans-serif;color:#6C7F78"> / adult</span></div>
+            </div>
+            <div style="text-align:right">
+              <div style="display:flex;align-items:center;justify-content:flex-end;gap:5px;font:700 12.5px/1 Manrope,sans-serif;color:#16302A"><span style="color:#B98D2F">★</span>4.8<span style="font-weight:500;color:#6C7F78">· 1,240</span></div>
+              <div style="margin-top:6px;font:700 11px/1 Manrope,sans-serif;color:#1E7F86">Today 9:00 AM – 5:00 PM</div>
+            </div>
+          </div>
+
+          <div style="margin-top:20px;display:grid;grid-template-columns:repeat(4,1fr);gap:8px">
+            <div style="background:#FFFDF7;border-radius:14px;padding:12px 6px;text-align:center"><div style="width:26px;height:26px;margin:0 auto;border-radius:8px;background:#DDEDE8"></div><div style="margin-top:8px;font:700 9.5px/1.25 Manrope,sans-serif;color:#16302A">Bobsled<br />Ride</div></div>
+            <div style="background:#FFFDF7;border-radius:14px;padding:12px 6px;text-align:center"><div style="width:26px;height:26px;margin:0 auto;border-radius:8px;background:#DDEDE8"></div><div style="margin-top:8px;font:700 9.5px/1.25 Manrope,sans-serif;color:#16302A">Zipline<br />Canopy</div></div>
+            <div style="background:#FFFDF7;border-radius:14px;padding:12px 6px;text-align:center"><div style="width:26px;height:26px;margin:0 auto;border-radius:8px;background:#DDEDE8"></div><div style="margin-top:8px;font:700 9.5px/1.25 Manrope,sans-serif;color:#16302A">Sky<br />Chairlift</div></div>
+            <div style="background:#FFFDF7;border-radius:14px;padding:12px 6px;text-align:center"><div style="width:26px;height:26px;margin:0 auto;border-radius:8px;background:#DDEDE8"></div><div style="margin-top:8px;font:700 9.5px/1.25 Manrope,sans-serif;color:#16302A">Rainforest<br />Walk</div></div>
+          </div>
+
+          <div style="margin-top:14px;display:grid;grid-template-columns:1fr 1fr;gap:10px">
+            <div style="background:#FFFDF7;border-radius:14px;padding:13px 14px"><div style="font:600 9.5px/1 Manrope,sans-serif;letter-spacing:0.1em;color:#7A8B85">DURATION</div><div style="margin-top:6px;font:700 13px/1 Manrope,sans-serif;color:#16302A">3 – 4 hours</div></div>
+            <div style="background:#FFFDF7;border-radius:14px;padding:13px 14px"><div style="font:600 9.5px/1 Manrope,sans-serif;letter-spacing:0.1em;color:#7A8B85">HOTEL PICKUP</div><div style="margin-top:6px;font:700 13px/1 Manrope,sans-serif;color:#16302A">Included</div></div>
+            <div style="background:#FFFDF7;border-radius:14px;padding:13px 14px"><div style="font:600 9.5px/1 Manrope,sans-serif;letter-spacing:0.1em;color:#7A8B85">FAMILIES</div><div style="margin-top:6px;font:700 13px/1 Manrope,sans-serif;color:#16302A">Ages 5 and up</div></div>
+            <div style="background:#FFFDF7;border-radius:14px;padding:13px 14px"><div style="font:600 9.5px/1 Manrope,sans-serif;letter-spacing:0.1em;color:#7A8B85">CANCELLATION</div><div style="margin-top:6px;font:700 13px/1 Manrope,sans-serif;color:#16302A">Free until 24 hrs</div></div>
+          </div>
+
+          <div style="margin-top:22px;font:600 19px/1 'Cormorant Garamond',serif;color:#16302A">What's included</div>
+          <div style="margin-top:11px;display:flex;flex-direction:column;gap:9px">
+            <div style="display:flex;align-items:center;gap:10px;font:500 12.5px/1.3 Manrope,sans-serif;color:#3C534C"><span style="width:18px;height:18px;border-radius:50%;background:#DDEDE8;display:flex;align-items:center;justify-content:center;flex:none"><svg width="11" height="11" viewBox="0 0 12 12" fill="none" stroke="#0C4A3F" stroke-width="2.2" stroke-linecap="round"><path d="M2.5 6.3 4.8 8.6 9.5 3.8"></path></svg></span>Round-trip hotel pickup in Ocho Rios</div>
+            <div style="display:flex;align-items:center;gap:10px;font:500 12.5px/1.3 Manrope,sans-serif;color:#3C534C"><span style="width:18px;height:18px;border-radius:50%;background:#DDEDE8;display:flex;align-items:center;justify-content:center;flex:none"><svg width="11" height="11" viewBox="0 0 12 12" fill="none" stroke="#0C4A3F" stroke-width="2.2" stroke-linecap="round"><path d="M2.5 6.3 4.8 8.6 9.5 3.8"></path></svg></span>Guided canopy tour with local naturalist</div>
+            <div style="display:flex;align-items:center;gap:10px;font:500 12.5px/1.3 Manrope,sans-serif;color:#3C534C"><span style="width:18px;height:18px;border-radius:50%;background:#DDEDE8;display:flex;align-items:center;justify-content:center;flex:none"><svg width="11" height="11" viewBox="0 0 12 12" fill="none" stroke="#0C4A3F" stroke-width="2.2" stroke-linecap="round"><path d="M2.5 6.3 4.8 8.6 9.5 3.8"></path></svg></span>Bobsled ride, chairlift and infinity pool access</div>
+          </div>
+
+          <div style="margin-top:20px;display:flex;gap:12px;background:#DDEDE8;border-radius:16px;padding:14px 15px">
+            <span style="font:800 15px/1 Manrope,sans-serif;color:#1E7F86;flex:none">TIP</span>
+            <div style="font:600 12px/1.45 Manrope,sans-serif;color:#16302A">Book the 9:00 AM slot — the canopy is coolest and the cruise crowds arrive after 11.</div>
+          </div>
+
+          <div style="margin-top:22px;background:#FFFDF7;border-radius:18px;padding:16px">
+            <div style="display:flex;align-items:center;justify-content:space-between">
+              <div><div style="font:800 13px/1 Manrope,sans-serif;color:#16302A">Booked 34 times this week</div>
+                <div style="margin-top:6px;font:600 11.5px/1 Manrope,sans-serif;color:#1E7F86">Popular with families · 97% would recommend</div></div>
+              <div style="display:flex">
+                <div style="width:30px;height:30px;border-radius:50%;overflow:hidden;border:2px solid #FFFDF7"><image-slot id="dt-av-1" shape="circle" placeholder="Traveller portrait"></image-slot></div>
+                <div style="width:30px;height:30px;border-radius:50%;overflow:hidden;border:2px solid #FFFDF7;margin-left:-10px"><image-slot id="dt-av-2" shape="circle" placeholder="Traveller portrait"></image-slot></div>
+                <div style="width:30px;height:30px;border-radius:50%;overflow:hidden;border:2px solid #FFFDF7;margin-left:-10px"><image-slot id="dt-av-3" shape="circle" placeholder="Traveller portrait"></image-slot></div>
+              </div>
+            </div>
+            <div style="margin-top:14px;border-top:1px solid #EFE7D6;padding-top:14px">
+              <div style="font:600 12px/1 Manrope,sans-serif;color:#B98D2F">★★★★★</div>
+              <div style="margin-top:8px;font:500 12.5px/1.5 Manrope,sans-serif;color:#3C534C">"Our guide made the kids feel like explorers. The bobsled was the highlight of our cruise stop."</div>
+              <div style="margin-top:8px;font:700 11px/1 Manrope,sans-serif;color:#7A8B85">Dana &amp; Chris · Family of four · May 2026</div>
+            </div>
+          </div>
+          <div style="padding:16px 0 0;text-align:center;font:600 9.5px/1 Manrope,sans-serif;letter-spacing:0.1em;color:#9AA8A2">DEMO LISTING · SAMPLE OPERATOR DATA</div>
+        </div>
+      </div>
+    </sc-if>
+
+    <sc-if value="{{ isCheckout }}">
+      <div style="min-height:844px;background:#FFFDFA;padding-bottom:96px">
+        <div style="padding:58px 16px 0;display:flex;align-items:center;gap:12px">
+          <div onClick="{{ goDetail }}" style="width:34px;height:34px;border-radius:50%;background:#F4EFE4;display:flex;align-items:center;justify-content:center;cursor:pointer">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#16302A" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 6l-6 6 6 6"></path></svg>
+          </div>
+          <div style="font:700 14px/1 Manrope,sans-serif;color:#16302A">Confirm your booking</div>
+        </div>
+
+        <div style="margin:22px 16px 0;display:flex;gap:13px;align-items:center">
+          <div style="width:76px;height:76px;border-radius:14px;overflow:hidden;flex:none"><image-slot id="ck-thumb" shape="rect" placeholder="Family cheering on the Mystic Mountain bobsled"></image-slot></div>
+          <div>
+            <div style="font:600 19px/1.15 'Cormorant Garamond',serif;color:#16302A">Mystic Mountain<br />Adventure Park</div>
+            <div style="margin-top:6px;font:600 11px/1 Manrope,sans-serif;color:#7A8B85">Ocho Rios, Jamaica</div>
+          </div>
+        </div>
+
+        <div style="margin:22px 16px 0;border-top:1px solid #EFE7D6;border-bottom:1px solid #EFE7D6;padding:6px 0">
+          <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 0"><span style="font:500 13px/1 Manrope,sans-serif;color:#6C7F78">Date</span><span style="font:700 13px/1 Manrope,sans-serif;color:#16302A">Saturday, 24 May 2026</span></div>
+          <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 0;border-top:1px solid #F4EFE4"><span style="font:500 13px/1 Manrope,sans-serif;color:#6C7F78">Time</span><span style="font:700 13px/1 Manrope,sans-serif;color:#16302A">9:00 AM · Hotel pickup 8:25 AM</span></div>
+          <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 0;border-top:1px solid #F4EFE4"><span style="font:500 13px/1 Manrope,sans-serif;color:#6C7F78">Guests</span><span style="font:700 13px/1 Manrope,sans-serif;color:#16302A">2 adults</span></div>
+          <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 0;border-top:1px solid #F4EFE4"><span style="font:500 13px/1 Manrope,sans-serif;color:#6C7F78">Cancellation</span><span style="font:700 13px/1 Manrope,sans-serif;color:#16302A">Free until Friday 9:00 AM</span></div>
+        </div>
+
+        <div style="margin:18px 16px 0;display:flex;align-items:center;gap:11px;background:#FBF7EA;border:1px solid #EBDFC0;border-radius:14px;padding:13px 14px">
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#B98D2F" stroke-width="1.9" stroke-linecap="round"><rect x="3.5" y="8.5" width="17" height="12" rx="2"></rect><path d="M3.5 12.5h17M12 8.5v12"></path></svg>
+          <div style="flex:1;font:700 12.5px/1 Manrope,sans-serif;color:#16302A">Complimentary rum punch applied</div>
+          <span style="font:700 11px/1 Manrope,sans-serif;color:#1E7F86">Voucher</span>
+        </div>
+
+        <div style="margin:20px 16px 0">
+          <div style="display:flex;align-items:center;justify-content:space-between;padding:7px 0"><span style="font:500 12.5px/1 Manrope,sans-serif;color:#6C7F78">2 adults × US$89</span><span style="font:600 12.5px/1 Manrope,sans-serif;color:#16302A">US$178.00</span></div>
+          <div style="display:flex;align-items:center;justify-content:space-between;padding:7px 0"><span style="font:500 12.5px/1 Manrope,sans-serif;color:#6C7F78">Service fee</span><span style="font:600 12.5px/1 Manrope,sans-serif;color:#16302A">US$6.00</span></div>
+          <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 0 0;margin-top:10px;border-top:1px solid #EFE7D6">
+            <span style="font:700 13px/1 Manrope,sans-serif;color:#16302A">Total</span>
+            <span style="font:800 26px/1 Manrope,sans-serif;color:#0C4A3F">US$184.00</span>
+          </div>
+        </div>
+
+        <div style="margin:22px 16px 0">
+          <div style="font:600 10px/1 Manrope,sans-serif;letter-spacing:0.12em;color:#7A8B85">PAYMENT</div>
+          <div style="margin-top:11px;display:flex;align-items:center;gap:12px;border:1.5px solid #E4DBC8;border-radius:14px;padding:15px 14px">
+            <div style="width:34px;height:22px;border-radius:4px;background:#16302A;flex:none"></div>
+            <div style="flex:1;font:700 13px/1 Manrope,sans-serif;color:#16302A">Visa ···· 4242</div>
+            <span style="font:700 11px/1 Manrope,sans-serif;color:#1E7F86">Change</span>
+          </div>
+          <div style="margin-top:10px;display:flex;gap:10px">
+            <div style="flex:1;border:1.5px solid #E4DBC8;border-radius:14px;padding:15px 14px;font:600 13px/1 Manrope,sans-serif;color:#9AA8A2">05 / 29</div>
+            <div style="width:112px;border:1.5px solid #E4DBC8;border-radius:14px;padding:15px 14px;font:600 13px/1 Manrope,sans-serif;color:#9AA8A2">CVC 123</div>
+          </div>
+        </div>
+
+        <div style="margin:18px 16px 0;display:flex;align-items:center;gap:10px;background:#F4F1E7;border-radius:12px;padding:12px 14px">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#3C534C" stroke-width="1.9" stroke-linecap="round"><rect x="4.5" y="10.5" width="15" height="9.5" rx="2"></rect><path d="M8 10.5V8a4 4 0 0 1 8 0v2.5"></path></svg>
+          <div style="font:600 11.5px/1.35 Manrope,sans-serif;color:#3C534C">Demo payment — no real charge will occur.</div>
+        </div>
+
+        <div onClick="{{ goConfirm }}" style="margin:18px 16px 0;background:#0C4A3F;color:#FFFDF7;text-align:center;font:700 15px/1 Manrope,sans-serif;padding:18px;border-radius:15px;cursor:pointer">Pay US$184.00</div>
+        <div style="margin:12px 16px 0;text-align:center;font:500 10.5px/1.4 Manrope,sans-serif;color:#8A9A93">Free cancellation until Friday 9:00 AM · Operator confirms instantly</div>
+      </div>
+    </sc-if>
+
+    <sc-if value="{{ isConfirm }}">
+      <div style="padding-bottom:96px">
+        <div style="position:relative;height:290px;background:#073229">
+          <div style="position:absolute;inset:0"><image-slot id="cf-hero" shape="rect" placeholder="Two friends laughing together after the bobsled ride"></image-slot></div>
+          <div style="position:absolute;inset:0;background:linear-gradient(180deg,rgba(7,40,33,0.55),rgba(7,40,33,0.9));pointer-events:none"></div>
+          <div style="position:absolute;left:24px;right:24px;bottom:38px;pointer-events:none">
+            <div style="display:flex;align-items:center;gap:8px">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="#E3C271"><path d="M12 3l1.7 4.8L18.5 9.5l-4.8 1.7L12 16l-1.7-4.8L5.5 9.5l4.8-1.7z"></path></svg>
+              <span style="font:800 9.5px/1 Manrope,sans-serif;letter-spacing:0.16em;color:#E3C271">BOOKING CONFIRMED</span>
+            </div>
+            <div style="margin-top:12px;font:600 33px/1.08 'Cormorant Garamond',serif;color:#FFFDF7">You're going to Mystic Mountain!</div>
+          </div>
+        </div>
+
+        <div style="margin:-20px 16px 0;position:relative;background:#FFFDF7;border-radius:22px;padding:18px;box-shadow:0 12px 30px rgba(7,40,33,0.1)">
+          <div style="display:flex;gap:16px">
+            <div style="flex:1">
+              <div style="font:600 9.5px/1 Manrope,sans-serif;letter-spacing:0.1em;color:#7A8B85">SATURDAY 24 MAY</div>
+              <div style="margin-top:7px;font:700 15px/1 Manrope,sans-serif;color:#16302A">9:00 AM · 2 adults</div>
+              <div style="margin-top:12px;font:600 9.5px/1 Manrope,sans-serif;letter-spacing:0.1em;color:#7A8B85">BOOKING REFERENCE</div>
+              <div style="margin-top:7px;font:800 14px/1 Manrope,sans-serif;color:#0C4A3F;letter-spacing:0.04em">CVIP-8241-JM</div>
+              <div style="margin-top:14px;display:flex;align-items:center;gap:9px;background:#FBF7EA;border:1px solid #EBDFC0;border-radius:11px;padding:10px 11px">
+                <span style="width:7px;height:7px;border-radius:50%;background:#B98D2F"></span>
+                <span style="font:700 11px/1.25 Manrope,sans-serif;color:#7A6420">Rum punch voucher attached</span>
+              </div>
+            </div>
+            <div onClick="{{ goTicket }}" style="width:112px;flex:none;cursor:pointer">
+              <div style="background:#FBF6EC;border-radius:14px;padding:10px">{{ qrSmall }}</div>
+              <div style="margin-top:8px;text-align:center;font:700 10.5px/1 Manrope,sans-serif;color:#1E7F86">View ticket</div>
+            </div>
+          </div>
+        </div>
+
+        <div style="margin:16px 16px 0;display:flex;gap:9px">
+          <div onClick="{{ goTrips }}" style="flex:1;background:#0C4A3F;color:#FFFDF7;text-align:center;font:700 13px/1 Manrope,sans-serif;padding:16px 10px;border-radius:14px;cursor:pointer">Add to Trip</div>
+          <div style="flex:1;background:#FFFDF7;border:1.5px solid #CFDCD6;color:#0C4A3F;text-align:center;font:700 13px/1 Manrope,sans-serif;padding:15px 10px;border-radius:14px">Get Directions</div>
+        </div>
+
+        <div style="margin:26px 16px 0">
+          <div style="font:600 19px/1 'Cormorant Garamond',serif;color:#16302A">Make it a full day</div>
+          <div onClick="{{ goTrips }}" style="margin-top:11px;display:flex;gap:13px;align-items:center;background:#FFFDF7;border-radius:18px;padding:12px;box-shadow:0 8px 20px rgba(7,40,33,0.07);cursor:pointer">
+            <div style="width:82px;height:82px;border-radius:14px;overflow:hidden;flex:none"><image-slot id="cf-next" shape="rect" placeholder="Cook plating jerk chicken at a roadside grill"></image-slot></div>
+            <div style="flex:1">
+              <span style="font:800 9px/1 Manrope,sans-serif;letter-spacing:0.1em;color:#1E7F86">12 MIN FROM YOUR EXIT</span>
+              <div style="margin-top:7px;font:700 13.5px/1.2 Manrope,sans-serif;color:#16302A">Lunch at Scotchies Jerk Centre</div>
+              <div style="margin-top:6px;display:flex;align-items:center;justify-content:space-between">
+                <span style="font:600 11.5px/1 Manrope,sans-serif;color:#3C534C">Table at 12:30 PM · US$24</span>
+                <span style="font:700 11px/1 Manrope,sans-serif;color:#0C4A3F">Add</span>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div style="padding:20px 16px 0;text-align:center;font:600 9.5px/1 Manrope,sans-serif;letter-spacing:0.1em;color:#9AA8A2">DEMO BOOKING · NO PAYMENT PROCESSED</div>
+      </div>
+    </sc-if>
+
+    <sc-if value="{{ isTrips }}">
+      <div style="padding-bottom:96px">
+        <div style="position:relative;height:214px;background:#0C4A3F">
+          <div style="position:absolute;inset:0;opacity:0.5"><image-slot id="tp-hero" shape="rect" placeholder="Aerial of Ocho Rios bay in morning light"></image-slot></div>
+          <div style="position:absolute;inset:0;background:linear-gradient(180deg,rgba(7,40,33,0.62),rgba(7,40,33,0.94));pointer-events:none"></div>
+          <div style="position:absolute;left:16px;right:16px;top:56px;pointer-events:none">
+            <div style="font:800 9.5px/1 Manrope,sans-serif;letter-spacing:0.16em;color:#E3C271">CARIBBEAN VIP · VIP JAMAICA</div>
+            <div style="margin-top:11px;display:flex;align-items:flex-end;justify-content:space-between">
+              <div>
+                <div style="font:600 29px/1.05 'Cormorant Garamond',serif;color:#FFFDF7">Your Ocho Rios Day</div>
+                <div style="margin-top:8px;font:600 12px/1 Manrope,sans-serif;color:rgba(251,246,236,0.78)">Saturday, 24 May · Sunny 28°C · Light breeze</div>
+              </div>
+              <div style="text-align:right">
+                <div style="font:800 9px/1 Manrope,sans-serif;letter-spacing:0.1em;color:rgba(227,194,113,0.9)">STARTS IN</div>
+                <div style="margin-top:6px;font:800 19px/1 Manrope,sans-serif;color:#FFFDF7">2h 15m</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div style="margin:-30px 16px 0;position:relative;background:#FFFDF7;border-radius:20px;padding:15px 16px;box-shadow:0 12px 28px rgba(7,40,33,0.12);display:flex;align-items:center;gap:13px">
+          <div style="width:44px;height:44px;border-radius:13px;background:#DDEDE8;display:flex;align-items:center;justify-content:center;flex:none">
+            <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="#0C4A3F" stroke-width="1.9" stroke-linecap="round"><circle cx="12" cy="12" r="8.5"></circle><path d="M12 7.5V12l3 2"></path></svg>
+          </div>
+          <div style="flex:1">
+            <div style="font:800 9px/1 Manrope,sans-serif;letter-spacing:0.1em;color:#1E7F86">NEXT UP</div>
+            <div style="margin-top:6px;font:700 13.5px/1.2 Manrope,sans-serif;color:#16302A">Mystic Mountain · 9:00 AM</div>
+            <div style="margin-top:5px;font:600 11px/1 Manrope,sans-serif;color:#CE5F44">Leave by 8:25 AM · pickup at hotel lobby</div>
+          </div>
+          <div onClick="{{ goTicket }}" style="background:#0C4A3F;color:#FFFDF7;font:700 11.5px/1 Manrope,sans-serif;padding:11px 13px;border-radius:11px;cursor:pointer">Ticket</div>
+        </div>
+
+        <div style="padding:24px 16px 0">
+          <div style="display:flex;align-items:baseline;justify-content:space-between;margin-bottom:14px">
+            <span style="font:600 20px/1 'Cormorant Garamond',serif;color:#16302A">Day timeline</span>
+            <span style="font:700 11px/1 Manrope,sans-serif;color:#1E7F86">Edit day</span>
+          </div>
+          <div style="position:relative;padding-left:22px">
+            <div style="position:absolute;left:5px;top:8px;bottom:22px;width:2px;background:#E1DAC8"></div>
+
+            <div style="position:relative;margin-bottom:8px">
+              <div style="position:absolute;left:-22px;top:6px;width:12px;height:12px;border-radius:50%;background:#0C4A3F;border:3px solid #FBF6EC"></div>
+              <div style="display:flex;gap:12px;background:#FFFDF7;border-radius:16px;padding:12px;box-shadow:0 6px 16px rgba(7,40,33,0.06)">
+                <div style="width:62px;height:62px;border-radius:12px;overflow:hidden;flex:none"><image-slot id="tp-1" shape="rect" placeholder="Family on the bobsled track"></image-slot></div>
+                <div style="flex:1">
+                  <div style="font:800 10.5px/1 Manrope,sans-serif;color:#1E7F86">9:00 AM</div>
+                  <div style="margin-top:6px;font:700 13px/1.2 Manrope,sans-serif;color:#16302A">Mystic Mountain Adventure Park</div>
+                  <div style="margin-top:6px;display:flex;align-items:center;gap:6px">
+                    <span style="background:#EAF3EF;color:#0C4A3F;font:700 9.5px/1 Manrope,sans-serif;padding:5px 7px;border-radius:6px">Confirmed</span>
+                    <span style="background:#FBF7EA;color:#7A6420;font:700 9.5px/1 Manrope,sans-serif;padding:5px 7px;border-radius:6px">Rum punch</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div style="display:flex;align-items:center;gap:7px;padding:0 0 8px 2px;font:600 10.5px/1 Manrope,sans-serif;color:#8A9A93">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#8A9A93" stroke-width="2" stroke-linecap="round"><path d="M5 17.5h14M7.5 17.5V12l2-4h5l2 4v5.5"></path><circle cx="8.5" cy="19.5" r="1.4"></circle><circle cx="15.5" cy="19.5" r="1.4"></circle></svg>
+              12 min drive · included pickup
+            </div>
+
+            <div style="position:relative;margin-bottom:8px">
+              <div style="position:absolute;left:-22px;top:6px;width:12px;height:12px;border-radius:50%;background:#B98D2F;border:3px solid #FBF6EC"></div>
+              <div style="display:flex;gap:12px;background:#FFFDF7;border-radius:16px;padding:12px;box-shadow:0 6px 16px rgba(7,40,33,0.06)">
+                <div style="width:62px;height:62px;border-radius:12px;overflow:hidden;flex:none"><image-slot id="tp-2" shape="rect" placeholder="Jerk chicken being served at Scotchies"></image-slot></div>
+                <div style="flex:1">
+                  <div style="font:800 10.5px/1 Manrope,sans-serif;color:#1E7F86">12:30 PM</div>
+                  <div style="margin-top:6px;font:700 13px/1.2 Manrope,sans-serif;color:#16302A">Lunch at Scotchies Jerk Centre</div>
+                  <div style="margin-top:6px"><span style="background:#FBF7EA;color:#7A6420;font:700 9.5px/1 Manrope,sans-serif;padding:5px 7px;border-radius:6px">Table reserved · 2 guests</span></div>
+                </div>
+              </div>
+            </div>
+            <div style="display:flex;align-items:center;gap:7px;padding:0 0 8px 2px;font:600 10.5px/1 Manrope,sans-serif;color:#8A9A93">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#8A9A93" stroke-width="2" stroke-linecap="round"><path d="M5 17.5h14M7.5 17.5V12l2-4h5l2 4v5.5"></path><circle cx="8.5" cy="19.5" r="1.4"></circle><circle cx="15.5" cy="19.5" r="1.4"></circle></svg>
+              18 min drive · taxi from US$14
+            </div>
+
+            <div style="position:relative;margin-bottom:8px">
+              <div style="position:absolute;left:-22px;top:6px;width:12px;height:12px;border-radius:50%;background:#0C4A3F;border:3px solid #FBF6EC"></div>
+              <div style="display:flex;gap:12px;background:#FFFDF7;border-radius:16px;padding:12px;box-shadow:0 6px 16px rgba(7,40,33,0.06)">
+                <div style="width:62px;height:62px;border-radius:12px;overflow:hidden;flex:none"><image-slot id="tp-3" shape="rect" placeholder="Friends climbing Dunn's River Falls hand in hand"></image-slot></div>
+                <div style="flex:1">
+                  <div style="font:800 10.5px/1 Manrope,sans-serif;color:#1E7F86">3:30 PM</div>
+                  <div style="margin-top:6px;font:700 13px/1.2 Manrope,sans-serif;color:#16302A">Dunn's River Falls climb</div>
+                  <div style="margin-top:6px"><span style="background:#EAF3EF;color:#0C4A3F;font:700 9.5px/1 Manrope,sans-serif;padding:5px 7px;border-radius:6px">Confirmed · US$52</span></div>
+                </div>
+              </div>
+            </div>
+            <div style="display:flex;align-items:center;gap:7px;padding:0 0 8px 2px;font:600 10.5px/1 Manrope,sans-serif;color:#8A9A93">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#8A9A93" stroke-width="2" stroke-linecap="round"><path d="M9 20l6-16M6 9h13M5 15h13"></path></svg>
+              9 min walk along the shore road
+            </div>
+
+            <div style="position:relative">
+              <div style="position:absolute;left:-22px;top:6px;width:12px;height:12px;border-radius:50%;background:#FBF6EC;border:3px solid #C6D6CF"></div>
+              <div style="display:flex;gap:12px;background:#FFFDF7;border-radius:16px;padding:12px;box-shadow:0 6px 16px rgba(7,40,33,0.06)">
+                <div style="width:62px;height:62px;border-radius:12px;overflow:hidden;flex:none"><image-slot id="tp-4" shape="rect" placeholder="Couple at a cliffside dinner table at sunset"></image-slot></div>
+                <div style="flex:1">
+                  <div style="font:800 10.5px/1 Manrope,sans-serif;color:#1E7F86">7:00 PM</div>
+                  <div style="margin-top:6px;font:700 13px/1.2 Manrope,sans-serif;color:#16302A">Dinner with a view · The Cliff</div>
+                  <div style="margin-top:6px"><span style="background:#F4EFE4;color:#3C534C;font:700 9.5px/1 Manrope,sans-serif;padding:5px 7px;border-radius:6px">Suggested · 3 tables left</span></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div style="margin:22px 16px 0;display:flex;gap:12px">
+          <div onClick="{{ goNearbyScreen }}" style="width:132px;flex:none;height:104px;border-radius:16px;overflow:hidden;position:relative;background:#E6EFEA;cursor:pointer">
+            <div style="position:absolute;right:-30px;top:-20px;width:150px;height:150px;border-radius:50%;background:#CFE4E4"></div>
+            <div style="position:absolute;left:0;right:0;top:44px;height:7px;background:#F3EBDA;transform:rotate(-9deg)"></div>
+            <div style="position:absolute;left:22px;top:30px;width:9px;height:9px;border-radius:50%;background:#0C4A3F"></div>
+            <div style="position:absolute;left:58px;top:52px;width:9px;height:9px;border-radius:50%;background:#B98D2F"></div>
+            <div style="position:absolute;left:92px;top:36px;width:9px;height:9px;border-radius:50%;background:#1E7F86"></div>
+            <div style="position:absolute;left:8px;bottom:8px;font:700 10px/1 Manrope,sans-serif;color:#16302A;background:rgba(255,253,247,0.9);padding:6px 8px;border-radius:8px">Route · 34 km</div>
+          </div>
+          <div style="flex:1;display:flex;flex-direction:column;gap:10px">
+            <div style="flex:1;background:#FFFDF7;border-radius:16px;padding:12px 14px;display:flex;align-items:center;justify-content:space-between">
+              <span style="font:600 11.5px/1 Manrope,sans-serif;color:#6C7F78">Estimated day total</span>
+              <span style="font:800 16px/1 Manrope,sans-serif;color:#0C4A3F">US$312</span>
+            </div>
+            <div onClick="{{ goTicket }}" style="flex:1;background:#FFFDF7;border-radius:16px;padding:12px 14px;display:flex;align-items:center;justify-content:space-between;cursor:pointer">
+              <span style="font:600 11.5px/1 Manrope,sans-serif;color:#6C7F78">Ticket wallet</span>
+              <span style="font:700 11.5px/1 Manrope,sans-serif;color:#1E7F86">3 passes</span>
+            </div>
+          </div>
+        </div>
+
+        <div onClick="{{ goIrieScreen }}" style="margin:14px 16px 0;display:flex;align-items:center;gap:12px;background:#0C4A3F;border-radius:18px;padding:14px;cursor:pointer">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="#E3C271"><path d="M12 3l1.8 4.9L18.7 9.7l-4.9 1.8L12 16.4l-1.8-4.9L5.3 9.7l4.9-1.8z"></path></svg>
+          <div style="flex:1;font:700 12.5px/1.3 Manrope,sans-serif;color:#FFFDF7">Need to adjust your day? Ask Irie AI.</div>
+          <svg width="15" height="15" viewBox="0 0 12 12" fill="none" stroke="#E3C271" stroke-width="2" stroke-linecap="round"><path d="M4 2l4 4-4 4"></path></svg>
+        </div>
+        <div style="padding:18px 16px 0;text-align:center;font:600 9.5px/1 Manrope,sans-serif;letter-spacing:0.1em;color:#9AA8A2">DEMO ITINERARY · SAMPLE TIMINGS</div>
+      </div>
+    </sc-if>
+
+    <sc-if value="{{ isTicket }}">
+      <div style="min-height:844px;background:#073229;padding-bottom:96px">
+        <div style="padding:56px 16px 0;display:flex;align-items:center;justify-content:space-between">
+          <div onClick="{{ goTrips }}" style="width:34px;height:34px;border-radius:50%;background:rgba(251,246,236,0.16);display:flex;align-items:center;justify-content:center;cursor:pointer">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#FFFDF7" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 6l-6 6 6 6"></path></svg>
+          </div>
+          <div style="font:800 9.5px/1 Manrope,sans-serif;letter-spacing:0.18em;color:#E3C271">CARIBBEAN VIP · MOBILE TICKET</div>
+          <div style="width:34px"></div>
+        </div>
+
+        <div style="margin:20px 16px 0;background:#FDFAF1;border-radius:24px;overflow:hidden">
+          <div style="padding:20px 20px 0;display:flex;align-items:flex-start;justify-content:space-between">
+            <div>
+              <div style="font:600 9.5px/1 Manrope,sans-serif;letter-spacing:0.12em;color:#7A8B85">VIP JAMAICA · OCHO RIOS</div>
+              <div style="margin-top:9px;font:600 23px/1.1 'Cormorant Garamond',serif;color:#16302A">Mystic Mountain<br />Adventure Park</div>
+            </div>
+            <div style="width:46px;height:46px;border-radius:50%;border:1.5px solid #C6A55E;display:flex;flex-direction:column;align-items:center;justify-content:center;flex:none">
+              <span style="font:700 12px/1 'Cormorant Garamond',serif;color:#0C4A3F;letter-spacing:0.04em">VIP</span>
+              <span style="font:800 5px/1 Manrope,sans-serif;letter-spacing:0.14em;color:#B98D2F;margin-top:2px">JAMAICA</span>
+            </div>
+          </div>
+          <div style="padding:18px 20px 0;display:grid;grid-template-columns:1fr 1fr;gap:14px 10px">
+            <div><div style="font:600 9px/1 Manrope,sans-serif;letter-spacing:0.1em;color:#7A8B85">GUEST</div><div style="margin-top:6px;font:700 12.5px/1 Manrope,sans-serif;color:#16302A">Marcus Bennett</div></div>
+            <div><div style="font:600 9px/1 Manrope,sans-serif;letter-spacing:0.1em;color:#7A8B85">GUESTS</div><div style="margin-top:6px;font:700 12.5px/1 Manrope,sans-serif;color:#16302A">2 adults</div></div>
+            <div><div style="font:600 9px/1 Manrope,sans-serif;letter-spacing:0.1em;color:#7A8B85">DATE &amp; TIME</div><div style="margin-top:6px;font:700 12.5px/1 Manrope,sans-serif;color:#16302A">Sat 24 May · 9:00 AM</div></div>
+            <div><div style="font:600 9px/1 Manrope,sans-serif;letter-spacing:0.1em;color:#7A8B85">PAYMENT</div><div style="margin-top:6px;display:inline-flex;align-items:center;gap:6px;font:700 12.5px/1 Manrope,sans-serif;color:#0C4A3F"><span style="width:7px;height:7px;border-radius:50%;background:#0C4A3F"></span>Paid · US$184</div></div>
+          </div>
+          <div style="padding:20px 20px 0;text-align:center">
+            <div style="display:inline-block;background:#FFFFFF;border:1px solid #EFE7D6;border-radius:16px;padding:14px">{{ qrLarge }}</div>
+            <div style="margin-top:11px;font:800 13px/1 Manrope,sans-serif;letter-spacing:0.06em;color:#16302A">CVIP-8241-JM</div>
+            <div style="margin-top:6px;font:600 10.5px/1 Manrope,sans-serif;color:#7A8B85">Show this code at the Mystic Mountain gate</div>
+          </div>
+          <div style="position:relative;margin-top:20px;height:1px">
+            <div style="position:absolute;left:-9px;top:-9px;width:18px;height:18px;border-radius:50%;background:#073229"></div>
+            <div style="position:absolute;right:-9px;top:-9px;width:18px;height:18px;border-radius:50%;background:#073229"></div>
+            <div style="position:absolute;left:14px;right:14px;top:0;border-top:1.5px dashed #DED2B5"></div>
+          </div>
+          <div style="padding:18px 20px 20px">
+            <div style="display:flex;align-items:center;gap:12px">
+              <div style="width:36px;height:36px;border-radius:11px;background:#B98D2F;display:flex;align-items:center;justify-content:center;flex:none">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#FFFDF7" stroke-width="1.9" stroke-linecap="round"><rect x="3.5" y="8.5" width="17" height="12" rx="2"></rect><path d="M3.5 12.5h17M12 8.5v12"></path></svg>
+              </div>
+              <div style="flex:1">
+                <div style="font:700 12.5px/1 Manrope,sans-serif;color:#16302A">Complimentary Rum Punch</div>
+                <div style="margin-top:5px;font:600 10.5px/1 Manrope,sans-serif;color:#7A6420">One per guest · redeem at the summit bar</div>
+              </div>
+              <span style="background:#EAF3EF;color:#0C4A3F;font:800 9px/1 Manrope,sans-serif;letter-spacing:0.06em;padding:7px 8px;border-radius:7px;flex:none">ATTACHED</span>
+            </div>
+            <div style="margin-top:14px;display:flex;gap:6px">
+              <span style="flex:1;text-align:center;background:#EAF3EF;color:#0C4A3F;font:700 8.5px/1 Manrope,sans-serif;padding:7px 4px;border-radius:6px">Available</span>
+              <span style="flex:1;text-align:center;background:#0C4A3F;color:#FFFDF7;font:700 8.5px/1 Manrope,sans-serif;padding:7px 4px;border-radius:6px">Attached</span>
+              <span style="flex:1;text-align:center;background:#F4EFE4;color:#8A9A93;font:700 8.5px/1 Manrope,sans-serif;padding:7px 4px;border-radius:6px">Redeemed</span>
+              <span style="flex:1;text-align:center;background:#F4EFE4;color:#C4998C;font:700 8.5px/1 Manrope,sans-serif;padding:7px 4px;border-radius:6px">Expired</span>
+            </div>
+          </div>
+        </div>
+
+        <div style="margin:16px 16px 0;display:flex;gap:9px">
+          <div style="flex:1;background:#FBF6EC;color:#0C4A3F;text-align:center;font:700 13px/1 Manrope,sans-serif;padding:16px 10px;border-radius:14px">Directions</div>
+          <div style="flex:1;background:rgba(251,246,236,0.14);border:1.5px solid rgba(251,246,236,0.4);color:#FFFDF7;text-align:center;font:700 13px/1 Manrope,sans-serif;padding:15px 10px;border-radius:14px">Add to Wallet</div>
+        </div>
+        <div style="padding:18px 16px 0;text-align:center;font:600 9.5px/1 Manrope,sans-serif;letter-spacing:0.1em;color:rgba(251,246,236,0.5)">DEMO TICKET · SAMPLE QR CODE</div>
+      </div>
+    </sc-if>
+
+    <sc-if value="{{ isIrie }}">
+      <div style="min-height:844px;background:#073229;padding-bottom:170px">
+        <div style="padding:56px 20px 0;display:flex;align-items:center;justify-content:space-between">
+          <div style="display:flex;align-items:center;gap:9px">
+            <svg width="19" height="19" viewBox="0 0 24 24" fill="#E3C271"><path d="M12 3l1.8 4.9L18.7 9.7l-4.9 1.8L12 16.4l-1.8-4.9L5.3 9.7l4.9-1.8z"></path></svg>
+            <span style="font:700 14px/1 Manrope,sans-serif;color:#FFFDF7">Irie AI</span>
+            <span style="font:600 9.5px/1 Manrope,sans-serif;letter-spacing:0.1em;color:rgba(227,194,113,0.85);border:1px solid rgba(227,194,113,0.4);padding:5px 7px;border-radius:6px">CONCIERGE</span>
+          </div>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="rgba(251,246,236,0.7)" stroke-width="1.9" stroke-linecap="round"><path d="M4 5.5v5h5"></path><path d="M4.6 10.5a8 8 0 1 1 2.2 7.6"></path></svg>
+        </div>
+
+        <div style="padding:26px 20px 0">
+          <div style="font:600 33px/1.02 'Cormorant Garamond',serif;color:#E3C271">Wah Gwaan!</div>
+          <div style="margin-top:12px;font:500 17px/1.35 'Cormorant Garamond',serif;font-size:18px;color:#FFFDF7">I'm Irie AI, your Caribbean concierge. How can I make your day extraordinary?</div>
+          <div style="margin-top:16px;display:flex;flex-wrap:wrap;gap:6px">
+            <span style="background:rgba(251,246,236,0.12);border:1px solid rgba(251,246,236,0.2);color:rgba(251,246,236,0.9);font:600 10px/1 Manrope,sans-serif;padding:7px 9px;border-radius:999px">Ocho Rios</span>
+            <span style="background:rgba(251,246,236,0.12);border:1px solid rgba(251,246,236,0.2);color:rgba(251,246,236,0.9);font:600 10px/1 Manrope,sans-serif;padding:7px 9px;border-radius:999px">3 free hours</span>
+            <span style="background:rgba(251,246,236,0.12);border:1px solid rgba(251,246,236,0.2);color:rgba(251,246,236,0.9);font:600 10px/1 Manrope,sans-serif;padding:7px 9px;border-radius:999px">Under US$80</span>
+            <span style="background:rgba(251,246,236,0.12);border:1px solid rgba(251,246,236,0.2);color:rgba(251,246,236,0.9);font:600 10px/1 Manrope,sans-serif;padding:7px 9px;border-radius:999px">Sunny 28°</span>
+            <span style="background:rgba(251,246,236,0.12);border:1px solid rgba(251,246,236,0.2);color:rgba(251,246,236,0.9);font:600 10px/1 Manrope,sans-serif;padding:7px 9px;border-radius:999px">Family of 4</span>
+            <span style="background:rgba(251,246,236,0.12);border:1px solid rgba(251,246,236,0.2);color:rgba(251,246,236,0.9);font:600 10px/1 Manrope,sans-serif;padding:7px 9px;border-radius:999px">Bobsled booked 9 AM</span>
+          </div>
+        </div>
+
+        <div style="padding:20px 20px 0;display:flex;flex-wrap:wrap;gap:7px">
+          <span style="background:#FBF6EC;color:#0C4A3F;font:700 11.5px/1 Manrope,sans-serif;padding:11px 13px;border-radius:999px">Plan my afternoon</span>
+          <span style="background:rgba(251,246,236,0.14);color:#FFFDF7;font:600 11.5px/1 Manrope,sans-serif;padding:11px 13px;border-radius:999px">Something under $50</span>
+          <span style="background:rgba(251,246,236,0.14);color:#FFFDF7;font:600 11.5px/1 Manrope,sans-serif;padding:11px 13px;border-radius:999px">Quiet beach nearby</span>
+          <span style="background:rgba(251,246,236,0.14);color:#FFFDF7;font:600 11.5px/1 Manrope,sans-serif;padding:11px 13px;border-radius:999px">Dinner with a view</span>
+          <span style="background:rgba(251,246,236,0.14);color:#FFFDF7;font:600 11.5px/1 Manrope,sans-serif;padding:11px 13px;border-radius:999px">Family activity</span>
+          <span style="background:rgba(251,246,236,0.14);color:#FFFDF7;font:600 11.5px/1 Manrope,sans-serif;padding:11px 13px;border-radius:999px">Rainy-day option</span>
+        </div>
+
+        <div style="margin:22px 16px 0;background:#FBF6EC;border-radius:22px;padding:16px">
+          <div style="font:600 13.5px/1.45 Manrope,sans-serif;color:#16302A">You finish the bobsled around 12:30. Here are two nearby options that fit your budget and get you back before dinner.</div>
+          <div style="margin-top:14px;display:flex;flex-direction:column;gap:10px">
+            <div onClick="{{ goDetail }}" style="display:flex;gap:12px;background:#FFFDF7;border-radius:16px;padding:11px;box-shadow:0 6px 14px rgba(7,40,33,0.07);cursor:pointer">
+              <div style="width:74px;height:74px;border-radius:12px;overflow:hidden;flex:none"><image-slot id="ai-1" shape="rect" placeholder="Small group swimming at a quiet blue hole"></image-slot></div>
+              <div style="flex:1">
+                <div style="font:700 12.5px/1.2 Manrope,sans-serif;color:#16302A">Blue Hole Secret Falls</div>
+                <div style="margin-top:5px;font:600 10.5px/1 Manrope,sans-serif;color:#1E7F86">US$45 · 0.6 km · Available 1:30 PM</div>
+                <div style="margin-top:6px;font:500 10.5px/1.35 Manrope,sans-serif;color:#3C534C">Quiet at midday and only 4 minutes from your exit.</div>
+                <div style="margin-top:7px;display:flex;gap:6px">
+                  <span style="background:#0C4A3F;color:#FFFDF7;font:700 9.5px/1 Manrope,sans-serif;padding:6px 8px;border-radius:7px">View</span>
+                  <span style="background:#EAF3EF;color:#0C4A3F;font:700 9.5px/1 Manrope,sans-serif;padding:6px 8px;border-radius:7px">Add to Trip</span>
+                </div>
+              </div>
+            </div>
+            <div style="display:flex;gap:12px;background:#FFFDF7;border-radius:16px;padding:11px;box-shadow:0 6px 14px rgba(7,40,33,0.07)">
+              <div style="width:74px;height:74px;border-radius:12px;overflow:hidden;flex:none"><image-slot id="ai-2" shape="rect" placeholder="Guide teaching kids to make patties in a kitchen"></image-slot></div>
+              <div style="flex:1">
+                <div style="font:700 12.5px/1.2 Manrope,sans-serif;color:#16302A">Patty-Making with Miss Elaine</div>
+                <div style="margin-top:5px;font:600 10.5px/1 Manrope,sans-serif;color:#1E7F86">US$32 · 1.8 km · 3 spots at 2:00 PM</div>
+                <div style="margin-top:6px;font:500 10.5px/1.35 Manrope,sans-serif;color:#3C534C">Indoors and shaded — good with children after a hot morning.</div>
+                <div style="margin-top:7px;display:flex;gap:6px">
+                  <span style="background:#0C4A3F;color:#FFFDF7;font:700 9.5px/1 Manrope,sans-serif;padding:6px 8px;border-radius:7px">View</span>
+                  <span style="background:#EAF3EF;color:#0C4A3F;font:700 9.5px/1 Manrope,sans-serif;padding:6px 8px;border-radius:7px">Add to Trip</span>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div onClick="{{ goTrips }}" style="margin-top:12px;text-align:center;font:700 11.5px/1 Manrope,sans-serif;color:#1E7F86;cursor:pointer">Add both to Your Ocho Rios Day</div>
+        </div>
+      </div>
+    </sc-if>
+
+  </div>
+
+  <sc-if value="{{ isIrie }}">
+    <div style="position:absolute;left:0;right:0;bottom:84px;background:#073229;padding:12px 16px 14px;z-index:19">
+      <div style="display:flex;align-items:center;gap:10px;background:rgba(251,246,236,0.14);border:1px solid rgba(251,246,236,0.24);border-radius:999px;padding:12px 14px">
+        <span style="flex:1;font:600 12.5px/1 Manrope,sans-serif;color:rgba(251,246,236,0.72)">Ask Irie AI anything…</span>
+        <div style="width:32px;height:32px;border-radius:50%;background:#E3C271;display:flex;align-items:center;justify-content:center">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#073229" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12h14M12 6l6 6-6 6"></path></svg>
+        </div>
+      </div>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{ isDetail }}">
+    <div style="position:absolute;left:0;right:0;bottom:84px;background:rgba(251,246,236,0.96);border-top:1px solid #EAE1CE;padding:14px 16px;display:flex;align-items:center;gap:14px;z-index:19">
+      <div><div style="font:800 17px/1 Manrope,sans-serif;color:#0C4A3F">US$89</div>
+        <div style="margin-top:5px;font:600 10px/1 Manrope,sans-serif;color:#CE5F44">Nearly full · 6 spots left</div></div>
+      <div onClick="{{ goCheckout }}" style="flex:1;background:#0C4A3F;color:#FFFDF7;text-align:center;font:700 14px/1 Manrope,sans-serif;padding:16px;border-radius:14px;cursor:pointer">Check Availability</div>
+    </div>
+  </sc-if>
+
+  <div style="position:absolute;left:0;right:0;bottom:0;height:84px;z-index:20">
+    <dc-import name="BottomNav" active="{{ navActive }}" onNavigate="{{ onNavigate }}" hint-size="100%,84px"></dc-import>
+  </div>
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:404,&quot;height&quot;:858},&quot;screen&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;explore&quot;,&quot;nearby&quot;,&quot;offer&quot;,&quot;detail&quot;,&quot;checkout&quot;,&quot;confirm&quot;,&quot;trips&quot;,&quot;ticket&quot;,&quot;irie&quot;],&quot;default&quot;:&quot;explore&quot;,&quot;tsType&quot;:&quot;string&quot;},&quot;island&quot;:{&quot;editor&quot;:&quot;text&quot;,&quot;default&quot;:&quot;VIP Jamaica · Ocho Rios&quot;,&quot;tsType&quot;:&quot;string&quot;},&quot;onNavigate&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;(s: string) =&gt; void&quot;}}">
+class Component extends DCLogic {
+  state = { islandOpen: false, saved: false };
+  qr(size, cell) {
+    const n = 25, on = [];
+    for (let y = 0; y < n; y++) for (let x = 0; x < n; x++) {
+      const fin = (a, b) => x >= a && x < a + 7 && y >= b && y < b + 7 && (x === a || x === a + 6 || y === b || y === b + 6 || (x > a + 1 && x < a + 5 && y > b + 1 && y < b + 5));
+      const inFinderBox = (a, b) => x >= a - 1 && x <= a + 7 && y >= b - 1 && y <= b + 7;
+      let v;
+      if (fin(0, 0) || fin(18, 0) || fin(0, 18)) v = 1;
+      else if (inFinderBox(0, 0) || inFinderBox(18, 0) || inFinderBox(0, 18)) v = 0;
+      else v = (((x * 7 + y * 13 + ((x * y) % 5) * 3 + ((x + y) % 3)) % 4) < 2) ? 1 : 0;
+      if (v) on.push([x, y]);
+    }
+    return React.createElement("div", { style: { position: "relative", width: size, height: size } },
+      on.map(([x, y], i) => React.createElement("div", {
+        key: i,
+        style: { position: "absolute", left: x * cell, top: y * cell, width: cell, height: cell, background: "#16302A" }
+      })));
+  }
+  renderVals() {
+    const s = this.props.screen || "explore";
+    const nav = this.props.onNavigate || (() => {});
+    const island = this.props.island || "VIP Jamaica · Ocho Rios";
+    const light = ["explore", "nearby", "offer", "detail", "irie", "ticket"];
+    const navMap = { explore: "explore", nearby: "nearby", offer: "nearby", detail: "explore", checkout: "explore", confirm: "trips", trips: "trips", ticket: "trips", irie: "irie" };
+    return {
+      isExplore: s === "explore", isNearby: s === "nearby", isOffer: s === "offer",
+      isDetail: s === "detail", isCheckout: s === "checkout", isConfirm: s === "confirm",
+      isTrips: s === "trips", isTicket: s === "ticket", isIrie: s === "irie",
+      navActive: navMap[s] || "explore",
+      qrSmall: this.qr(92, 3.68),
+      qrLarge: this.qr(176, 7.04),
+      onNavigate: nav,
+      islandLabel: island,
+      islandOpen: this.state.islandOpen,
+      statusColor: (s === "explore" || s === "offer" || s === "irie" || s === "detail" || s === "confirm" || s === "ticket") ? "#FFFDF7" : "#16302A",
+      saveLabel: this.state.saved ? "Saved to your vouchers" : "Save Offer",
+      toggleIsland: () => this.setState(p => ({ islandOpen: !p.islandOpen })),
+      pickJamaica: () => this.setState({ islandOpen: false }),
+      pickCayman: () => this.setState({ islandOpen: false }),
+      pickBarbados: () => this.setState({ islandOpen: false }),
+      saveOffer: () => this.setState({ saved: true }),
+      goExplore: () => nav("explore"),
+      goNearbyScreen: () => nav("nearby"),
+      goOffer: () => nav("offer"),
+      goDetail: () => nav("detail"),
+      goCheckout: () => nav("checkout"),
+      goConfirm: () => nav("confirm"),
+      goTrips: () => nav("trips"),
+      goTicket: () => nav("ticket"),
+      goIrieScreen: () => nav("irie")
+    };
+  }
+}
+</script>
+</body>
+</html>

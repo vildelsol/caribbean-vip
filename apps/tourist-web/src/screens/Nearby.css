@@ -1,0 +1,271 @@
+/* The stylised map. Abstract shapes, not tiles — see the note in Nearby.tsx. */
+
+.nearby-map {
+  position: relative;
+  height: 300px;
+  background: var(--map-land);
+  overflow: hidden;
+  isolation: isolate;
+}
+
+.nearby-map__water,
+.nearby-map__land,
+.nearby-map__green,
+.nearby-map__road {
+  position: absolute;
+  pointer-events: none;
+}
+
+.nearby-map__land {
+  left: -60px;
+  top: -80px;
+  width: 300px;
+  height: 300px;
+  border-radius: 50%;
+  background: var(--map-land-alt);
+}
+
+.nearby-map__water {
+  right: -110px;
+  top: 40px;
+  width: 340px;
+  height: 380px;
+  border-radius: 46% 54% 40% 60%;
+  background: var(--map-water);
+}
+
+.nearby-map__green {
+  left: -40px;
+  bottom: -40px;
+  width: 240px;
+  height: 180px;
+  border-radius: 50% 40% 60% 50%;
+  background: var(--map-green);
+}
+
+.nearby-map__road {
+  background: var(--map-road);
+}
+
+.nearby-map__road--a {
+  left: 0;
+  right: 0;
+  top: 120px;
+  height: 11px;
+  transform: rotate(-8deg);
+}
+
+.nearby-map__road--b {
+  left: 140px;
+  top: 0;
+  bottom: 0;
+  width: 8px;
+  transform: rotate(7deg);
+}
+
+/* --- Proximity rings ------------------------------------------------------ */
+
+.ring,
+.you,
+.you__label,
+.ring__scale {
+  position: absolute;
+  left: 46%;
+  top: 58%;
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+}
+
+.ring {
+  border-radius: 50%;
+  border: 1.5px dashed rgba(30, 127, 134, 0.4);
+}
+
+.ring--3 {
+  width: 260px;
+  height: 260px;
+}
+
+.ring--2 {
+  width: 160px;
+  height: 160px;
+  border-color: rgba(30, 127, 134, 0.5);
+  background: rgba(30, 127, 134, 0.06);
+}
+
+.ring--1 {
+  width: 78px;
+  height: 78px;
+  border: none;
+  background: rgba(30, 127, 134, 0.12);
+}
+
+.you {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--teal);
+  border: 4px solid var(--ivory-raised);
+  box-shadow: 0 3px 10px rgba(7, 40, 33, 0.28);
+}
+
+.you__label {
+  transform: translate(14px, 6px);
+  color: var(--teal-text);
+  white-space: nowrap;
+}
+
+.ring__scale {
+  transform: translate(-50%, -142px);
+  color: rgba(26, 110, 116, 0.85);
+  letter-spacing: 0.1em;
+}
+
+/* --- Pins ------------------------------------------------------------------ */
+
+.map-pin {
+  position: absolute;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: 7px 9px;
+  border-radius: var(--r-sm);
+  background: var(--ivory-raised);
+  color: var(--green-900);
+  box-shadow: 0 5px 14px rgba(7, 40, 33, 0.18);
+  z-index: 3;
+  transition: transform 0.14s ease;
+}
+
+.map-pin.is-on {
+  background: var(--green-900);
+  color: var(--on-dark);
+  transform: scale(1.06);
+  z-index: 4;
+}
+
+.map-pin:active {
+  transform: scale(0.96);
+}
+
+.map-pin__name {
+  font-size: 9.5px;
+  font-weight: 600;
+  opacity: 0.82;
+  white-space: nowrap;
+}
+
+.map-pin--0 {
+  left: 22%;
+  top: 30%;
+}
+.map-pin--1 {
+  left: 62%;
+  top: 44%;
+}
+.map-pin--2 {
+  left: 14%;
+  top: 72%;
+}
+.map-pin--3 {
+  left: 66%;
+  top: 76%;
+}
+
+/* --- Head ------------------------------------------------------------------- */
+
+.nearby-head {
+  margin-top: -28px;
+  position: relative;
+  z-index: 5;
+}
+
+.nearby-search {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 48px;
+  padding: 12px 14px;
+  border-radius: var(--r-md);
+  background: var(--ivory-raised);
+  box-shadow: 0 8px 22px rgba(7, 40, 33, 0.12);
+}
+
+.nearby-filters {
+  display: flex;
+  gap: 8px;
+  margin-top: 10px;
+  overflow-x: auto;
+  scrollbar-width: none;
+  padding-bottom: 2px;
+}
+
+.nearby-filters::-webkit-scrollbar {
+  display: none;
+}
+
+.nearby-filters > * {
+  flex: none;
+}
+
+/* --- Notice ------------------------------------------------------------------ */
+
+.nearby-notice {
+  display: flex;
+  align-items: flex-start;
+  gap: 7px;
+  margin: 14px var(--s-md) 0;
+  padding: 10px 12px;
+  border-radius: var(--r-md);
+  background: var(--aqua-soft);
+  color: var(--green-900);
+}
+
+.nearby-notice svg {
+  flex: none;
+  margin-top: 1px;
+}
+
+/* --- List --------------------------------------------------------------------- */
+
+.nearby-list {
+  padding-top: 22px;
+}
+
+.near-row__inner {
+  gap: 13px;
+  padding: 13px;
+  align-items: flex-start;
+}
+
+.near-row__photo {
+  width: 92px;
+  flex: none;
+}
+
+.near-row__dist {
+  letter-spacing: 0.08em;
+}
+
+.near-row__title {
+  margin-top: 6px;
+}
+
+.near-row__tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  margin-top: 7px;
+}
+
+.near-row__foot {
+  margin-top: 10px;
+  justify-content: space-between;
+}
+
+.near-row__cta {
+  padding: 10px 14px;
+  border-radius: var(--r-sm);
+  font-size: 12px;
+}

@@ -1,0 +1,74 @@
+import { NavLink, useLocation } from 'react-router-dom';
+import { Icon, type IconName } from './Icon';
+import './BottomNav.css';
+
+/**
+ * The five-tab bar, with Irie AI raised in the centre.
+ *
+ * The bar is **ivory**, not green — the same value as the screen above it, separated by a hairline.
+ * Putting the darkest value in the design along the bottom edge of every screen inverts its value
+ * structure, and doing that was once the single largest reason the app did not look like its
+ * design. The one heavy element is the centre badge, which is the point.
+ *
+ * Irie is gold-on-green, always, never the reverse: a green disc carrying a gold sparkle. Built the
+ * other way round it throws away the motif the concierge is recognised by across the journey.
+ */
+
+interface Tab {
+  to: string;
+  label: string;
+  icon: IconName;
+  /** Routes that should light this tab even though they are not it. */
+  matches?: string[];
+}
+
+const TABS: Tab[] = [
+  { to: '/', label: 'Explore', icon: 'home', matches: ['/experience', '/search', '/checkout', '/interests'] },
+  { to: '/nearby', label: 'Nearby', icon: 'pin', matches: ['/offer'] },
+  { to: '/irie', label: 'Irie AI', icon: 'sparkle' },
+  { to: '/trips', label: 'Trips', icon: 'calendar', matches: ['/ticket', '/confirmation'] },
+  { to: '/profile', label: 'Profile', icon: 'user' },
+];
+
+export function BottomNav() {
+  const { pathname } = useLocation();
+
+  const isActive = (tab: Tab) =>
+    pathname === tab.to || (tab.matches ?? []).some((m) => pathname.startsWith(m));
+
+  return (
+    <nav className="bottom-nav" aria-label="Primary">
+      {TABS.map((tab) => {
+        const active = isActive(tab);
+        if (tab.icon === 'sparkle') {
+          return (
+            <NavLink
+              key={tab.to}
+              to={tab.to}
+              className="bottom-nav__item bottom-nav__item--centre"
+              aria-current={active ? 'page' : undefined}
+            >
+              <span className={`irie-badge ${active ? 'irie-badge--on' : ''}`}>
+                <Icon name="sparkle" size={24} color="var(--gold-light)" />
+              </span>
+              <span className={`bottom-nav__label ${active ? 'is-active' : ''}`}>{tab.label}</span>
+            </NavLink>
+          );
+        }
+        return (
+          <NavLink
+            key={tab.to}
+            to={tab.to}
+            className="bottom-nav__item"
+            aria-current={active ? 'page' : undefined}
+          >
+            <span className={`bottom-nav__icon ${active ? 'is-active' : ''}`}>
+              <Icon name={tab.icon} size={21} strokeWidth={1.9} />
+            </span>
+            <span className={`bottom-nav__label ${active ? 'is-active' : ''}`}>{tab.label}</span>
+          </NavLink>
+        );
+      })}
+    </nav>
+  );
+}

@@ -1,0 +1,362 @@
+/* --- Hero ---------------------------------------------------------------- */
+
+.ex-hero {
+  position: relative;
+  isolation: isolate;
+}
+
+.ex-hero__photo {
+  border-radius: 0;
+}
+
+.ex-hero__scrim {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    180deg,
+    rgba(7, 40, 33, 0.72) 0%,
+    rgba(7, 40, 33, 0.12) 42%,
+    rgba(7, 40, 33, 0.86) 100%
+  );
+  pointer-events: none;
+}
+
+.ex-hero__top {
+  position: absolute;
+  top: 16px;
+  left: var(--s-md);
+  right: var(--s-md);
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.island-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  min-height: 36px;
+  padding: 7px 12px;
+  border-radius: var(--r-pill);
+  background: rgba(251, 246, 236, 0.16);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  border: 1px solid rgba(251, 246, 236, 0.34);
+  color: var(--on-dark);
+  min-width: 0;
+}
+
+.island-pill__brand {
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--gold-light);
+  flex: none;
+}
+
+.island-pill__rule {
+  width: 1px;
+  height: 11px;
+  background: rgba(251, 246, 236, 0.4);
+  flex: none;
+}
+
+.island-pill__name {
+  font-size: 12px;
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.island-menu {
+  position: absolute;
+  top: 60px;
+  left: var(--s-md);
+  width: 258px;
+  max-width: calc(100% - var(--s-md) * 2);
+  background: var(--ivory-raised);
+  border-radius: var(--r-md);
+  padding: 8px;
+  box-shadow: 0 18px 40px rgba(7, 40, 33, 0.34);
+  z-index: 12;
+}
+
+.island-menu__head {
+  padding: 7px 10px 6px;
+  font-size: 10px;
+}
+
+.island-menu__row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  width: 100%;
+  min-height: 44px;
+  padding: 10px;
+  border-radius: var(--r-sm);
+  color: var(--ink-muted);
+}
+
+.island-menu__row.is-on {
+  background: var(--aqua-soft);
+  color: var(--green-900);
+}
+
+.island-menu__dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--green-900);
+  flex: none;
+}
+
+.ex-hero__title {
+  position: absolute;
+  left: var(--s-md);
+  right: var(--s-md);
+  bottom: 42px;
+  pointer-events: none;
+}
+
+.ex-hero__place {
+  font-size: 40px;
+  font-weight: 600;
+}
+
+.ex-hero__sub {
+  margin-top: 10px;
+  color: rgba(251, 246, 236, 0.9);
+}
+
+/* --- Search --------------------------------------------------------------- */
+
+.search-pill {
+  position: relative;
+  z-index: 8;
+  margin-top: -26px;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 48px;
+  padding: 13px 16px;
+  border-radius: var(--r-pill);
+  background: var(--ivory-raised);
+  box-shadow: 0 10px 26px rgba(7, 40, 33, 0.16);
+  text-align: left;
+}
+
+/* --- Mood ----------------------------------------------------------------- */
+
+.ex-moods {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  padding-top: 18px;
+}
+
+.mood {
+  position: relative;
+  border-radius: var(--r-lg);
+  overflow: hidden;
+  border: 2px solid transparent;
+  transition: border-color 0.15s ease, transform 0.12s ease;
+}
+
+.mood--on {
+  border-color: var(--green-900);
+}
+
+.mood:active {
+  transform: scale(0.985);
+}
+
+.mood__scrim {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, rgba(7, 40, 33, 0.08), rgba(7, 40, 33, 0.76));
+  pointer-events: none;
+}
+
+.mood__label {
+  position: absolute;
+  left: 12px;
+  bottom: 11px;
+  right: 12px;
+  font-size: 13.5px;
+  font-weight: 700;
+  color: var(--on-dark);
+  text-align: left;
+  pointer-events: none;
+}
+
+.mood__flag {
+  position: absolute;
+  top: 9px;
+  right: 9px;
+  background: var(--ivory-raised);
+  color: var(--green-900);
+  letter-spacing: 0.1em;
+  padding: 5px 7px;
+  border-radius: var(--r-xs);
+}
+
+/* --- Sections -------------------------------------------------------------- */
+
+.ex-section {
+  padding-top: 26px;
+}
+
+/* --- Feature card ---------------------------------------------------------- */
+
+.feature__media {
+  position: relative;
+}
+
+.feature__flags {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  display: flex;
+  gap: 6px;
+}
+
+.feature__save {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+}
+
+.feature__body {
+  padding: 15px 16px 16px;
+}
+
+.feature__meta {
+  margin-top: 5px;
+  text-transform: capitalize;
+}
+
+.feature__summary {
+  margin-top: 9px;
+}
+
+.feature__foot {
+  margin-top: 13px;
+  gap: 12px;
+  align-items: flex-end;
+}
+
+.feature__price {
+  margin-top: 6px;
+  display: flex;
+  align-items: baseline;
+  gap: 4px;
+}
+
+.feature__cta {
+  padding: 13px 18px;
+  border-radius: var(--r-md);
+  font-size: 12.5px;
+  flex: none;
+}
+
+/* --- Near you rail ---------------------------------------------------------- */
+
+.near {
+  width: 206px;
+}
+
+.near__media {
+  position: relative;
+}
+
+.near__flag {
+  position: absolute;
+  left: 10px;
+  bottom: 10px;
+}
+
+.near__body {
+  padding: 12px 13px 14px;
+}
+
+.near__title {
+  /* Two lines maximum, so a long title cannot make one card in the rail taller than its siblings. */
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  line-clamp: 2;
+  overflow: hidden;
+  min-height: 40px;
+}
+
+.near__foot {
+  margin-top: 9px;
+  justify-content: space-between;
+}
+
+/* --- Hidden gems ------------------------------------------------------------ */
+
+.ex-gems {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.gem {
+  position: relative;
+  border-radius: var(--r-lg);
+  overflow: hidden;
+}
+
+.gem__scrim {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, rgba(7, 40, 33, 0), rgba(7, 40, 33, 0.84));
+  pointer-events: none;
+}
+
+.gem__body {
+  position: absolute;
+  left: 11px;
+  right: 11px;
+  bottom: 11px;
+  pointer-events: none;
+}
+
+.gem__price {
+  margin-top: 4px;
+  font-size: 11px;
+  font-weight: 600;
+  color: rgba(251, 246, 236, 0.86);
+}
+
+/* --- Tonight ---------------------------------------------------------------- */
+
+.tonight {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  background: var(--green-900);
+  border-radius: var(--r-xl);
+  padding: 14px;
+  color: var(--on-dark);
+}
+
+.tonight__title {
+  margin-top: 10px;
+}
+
+.tonight__sub {
+  margin-top: 6px;
+  color: rgba(251, 246, 236, 0.74);
+}
+
+.tonight__photo {
+  width: 96px;
+  border-radius: var(--r-md);
+}

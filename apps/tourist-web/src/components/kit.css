@@ -1,0 +1,353 @@
+/* Kit styles. Colour only ever comes from a custom property in tokens.css. */
+
+/* --- Buttons ------------------------------------------------------------- */
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  /* PRD §16: 44px is the accessible minimum tap target, primaries are 52. */
+  min-height: 52px;
+  padding: 0 18px;
+  border-radius: var(--r-md);
+  font-weight: 700;
+  font-size: 15px;
+  line-height: 1.1;
+  transition: transform 0.12s ease, opacity 0.12s ease, background-color 0.12s ease;
+}
+
+.btn--full {
+  width: 100%;
+}
+
+.btn:active:not(:disabled) {
+  transform: scale(0.985);
+}
+
+.btn:disabled {
+  opacity: 0.45;
+}
+
+.btn--primary {
+  background: var(--green-900);
+  color: var(--on-dark);
+  box-shadow: var(--e-card);
+}
+
+.btn--secondary {
+  background: var(--ivory-raised);
+  color: var(--green-900);
+  border: 1.5px solid var(--border-cool);
+}
+
+.btn--gold {
+  background: var(--ivory-ticket);
+  color: var(--gold-text);
+  border: 1.5px solid var(--gold);
+}
+
+.btn--text {
+  min-height: 44px;
+  padding: 0 8px;
+  background: none;
+  color: var(--ink-faint);
+  font-weight: 700;
+  font-size: 13px;
+}
+
+.round-btn {
+  width: 36px;
+  height: 36px;
+  min-width: 36px;
+  border-radius: var(--r-pill);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.12s ease;
+}
+
+/* The visual control is 36px; this pads the *hit* area out to 44 without moving the artwork. */
+.round-btn::after {
+  content: '';
+  position: absolute;
+  inset: -4px;
+}
+
+.round-btn {
+  position: relative;
+}
+
+.round-btn--light {
+  background: rgba(251, 246, 236, 0.92);
+  color: var(--ink);
+}
+
+.round-btn--dark {
+  background: rgba(22, 48, 42, 0.5);
+  color: var(--on-dark);
+}
+
+.round-btn:active {
+  transform: scale(0.94);
+}
+
+/* --- Chips --------------------------------------------------------------- */
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 36px;
+  padding: 0 13px;
+  border-radius: var(--r-pill);
+  font-size: 13px;
+  font-weight: 600;
+  white-space: nowrap;
+  background: var(--ivory-raised);
+  color: var(--ink);
+  border: 1px solid transparent;
+  box-shadow: 0 3px 8px rgba(7, 40, 33, 0.06);
+}
+
+.chip--aqua {
+  background: var(--aqua);
+  color: var(--green-900);
+  box-shadow: none;
+}
+.chip--sand {
+  background: var(--sand);
+  color: var(--gold-text);
+  box-shadow: none;
+}
+.chip--sunken {
+  background: var(--ivory-sunken);
+  color: var(--ink-muted);
+  box-shadow: none;
+}
+
+.chip--on {
+  background: var(--green-900);
+  color: var(--on-dark);
+  box-shadow: none;
+}
+
+button.chip:active {
+  transform: scale(0.97);
+}
+
+/* --- Badges -------------------------------------------------------------- */
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 5px 8px;
+  border-radius: var(--r-xs);
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1.2;
+  white-space: nowrap;
+}
+
+.badge--brand {
+  background: var(--green-900);
+  color: var(--on-dark);
+}
+.badge--aqua {
+  background: var(--aqua-soft);
+  color: var(--green-900);
+}
+.badge--sand {
+  background: var(--sand);
+  color: var(--gold-text);
+}
+.badge--coral {
+  background: var(--coral);
+  color: var(--on-dark);
+}
+.badge--plain {
+  background: rgba(251, 246, 236, 0.94);
+  color: var(--ink);
+}
+.badge--muted {
+  background: var(--ivory-sunken);
+  color: var(--ink-muted);
+}
+
+/* --- Rating -------------------------------------------------------------- */
+
+.rating {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
+/* --- Photo --------------------------------------------------------------- */
+
+.photo {
+  position: relative;
+  overflow: hidden;
+  background: var(--ivory-sunken);
+  flex: none;
+}
+
+.photo img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* Attribution ships with the image. Small, but legible — it is a licence condition, not a nicety. */
+.photo__credit {
+  position: absolute;
+  right: 6px;
+  bottom: 6px;
+  max-width: calc(100% - 12px);
+  padding: 3px 6px;
+  border-radius: 5px;
+  background: rgba(7, 40, 33, 0.62);
+  color: rgba(255, 253, 247, 0.95);
+  font-size: 9.5px;
+  line-height: 1.3;
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  pointer-events: none;
+}
+
+/* --- Card ---------------------------------------------------------------- */
+
+.card {
+  background: var(--ivory-raised);
+  border-radius: var(--r-xl);
+  box-shadow: var(--e-card);
+  overflow: hidden;
+  width: 100%;
+  display: block;
+  text-align: left;
+  color: inherit;
+}
+
+.card--tappable {
+  transition: transform 0.14s ease, box-shadow 0.14s ease;
+}
+
+.card--tappable:active {
+  transform: scale(0.99);
+  box-shadow: 0 4px 12px rgba(7, 40, 33, 0.09);
+}
+
+/* --- Section header ------------------------------------------------------ */
+
+.section-head {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  margin-bottom: 11px;
+}
+
+.section-head .t-section {
+  flex: 1;
+  min-width: 0;
+}
+
+.section-head__note,
+.section-head__action {
+  flex: none;
+}
+
+.section-head__action {
+  min-height: 32px;
+}
+
+/* --- Demo disclosure ----------------------------------------------------- */
+
+.demo-note {
+  text-align: center;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+  padding: 18px 16px 0;
+}
+
+.screen--deep .demo-note {
+  color: rgba(251, 246, 236, 0.72);
+}
+
+/* --- Skeleton ------------------------------------------------------------ */
+
+.skeleton {
+  display: block;
+  background: linear-gradient(
+    90deg,
+    var(--ivory-sunken) 25%,
+    var(--ivory-raised) 50%,
+    var(--ivory-sunken) 75%
+  );
+  background-size: 200% 100%;
+  animation: skeleton-shimmer 1.3s ease-in-out infinite;
+}
+
+@keyframes skeleton-shimmer {
+  from {
+    background-position: 200% 0;
+  }
+  to {
+    background-position: -200% 0;
+  }
+}
+
+/* --- Empty state --------------------------------------------------------- */
+
+.empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 10px;
+  padding: 40px 24px;
+}
+
+.empty__icon {
+  width: 52px;
+  height: 52px;
+  border-radius: var(--r-pill);
+  background: var(--aqua);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 4px;
+}
+
+/* --- Stepper ------------------------------------------------------------- */
+
+.stepper {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 0;
+}
+
+.stepper__btn {
+  width: 36px;
+  height: 36px;
+  border-radius: var(--r-pill);
+  border: 1.5px solid var(--border-cool);
+  color: var(--green-900);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+}
+
+.stepper__btn:disabled {
+  opacity: 0.35;
+}
+
+.stepper__value {
+  min-width: 24px;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}

@@ -1,0 +1,326 @@
+@import './tokens.css';
+
+/**
+ * Base layer.
+ *
+ * Three of the brief's acceptance criteria are structural rather than per-screen, so they are
+ * enforced here once instead of being re-remembered on every screen:
+ *
+ *   - **No horizontal overflow.** `overflow-x: clip` on the app frame, `min-width: 0` on flex
+ *     children (the default `auto` is what makes a long word push a row wider than its parent),
+ *     and `max-width: 100%` on media.
+ *   - **Nothing hidden under the bottom navigation.** `.screen` reserves `--nav-clearance`.
+ *   - **No dead primary buttons.** Every interactive element gets a visible `:active` and a
+ *     focus ring, so a control that does nothing is obvious in review rather than plausible.
+ */
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  background: var(--green-980);
+  color: var(--ink);
+  font-family: var(--font-sans);
+  font-size: 16px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+  /* The frame is centred with auto margins on `.app`, deliberately NOT by making the body a flex
+     container. A flex item defaults to `min-width: auto`, so it refuses to shrink below its own
+     min-content width — which meant the 430px frame stayed 430px inside a 402px viewport and hung
+     off both edges, clipping the left of every heading. Auto margins have no such floor. */
+  overflow-x: hidden;
+}
+
+/* A flex or grid child defaults to min-width:auto, which refuses to shrink below its content —
+   the single most common cause of a row overflowing its container sideways. */
+.row > *,
+.col > * {
+  min-width: 0;
+}
+
+img,
+svg,
+video {
+  max-width: 100%;
+  display: block;
+}
+
+button {
+  font: inherit;
+  color: inherit;
+  background: none;
+  border: none;
+  padding: 0;
+  margin: 0;
+  cursor: pointer;
+  text-align: inherit;
+}
+
+button:disabled {
+  cursor: not-allowed;
+}
+
+a {
+  color: var(--teal-text);
+  text-decoration: none;
+}
+
+/* Visible keyboard focus everywhere, removed for pointer users only. */
+:focus-visible {
+  outline: 2.5px solid var(--teal);
+  outline-offset: 2px;
+  border-radius: var(--r-xs);
+}
+
+:focus:not(:focus-visible) {
+  outline: none;
+}
+
+/* ---------------------------------------------------------------------------
+   The app frame
+   --------------------------------------------------------------------------- */
+
+.app {
+  position: relative;
+  width: 100%;
+  max-width: var(--app-width);
+  margin-inline: auto;
+  min-height: 100%;
+  min-width: 0;
+  background: var(--ivory);
+  overflow-x: clip;
+  display: flex;
+  flex-direction: column;
+}
+
+@media (min-width: 480px) {
+  .app {
+    box-shadow: 0 0 0 1px rgba(255, 253, 247, 0.08), 0 30px 80px rgba(3, 20, 16, 0.5);
+  }
+}
+
+/**
+ * A screen's scroll container.
+ *
+ * The bottom navigation is fixed, so every screen has to reserve room for it or its last card
+ * sits underneath. Reserving it here means no screen has to remember.
+ */
+.screen {
+  flex: 1;
+  padding-bottom: var(--nav-clearance);
+}
+
+/* A screen that paints its own full-bleed dark background (offer, ticket, Irie). */
+.screen--deep {
+  background: var(--green-950);
+  color: var(--on-dark);
+}
+
+.screen--calm {
+  background: var(--ivory-calm);
+}
+
+/* ---------------------------------------------------------------------------
+   Type scale — mirrors `typography` in @cvip/ui
+   --------------------------------------------------------------------------- */
+
+.t-display,
+.t-display-md,
+.t-display-sm,
+.t-section {
+  font-family: var(--font-display);
+  font-weight: 600;
+  letter-spacing: -0.005em;
+  margin: 0;
+}
+
+.t-display {
+  font-size: 33px;
+  line-height: 1.09;
+}
+.t-display-md {
+  font-size: 27px;
+  line-height: 1.11;
+}
+.t-display-sm {
+  font-size: 21px;
+  line-height: 1.24;
+}
+.t-section {
+  font-size: 21px;
+  line-height: 1.19;
+}
+
+.t-title {
+  font-size: 22px;
+  line-height: 1.27;
+  font-weight: 700;
+  letter-spacing: -0.013em;
+  margin: 0;
+}
+.t-heading {
+  font-size: 18px;
+  line-height: 1.33;
+  font-weight: 700;
+  letter-spacing: -0.011em;
+  margin: 0;
+}
+.t-body {
+  font-size: 16px;
+  line-height: 1.5;
+  font-weight: 500;
+  margin: 0;
+}
+.t-body-strong {
+  font-size: 16px;
+  line-height: 1.5;
+  font-weight: 700;
+  margin: 0;
+}
+.t-caption {
+  font-size: 14px;
+  line-height: 1.43;
+  font-weight: 500;
+  margin: 0;
+}
+.t-caption-strong {
+  font-size: 14px;
+  line-height: 1.43;
+  font-weight: 600;
+  margin: 0;
+}
+/* The floor. The source design goes to 8.5px; PRD §16 requires this to be readable outdoors in
+   sun, so the scale is kept and the floor is not. */
+.t-micro {
+  font-size: 11px;
+  line-height: 1.36;
+  font-weight: 600;
+  margin: 0;
+}
+.t-micro-strong {
+  font-size: 11px;
+  line-height: 1.36;
+  font-weight: 700;
+  margin: 0;
+}
+.t-overline {
+  font-size: 12px;
+  line-height: 1.25;
+  font-weight: 800;
+  letter-spacing: 0.125em;
+  text-transform: uppercase;
+  margin: 0;
+}
+
+.t-amount {
+  font-size: 22px;
+  line-height: 1.18;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  margin: 0;
+}
+.t-amount-sm {
+  font-size: 16px;
+  line-height: 1.25;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  margin: 0;
+}
+
+/* ---------------------------------------------------------------------------
+   Colour helpers
+   --------------------------------------------------------------------------- */
+
+.c-ink {
+  color: var(--ink);
+}
+.c-muted {
+  color: var(--ink-muted);
+}
+.c-faint {
+  color: var(--ink-faint);
+}
+.c-brand {
+  color: var(--green-900);
+}
+.c-locator {
+  color: var(--teal-text);
+}
+.c-premium {
+  color: var(--gold-text);
+}
+.c-urgent {
+  color: var(--coral-text);
+}
+.c-on-dark {
+  color: var(--on-dark);
+}
+
+/* ---------------------------------------------------------------------------
+   Layout helpers
+   --------------------------------------------------------------------------- */
+
+.row {
+  display: flex;
+  align-items: center;
+}
+.col {
+  display: flex;
+  flex-direction: column;
+}
+.grow {
+  flex: 1;
+  min-width: 0;
+}
+.pad {
+  padding-inline: var(--s-md);
+}
+
+/**
+ * A horizontally scrolling rail.
+ *
+ * Wide content must scroll inside its own container rather than widening the page — this is the
+ * mechanism that keeps "no horizontal overflow" true while still allowing the design's side-scroll
+ * card rows.
+ */
+.rail {
+  display: flex;
+  gap: 12px;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scroll-snap-type: x proximity;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+  padding-inline: var(--s-md);
+}
+
+.rail::-webkit-scrollbar {
+  display: none;
+}
+
+.rail > * {
+  scroll-snap-align: start;
+  flex: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+}
