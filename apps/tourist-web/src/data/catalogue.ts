@@ -233,7 +233,39 @@ export function byDistanceFrom(
     .sort((a, b) => a.metres - b.metres);
 }
 
-/** Walking time at a slow tourist pace — 4 km/h, which is what the design's "4 min away" implies. */
-export function walkMinutes(metres: number): number {
-  return Math.max(1, Math.round(metres / 66.7));
+export interface Travel {
+  minutes: number;
+  mode: 'walk' | 'drive';
+}
+
+/**
+ * How long it takes to get there, and how.
+ *
+ * The design's cards say "4 min away" and "12 min away", and its geography is tight enough that
+ * those are all walks. The real vendor coordinates are not: Camana Bay is 4.4 km from the Seven
+ * Mile Beach centre, which at walking pace is 66 minutes. Rendering that as "66 min away" beside a
+ * badge reading "Pickup available" is the kind of small incoherence that an audience notices even
+ * when they cannot say why.
+ *
+ * So the mode is chosen from the distance and then *stated*, rather than a walk being assumed:
+ * 4 km/h under 1.2 km, and 28 km/h beyond it — a realistic average for Caribbean coastal roads with
+ * junctions and single-lane sections, not open-highway speed.
+ */
+export function travelFrom(metres: number): Travel {
+  if (metres <= WALKABLE_METRES) {
+    return { minutes: Math.max(1, Math.round(metres / 66.7)), mode: 'walk' };
+  }
+  return { minutes: Math.max(2, Math.round(metres / 466.7)), mode: 'drive' };
+}
+
+/** Beyond this a listing is offered with pickup rather than as a walk. */
+export const WALKABLE_METRES = 1200;
+
+export function isWalkable(metres: number): boolean {
+  return metres <= WALKABLE_METRES;
+}
+
+/** "4.4 km" / "600 m" — metres below a kilometre, because "0.6 km" reads as further than it is. */
+export function formatKm(metres: number): string {
+  return metres < 1000 ? `${Math.round(metres / 10) * 10} m` : `${(metres / 1000).toFixed(1)} km`;
 }

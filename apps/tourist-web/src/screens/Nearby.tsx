@@ -6,7 +6,9 @@ import {
   heroUrl,
   islandById,
   simulatedPosition,
-  walkMinutes,
+  travelFrom,
+  isWalkable,
+  formatKm,
 } from '../data/catalogue';
 import { useStore } from '../state/store';
 import { Badge, Card, Chip, DemoNote, Photo, Price, SectionHeader } from '../components/kit';
@@ -78,7 +80,7 @@ export function Nearby() {
             type="button"
             className={`map-pin map-pin--${i} ${chosen?.experience.id === experience.id ? 'is-on' : ''}`}
             onClick={() => setSelected(experience.id)}
-            aria-label={`${experience.title}, ${(metres / 1000).toFixed(1)} kilometres away`}
+            aria-label={`${experience.title}, ${formatKm(metres)} away`}
           >
             <span className="t-micro-strong">{`US$${Math.round(experience.fromAmountMinor / 100)}`}</span>
             <span className="map-pin__name">{experience.title.split(' ').slice(0, 2).join(' ')}</span>
@@ -115,7 +117,9 @@ export function Nearby() {
           <p className="t-caption c-muted">Nothing in this category near {destination.name}.</p>
         ) : (
           <div className="col" style={{ gap: 12 }}>
-            {results.map(({ experience, metres }) => (
+            {results.map(({ experience, metres }) => {
+              const travel = travelFrom(metres);
+              return (
               <Card key={experience.id} className="near-row" onClick={() => setSelected(experience.id)}>
                 <div className="row near-row__inner">
                   <Photo
@@ -128,11 +132,11 @@ export function Nearby() {
                   />
                   <div className="grow">
                     <p className="t-micro-strong c-locator near-row__dist">
-                      {walkMinutes(metres)} MIN AWAY · {(metres / 1000).toFixed(1)} KM
+                      {travel.minutes} MIN {travel.mode.toUpperCase()} · {formatKm(metres).toUpperCase()}
                     </p>
                     <h3 className="t-caption-strong near-row__title">{experience.title}</h3>
                     <div className="near-row__tags">
-                      <Badge tone="aqua">{metres < 1200 ? 'Walking distance' : 'Pickup available'}</Badge>
+                      <Badge tone="aqua">{isWalkable(metres) ? 'Walking distance' : 'Pickup available'}</Badge>
                       <Badge tone="sand">Starts in 90 min</Badge>
                     </div>
                     <div className="row near-row__foot">
@@ -142,7 +146,8 @@ export function Nearby() {
                   </div>
                 </div>
               </Card>
-            ))}
+              );
+            })}
           </div>
         )}
       </section>

@@ -57,7 +57,9 @@ each package to the root, so the two React majors collided in three separate way
 
 1. `expo-asset` pulled React Native 0.86 alongside the 0.76.5 Expo SDK 52 requires, and Metro
    bundled the wrong one (a `match` expression in RN 0.86 source failed the Hermes parser).
-2. Hoisting `expo-router` above `apps/mobile` moved it outside the app's Babel root, so
+2. *(History — the Expo app was retired on 2026-08-03 and every app is now React 19, so this no
+   longer applies. Kept because it is the reason the workspace uses pnpm.)* Hoisting
+   `expo-router` above `apps/mobile` moved it outside the app's Babel root, so
    `apps/mobile/babel.config.js` never applied to it and
    `require.context(process.env.EXPO_ROUTER_APP_ROOT)` was left un-inlined.
 3. The Next builds failed outright with "Incompatible React versions: react 18.3.1 /

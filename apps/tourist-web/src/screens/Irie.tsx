@@ -6,7 +6,8 @@ import {
   heroUrl,
   islandById,
   simulatedPosition,
-  walkMinutes,
+  travelFrom,
+  formatKm,
   type DemoExperience,
 } from '../data/catalogue';
 import { useStore } from '../state/store';
@@ -40,7 +41,10 @@ const INTENTS: Intent[] = [
     chip: 'Plan my afternoon',
     reply: 'You have a few free hours. These are close, open this afternoon and get you back before dinner.',
     categories: [],
-    reason: (_e, m) => `${walkMinutes(m)} minutes from you, and quiet at midday.`,
+    reason: (_e, m) => {
+      const t = travelFrom(m);
+      return `${t.minutes} minutes' ${t.mode} from you, and quiet at midday.`;
+    },
   },
   {
     chip: 'Something under $50',
@@ -53,7 +57,7 @@ const INTENTS: Intent[] = [
     chip: 'Quiet beach nearby',
     reply: 'These stay calm even when the cruise ships are in.',
     categories: ['beaches', 'water_sports'],
-    reason: (_e, m) => `${(m / 1000).toFixed(1)} km out, so it misses the port crowds.`,
+    reason: (_e, m) => `${formatKm(m)} out, so it misses the port crowds.`,
   },
   {
     chip: 'Dinner with a view',
@@ -180,7 +184,8 @@ export function Irie() {
                       <h3 className="t-caption-strong">{experience.title}</h3>
                       <p className="t-micro c-locator irie-pick__meta">
                         {`US$${Math.round(experience.fromAmountMinor / 100)}`} ·{' '}
-                        {(metres / 1000).toFixed(1)} km · {walkMinutes(metres)} min
+                        {formatKm(metres)} · {travelFrom(metres).minutes} min{' '}
+                        {travelFrom(metres).mode}
                       </p>
                       {/* The stated reason is the point: an answer a guest can check beats one they
                           have to trust. */}

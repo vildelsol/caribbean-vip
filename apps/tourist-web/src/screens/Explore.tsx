@@ -10,7 +10,9 @@ import {
   mediaUrl,
   simulatedPosition,
   vendorFor,
-  walkMinutes,
+  travelFrom,
+  isWalkable,
+  formatKm,
   type DemoExperience,
 } from '../data/catalogue';
 import { useStore } from '../state/store';
@@ -340,18 +342,19 @@ function FeatureCard({ experience }: { experience: DemoExperience }) {
 }
 
 function NearCard({ experience, metres }: { experience: DemoExperience; metres: number }) {
+  const travel = travelFrom(metres);
   return (
     <Card className="near">
       <div className="near__media">
         <Photo src={heroUrl(experience)} mediaKey={experience.media[0]} alt={experience.title} ratio="206 / 112" radius="0" />
         <span className="near__flag">
-          <Badge tone="plain">{walkMinutes(metres)} min away</Badge>
+          <Badge tone="plain">{travel.minutes} min {travel.mode}</Badge>
         </span>
       </div>
       <div className="near__body">
         <h3 className="t-caption-strong near__title">{experience.title}</h3>
         <p className="t-micro c-locator">
-          {(metres / 1000).toFixed(1)} km · {metres < 1200 ? 'Walking distance' : 'Pickup available'}
+          {formatKm(metres)} · {isWalkable(metres) ? 'Walking distance' : 'Pickup available'}
         </p>
         <div className="row near__foot">
           <Price minor={experience.fromAmountMinor} />

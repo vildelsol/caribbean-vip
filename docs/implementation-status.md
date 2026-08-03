@@ -137,7 +137,7 @@ Per operating rule 4, none of these block the build; each sits behind an env var
   `mock` and Nearby ships as a distance-sorted list with an explicit "map view unavailable"
   notice. This is a working fallback, not a finished map.
 - **Demo photography is bundled with the app; live media is still unrendered.** Demo images resolve
-  from `apps/mobile/assets/demo` through a static require map. Real listings store Supabase Storage
+  from `apps/tourist-web/public/demo` (through a static require map, in the retired Expo app). Real listings store Supabase Storage
   paths, and no signed-URL fetching exists — with no hosted project there is nothing to fetch, so a
   live card renders its text-only layout rather than a broken image.
 - Six commercial/legal decisions remain open — see [`open-decisions.md`](open-decisions.md). None

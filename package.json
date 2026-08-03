@@ -31,25 +31,5 @@
     "typescript-eslint": "^8.18.0",
     "vitest": "^2.1.8"
   },
-  "allowScripts": {
-    "esbuild@0.21.5": true,
-    "fsevents@2.3.3": true,
-    "sharp@0.34.5": true
-  },
-  "packageManager": "pnpm@9.15.9",
-  "pnpm": {
-    "//": "hoist-pattern[]=!@types/react in .npmrc keeps React 19's types out of the shared hoist directory, which is what stops them leaking into the mobile type-check (AD-01). The cost is that a third-party package whose own .d.ts does `import * as React from \"react\"` has nowhere to resolve React's types from, so React.PureComponent degrades to an error and surfaces as \"cannot be used as a JSX component\" at the call site, a long way from the cause. Declaring the types dependency the package should have had puts a copy inside its own node_modules. Prefer this over re-hoisting, which fixes one package and re-breaks every app.",
-    "packageExtensions": {
-      "react-native-qrcode-svg": {
-        "dependencies": {
-          "@types/react": "~18.3.12"
-        }
-      },
-      "expo-linear-gradient": {
-        "dependencies": {
-          "@types/react": "~18.3.12"
-        }
-      }
-    }
-  }
+  "packageManager": "pnpm@9.15.9"
 }

@@ -151,6 +151,20 @@
 
 /* --- Saved ----------------------------------------------------------------- */
 
+.saved-row__open {
+  gap: 12px;
+  min-width: 0;
+  text-align: left;
+  min-height: 44px;
+}
+
+.saved-row__text {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+}
+
 .saved-row__photo {
   width: 54px;
   flex: none;

@@ -87,6 +87,48 @@ a {
   outline: none;
 }
 
+/**
+ * 44px hit areas, without changing what anything looks like.
+ *
+ * PRD §16 requires this to be usable one-handed, outdoors, in sun, and 44px is the accessible
+ * minimum. The source design draws several controls smaller — chips at 36, the round photo controls
+ * at 36, the "See all" link at 32 — and simply enlarging them would coarsen the design everywhere
+ * those shapes appear.
+ *
+ * So the *artwork* keeps the design's size and the *target* is expanded underneath it with a
+ * centred pseudo-element. The visual is unchanged; the finger gets the area it needs.
+ */
+.chip,
+.irie-chip,
+.island-pill,
+.round-btn,
+.saved-row__remove,
+.section-head__action,
+.irie-pick__btn,
+.map-pin {
+  position: relative;
+}
+
+.chip::after,
+.irie-chip::after,
+.island-pill::after,
+.round-btn::after,
+.saved-row__remove::after,
+.section-head__action::after,
+.irie-pick__btn::after,
+.map-pin::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: max(100%, 44px);
+  height: max(100%, 44px);
+  /* Purely a target. It must never paint, and never intercept a scroll gesture on a rail. */
+  background: none;
+  pointer-events: auto;
+}
+
 /* ---------------------------------------------------------------------------
    The app frame
    --------------------------------------------------------------------------- */

@@ -139,28 +139,38 @@ export function Profile() {
           />
         ) : (
           <div className="col profile__saved">
+            {/*
+              The row carries two independent actions — open, and remove — so the card itself is a
+              plain container with two sibling buttons inside it. Making the card tappable and
+              nesting the remove control in it puts a <button> inside a <button>, which is invalid
+              HTML: React warns, and the browser's own parser recovery moves the inner control out
+              of the outer one, so what ships is not the tree that was written.
+            */}
             {saved.map((e) => (
-              <Card key={e.id} className="saved-row" onClick={() => navigate(`/experience/${e.id}`)}>
+              <Card key={e.id} className="saved-row">
                 <div className="row saved-row__inner">
-                  <Photo
-                    src={heroUrl(e)}
-                    mediaKey={e.media[0]}
-                    alt=""
-                    ratio="1 / 1"
-                    radius="var(--r-sm)"
-                    className="saved-row__photo"
-                  />
-                  <div className="grow">
-                    <p className="t-caption-strong">{e.title}</p>
-                    <p className="t-micro c-locator">from {formatUsd(e.fromAmountMinor)}</p>
-                  </div>
+                  <button
+                    type="button"
+                    className="row grow saved-row__open"
+                    onClick={() => navigate(`/experience/${e.id}`)}
+                  >
+                    <Photo
+                      src={heroUrl(e)}
+                      mediaKey={e.media[0]}
+                      alt=""
+                      ratio="1 / 1"
+                      radius="var(--r-sm)"
+                      className="saved-row__photo"
+                    />
+                    <span className="grow saved-row__text">
+                      <span className="t-caption-strong">{e.title}</span>
+                      <span className="t-micro c-locator">from {formatUsd(e.fromAmountMinor)}</span>
+                    </span>
+                  </button>
                   <button
                     type="button"
                     className="saved-row__remove"
-                    onClick={(ev) => {
-                      ev.stopPropagation();
-                      dispatch({ type: 'toggleSaved', experienceId: e.id });
-                    }}
+                    onClick={() => dispatch({ type: 'toggleSaved', experienceId: e.id })}
                     aria-label={`Remove ${e.title} from saved`}
                   >
                     <Icon name="close" size={16} color="var(--ink-faint)" strokeWidth={2.2} />

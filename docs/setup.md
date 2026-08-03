@@ -96,7 +96,7 @@ Each app ships a `.env.example`. Copy it and fill in locally — never commit th
 (operating rule 10).
 
 ```bash
-cp apps/mobile/.env.example apps/mobile/.env && cp apps/vendor-web/.env.example apps/vendor-web/.env && cp apps/admin-web/.env.example apps/admin-web/.env
+cp apps/vendor-web/.env.example apps/vendor-web/.env && cp apps/admin-web/.env.example apps/admin-web/.env
 ```
 
 **The variable-naming rule matters.** Anything prefixed `EXPO_PUBLIC_` or `NEXT_PUBLIC_` is compiled
@@ -112,10 +112,10 @@ remembered. `pnpm test` asserts it.
 - `packages/supabase` — client factories that refuse a service-role key in a client bundle.
 - `supabase/` — the full schema for all 24 PRD entities, RLS on every table, the two atomicity
   functions, and seeded Jamaica demo content.
-- `apps/mobile` — Expo app with guest browsing (T-01), island/destination switching (T-02),
-  Explore with destination-aware sections, full-text search with filters and sort (T-03), Nearby
-  with distance sorting and a manual fallback, experience detail, saved items, and the privacy
-  controls PRD §14 requires.
+- `apps/tourist-web` — React + TypeScript tourist app on Vite. Guest browsing (T-01), island and
+  destination switching (T-02), Explore, Nearby with distance sorting over a stylised map, a
+  rule-matched Irie AI, Trips and Profile. It needs no environment file: it runs entirely on the
+  demo catalogue and LocalStorage. The Expo app it replaced is retired in `.archive/mobile`.
 - `apps/vendor-web` — membership-gated portal shell.
 - `apps/admin-web` — role-gated console shell.
 

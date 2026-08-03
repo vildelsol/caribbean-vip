@@ -156,21 +156,26 @@
   white-space: nowrap;
 }
 
+/*
+ * Pin positions are decorative, but they have to stay clear of the centre: the "you are here" dot
+ * and its label live at 46%/58%, and a pin dropped near them covered the label. These four sit in
+ * separate quadrants, outside the inner ring.
+ */
 .map-pin--0 {
-  left: 22%;
-  top: 30%;
+  left: 20%;
+  top: 22%;
 }
 .map-pin--1 {
-  left: 62%;
-  top: 44%;
+  left: 64%;
+  top: 30%;
 }
 .map-pin--2 {
-  left: 14%;
-  top: 72%;
+  left: 12%;
+  top: 74%;
 }
 .map-pin--3 {
   left: 66%;
-  top: 76%;
+  top: 78%;
 }
 
 /* --- Head ------------------------------------------------------------------- */

@@ -67,16 +67,8 @@
   transition: transform 0.12s ease;
 }
 
-/* The visual control is 36px; this pads the *hit* area out to 44 without moving the artwork. */
-.round-btn::after {
-  content: '';
-  position: absolute;
-  inset: -4px;
-}
-
-.round-btn {
-  position: relative;
-}
+/* The 44px hit area is applied centrally in global.css, alongside every other control the design
+   draws below the accessible minimum. */
 
 .round-btn--light {
   background: rgba(251, 246, 236, 0.92);

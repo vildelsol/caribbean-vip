@@ -5,19 +5,28 @@ that proves it. Updated at every milestone gate.
 
 Status values: `complete` · `partial` · `blocked` · `deferred` · `not started`
 
+> **The tourist surface was rebuilt.** The Expo app was retired on 2026-08-03 and replaced by
+> `apps/tourist-web`; see [`.archive/README.md`](../.archive/README.md). Several tourist rows below
+> were **complete in the Expo app and are not yet rebuilt in the web app**, and they are marked
+> `regressed` rather than left at their old status. Nothing is silently omitted: a requirement that
+> only works in retired code is not a requirement that works.
+>
+> The database, RLS and domain-logic evidence is unaffected — those tests never depended on which
+> client rendered the result.
+
 ## Tourist requirements (PRD §5)
 
 | ID | Requirement | Milestone | Code area | Test | Status |
 |---|---|---|---|---|---|
-| T-01 | Browse Jamaica content without an account | M1–M2 | `apps/mobile/lib/session.tsx` guest state; `experiences_public_read` policy | `rls_public_read.test.sql` (guest reads islands, destinations, catalogue) | **complete** |
-| T-02 | Select/change island and destination manually | M2 | `apps/mobile/lib/island.tsx`; `app/select-destination.tsx`; `profiles.selected_island_id` | `discovery.test.sql` (destination filter partitions the catalogue and narrows it); `rls_public_read.test.sql` (inactive islands hidden) | **complete** |
-| T-03 | Search/filters return only active approved listings | M2 | `search_experiences()` (NOT security definer); `experiences_public_read` (AD-10); `app/search.tsx` | `search.test.sql`: draft and unapproved-vendor listings unfindable by exact title, plus an assertion that the function is not `security definer`; `search.test.ts` (27 unit tests) | **complete** |
-| T-04 | Date/time/party selection shows calculated total | M3 | `packages/types/pricing.ts`; `apps/mobile/app/book/[id].tsx` re-quotes on every change | `pricing.test.ts` (table-driven); demo store quote tests | **complete in demo mode** — the live path needs the `quote`/`checkout-session` Edge Functions, which are not deployed |
+| T-01 | Browse Jamaica content without an account | M1–M2 | `apps/tourist-web` browses with no auth at all; `experiences_public_read` policy; `isPubliclyVisibleDemo` mirrors it in demo mode | `rls_public_read.test.sql` (guest reads islands, destinations, catalogue) | **complete** |
+| T-02 | Select/change island and destination manually | M2 | `apps/tourist-web/src/state/store.tsx`; the Explore switcher and the Profile island list; `profiles.selected_island_id` | `discovery.test.sql` (destination filter partitions the catalogue and narrows it); `rls_public_read.test.sql` (inactive islands hidden) | **complete** |
+| T-03 | Search/filters return only active approved listings | M2 | `search_experiences()` (NOT security definer); `experiences_public_read` (AD-10). **No search screen in the web app yet** — Nearby filters by category only | `search.test.sql`: draft and unapproved-vendor listings unfindable by exact title, plus an assertion that the function is not `security definer`; `search.test.ts` (27 unit tests) | **regressed** — the rule and its tests hold; the UI that exercised them is not rebuilt |
+| T-04 | Date/time/party selection shows calculated total | M3 | `packages/types/pricing.ts`; `priceFor()` in `apps/tourist-web/src/data/catalogue.ts` wraps it. **No booking screen yet** | `pricing.test.ts` (table-driven); demo store quote tests | **regressed** — the calculator and its tests are intact and wired; the screen that calls it is not rebuilt |
 | T-05 | Stripe test payment creates a booking exactly once | M3 | `supabase/functions/checkout-session`, `stripe-webhook`; unique `payments.stripe_event_id` | `webhook-idempotency.test.ts` (replay same event); demo capacity-hold test | **partial** — booking, capacity hold and confirmation work end to end in demo mode; **no Stripe payment has ever been taken**, because the Edge Function adapters are not built |
-| T-06 | Paid booking in Trips with scannable QR voucher | M3 | `voucher.ts` codec; `app/(tabs)/trips.tsx`, `app/voucher/[id].tsx` (`react-native-qrcode-svg`) | `voucher.test.ts`; demo booking-to-voucher test; walked in a browser | **complete in demo mode** |
+| T-06 | Paid booking in Trips with scannable QR voucher | M3 | `voucher.ts` codec; `apps/tourist-web/src/data/ticket.ts` signs with the real HMAC; Trips renders the day plan. **No QR ticket screen yet** | `voucher.test.ts`; demo booking-to-voucher test | **regressed** — signing and verification are wired; the ticket screen is not rebuilt |
 | T-07 | Geofenced notifications only after consent | M6 | `profiles.location_consent` + `offer_consent`; `mayTriggerGeofencedOffer()`; Profile switches | `states.test.ts` (both flags required); `nearby-offers` Edge Fn in M6 | **partial** |
 | T-08 | Save an offer voucher without booking | M6 | `vouchers` state `saved`; offer wallet | `voucher-state-machine.test.ts` | not started |
-| T-09 | Cancel per policy, see status/refund result | M3 | `cancellationDeadline()` in `lib/booking.ts`; confirmation screen | demo cancel-invalidates-voucher test | **partial** — cancelling releases capacity and voids the voucher; **no refund is issued**, because there is no payment to refund |
+| T-09 | Cancel per policy, see status/refund result | M3 | `cancellationDeadline()` (retired with the Expo app); the web store's `cancelBooking` releases an attached voucher | demo cancel-invalidates-voucher test | **partial** — the state transition is modelled; there is no cancellation UI in the web app, and **no refund is issued**, because there is no payment to refund |
 
 ## Vendor requirements (PRD §6)
 

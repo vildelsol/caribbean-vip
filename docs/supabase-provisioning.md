@@ -55,7 +55,7 @@ leaks, rotate it in **Settings → API → Generate new key**.
 ## 4. Configure the apps
 
 ```bash
-cp apps/mobile/.env.example apps/mobile/.env && cp apps/vendor-web/.env.example apps/vendor-web/.env && cp apps/admin-web/.env.example apps/admin-web/.env
+cp apps/vendor-web/.env.example apps/vendor-web/.env && cp apps/admin-web/.env.example apps/admin-web/.env
 ```
 
 Fill in the URL and anon key in each. The `EXPO_PUBLIC_` and `NEXT_PUBLIC_` prefixes are load-
