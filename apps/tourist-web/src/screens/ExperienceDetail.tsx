@@ -205,13 +205,26 @@ export function ExperienceDetail() {
 
         <section className="detail__block">
           <h2 className="t-section">Ask Irie AI</h2>
-          <button type="button" className="detail__irie" onClick={() => navigate('/irie')}>
+          {/*
+            The listing travels with the question.
+            This was a bare link to the Irie tab, which left the guest to re-ask what they were
+            already looking at — the concierge was reachable but not informed. Handing the id over
+            in router state makes Irie build the day *around* this listing and answer whether it
+            fits, which is the only version of this affordance worth the space it takes.
+          */}
+          <button
+            type="button"
+            className="detail__irie"
+            onClick={() => navigate('/irie', { state: { askIrieAbout: experience.id } })}
+          >
             <span className="detail__irie-mark">
               <Icon name="sparkle" size={19} color="var(--gold-light)" />
             </span>
             <span className="grow detail__irie-text">
-              <span className="t-caption-strong">Would this fit my afternoon?</span>
-              <span className="t-micro c-locator">Ask the concierge about timing and pickup</span>
+              <span className="t-caption-strong">Would this fit my day?</span>
+              <span className="t-micro c-locator">
+                Build a day around {experience.title}, with travel and a total
+              </span>
             </span>
             <Icon name="chevron-right" size={16} color="var(--green-900)" strokeWidth={2.2} />
           </button>

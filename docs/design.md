@@ -158,6 +158,29 @@ Its screen also carries a **GUIDED DEMO** label that the source design does not 
 deliberate and is not a style choice: the design shows Irie giving contextual, reasoned answers, and
 it is the screen an audience is most likely to mistake for something it is not.
 
+### The itinerary builder
+
+The Journey design's day timeline — timed rows with thumbnails, the travel between them, and an
+"Estimated day total" — is what Irie composes on its own tab, in `data/itinerary.ts`. Three dot
+weights carry the three states the design draws: **deep green** confirmed, **gold** planned, and a
+**hollow ring** for Irie's own suggestion. Coral is added for a fourth case the design has no
+picture of, and it is the one that earns its place: a stop the day cannot actually accommodate.
+
+Two rules keep the screen honest, and both are stated in the UI rather than silently applied:
+
+- **A short day says it is short.** The builder refuses to pretend a listing 130 km away can join a
+  morning here, so a "full day" routinely comes back with two or three stops rather than four. The
+  screen prints "2 of a possible 4 — nothing else nearby has a departure that fits the time left"
+  instead of quietly under-delivering.
+- **Two bookings that clash are both shown.** A guest can hold two bookings for the same morning.
+  Dropping one hides something that was paid for; showing them in silence presents an impossible day
+  as a plan. Both stay, the clashing one is marked in coral with what it runs over and by how much,
+  and the headline leads with the problem rather than the shape's usual "here is a day that flows".
+
+**Location lives on the vendor, not the listing**, so two experiences from one operator are at
+identical coordinates. A leg between them is rendered as "Same site — no transfer", never as a
+0 m walk — the distance is genuinely zero and the transfer genuinely does not exist.
+
 ## The kit
 
 `apps/tourist-web/src/components/kit.tsx` holds everything the design repeats — both button weights,
@@ -173,7 +196,7 @@ style is the exact failure the design's own notes call out.
 |---|---|
 | Explore | built — hero, island switcher, mood tiles, feature card, near-you rail, gems, tonight |
 | Nearby | built — stylised map with proximity rings, filters, distance-sorted list |
-| Irie AI | built as a **guided demo** — context chips, rule-matched answers with stated reasons |
+| Irie AI | built as a **guided demo** — context chips, rule-matched answers with stated reasons, and the itinerary builder |
 | Trips | built — day timeline, next-up card, day total |
 | Profile | built — crest, island switching, voucher wallet, saved, simulation disclosure |
 | Experience detail | built — hero with floating controls, rounded sheet, price card, facts, sticky action bar |

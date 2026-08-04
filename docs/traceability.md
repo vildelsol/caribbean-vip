@@ -52,7 +52,7 @@ Status values: `complete` · `partial` · `blocked` · `deferred` · `not starte
 | QR contains opaque signed reference only | `voucher.ts`: random id + HMAC, no PII | `voucher-codec.test.ts` asserts payload shape | not started |
 | Redemption atomic, never twice | `redeem_voucher()` row lock + terminal-state trigger | `atomicity.test.sql` + `db-concurrency-test.sh` | **complete** |
 | Geofenced offers need consent + cooldown + fallback | `nearby-offers`; `promotion_impressions` | `consent-gate.test.ts`, `cooldown.test.ts` | not started |
-| Irie AI recommends only approved inventory | Retrieval restricted to approved rows | `irie-grounding.test.ts` (asks for absent vendor) | not started |
+| Irie AI recommends only approved inventory | Retrieval restricted to approved rows. In the web app both Irie surfaces read the catalogue through `visibleExperiences()`, which applies `isPubliclyVisibleDemo` — the mirror of `experiences_public_read` | `itinerary.test.ts` asserts the builder never places a draft listing or one under an unapproved vendor, on every shape, island and day of the next week; `irie-grounding.test.ts` (asks for absent vendor) still needed against a real backend | **partial** — proven for the demo catalogue, unproven against Supabase |
 | Admin actions and redemptions audit logged | `audit_status_change()` triggers; every scan writes `voucher_redemptions` | `append_only_and_seed.test.sql` | **partial** (M5 adds the rest of the admin actions) |
 
 ## Additional guarantees added in M2

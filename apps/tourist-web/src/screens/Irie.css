@@ -162,3 +162,188 @@
   text-align: left;
   color: var(--ink);
 }
+
+/* --- The day builder -------------------------------------------------------
+   Gold on green, like everything else Irie owns: composing a day is the thing this tab does that a
+   search box cannot, so its chips carry the concierge's own mark and lead the narrower questions. */
+
+.irie__builder {
+  padding: 22px var(--s-md) 0;
+}
+
+.irie__builder-label {
+  color: var(--gold-light);
+  letter-spacing: 0.12em;
+}
+
+.irie__chips--builder {
+  padding: 10px 0 0;
+}
+
+.irie-chip--gold {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  background: rgba(227, 194, 113, 0.16);
+  border: 1px solid rgba(227, 194, 113, 0.4);
+  color: var(--gold-light);
+}
+
+.irie-chip--gold:hover {
+  background: rgba(227, 194, 113, 0.26);
+}
+
+/* --- A built day ----------------------------------------------------------- */
+
+.day__none {
+  margin-top: 10px;
+}
+
+.day__summary {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+  margin-top: 12px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--border);
+}
+
+.day__party {
+  margin: 4px 0 14px;
+}
+
+/* The rail the dots sit on. Padding-left clears it so no card overlaps the line. */
+.day__timeline {
+  list-style: none;
+  margin: 0;
+  padding: 0 0 0 22px;
+  position: relative;
+}
+
+.day__timeline::before {
+  content: '';
+  position: absolute;
+  left: 5px;
+  top: 6px;
+  bottom: 6px;
+  width: 1px;
+  background: var(--border-strong);
+}
+
+.day__row {
+  position: relative;
+}
+
+.day__dot {
+  position: absolute;
+  left: -22px;
+  top: 17px;
+  width: 11px;
+  height: 11px;
+  border-radius: 50%;
+  border: 3px solid var(--ivory);
+  box-sizing: content-box;
+}
+
+/* Paid, on the plan, and Irie's own idea — three states, three weights, as the design draws them. */
+.day__dot--confirmed {
+  background: var(--green-900);
+}
+
+.day__dot--planned {
+  background: var(--gold);
+}
+
+.day__dot--suggested {
+  background: var(--ivory);
+  box-shadow: inset 0 0 0 2px var(--border-cool);
+}
+
+.day__leg {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  color: var(--ink-faint);
+  padding: 0 0 8px 2px;
+}
+
+/* Coral is scarcity and urgency only, and a booking the guest cannot reach in time is exactly that. */
+.day__leg--clash {
+  color: var(--coral-text);
+  font-weight: 700;
+}
+
+.day__dot--clash {
+  background: var(--coral);
+  box-shadow: none;
+}
+
+.day__card {
+  display: flex;
+  gap: 12px;
+  width: 100%;
+  text-align: left;
+  background: var(--ivory-raised);
+  border-radius: var(--r-md);
+  padding: 11px;
+  margin-bottom: 8px;
+  box-shadow: var(--e-card);
+}
+
+.day__photo {
+  width: 62px;
+  flex: none;
+}
+
+.day__card-body {
+  display: block;
+  min-width: 0;
+}
+
+.day__time {
+  display: block;
+}
+
+.day__title {
+  display: block;
+  margin-top: 5px;
+  color: var(--ink);
+}
+
+.day__tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 7px;
+}
+
+.day__short {
+  margin-top: 2px;
+}
+
+.day__total {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 14px;
+  padding-top: 14px;
+  border-top: 1px solid var(--border);
+}
+
+.day__route {
+  display: block;
+  margin-top: 3px;
+}
+
+.day__caveat {
+  margin-top: 8px;
+}
+
+.day__actions {
+  margin-top: 14px;
+}
+
+.day__note {
+  margin-top: 10px;
+}

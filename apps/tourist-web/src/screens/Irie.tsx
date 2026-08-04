@@ -1,19 +1,34 @@
-import { useMemo, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
 import {
   byDistanceFrom,
   destinationBySlug,
+  experienceById,
   experiencesFor,
   heroUrl,
   islandById,
   simulatedPosition,
   travelFrom,
   formatKm,
+  DEFAULT_PARTY,
+  seatsIn,
   type DemoExperience,
+  type PartySelection,
 } from '../data/catalogue';
+import { isoDate } from '../data/availability';
+import {
+  ITINERARY_SHAPES,
+  buildSoonestDay,
+  formatClock,
+  formatSpan,
+  shapeById,
+  type Itinerary,
+  type ItineraryShape,
+  type ItineraryStop,
+} from '../data/itinerary';
 import { useStore } from '../state/store';
 import { Icon } from '../components/Icon';
-import { Badge, DemoNote, Photo, Price } from '../components/kit';
+import { Badge, DemoNote, Photo, Price, Stepper, formatUsd, type BadgeTone } from '../components/kit';
 import './Irie.css';
 
 /**
@@ -27,7 +42,23 @@ import './Irie.css';
  *
  * When a real model lands it goes *in front* of this, and this stays behind it as the documented
  * "falls back to normal search" path.
+ *
+ * ## Two kinds of answer
+ *
+ * A **pick** turn answers a question with two listings and a stated reason for each. A **day** turn
+ * composes a whole itinerary — timed stops, the travel between them, and a running estimate — in
+ * `data/itinerary.ts`. The day turn is what makes this tab read as a product rather than a chatbot,
+ * and it is the half that is unit tested, because all of its judgement lives in that pure module
+ * rather than in this file.
+ *
+ * A day turn stores its *request*, not its result, and rebuilds on every render. That is deliberate:
+ * booking one of the stops, or adding the day to the plan, changes the answer, and a transcript
+ * showing a stale day beside a Trips screen that disagrees with it is worse than no transcript.
  */
+
+// ---------------------------------------------------------------------------
+// Pick turns
+// ---------------------------------------------------------------------------
 
 interface Intent {
   chip: string;
@@ -38,15 +69,6 @@ interface Intent {
 }
 
 const INTENTS: Intent[] = [
-  {
-    chip: 'Plan my afternoon',
-    reply: 'You have a few free hours. These are close, open this afternoon and get you back before dinner.',
-    categories: [],
-    reason: (_e, m) => {
-      const t = travelFrom(m);
-      return `${t.minutes} minutes' ${t.mode} from you, and quiet at midday.`;
-    },
-  },
   {
     chip: 'Something under $50',
     reply: 'Here is what I can find under US$50 per person nearby.',
@@ -80,16 +102,35 @@ const INTENTS: Intent[] = [
   },
 ];
 
-interface Turn {
-  id: string;
-  question: string;
-  reply: string;
-  picks: { experience: DemoExperience; metres: number; reason: string }[];
+type Turn =
+  | {
+      id: string;
+      kind: 'picks';
+      question: string;
+      reply: string;
+      picks: { experience: DemoExperience; metres: number; reason: string }[];
+    }
+  | {
+      id: string;
+      kind: 'day';
+      question: string;
+      shapeId: ItineraryShape['id'];
+      party: PartySelection;
+      /** The listing the guest arrived from, placed before the day is fitted around it. */
+      anchorExperienceId?: string;
+    };
+
+/** Today, local, matching `availability.ts` — never a UTC date, which drifts by a day after 8pm. */
+function todayISO(): string {
+  const d = new Date();
+  d.setHours(0, 0, 0, 0);
+  return isoDate(d);
 }
 
 export function Irie() {
   const { state, dispatch } = useStore();
   const navigate = useNavigate();
+  const location = useLocation();
   const [turns, setTurns] = useState<Turn[]>([]);
 
   const island = islandById(state.islandId);
@@ -99,6 +140,42 @@ export function Irie() {
     if (!destination) return [];
     return byDistanceFrom(simulatedPosition(destination), experiencesFor(state.islandId));
   }, [state.islandId, destination]);
+
+  /**
+   * "Ask Irie" on the experience detail page hands the listing over in router state.
+   *
+   * It is consumed once and then cleared, because a browser Back onto this tab must not silently
+   * re-ask a question the guest did not ask again. `replace` keeps it out of the history stack.
+   */
+  const askAbout = (location.state as { askIrieAbout?: string } | null)?.askIrieAbout;
+  /**
+   * Clearing the router state is not enough on its own to make this run once.
+   *
+   * StrictMode invokes an effect twice in development, and both invocations read the same
+   * `askAbout` before the clearing `navigate` has re-rendered — which posted the question, and the
+   * whole itinerary under it, twice. The ref is the thing that actually makes consumption
+   * single-shot; the `navigate` still matters, because it stops a browser Back onto this tab
+   * re-asking a question the guest did not ask again.
+   */
+  const consumedAsk = useRef<string | null>(null);
+  useEffect(() => {
+    if (!askAbout || consumedAsk.current === askAbout) return;
+    consumedAsk.current = askAbout;
+    const experience = experienceById(askAbout);
+    navigate(location.pathname, { replace: true, state: null });
+    if (!experience) return;
+    setTurns((t) => [
+      ...t,
+      {
+        id: `${Date.now()}`,
+        kind: 'day',
+        question: `Would ${experience.title} fit my day?`,
+        shapeId: 'full-day',
+        party: DEFAULT_PARTY,
+        anchorExperienceId: experience.id,
+      },
+    ]);
+  }, [askAbout, navigate, location.pathname]);
 
   const ask = (intent: Intent) => {
     let pool = ranked;
@@ -117,7 +194,21 @@ export function Irie() {
       metres,
       reason: intent.reason(experience, metres),
     }));
-    setTurns((t) => [...t, { id: `${Date.now()}`, question: intent.chip, reply: intent.reply, picks }]);
+    setTurns((t) => [
+      ...t,
+      { id: `${Date.now()}`, kind: 'picks', question: intent.chip, reply: intent.reply, picks },
+    ]);
+  };
+
+  const askForDay = (shape: ItineraryShape) => {
+    setTurns((t) => [
+      ...t,
+      { id: `${Date.now()}`, kind: 'day', question: shape.chip, shapeId: shape.id, party: DEFAULT_PARTY },
+    ]);
+  };
+
+  const setParty = (turnId: string, party: PartySelection) => {
+    setTurns((t) => t.map((turn) => (turn.id === turnId && turn.kind === 'day' ? { ...turn, party } : turn)));
   };
 
   if (!island || !destination) return null;
@@ -156,6 +247,25 @@ export function Irie() {
         </div>
       </section>
 
+      {/* The builder leads, because composing a day is the thing this tab does that a search box
+          cannot. The narrower question chips follow it. */}
+      <section className="irie__builder">
+        <p className="t-micro-strong irie__builder-label">BUILD ME A DAY</p>
+        <div className="irie__chips irie__chips--builder">
+          {ITINERARY_SHAPES.map((shape) => (
+            <button
+              key={shape.id}
+              type="button"
+              className="irie-chip irie-chip--gold"
+              onClick={() => askForDay(shape)}
+            >
+              <Icon name="sparkle" size={13} color="var(--gold-light)" />
+              {shape.chip}
+            </button>
+          ))}
+        </div>
+      </section>
+
       <div className="irie__chips">
         {INTENTS.map((i) => (
           <button key={i.chip} type="button" className="irie-chip" onClick={() => ask(i)}>
@@ -168,68 +278,366 @@ export function Irie() {
         <section key={turn.id} className="irie__turn">
           <p className="irie__question">{turn.question}</p>
           <div className="irie__answer">
-            <p className="t-caption-strong">{turn.reply}</p>
-            <div className="col irie__picks">
-              {turn.picks.map(({ experience, metres, reason }) => {
-                const isPlanned = state.plannedExperienceIds.includes(experience.id);
-                return (
-                  <article key={experience.id} className="irie-pick">
-                    <Photo
-                      src={heroUrl(experience)}
-                      mediaKey={experience.media[0]}
-                      alt={experience.title}
-                      ratio="1 / 1"
-                      radius="var(--r-md)"
-                      className="irie-pick__photo"
-                    />
-                    <div className="grow">
-                      <button
-                        type="button"
-                        className="irie-pick__open t-caption-strong"
-                        onClick={() => navigate(`/experience/${experience.id}`)}
-                      >
-                        {experience.title}
-                      </button>
-                      <p className="t-micro c-locator irie-pick__meta">
-                        {`US$${Math.round(experience.fromAmountMinor / 100)}`} ·{' '}
-                        {formatKm(metres)} · {travelFrom(metres).minutes} min{' '}
-                        {travelFrom(metres).mode}
-                      </p>
-                      {/* The stated reason is the point: an answer a guest can check beats one they
-                          have to trust. */}
-                      <p className="t-micro c-muted irie-pick__reason">{reason}</p>
-                      <div className="irie-pick__actions">
-                        <button
-                          type="button"
-                          className="badge badge--brand irie-pick__btn"
-                          onClick={() =>
-                            dispatch(
-                              isPlanned
-                                ? { type: 'unplanExperience', experienceId: experience.id }
-                                : { type: 'planExperience', experienceId: experience.id },
-                            )
-                          }
-                        >
-                          {isPlanned ? 'Remove from day' : 'Add to Trip'}
-                        </button>
-                        <Badge tone="aqua">
-                          <Price minor={experience.fromAmountMinor} />
-                        </Badge>
-                      </div>
-                    </div>
-                  </article>
-                );
-              })}
-            </div>
+            {turn.kind === 'picks' ? (
+              <PicksAnswer
+                reply={turn.reply}
+                picks={turn.picks}
+                plannedIds={state.plannedExperienceIds}
+                onOpen={(id) => navigate(`/experience/${id}`)}
+                onTogglePlan={(id, isPlanned) =>
+                  dispatch(
+                    isPlanned
+                      ? { type: 'unplanExperience', experienceId: id }
+                      : { type: 'planExperience', experienceId: id },
+                  )
+                }
+              />
+            ) : (
+              <DayAnswer
+                turn={turn}
+                onParty={(party) => setParty(turn.id, party)}
+                onOpen={(id) => navigate(`/experience/${id}`)}
+                onSeeTrips={() => navigate('/trips')}
+              />
+            )}
           </div>
         </section>
       ))}
 
       {turns.length === 0 ? (
-        <p className="irie__hint t-caption">Tap a suggestion above — every answer comes from the live demo catalogue.</p>
+        <p className="irie__hint t-caption">
+          Tap a suggestion above — every answer comes from the live demo catalogue.
+        </p>
       ) : null}
 
       <DemoNote>Rule-matched over the demo catalogue · no language model</DemoNote>
     </main>
   );
+}
+
+// ---------------------------------------------------------------------------
+// Pick answers
+// ---------------------------------------------------------------------------
+
+function PicksAnswer({
+  reply,
+  picks,
+  plannedIds,
+  onOpen,
+  onTogglePlan,
+}: {
+  reply: string;
+  picks: { experience: DemoExperience; metres: number; reason: string }[];
+  plannedIds: string[];
+  onOpen: (id: string) => void;
+  onTogglePlan: (id: string, isPlanned: boolean) => void;
+}) {
+  return (
+    <>
+      <p className="t-caption-strong">{reply}</p>
+      <div className="col irie__picks">
+        {picks.map(({ experience, metres, reason }) => {
+          const isPlanned = plannedIds.includes(experience.id);
+          return (
+            <article key={experience.id} className="irie-pick">
+              <Photo
+                src={heroUrl(experience)}
+                mediaKey={experience.media[0]}
+                alt={experience.title}
+                ratio="1 / 1"
+                radius="var(--r-md)"
+                className="irie-pick__photo"
+              />
+              <div className="grow">
+                <button
+                  type="button"
+                  className="irie-pick__open t-caption-strong"
+                  onClick={() => onOpen(experience.id)}
+                >
+                  {experience.title}
+                </button>
+                <p className="t-micro c-locator irie-pick__meta">
+                  {`US$${Math.round(experience.fromAmountMinor / 100)}`} · {formatKm(metres)} ·{' '}
+                  {travelFrom(metres).minutes} min {travelFrom(metres).mode}
+                </p>
+                {/* The stated reason is the point: an answer a guest can check beats one they
+                    have to trust. */}
+                <p className="t-micro c-muted irie-pick__reason">{reason}</p>
+                <div className="irie-pick__actions">
+                  <button
+                    type="button"
+                    className="badge badge--brand irie-pick__btn"
+                    onClick={() => onTogglePlan(experience.id, isPlanned)}
+                  >
+                    {isPlanned ? 'Remove from day' : 'Add to Trip'}
+                  </button>
+                  <Badge tone="aqua">
+                    <Price minor={experience.fromAmountMinor} />
+                  </Badge>
+                </div>
+              </div>
+            </article>
+          );
+        })}
+      </div>
+    </>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Day answers — the itinerary builder
+// ---------------------------------------------------------------------------
+
+function DayAnswer({
+  turn,
+  onParty,
+  onOpen,
+  onSeeTrips,
+}: {
+  turn: Extract<Turn, { kind: 'day' }>;
+  onParty: (party: PartySelection) => void;
+  onOpen: (id: string) => void;
+  onSeeTrips: () => void;
+}) {
+  const { state, dispatch } = useStore();
+  const shape = shapeById(turn.shapeId);
+  const destination = destinationBySlug(state.destinationSlug);
+
+  /**
+   * Rebuilt from live state on every render, so booking a stop or adding the day to the plan is
+   * reflected in the answer rather than leaving a stale transcript beside a Trips screen that
+   * disagrees with it.
+   */
+  const day: Itinerary | null = useMemo(() => {
+    if (!shape || !destination) return null;
+    return buildSoonestDay(
+      {
+        shape,
+        islandId: state.islandId,
+        destination,
+        party: turn.party,
+        bookings: state.bookings.filter((b) => b.status === 'confirmed' && b.islandId === state.islandId),
+        plannedExperienceIds: state.plannedExperienceIds,
+        anchorExperienceId: turn.anchorExperienceId,
+      },
+      todayISO(),
+    );
+  }, [shape, destination, state.islandId, state.bookings, state.plannedExperienceIds, turn.party, turn.anchorExperienceId]);
+
+  if (!day || !shape) return null;
+
+  const anchor = turn.anchorExperienceId ? experienceById(turn.anchorExperienceId) : undefined;
+  const anchorPlaced = anchor ? day.stops.some((s) => s.experience.id === anchor.id) : false;
+  const unplanned = day.addableExperienceIds.filter((id) => !state.plannedExperienceIds.includes(id));
+
+  if (day.stops.length === 0) {
+    return (
+      <>
+        <p className="t-caption-strong">{shape.reply}</p>
+        <p className="t-caption c-muted day__none">
+          Nothing within reach has a departure left that fits {shape.title.toLowerCase()} in the next few
+          days. Try a different island or a wider window.
+        </p>
+      </>
+    );
+  }
+
+  return (
+    <>
+      {/*
+        A day with a clash in it must not be introduced as one that flows. The bookings are the
+        guest's own and are all still shown — but the headline leads with the problem, because that
+        is the thing they need to act on and the rest of the screen is unchanged by it.
+      */}
+      <p className="t-caption-strong">
+        {day.clashCount > 0
+          ? `${day.clashCount === 1 ? 'One booking does' : `${day.clashCount} bookings do`} not fit around the rest of your day. I have left everything here and marked what clashes.`
+          : anchor
+            ? anchorPlaced
+              ? `Yes — ${anchor.title} fits, and here is the day around it.`
+              : `${anchor.title} has no departure that fits, so here is the day without it.`
+            : shape.reply}
+      </p>
+
+      <div className="day__summary">
+        <span className="t-micro-strong c-locator">
+          {day.stops.length} stop{day.stops.length === 1 ? '' : 's'} · {formatSpan(day.stops)}
+        </span>
+        <span className="t-micro c-muted">{whenLabel(day.dateISO)}</span>
+      </div>
+
+      {/* Party size drives every quote below it, so it sits above the total rather than beside it. */}
+      <div className="day__party">
+        <Stepper
+          label="Guests"
+          sub="Re-prices every stop"
+          value={seatsIn(turn.party)}
+          min={1}
+          max={12}
+          onChange={(next) => onParty({ ...turn.party, adults: next, children: 0 })}
+        />
+      </div>
+
+      <ol className="day__timeline">
+        {day.stops.map((stop) => (
+          <li key={stop.experience.id} className="day__item">
+            {stop.arriveFrom || stop.clash ? <Leg stop={stop} /> : null}
+            {/* The dot is positioned against the card, not the list item — a leg above it would
+                otherwise push it up the rail and leave it labelling the transfer instead of the stop. */}
+            <div className="day__row">
+              <span className={`day__dot day__dot--${stop.state} ${stop.clash ? 'day__dot--clash' : ''}`} />
+              <button type="button" className="day__card" onClick={() => onOpen(stop.experience.id)}>
+                <Photo
+                  src={heroUrl(stop.experience)}
+                  mediaKey={stop.experience.media[0]}
+                  alt=""
+                  ratio="1 / 1"
+                  radius="var(--r-sm)"
+                  className="day__photo"
+                />
+                <span className="grow day__card-body">
+                  <span className="t-micro-strong c-locator day__time">{formatClock(stop.startMinutes)}</span>
+                  <span className="t-caption-strong day__title">{stop.experience.title}</span>
+                  <span className="day__tags">
+                    <StopBadge stop={stop} />
+                  </span>
+                </span>
+              </button>
+            </div>
+          </li>
+        ))}
+      </ol>
+
+      {day.stops.length < day.stopsWanted ? (
+        // Stated rather than silently under-delivered: the builder refuses to pretend that a listing
+        // 130 km away can join a morning here, and a guest who asked for a full day deserves to know
+        // that is the reason they got three stops.
+        <p className="t-micro c-muted day__short">
+          {day.stops.length} of a possible {day.stopsWanted} — nothing else nearby has a departure that
+          fits the time left.
+        </p>
+      ) : null}
+
+      <div className="day__total">
+        <span className="grow">
+          <span className="t-caption c-muted">Estimated total</span>
+          {day.routeMetres > 0 ? (
+            <span className="t-micro c-faint day__route">Route · {formatKm(day.routeMetres)}</span>
+          ) : null}
+        </span>
+        <span className="t-amount c-brand">
+          {day.unquotedCount > 0 ? 'from ' : ''}
+          {formatUsd(day.totalMinor)}
+        </span>
+      </div>
+
+      {day.unquotedCount > 0 ? (
+        <p className="t-micro c-urgent day__caveat">
+          {day.unquotedCount} stop{day.unquotedCount === 1 ? '' : 's'} could not be priced for this party,
+          so the total is a floor rather than a quote.
+        </p>
+      ) : null}
+
+      <div className="day__actions">
+        {unplanned.length > 0 ? (
+          <button
+            type="button"
+            className="btn btn--primary btn--full day__add"
+            onClick={() => {
+              for (const id of unplanned) dispatch({ type: 'planExperience', experienceId: id });
+            }}
+          >
+            Add {unplanned.length === day.stops.length ? 'this day' : `${unplanned.length} more`} to my trip
+          </button>
+        ) : (
+          <button type="button" className="btn btn--secondary btn--full" onClick={onSeeTrips}>
+            See it on Trips
+          </button>
+        )}
+      </div>
+
+      <p className="t-micro c-faint day__note">
+        Timings and capacity are simulated. Adding a stop plans it — nothing is booked or paid for until
+        you check out.
+      </p>
+    </>
+  );
+}
+
+/**
+ * The transfer between two stops — or the fact that there is not one, or that it cannot be made.
+ *
+ * A clash replaces the leg rather than sitting beside it: "127 min drive" above a stop the guest
+ * cannot reach in time is not extra detail, it is the misleading half of the same sentence.
+ */
+function Leg({ stop }: { stop: ItineraryStop }) {
+  if (stop.clash) {
+    return (
+      <span className="day__leg day__leg--clash t-micro">
+        <Icon name="clock" size={12} color="var(--coral-text)" strokeWidth={2} />
+        {stop.clash.kind === 'overlap'
+          ? `Runs over ${stop.clash.withTitle} — ${durationLabel(stop.clash.shortfallMinutes)} short`
+          : `Not enough time from ${stop.clash.withTitle} — ${durationLabel(stop.clash.shortfallMinutes)} short`}
+      </span>
+    );
+  }
+  const arrival = stop.arriveFrom!;
+  if (arrival.kind === 'same-site') {
+    return (
+      <span className="day__leg t-micro">
+        <Icon name="pin" size={12} color="var(--ink-faint)" strokeWidth={2} />
+        Same site — no transfer
+      </span>
+    );
+  }
+  return (
+    <span className="day__leg t-micro">
+      <Icon name={arrival.mode === 'walk' ? 'walk' : 'car'} size={12} color="var(--ink-faint)" strokeWidth={2} />
+      {arrival.minutes} min {arrival.mode} · {formatKm(arrival.metres)}
+    </span>
+  );
+}
+
+/** "45 min" / "2 hr 10 min" — a shortfall of 374 minutes means nothing read as a number of minutes. */
+function durationLabel(minutes: number): string {
+  if (minutes < 60) return `${minutes} min`;
+  const h = Math.floor(minutes / 60);
+  const m = minutes % 60;
+  return m === 0 ? `${h} hr` : `${h} hr ${m} min`;
+}
+
+function StopBadge({ stop }: { stop: ItineraryStop }) {
+  if (stop.state === 'confirmed') {
+    return <Badge tone="aqua">Confirmed · {formatUsd(stop.estimateMinor ?? 0)}</Badge>;
+  }
+  if (stop.estimateMinor === null) {
+    return <Badge tone="coral">{stop.quoteNote ?? 'No price for this party'}</Badge>;
+  }
+  const label = stop.state === 'planned' ? 'Planned' : 'Suggested';
+  const tone: BadgeTone = stop.state === 'planned' ? 'sand' : 'muted';
+  return (
+    <>
+      <Badge tone={tone}>
+        {label} · {formatUsd(stop.estimateMinor)}
+      </Badge>
+      {stop.capacityRemaining !== null && stop.capacityRemaining <= 6 ? (
+        <Badge tone="coral">{stop.capacityRemaining} left</Badge>
+      ) : null}
+    </>
+  );
+}
+
+/** "Today" / "Tomorrow" / "Thu 6 Aug" — a built day that moved must say that it moved. */
+function whenLabel(dateISO: string): string {
+  const today = todayISO();
+  if (dateISO === today) return 'Today';
+  const [y, m, d] = today.split('-').map(Number);
+  const tomorrow = isoDate(new Date(y ?? 2026, (m ?? 1) - 1, (d ?? 1) + 1));
+  if (dateISO === tomorrow) return 'Tomorrow';
+  const [py, pm, pd] = dateISO.split('-').map(Number);
+  return new Date(py ?? 2026, (pm ?? 1) - 1, pd ?? 1).toLocaleDateString('en-GB', {
+    weekday: 'short',
+    day: 'numeric',
+    month: 'short',
+  });
 }

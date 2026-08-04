@@ -1,6 +1,6 @@
 # Handover — Caribbean VIP
 
-**Written:** 2026-08-02 · **Updated:** 2026-08-03 (staff route separation; offer trigger on Nearby) · **Branch:** `master` · **Gates:** all green
+**Written:** 2026-08-02 · **Updated:** 2026-08-04 (Irie itinerary builder; contextual Ask Irie) · **Branch:** `master` · **Gates:** all green
 
 Read this first, then [`PRD.md`](PRD.md) (product source of truth),
 [`architecture.md`](architecture.md) (the numbered decisions), and
@@ -82,11 +82,13 @@ refresh mid-presentation cannot lose a booking. Profile → *Reset the demonstra
 | **M3 — Booking, Stripe, redemption** | **complete in demo mode** — see §8 |
 | M4–M8 | not started |
 
-**T-01, T-02, T-03 complete. T-04, T-06, V-04, V-05 complete in demo mode. T-05 and T-09 partial:**
+**T-01 and T-02 complete. T-03 regressed** — the rule and its tests hold, but the Search screen that
+exercised them was retired with the Expo app and is not rebuilt. **T-04, T-06, V-04, V-05 complete in
+demo mode. T-05 and T-09 partial:**
 booking, capacity hold, cancellation and voucher invalidation all work, but **no Stripe payment has
 ever been taken and no refund has ever been issued**. Detail in [`traceability.md`](traceability.md).
 
-Gates: **214 unit tests (12 files), 7/7 SQL files, typecheck and lint clean across 9 workspaces.**
+Gates: **251 unit tests (13 files), 7/7 SQL files, typecheck and lint clean across 9 workspaces.**
 
 ---
 
@@ -155,6 +157,11 @@ a style, never a prop. See §6.
 
 ### The second design pass — the remaining screens
 
+> **This section is the record of the retired Expo app** — the `app/…` paths below are
+> `.archive/mobile`. Everything here was built *there*. Most of it was rebuilt in `apps/tourist-web`;
+> **Search was not**, which is why T-03 is `regressed` rather than complete. Do not read the Search
+> entry below as describing something that exists today.
+
 Every tourist screen is now drawn to the mockups. Built in this pass:
 
 - **Interests** (`app/interests.tsx`) — the eight-tile step between Welcome and Explore. It
@@ -212,19 +219,59 @@ Post-M2 cleanup (also 2026-08-03):
   screen fires the offer (once per island, same gate as the Explore timer). The second tap goes
   straight to the experience detail.
 
+### The itinerary builder, and Irie in context (2026-08-04)
+
+Both of the first two ideas below are now built.
+
+**`data/itinerary.ts`** composes a day: timed stops, the travel between them, per-stop quotes and a
+running estimate. It is **pure** — no React, no store, no clock beyond the date it is given — which
+is why all of its judgement is unit tested (37 cases) while the screen rendering it is not. The
+three properties that matter each have a test: it composes only from `visibleExperiences()`, so
+Irie cannot put a draft listing or one under an unapproved vendor on a guest's day; it never sums a
+total itself, quoting every suggestion through `priceFor` and taking the frozen `totalMinor` for
+anything already booked; and it never places a departure the party would not fit on.
+
+**"Ask Irie" on the experience detail page already existed as a bare link to the tab**, which left
+the guest to re-ask about the listing they were already looking at. It now carries the listing id in
+router state, and Irie builds the day *around* it and answers whether it fits. Consumption is
+guarded by a ref as well as by clearing the router state — StrictMode double-invokes the effect in
+development, and without the ref the question and its whole itinerary posted twice.
+
+Four things this work surfaced, all fixed, and all worth knowing before touching it:
+
+1. **Location lives on the vendor, not the listing.** Dunn's River Falls Climb and Mystic Mountain
+   are both `vendor-dunns`, so the distance between them is genuinely 0 m. That rendered as
+   "1 min walk · 0 m". `Arrival` is now a two-case union and the same-operator case reads
+   "Same site — no transfer".
+2. **Confirmed bookings can clash with each other**, and the first version placed them as fixed
+   points without ever checking them against one another — the demo state has two bookings both at
+   09:00 with a 374-minute drive between them, presented as a day that "flows". Both are still
+   shown, the clash is marked in coral, and the headline leads with it. **Never drop a booking the
+   guest paid for to make the plan look tidy.**
+3. **First fit by distance let one all-day listing swallow the window.** "Plan my whole day" in
+   Cayman returned a single eight-hour beach club. The fit is now two passes: anything longer than
+   a fair share of the window waits until the shorter stops are placed. The anchor and anything
+   already planned skip the filter — they were asked for.
+4. **A "full day" honestly yields two or three stops, not four.** Ocho Rios has four listings, one
+   per category, and nothing else on the island is reachable in the gap. That is the builder
+   working. The screen states the shortfall rather than padding it.
+
+Gates after: **251 tests (13 files), 7/7 SQL, typecheck and lint clean.**
+
 Ideas raised but not started, in the order I would take them:
 
-1. **Irie's itinerary builder** (mockup screen "Irie AI — Itinerary Builder"): timed rows with
-   thumbnails and a running "Estimated Total". Buildable now against the demo catalogue, and it is
-   what makes the AI tab read as a product rather than a chatbot.
-2. **An "Ask Irie" affordance on the experience detail page**, so the concierge is reachable at the
-   moment a guest is deciding — the one point in the journey where it is currently absent.
+1. **Search (T-03)** — still `regressed`. The Expo app had a built Search screen (pill field, filter
+   control, category chips, result count); the web app does not, and Nearby filters by category
+   instead. This is a port from `.archive/`, not a design job, and it flips a traceability row back
+   to complete.
+2. **Vendor portal visual language** — functional, no visual language. Next up, per Ro.
 3. **Commissioned photography** — see §8. The biggest single gap between this and a product.
 
 ### Still not drawn to the mockups
 
-1. **Vendor portal** — functional, no visual language. Next up, per Ro.
-2. **Map view** — blocked on OD-05; ships as a distance-sorted list with an explicit notice.
+1. **Search** — not rebuilt in the web app at all; Nearby filters by category instead. T-03.
+2. **Vendor portal** — functional, no visual language. Next up, per Ro.
+3. **Map view** — blocked on OD-05; ships as a distance-sorted list with an explicit notice.
 
 ### Then: the Edge Function adapters
 
