@@ -42,7 +42,7 @@ export function App() {
         <Route path="/confirmation/:bookingId" element={<Confirmation />} />
         <Route path="/ticket/:bookingId" element={<Ticket />} />
         <Route path="/offer" element={<Offer />} />
-        <Route path="/redeem" element={<Redeem />} />
+        <Route path="/staff/redeem" element={<Redeem />} />
 
         {/* An unknown hash route lands on Explore rather than a blank frame. */}
         <Route path="*" element={<Explore />} />

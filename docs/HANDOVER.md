@@ -1,6 +1,6 @@
 # Handover — Caribbean VIP
 
-**Written:** 2026-08-02 · **Updated:** 2026-08-03 (Journey design; Expo app retired) · **Branch:** `master` · **Gates:** all green
+**Written:** 2026-08-02 · **Updated:** 2026-08-03 (staff route separation; offer trigger on Nearby) · **Branch:** `master` · **Gates:** all green
 
 Read this first, then [`PRD.md`](PRD.md) (product source of truth),
 [`architecture.md`](architecture.md) (the numbered decisions), and
@@ -54,15 +54,17 @@ Individually, if you prefer: `pnpm tourist` and `pnpm vendor`.
 1. **Welcome** — crest, "Continue as Guest".
 2. **Explore** — greeting, destination selector, category tiles, Nearby Discoveries, rated cards.
 3. **Choose a destination** → switch island. The catalogue changes; the product name never does.
-4. Open a listing → the **rum-punch offer popup** fires → **Check Availability**.
+4. Tap any listing on Nearby → the **rum-punch offer popup** fires (once per island) → dismiss or
+   save the voucher → the next tap goes straight to the listing → **Check Availability**.
 5. Pick a day and time, set the party size, watch the total re-quote → **Continue to payment** →
    **Pay**.
 6. **Booking Confirmed** → **View my ticket** → QR.
-7. Tap **"QR will not scan? Show the code"**, copy the token.
-8. Paste it into the vendor portal → **Valid — admit the guest**.
-9. Paste it again → **Already redeemed**, with the original time and scanner. This is V-05 and it is
-   the most convincing thing in the demo.
-10. Change one character → **Invalid signature**.
+7. To demonstrate the vendor side, navigate to `/#/staff/redeem` (this route is **not linked from
+   the customer journey** — no bottom nav, no button on the ticket). Paste or type a ticket token.
+8. **Validate** → **Valid — admit the guest**.
+9. Validate the same token again → **Already redeemed**, with the original time and scanner. This
+   is V-05 and it is the most convincing thing in the demo.
+10. **Tamper with one character** → **Invalid signature**.
 
 **In the web app, reloading resets nothing.** State is persisted to LocalStorage on purpose, so a
 refresh mid-presentation cannot lose a booking. Profile → *Reset the demonstration* puts it back.
@@ -199,7 +201,16 @@ goes *in front* of this, and this stays behind it as the "falls back to normal s
 Both design passes are **committed** as of 2026-08-03, after a review pass that pulled five
 hand-mixed tint colours out of three screens and into tokens. Bringing them under `tokens.test.ts`
 found three of them failing AA — see the tints section of [`design.md`](design.md). Gates after:
-**203 tests (14 files), 7/7 SQL, typecheck and lint clean.**
+**214 tests (12 files), 7/7 SQL, typecheck and lint clean.**
+
+Post-M2 cleanup (also 2026-08-03):
+
+- **Staff redemption moved to `/staff/redeem`**, a separate route with no bottom nav. The customer
+  ticket screen no longer has a "Staff: validate this ticket" button — a presenter navigates to the
+  staff route directly; a customer never sees it.
+- **The rum-punch offer now also triggers from Nearby.** Tapping any listing card on the Nearby
+  screen fires the offer (once per island, same gate as the Explore timer). The second tap goes
+  straight to the experience detail.
 
 Ideas raised but not started, in the order I would take them:
 

@@ -33,6 +33,8 @@ const TABS: Tab[] = [
 export function BottomNav() {
   const { pathname } = useLocation();
 
+  if (pathname.startsWith('/staff')) return null;
+
   const isActive = (tab: Tab) =>
     pathname === tab.to || (tab.matches ?? []).some((m) => pathname.startsWith(m));
 

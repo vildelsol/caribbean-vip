@@ -4,7 +4,7 @@ import { formatLongDate } from '../data/availability';
 import { useStore, type VoucherState } from '../state/store';
 import { QR } from '../components/QR';
 import { Icon } from '../components/Icon';
-import { DemoNote, EmptyState, SecondaryButton, formatUsd } from '../components/kit';
+import { DemoNote, EmptyState, formatUsd } from '../components/kit';
 import './Ticket.css';
 
 /**
@@ -152,12 +152,6 @@ export function Ticket() {
           )}
         </div>
       </article>
-
-      <div className="ticket__actions">
-        <SecondaryButton onClick={() => navigate(`/redeem?token=${encodeURIComponent(booking.ticketToken)}`)}>
-          Staff: validate this ticket
-        </SecondaryButton>
-      </div>
 
       <DemoNote>Demo ticket · signature is real, secret is not</DemoNote>
     </main>

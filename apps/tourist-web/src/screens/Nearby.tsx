@@ -39,10 +39,21 @@ const CATEGORY_FOR: Record<string, string[]> = {
 };
 
 export function Nearby() {
-  const { state } = useStore();
+  const { state, dispatch } = useStore();
   const navigate = useNavigate();
   const [filter, setFilter] = useState<string>('All');
   const [selected, setSelected] = useState<string | null>(null);
+
+  const offerPending = !state.offerShownForIslands.includes(state.islandId);
+
+  const navigateToExperience = (experienceId: string) => {
+    if (offerPending) {
+      dispatch({ type: 'markOfferShown', islandId: state.islandId });
+      navigate('/offer');
+    } else {
+      navigate(`/experience/${experienceId}`);
+    }
+  };
 
   const island = islandById(state.islandId);
   const destination = destinationBySlug(state.destinationSlug);
@@ -126,7 +137,7 @@ export function Nearby() {
                 key={experience.id}
                 className="near-row"
                 label={experience.title}
-                onClick={() => navigate(`/experience/${experience.id}`)}
+                onClick={() => navigateToExperience(experience.id)}
               >
                 <div className="row near-row__inner">
                   <Photo
