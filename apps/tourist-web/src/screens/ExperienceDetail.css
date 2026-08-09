@@ -1,6 +1,24 @@
-/* The sticky action bar sits above the nav, so the sheet reserves room for both. */
+/*
+ * The sticky action bar sits above the nav, so the sheet reserves room for both.
+ *
+ * `.screen.detail` rather than `.detail`, and that is not belt-and-braces. `.screen` in global.css
+ * sets its own `padding-bottom: var(--nav-clearance)`, and a single-class rule here only beat it by
+ * stylesheet order — which it did not. The reservation silently lost, the sheet ended 82px above the
+ * fold instead of 155px, and the last two things on the page went under the bar: the "Ask Irie"
+ * card was clipped and the demo disclosure was hidden outright. A label that operating rule 9
+ * requires wherever inventory appears is not allowed to depend on which CSS file Vite emitted last.
+ *
+ * The bar is 12px + a 48px button + 12px + a hairline, and `--s-md` is the gap beneath the last
+ * card. Both are named so a change to the bar cannot quietly reopen the same hole.
+ */
 .detail {
-  padding-bottom: calc(var(--nav-clearance) + 76px);
+  --detail-action-height: 73px;
+}
+
+.screen.detail {
+  padding-bottom: calc(
+    var(--nav-height) + env(safe-area-inset-bottom, 0px) + var(--detail-action-height) + var(--s-md)
+  );
 }
 
 /* --- Hero ---------------------------------------------------------------- */
