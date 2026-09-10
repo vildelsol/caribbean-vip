@@ -16,6 +16,7 @@ Re-run after editing the manifest:  python3 fetch.py
 import json
 import os
 import re
+import shutil
 import subprocess
 import sys
 from concurrent.futures import ThreadPoolExecutor
@@ -25,6 +26,8 @@ ROOT = os.path.dirname(os.path.dirname(HERE))
 ASSETS = os.path.join(ROOT, "apps", "tourist-web", "public", "demo")
 CREDITS_TS = os.path.join(ROOT, "packages", "demo", "src", "credits.ts")
 CREDITS_DOC = os.path.join(ROOT, "docs", "media-credits.md")
+LICENSED_JSON = os.path.join(HERE, "licensed.json")
+LICENSED_DIR = os.path.join(HERE, "licensed")
 
 API = "https://commons.wikimedia.org/w/api.php"
 UA = "caribbean-vip-demo-seed/1.0 (repository seeding; contact via project)"
@@ -100,6 +103,47 @@ def main():
             "file": entry["file"],
         }
         jobs.append((key, info.get("thumburl") or info.get("url")))
+
+    # --- Operator-supplied photography ---------------------------------------
+    #
+    # Commons can be verified; a vendor's own photograph cannot. So the check here is that its
+    # provenance was actually written down — who owns it and on what basis we are using it. An
+    # entry missing either is refused, for the same reason an unlicensed Commons file is: a missing
+    # photograph is obvious in the app and an undocumented one is not.
+    licensed = {}
+    if os.path.exists(LICENSED_JSON):
+        licensed = {k: v for k, v in json.load(open(LICENSED_JSON)).items()
+                    if not k.startswith("_")}
+
+    for key, entry in sorted(licensed.items()):
+        source_path = os.path.join(LICENSED_DIR, f"{key}.jpg")
+        if not os.path.exists(source_path):
+            problems.append(f"{key}: licensed.json names it but licensed/{key}.jpg is missing")
+            continue
+        holder = (entry.get("rightsHolder") or "").strip()
+        permission = (entry.get("permission") or "").strip()
+        if not holder or not permission:
+            problems.append(f"{key}: licensed entries need both 'rightsHolder' and 'permission'")
+            continue
+        if permission.upper().startswith("REPLACE ME"):
+            problems.append(f"{key}: 'permission' is still the placeholder — record how we got it")
+            continue
+        credits[key] = {
+            "subject": entry.get("subject", ""),
+            "author": holder,
+            # Rendered on the card exactly like a Commons licence, so the basis always travels
+            # with the image rather than living only in this file.
+            "licence": f"Used with permission — {permission}",
+            "licenceUrl": entry.get("sourceUrl", "") or entry.get("source", ""),
+            "source": entry.get("source", ""),
+            "file": f"licensed/{key}.jpg",
+        }
+        # Copied rather than downloaded, then shrunk on the same terms as everything else.
+        jobs = [j for j in jobs if j[0] != key]
+        target = os.path.join(ASSETS, f"{key}.jpg")
+        os.makedirs(ASSETS, exist_ok=True)
+        shutil.copyfile(source_path, target)
+        shrink(target)
 
     if problems:
         print("Refusing to write anything — fix the manifest first:", file=sys.stderr)

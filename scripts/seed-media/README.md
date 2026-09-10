@@ -47,6 +47,41 @@ it is a false one. A slightly wrong photograph of the right place is honest. The
 the wrong country is not.
 
 The operator is the answer. A marketplace about to send an operator bookings is in a strong position
-to ask for a media kit, and most have one ready. Ask for written permission alongside the files, and
-record it with the image — `manifest.json` is Commons-only by design, so vendor-supplied media needs
-a separate path with its permission noted.
+to ask for a media kit, and most have one ready.
+
+## Operator-supplied photography
+
+`manifest.json` is Commons-only and will refuse anything else — correctly, because it cannot verify
+a licence it cannot look up. `licensed.json` is the other route, for photographs the operator has
+given us of their own product.
+
+```bash
+# 1. save the image under the media key the dataset already uses
+cp ~/Downloads/mystic-bobsled.jpg scripts/seed-media/licensed/jm-mystic-1.jpg
+
+# 2. add an entry to licensed.json with that same key (see the _example in the file)
+
+# 3. rebuild — copies it in, shrinks it, and regenerates the credits
+python3 scripts/seed-media/fetch.py
+```
+
+An entry here **overrides `manifest.json` for that key**, so no dataset change is needed: the
+listing keeps pointing at `jm-mystic-1` and simply gets a different photograph.
+
+Nothing here can be verified automatically, so provenance is recorded by hand instead and the
+script refuses an entry that does not carry it. Four ways it will refuse, all tested:
+
+| Problem | What it says |
+|---|---|
+| Entry with no file beside it | `licensed.json names it but licensed/<key>.jpg is missing` |
+| `permission` left as the placeholder | `'permission' is still the placeholder — record how we got it` |
+| `rightsHolder` or `permission` blank | `licensed entries need both 'rightsHolder' and 'permission'` |
+| — | and as always, nothing at all is written until every problem is fixed |
+
+`permission` is rendered on the card, as `Used with permission — <what you wrote>`. Write what is
+actually true: *"Email from Marketing, 12 Sep 2026"* is useful a year later; *"yes"* is not.
+
+**A photograph being publicly visible online is not permission.** An operator's website, a booking
+site's gallery and a search-results page are all still someone's copyright. This route is for images
+we were *given*, and the `permission` field is where that is recorded — which is also what makes the
+difference easy to see later, when nobody remembers where a file came from.

@@ -1,0 +1,29 @@
+{
+  "_comment": [
+    "Operator-supplied photography — photographs of the ACTUAL vendor, given to us by them.",
+    "",
+    "manifest.json is Wikimedia Commons only and will refuse anything else, which is correct: it",
+    "cannot verify a licence it cannot look up. This file is the other route. The trade is that",
+    "nothing here can be verified automatically, so provenance is recorded by hand instead and",
+    "fetch.py refuses to write an entry that does not carry it.",
+    "",
+    "To add one:",
+    "  1. Save the image as scripts/seed-media/licensed/<key>.jpg",
+    "  2. Add an entry below with the same <key>",
+    "  3. python3 scripts/seed-media/fetch.py",
+    "",
+    "<key> is the media key the dataset already uses, e.g. jm-mystic-1 — adding it here overrides",
+    "whatever manifest.json says for that key.",
+    "",
+    "`rightsHolder` and `permission` are both required and both end up in the app's credit line.",
+    "Write what is actually true in `permission`: 'Email from Marketing, 12 Sep 2026' is useful a",
+    "year later; 'yes' is not."
+  ],
+
+  "_example-jm-mystic-1": {
+    "subject": "The bobsled at Mystic Mountain, Ocho Rios, Jamaica",
+    "rightsHolder": "Rainforest Adventures (Mystic Mountain)",
+    "permission": "REPLACE ME — e.g. 'Media kit supplied by <name>, <date>' or 'Written permission, email <date>'",
+    "source": "https://www.rainforestadventure.com/jamaica-mystic-mountain"
+  }
+}
