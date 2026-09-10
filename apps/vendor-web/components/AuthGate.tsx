@@ -1,7 +1,6 @@
 'use client';
 
 import { useState, type ReactNode } from 'react';
-import { semantic, spacing, radius } from '@cvip/ui';
 import { supabase, isSupabaseConfigured } from '../lib/supabase';
 import { useVendorSession } from '../lib/session';
 
@@ -31,20 +30,15 @@ export function AuthGate({ children }: { children: ReactNode }) {
   // credentials exist, `isSupabaseConfigured` is true and the real gate below applies as before.
   if (!isSupabaseConfigured) {
     return (
-      <>
-        <div
-          style={{
-            background: semantic.premium,
-            color: semantic.brand,
-            padding: `6px ${spacing.md}px`,
-            textAlign: 'center',
-            fontSize: 14,
-          }}
-        >
-          DEMO MODE · sample data, no real vendor account, nothing is charged
+      <div className="shell">
+        {/* A hairline strip rather than a slab. The tourist app made the same change on 2026-08-03:
+            the first thing anyone sees should be the product, and the notice still says the whole
+            truth at 11px. */}
+        <div className="demo-strip">
+          Demo mode · sample data · no real vendor account · nothing is charged
         </div>
         {children}
-      </>
+      </div>
     );
   }
 
@@ -62,33 +56,33 @@ export function AuthGate({ children }: { children: ReactNode }) {
 
     return (
       <Panel title="Vendor sign in">
-        <form onSubmit={submit} style={{ display: 'grid', gap: spacing.sm }}>
-          <label style={{ display: 'grid', gap: 4 }}>
-            <span style={{ fontSize: 14, color: semantic.textMuted }}>Email</span>
+        <form onSubmit={submit} style={{ display: 'grid', gap: 'var(--s-md)' }}>
+          <label className="field">
+            <span className="field__label">Email</span>
             <input
               type="email"
+              className="input"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
               autoComplete="email"
-              style={inputStyle}
             />
           </label>
-          <label style={{ display: 'grid', gap: 4 }}>
-            <span style={{ fontSize: 14, color: semantic.textMuted }}>Password</span>
+          <label className="field">
+            <span className="field__label">Password</span>
             <input
               type="password"
+              className="input"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
               autoComplete="current-password"
-              style={inputStyle}
             />
           </label>
-          <button type="submit" disabled={busy} style={buttonStyle}>
+          <button type="submit" disabled={busy} className="btn btn--primary">
             {busy ? 'Signing in…' : 'Sign in'}
           </button>
-          {message ? <p style={{ color: semantic.urgentText, fontSize: 14 }}>{message}</p> : null}
+          {message ? <p className="transport__title">{message}</p> : null}
         </form>
       </Panel>
     );
@@ -97,13 +91,11 @@ export function AuthGate({ children }: { children: ReactNode }) {
   if (memberships.length === 0) {
     return (
       <Panel title="No vendor organization yet">
-        <p style={{ color: semantic.textMuted }}>
+        <p className="card__note">
           This account is signed in but is not a member of any vendor organization. Create one to
           start onboarding, or ask an owner to invite you.
         </p>
-        <p style={{ color: semantic.textMuted, fontSize: 14 }}>
-          Onboarding and staff invitations arrive in M4.
-        </p>
+        <p className="card__note">Onboarding and staff invitations arrive in M4.</p>
       </Panel>
     );
   }
@@ -113,30 +105,15 @@ export function AuthGate({ children }: { children: ReactNode }) {
 
 function Panel({ title, children }: { title: string; children: ReactNode }) {
   return (
-    <main style={{ maxWidth: 420, margin: '10vh auto', padding: spacing.xl }}>
-      <p style={{ color: semantic.textMuted, margin: 0, fontSize: 14 }}>Caribbean VIP</p>
-      <h1 style={{ color: semantic.brand, marginTop: 4 }}>{title}</h1>
-      {children}
+    <main className="panel">
+      <div className="panel__brand">
+        <span className="crest" aria-hidden="true">
+          <span className="crest__vip">VIP</span>
+          <span className="crest__role">VENDOR</span>
+        </span>
+      </div>
+      <h1 className="panel__title">{title}</h1>
+      <div className="card">{children}</div>
     </main>
   );
 }
-
-const inputStyle: React.CSSProperties = {
-  padding: spacing.sm,
-  fontSize: 16,
-  border: `1px solid ${semantic.border}`,
-  borderRadius: radius.sm,
-  background: semantic.surface,
-  color: semantic.textPrimary,
-};
-
-const buttonStyle: React.CSSProperties = {
-  padding: spacing.sm,
-  fontSize: 16,
-  fontWeight: 600,
-  color: semantic.textOnDark,
-  background: semantic.brandActive,
-  border: 'none',
-  borderRadius: radius.sm,
-  cursor: 'pointer',
-};

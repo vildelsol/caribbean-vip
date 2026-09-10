@@ -1,0 +1,410 @@
+/**
+ * Vendor portal visual language.
+ *
+ * Same family as the tourist app — ivory, deep green, gold, Cormorant over Manrope, the crest —
+ * but composed for a different job. The tourist app is browsed on a sofa; this is used at a gate,
+ * in sunlight, one-handed, with a guest waiting and a queue behind them. Three consequences run
+ * through everything below:
+ *
+ *   1. **The verdict is the loudest thing on the screen.** A vendor decides "let them in" or "do
+ *      not" from across a metre of glare. The result panel is full-bleed colour with a 30px
+ *      headline, not a tinted box with an icon.
+ *   2. **Targets are large and few.** Every control is at least 52px tall. There is one primary
+ *      action visible at a time.
+ *   3. **The chrome is dark.** The tourist app's ivory bar is right indoors; a deep green header
+ *      holds its contrast outdoors, and it tells a vendor at a glance that this is the staff tool
+ *      and not the customer app — the two are otherwise deliberately identical in palette.
+ */
+
+/* --- Frame ---------------------------------------------------------------- */
+
+.shell {
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+}
+
+.masthead {
+  background: var(--green-950);
+  color: var(--on-dark);
+  padding: var(--s-md) var(--s-md) var(--s-lg);
+}
+
+.masthead__inner {
+  max-width: 720px;
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  gap: var(--s-md);
+}
+
+/* The crest, drawn in type exactly as the tourist app draws it — one mark, never redrawn per
+   surface. Only the word underneath changes: the guest sees their island, staff see VENDOR. */
+.crest {
+  width: 58px;
+  height: 58px;
+  flex: none;
+  border-radius: 50%;
+  background: var(--green-980);
+  border: 2px solid var(--gold-light);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.crest__vip {
+  font-family: var(--font-display);
+  font-size: 21px;
+  font-weight: 600;
+  line-height: 1;
+  color: var(--gold-light);
+  letter-spacing: 0.03em;
+}
+
+.crest__role {
+  margin-top: 2px;
+  font-size: 6px;
+  font-weight: 800;
+  letter-spacing: 0.18em;
+  color: var(--gold);
+}
+
+.masthead__title {
+  font-family: var(--font-display);
+  font-size: 27px;
+  font-weight: 600;
+  color: var(--on-dark);
+  line-height: 1.1;
+  margin: 0;
+}
+
+.masthead__sub {
+  margin: 2px 0 0;
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--gold-light);
+}
+
+/* The demo notice is a hairline strip, not a slab. The tourist app made this change in the
+   2026-08-03 pass for the same reason: a two-line gold banner is the first thing an investor sees,
+   and it should not be. It still says the whole truth, in 11px. */
+.demo-strip {
+  background: var(--gold);
+  color: var(--green-980);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  text-align: center;
+  padding: 4px var(--s-md);
+}
+
+.page {
+  flex: 1;
+  width: 100%;
+  max-width: 720px;
+  margin: 0 auto;
+  padding: var(--s-lg) var(--s-md) var(--s-xxl);
+  display: grid;
+  gap: var(--s-lg);
+}
+
+/* --- Card ----------------------------------------------------------------- */
+
+.card {
+  background: var(--ivory-raised);
+  border: 1px solid var(--border);
+  border-radius: var(--r-xl);
+  box-shadow: var(--e-card);
+  padding: var(--s-lg);
+  display: grid;
+  gap: var(--s-md);
+}
+
+.card__head {
+  display: grid;
+  gap: 4px;
+}
+
+.card__note {
+  margin: 0;
+  color: var(--ink-muted);
+  font-size: 14px;
+}
+
+/* --- Fields --------------------------------------------------------------- */
+
+.field {
+  display: grid;
+  gap: 6px;
+}
+
+.field__label {
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+}
+
+.field__hint {
+  margin: 0;
+  font-size: 13px;
+  color: var(--ink-muted);
+}
+
+.input {
+  /* 16px minimum: anything smaller and iOS zooms the viewport on focus, which on a phone held at
+     arm's length in front of a guest is genuinely disruptive. */
+  font: 16px/1.4 var(--font-sans);
+  padding: 15px var(--s-md);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--r-md);
+  background: var(--ivory-calm);
+  color: var(--ink);
+  width: 100%;
+}
+
+.input--code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  letter-spacing: 0.02em;
+}
+
+/* --- Buttons -------------------------------------------------------------- */
+
+.btn {
+  font: 600 17px/1 var(--font-sans);
+  min-height: 54px;
+  padding: 0 var(--s-lg);
+  border-radius: var(--r-md);
+  border: 1px solid transparent;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--s-sm);
+  transition: transform 0.12s ease, background 0.12s ease;
+}
+
+.btn:active {
+  transform: scale(0.985);
+}
+
+.btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.btn--primary {
+  background: var(--green-900);
+  color: var(--on-dark);
+}
+
+.btn--secondary {
+  background: var(--ivory-raised);
+  color: var(--green-900);
+  border-color: var(--border-strong);
+}
+
+.btn--onDark {
+  background: rgba(255, 253, 247, 0.14);
+  color: var(--on-dark);
+  border-color: rgba(255, 253, 247, 0.4);
+}
+
+/* --- Camera --------------------------------------------------------------- */
+
+.camera {
+  width: 100%;
+  border-radius: var(--r-lg);
+  overflow: hidden;
+  background: var(--green-980);
+  aspect-ratio: 1 / 1;
+}
+
+/* --- The verdict ---------------------------------------------------------- */
+
+/*
+ * V-05 is the most convincing thing in the demonstration, and it was previously a bordered box the
+ * same colour as everything around it. Full-bleed colour is the point: the answer must be legible
+ * before the words are read.
+ */
+.verdict {
+  border-radius: var(--r-xl);
+  padding: var(--s-lg);
+  display: grid;
+  gap: var(--s-md);
+  color: var(--on-dark);
+  box-shadow: var(--e-raised);
+}
+
+.verdict--ok {
+  background: var(--green-900);
+}
+
+.verdict--warn {
+  background: var(--gold-text);
+}
+
+.verdict--bad {
+  background: var(--coral-text);
+}
+
+.verdict__headline {
+  font-family: var(--font-display);
+  font-size: 30px;
+  font-weight: 700;
+  line-height: 1.05;
+  margin: 0;
+}
+
+.verdict__detail {
+  margin: 0;
+  font-size: 16px;
+  color: rgba(255, 253, 247, 0.92);
+}
+
+/* The record of the first redemption — who, and when. Held on a darkened panel rather than in the
+   body copy so a vendor can find the two facts without reading a sentence. */
+.verdict__record {
+  background: rgba(7, 40, 33, 0.34);
+  border-radius: var(--r-md);
+  padding: var(--s-md);
+  display: grid;
+  gap: 2px;
+}
+
+.verdict__recordLabel {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: rgba(255, 253, 247, 0.72);
+}
+
+.verdict__recordValue {
+  font-size: 17px;
+  font-weight: 700;
+}
+
+.verdict__recordBy {
+  font-size: 14px;
+  color: rgba(255, 253, 247, 0.86);
+}
+
+.verdict__stamp {
+  font-size: 13px;
+  color: rgba(255, 253, 247, 0.82);
+}
+
+/* --- Transport failure ---------------------------------------------------- */
+
+/*
+ * Deliberately NOT a verdict. A connection problem is not a decision about the voucher, and
+ * dressing it in the same full-bleed colour as "already redeemed" would get a paying guest turned
+ * away because the wifi dropped. Ivory card, coral hairline, and the copy says so outright.
+ */
+.transport {
+  background: var(--ivory-raised);
+  border: 2px solid var(--coral-text);
+  border-radius: var(--r-xl);
+  padding: var(--s-lg);
+  display: grid;
+  gap: var(--s-sm);
+}
+
+.transport__title {
+  font-family: var(--font-display);
+  font-size: 21px;
+  font-weight: 700;
+  color: var(--coral-text);
+  margin: 0;
+}
+
+.transport p {
+  margin: 0;
+  color: var(--ink-muted);
+  font-size: 14px;
+}
+
+/* --- Roadmap -------------------------------------------------------------- */
+
+.roadmap {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: grid;
+  gap: var(--s-sm);
+}
+
+.roadmap__item {
+  background: var(--ivory-sunken);
+  border-radius: var(--r-md);
+  padding: 13px var(--s-md);
+  display: flex;
+  gap: var(--s-md);
+  align-items: baseline;
+}
+
+.roadmap__id {
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  color: var(--teal-text);
+  min-width: 38px;
+}
+
+.roadmap__text {
+  flex: 1;
+  font-size: 15px;
+  min-width: 0;
+}
+
+.roadmap__milestone {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  color: var(--gold-text);
+  background: var(--sand);
+  border: 1px solid var(--sand-border);
+  border-radius: var(--r-pill);
+  padding: 2px 9px;
+}
+
+/* --- Footnote ------------------------------------------------------------- */
+
+.footnote {
+  margin: 0;
+  font-size: 13px;
+  color: var(--ink-muted);
+  text-align: center;
+}
+
+/* --- Sign-in panel -------------------------------------------------------- */
+
+.panel {
+  max-width: 420px;
+  margin: 8vh auto;
+  padding: var(--s-md);
+  display: grid;
+  gap: var(--s-md);
+}
+
+.panel__brand {
+  display: flex;
+  align-items: center;
+  gap: var(--s-md);
+  justify-content: center;
+}
+
+.panel__brand .crest {
+  background: var(--green-950);
+}
+
+.panel__title {
+  text-align: center;
+  margin: 0;
+}

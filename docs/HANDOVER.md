@@ -332,13 +332,41 @@ text plus the `Ocho Rios`, `Saint Ann Parish`, `Negril` and `Tourism in Jamaica`
 
 | Listing | Currently shows | Needs |
 |---|---|---|
-| Mystic Mountain Bobsled & Zipline | **Konoko Falls gardens — a different attraction** | The bobsled, zipline or chairlift |
-| White River Tubing | A bamboo raft on the White River — right river, wrong craft | Tubing |
+| Mystic Mountain Bobsled & Zipline | **Resolved 2026-09-10** — the bobsled, via the licensed route | nothing further |
+| White River Tubing | **Settled 2026-09-10** — a bamboo raft on the White River | nothing; rafting is what the river is known for |
 
-Ro has a photograph of the Mystic Mountain bobsled. It is a Rainforest Adventures promotional image
-and therefore their copyright, so it is **not shipped until there is written permission**. Getting it
-is a one-email task and a marketplace about to send an operator bookings is in a strong position to
-ask. `scripts/seed-media/README.md` carries the detail and the wording.
+**Mystic Mountain is resolved, and the earlier reading of it was wrong.** The photograph Ro has is
+*not* a Rainforest Adventures promotional image and not their copyright: it is an aerial shot by an
+independent drone pilot, used with that pilot's permission. It shipped on 2026-09-10 as the first
+image through the `licensed.json` route, replacing the Konoko Falls gardens — which were a different
+attraction entirely, and the worse error by far.
+
+It shows **the bobsled itself**, so the listing and its photograph finally agree. (A first shot of
+the same site showed the waterslide and was replaced within the hour.) It is 275x183 where other
+heroes are 1400 — **Ro's call, 2026-09-10, that this is fine for the demonstration**, so do not
+revisit it. The pilot's name is still to be recorded in `rightsHolder`.
+
+**White River Tubing is settled too, and was never really blocked.** It shows a bamboo raft on the
+White River rather than a tube — and Ro's call, 2026-09-10, is that this is right rather than
+tolerated: **rafting is what the river is known for.** The photograph reads as the White River to
+anyone who knows it. Searched again the same day across Commons, Flickr's CC pool, Unsplash and
+Pexels: no freely-licensed photograph of Jamaican tubing exists, and every real one belongs to a
+tour operator. **Nothing further is needed here — do not "fix" it.**
+
+**All 34 listings now carry a photograph of the right place**, and the media section of this
+document is closed.
+
+**It also found a layout bug, which is fixed.** `.detail__credit` shared the 40px baseline with
+`.detail__hero-flags` and had neither a width cap nor `nowrap` — fine for a Commons credit averaging
+27 characters, not fine for the first licensed one, which wrapped back across the row and hid the
+"Open Now" badge. The credit now sits on its own line above the badges, so no credit length can
+cover one. **The two photography tests were widened in the same pass**: they asserted a free Commons
+licence and an `https://` source for *every* credit, which no `licensed.json` entry can satisfy —
+they were written before that route existed and this was the first entry to use it. They now accept
+either route and check that a licensed entry records a real, non-placeholder permission. Verified by
+mutation, both ways.
+
+
 
 **Do not "fix" these with a photograph of the right activity taken somewhere else.** The only free
 tubing images on Commons are of the Chattahoochee and Shenandoah rivers in the United States. A
@@ -382,6 +410,52 @@ one minute. Under `AT_VENUE_METRES` the row now reads "YOU'RE HERE".
 Walked in a browser in all four states with the device stubbed: at a vendor, elsewhere in Ocho Rios,
 consent-but-no-fix, and from London. A fresh load raises no dialogue.
 
+### The vendor portal has a visual language now (2026-09-10)
+
+The handover's top remaining demo item, and it turned out to be two problems stacked.
+
+**It did not run.** `http://localhost:3001` returned 500 — a stale `.next` webpack cache resolving
+`buffer@5.7.1`, a package that is not in the lockfile and never was. `rm -rf apps/vendor-web/.next`
+fixes it. Worth knowing because **the gates cannot catch this**: typecheck, lint and vitest never
+start the Next dev server, so the portal can be broken while everything reports green. If the portal
+500s, clear the cache before believing the error.
+
+**Its palette was two designs old.** `app/globals.css` carried a hand-written copy — `--turquoise:
+#10828a`, the old `--sand: #fbf1e3` — written before the 2026-08-03 redesign, while every component
+in the same app imported the *current* tokens from `@cvip/ui`. So the portal rendered the old palette
+under the new one. `tokens.test.ts` had guarded the tourist app's mirror and nothing guarded this,
+which is the whole reason it survived.
+
+**The fix is structural, not a repaint.** `tokens.css` moved from `apps/tourist-web/src/design/` to
+`packages/ui/tokens.css` and is exported as `@cvip/ui/tokens.css`; both web apps import that one
+file. A new test asserts the vendor stylesheet imports the mirror and declares **no** `--name: #hex`
+of its own — verified by mutation with the old turquoise, which it catches. An app-local palette
+cannot come back without failing the suite.
+
+On top of that, the portal was given the design it never had: the crest (same mark, `VENDOR` where a
+guest sees their island), Cormorant Garamond and Manrope (it had been rendering in the platform
+default), a deep-green masthead, cards, and the demo notice as a **hairline strip** rather than the
+gold slab — the same call the tourist app made on 2026-08-03, for the same reason.
+
+**The verdict is the part that matters.** V-05 is the most convincing thing in the demonstration and
+it had been a bordered box the same colour as everything around it. It is now full-bleed colour with
+a 30px display headline — green for admit, gold for already-redeemed, coral for refuse — because a
+vendor reads it across a metre of glare and must know the answer before reading the words. The
+"first redeemed / scanned by" record sits on a darkened panel inside it.
+
+**A transport failure is deliberately not a verdict.** It stays an ivory card with a coral hairline,
+because dressing "could not reach the server" in the same colour as "already redeemed" gets a paying
+guest turned away over dropped wifi.
+
+Walked in a browser in all three states with a real signed token: valid, second scan refused with
+the original time and scanner, and a tampered character rejected. Gates after: **276 tests
+(15 files), typecheck and lint clean, and both apps build.**
+
+> **Note for whoever demonstrates this.** There are two redemption surfaces and they are not the
+> same one. `/#/staff/redeem` in the tourist app is what §2's walkthrough uses, and it already had
+> the design language. The portal on `:3001` is the vendor's own device, and is the one this pass
+> was about.
+
 ### The open question for the next session
 
 **Irie AI is the other moat Ro named, and it is still a guided demo** — rule-matched over the
@@ -393,8 +467,7 @@ replace it.
 
 Ideas raised but not started, in the order I would take them:
 
-1. **Vendor portal visual language** — functional, no visual language. The last screen with no design
-   applied, and the highest-value remaining demo work.
+1. ~~**Vendor portal visual language**~~ — **done, 2026-09-10.** See the section above.
 2. **A licensed-media path in the pipeline** (~20 minutes). `manifest.json` and `fetch.py` are
    Commons-only *by design*, and will refuse anything else. Operator-supplied photography needs its
    own route with the permission recorded beside the file. Needed for every real vendor eventually,

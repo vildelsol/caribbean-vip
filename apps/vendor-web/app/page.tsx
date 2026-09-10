@@ -1,4 +1,3 @@
-import { semantic, spacing, radius } from '@cvip/ui';
 import { Scanner } from '../components/Scanner';
 
 /**
@@ -18,45 +17,66 @@ const remaining = [
 
 export default function VendorHome() {
   return (
-    <main style={{ maxWidth: 760, margin: '0 auto', padding: spacing.xl }}>
-      <p style={{ color: semantic.textMuted, margin: 0, fontSize: 14 }}>Caribbean VIP</p>
-      <h1 style={{ color: semantic.brand, margin: `${spacing.xs}px 0 ${spacing.sm}px` }}>
-        Vendor Portal
-      </h1>
+    <>
+      <header className="masthead">
+        <div className="masthead__inner">
+          <Crest />
+          <div>
+            <p className="masthead__sub">Vendor Portal</p>
+            <h1 className="masthead__title">Redeem a voucher</h1>
+          </div>
+        </div>
+      </header>
 
-      <h2 style={{ color: semantic.textPrimary, marginTop: spacing.lg }}>Redeem a voucher</h2>
-      <p style={{ color: semantic.textMuted, marginTop: 0 }}>
-        Scan the guest&rsquo;s QR code, or type the code they read out. A voucher can only be
-        redeemed once.
-      </p>
+      <main className="page">
+        <section className="card">
+          <div className="card__head">
+            <h2>Scan the guest&rsquo;s code</h2>
+            <p className="card__note">
+              Point the camera at their QR code, or type the code they read out. A voucher can only
+              be redeemed once.
+            </p>
+          </div>
+          <Scanner />
+        </section>
 
-      <Scanner />
+        <section className="card">
+          <div className="card__head">
+            <h2>Still to come</h2>
+            <p className="card__note">
+              The portal ships with redemption because that is the half of the journey a guest
+              stands in front of. The rest arrives with M4 and M6.
+            </p>
+          </div>
+          <ul className="roadmap">
+            {remaining.map((m) => (
+              <li key={m.id} className="roadmap__item">
+                <strong className="roadmap__id">{m.id}</strong>
+                <span className="roadmap__text">{m.text}</span>
+                <span className="roadmap__milestone">{m.milestone}</span>
+              </li>
+            ))}
+          </ul>
+        </section>
 
-      <h2 style={{ color: semantic.textPrimary, marginTop: spacing.xxl }}>Still to come</h2>
-      <ul style={{ listStyle: 'none', padding: 0, display: 'grid', gap: spacing.sm }}>
-        {remaining.map((m) => (
-          <li
-            key={m.id}
-            style={{
-              background: semantic.surface,
-              border: `1px solid ${semantic.border}`,
-              borderRadius: radius.md,
-              padding: spacing.md,
-              display: 'flex',
-              gap: spacing.md,
-              alignItems: 'baseline',
-            }}
-          >
-            <strong style={{ color: semantic.locatorText, minWidth: 44 }}>{m.id}</strong>
-            <span style={{ flex: 1 }}>{m.text}</span>
-            <span style={{ color: semantic.premiumText, fontSize: 14 }}>{m.milestone}</span>
-          </li>
-        ))}
-      </ul>
+        <p className="footnote">
+          Demo build — not connected to a live payment account or verified vendor records.
+        </p>
+      </main>
+    </>
+  );
+}
 
-      <p style={{ color: semantic.urgentText, fontSize: 14 }}>
-        Demo build — not connected to a live payment account or verified vendor records.
-      </p>
-    </main>
+/**
+ * One mark, never redrawn per surface — the same disc, ring and serif lettering the tourist app
+ * uses, with VENDOR where a guest sees their island. Drawn in type rather than shipped as an
+ * image, so it stays crisp at any size and costs nothing in the bundle.
+ */
+function Crest() {
+  return (
+    <span className="crest" aria-hidden="true">
+      <span className="crest__vip">VIP</span>
+      <span className="crest__role">VENDOR</span>
+    </span>
   );
 }

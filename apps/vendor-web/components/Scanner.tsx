@@ -1,7 +1,6 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import { radius, semantic, spacing } from '@cvip/ui';
 import { REDEMPTION_COPY, isDemoScanner, redeemToken, type RedemptionView } from '../lib/redeem';
 
 /**
@@ -95,84 +94,78 @@ export function Scanner() {
   }, []);
 
   const copy = outcome ? REDEMPTION_COPY[outcome.result] : null;
-  const toneColour =
-    copy?.tone === 'ok' ? semantic.brand : copy?.tone === 'warn' ? semantic.premiumText : semantic.urgentText;
+  // `fail` covers expired, unknown and bad-signature alike: all three mean do not admit, and a
+  // vendor does not need three colours to be told the same thing.
+  const verdictTone = copy?.tone === 'ok' ? 'ok' : copy?.tone === 'warn' ? 'warn' : 'bad';
 
   return (
-    <section style={{ display: 'grid', gap: spacing.md }}>
-      <div style={{ display: 'grid', gap: spacing.xs }}>
-        <label htmlFor="scanner-name" style={{ fontSize: 14, color: semantic.textMuted }}>
+    <section style={{ display: 'grid', gap: 'var(--s-md)' }}>
+      <div className="field">
+        <label htmlFor="scanner-name" className="field__label">
           Who is scanning?
         </label>
         <input
           id="scanner-name"
+          className="input"
           value={scannerName}
           onChange={(e) => setScannerName(e.target.value)}
-          style={inputStyle}
         />
-        <p style={{ fontSize: 13, color: semantic.textMuted, margin: 0 }}>
+        <p className="field__hint">
           Recorded against the redemption, and shown to whoever scans the voucher next.
         </p>
       </div>
 
       {mode === 'camera' ? (
-        <div style={{ display: 'grid', gap: spacing.sm }}>
-          <div
-            id={regionId}
-            style={{
-              width: '100%',
-              maxWidth: 420,
-              borderRadius: radius.md,
-              overflow: 'hidden',
-              background: '#000',
-            }}
-          />
-          <button type="button" onClick={() => void stopCamera()} style={secondaryButton}>
+        <div style={{ display: 'grid', gap: 'var(--s-sm)' }}>
+          <div id={regionId} className="camera" />
+          <button type="button" onClick={() => void stopCamera()} className="btn btn--secondary">
             Stop camera
           </button>
         </div>
       ) : (
-        <button type="button" onClick={() => void startCamera()} style={primaryButton}>
+        <button type="button" onClick={() => void startCamera()} className="btn btn--primary">
           Scan with camera
         </button>
       )}
 
       {/* The region must exist in the DOM before html5-qrcode is told to render into it. */}
-      {mode === 'camera' ? null : <div id={regionId} style={{ display: 'none' }} />}
+      {mode === 'camera' ? null : <div id={regionId} hidden />}
 
-      {cameraError ? (
-        <p style={{ color: semantic.urgentText, fontSize: 14, margin: 0 }}>{cameraError}</p>
-      ) : null}
+      {cameraError ? <p className="field__hint">{cameraError}</p> : null}
 
       <form
         onSubmit={(e) => {
           e.preventDefault();
           void submit(manual);
         }}
-        style={{ display: 'grid', gap: spacing.xs }}
+        style={{ display: 'grid', gap: 6 }}
       >
-        <label htmlFor="voucher-code" style={{ fontSize: 14, color: semantic.textMuted }}>
+        <label htmlFor="voucher-code" className="field__label">
           Or type / paste the voucher code
         </label>
         <input
           id="voucher-code"
+          className="input input--code"
           value={manual}
           onChange={(e) => setManual(e.target.value)}
           placeholder="cvip://v1/…"
           autoComplete="off"
           spellCheck={false}
-          style={{ ...inputStyle, fontFamily: 'ui-monospace, SFMono-Regular, Menlo, monospace' }}
         />
-        <button type="submit" disabled={busy || manual.trim().length === 0} style={primaryButton}>
+        <button
+          type="submit"
+          disabled={busy || manual.trim().length === 0}
+          className="btn btn--secondary"
+        >
           {busy ? 'Checking…' : 'Check voucher'}
         </button>
       </form>
 
       {transportError ? (
-        <div style={{ ...resultBox, borderColor: semantic.urgentText }}>
-          <strong style={{ color: semantic.urgentText }}>Could not check this voucher</strong>
-          <p style={{ margin: 0, color: semantic.textMuted }}>{transportError}</p>
-          <p style={{ margin: 0, color: semantic.textMuted, fontSize: 14 }}>
+        <div className="transport">
+          <p className="transport__title">Could not check this voucher</p>
+          <p>{transportError}</p>
+          <p>
             This is a connection problem, not a decision about the voucher. Try again before turning
             anyone away.
           </p>
@@ -180,39 +173,27 @@ export function Scanner() {
       ) : null}
 
       {outcome && copy ? (
-        <div
-          style={{ ...resultBox, borderColor: toneColour, borderWidth: 2 }}
-          role="status"
-          aria-live="polite"
-        >
-          <strong style={{ color: toneColour, fontSize: 20 }}>{copy.headline}</strong>
-          <p style={{ margin: 0 }}>{copy.detail}</p>
+        <div className={`verdict verdict--${verdictTone}`} role="status" aria-live="polite">
+          <p className="verdict__headline">{copy.headline}</p>
+          <p className="verdict__detail">{copy.detail}</p>
 
           {/* V-05's acceptance criterion: a second scan must show WHEN and BY WHOM, not just refuse. */}
           {outcome.result === 'already_redeemed' ? (
-            <div
-              style={{
-                background: semantic.surfaceSunken,
-                borderRadius: radius.sm,
-                padding: spacing.md,
-                display: 'grid',
-                gap: 4,
-              }}
-            >
-              <span style={{ fontSize: 14, color: semantic.textMuted }}>First redeemed</span>
-              <strong>
+            <div className="verdict__record">
+              <span className="verdict__recordLabel">First redeemed</span>
+              <strong className="verdict__recordValue">
                 {outcome.originalRedeemedAt
                   ? new Date(outcome.originalRedeemedAt).toLocaleString()
                   : 'Time not recorded'}
               </strong>
-              <span style={{ fontSize: 14, color: semantic.textMuted }}>
+              <span className="verdict__recordBy">
                 Scanned by {outcome.originalScanner ?? 'an unnamed scanner'}
               </span>
             </div>
           ) : null}
 
           {outcome.result === 'ok' && outcome.redeemedAt ? (
-            <span style={{ fontSize: 14, color: semantic.textMuted }}>
+            <span className="verdict__stamp">
               Redeemed at {new Date(outcome.redeemedAt).toLocaleString()} by {scannerName}
             </span>
           ) : null}
@@ -223,7 +204,7 @@ export function Scanner() {
               setOutcome(null);
               setManual('');
             }}
-            style={secondaryButton}
+            className="btn btn--onDark"
           >
             Scan another
           </button>
@@ -231,7 +212,7 @@ export function Scanner() {
       ) : null}
 
       {isDemoScanner ? (
-        <p style={{ fontSize: 13, color: semantic.urgentText, margin: 0 }}>
+        <p className="field__hint">
           Demo scanner — no backend configured. The signature on every code is genuinely verified,
           and redemptions are remembered in this browser tab only, so a reload starts fresh.
         </p>
@@ -239,44 +220,3 @@ export function Scanner() {
     </section>
   );
 }
-
-const inputStyle: React.CSSProperties = {
-  padding: `${spacing.sm}px ${spacing.md}px`,
-  fontSize: 16,
-  borderRadius: radius.md,
-  border: `1px solid ${semantic.border}`,
-  background: semantic.surface,
-  color: semantic.textPrimary,
-  width: '100%',
-  boxSizing: 'border-box',
-};
-
-const primaryButton: React.CSSProperties = {
-  padding: spacing.md,
-  fontSize: 16,
-  fontWeight: 600,
-  borderRadius: radius.md,
-  border: 'none',
-  background: semantic.brand,
-  color: semantic.textOnDark,
-  cursor: 'pointer',
-};
-
-const secondaryButton: React.CSSProperties = {
-  padding: spacing.md,
-  fontSize: 16,
-  borderRadius: radius.md,
-  border: `1px solid ${semantic.border}`,
-  background: semantic.surface,
-  color: semantic.textPrimary,
-  cursor: 'pointer',
-};
-
-const resultBox: React.CSSProperties = {
-  border: `1px solid ${semantic.border}`,
-  borderRadius: radius.md,
-  padding: spacing.lg,
-  display: 'grid',
-  gap: spacing.sm,
-  background: semantic.surface,
-};

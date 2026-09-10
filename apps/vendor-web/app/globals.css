@@ -1,16 +1,15 @@
-:root {
-  --sand: #fbf1e3;
-  --sand-deep: #f3e6d2;
-  --green-900: #073a32;
-  --green-700: #0b5a53;
-  --turquoise: #10828a;
-  --gold: #dbaa50;
-  --gold-deep: #9e8541;
-  --coral: #d9694f;
-  --ink: #12211d;
-  --ink-muted: #4a5a55;
-  --border: #e2d6c2;
-}
+/**
+ * Vendor portal base layer.
+ *
+ * The palette is imported, never redeclared. This file used to carry its own hand-written copy —
+ * turquoise `#10828a`, the old sand `#fbf1e3` — written before the 2026-08-03 redesign and never
+ * updated, because `tokens.test.ts` guarded the tourist app's mirror and nothing guarded this one.
+ * The result was a portal quietly rendering the previous design's colours while every component in
+ * it imported the current ones from `@cvip/ui`.
+ *
+ * Add a colour to `packages/ui/src/tokens.ts` first. Never to this file.
+ */
+@import '@cvip/ui/tokens.css';
 
 * {
   box-sizing: border-box;
@@ -18,8 +17,49 @@
 
 body {
   margin: 0;
-  /* PRD §16: readable outdoors — body text never below 16px. */
-  font: 16px/1.5 system-ui, -apple-system, 'Segoe UI', sans-serif;
-  background: var(--sand);
+  /* PRD §16: readable outdoors — body text never below 16px. A vendor reads this in sunlight, on
+     a phone, with a queue in front of them. */
+  font: 16px/1.5 var(--font-sans);
+  background: var(--ivory);
   color: var(--ink);
+  -webkit-font-smoothing: antialiased;
+}
+
+h1,
+h2,
+h3 {
+  font-family: var(--font-display);
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  color: var(--green-900);
+  margin: 0;
+}
+
+h1 {
+  font-size: 34px;
+  line-height: 1.1;
+}
+
+h2 {
+  font-size: 23px;
+  line-height: 1.2;
+}
+
+/* --- Focus ---------------------------------------------------------------- */
+
+/* The portal is used one-handed, at speed, sometimes with gloves on a cracked screen. A focus ring
+   that is visible on both ivory and deep green matters more here than in the tourist app. */
+:where(a, button, input, [tabindex]):focus-visible {
+  outline: 2px solid var(--teal);
+  outline-offset: 2px;
+  border-radius: var(--r-xs);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
 }
