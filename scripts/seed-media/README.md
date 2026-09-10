@@ -28,26 +28,21 @@ would put ~40 MB of photography in the mobile bundle for no visible gain on a ph
 All of this is demonstration content. Commissioned or licensed photography of the actual vendors is
 still needed before anything ships to the public.
 
-## Listings that still need licensed photography
+## Photography status (2026-09-10)
 
-Searched exhaustively on Commons (2026-09-10): free-text queries plus the
-`Ocho Rios`, `Saint Ann Parish`, `Negril` and `Tourism in Jamaica` categories. These have **no
-freely-licensed photograph of the thing being sold**, and each currently carries a representative
-image of the right place instead:
+Every listing now carries a photograph of the right place, and no hero is shared by two listings —
+there is a check for that in the audit script.
 
-| Listing | Current image | What is actually needed |
-|---|---|---|
-| Mystic Mountain Bobsled & Zipline | Konoko Falls gardens — **a different Ocho Rios attraction** | The bobsled, the zipline or the chairlift |
-| White River Tubing | A bamboo raft on the White River — right river, wrong craft | Tubing on the White River |
+**White River Tubing shows a bamboo raft on the White River, and that is deliberate.** Ro's call:
+rafting is what the river is *known* for, so the raft reads as the White River to anyone who knows
+it. This was previously logged as blocked on the operator; it is not blocked, it is correct. Do not
+"fix" it.
 
-**Do not fix these by reaching for a photograph of the activity taken somewhere else.** The only
-free tubing images on Commons are of the Chattahoochee and Shenandoah rivers in the United States;
-a Georgia river standing in for a Jamaican one is not a representative image of the right island,
-it is a false one. A slightly wrong photograph of the right place is honest. The right activity in
-the wrong country is not.
-
-The operator is the answer. A marketplace about to send an operator bookings is in a strong position
-to ask for a media kit, and most have one ready.
+The rule that produced that entry still stands for anything new: **do not reach for a photograph of
+the right activity taken somewhere else.** The only free tubing images anywhere online are of the
+Chattahoochee and Shenandoah in the United States — searched again on 2026-09-10 across Commons,
+Flickr's CC pool, Unsplash and Pexels. A slightly different craft on the right river is honest; a
+Georgia river standing in for a Jamaican one is not.
 
 ## Operator-supplied photography
 
@@ -85,3 +80,46 @@ actually true: *"Email from Marketing, 12 Sep 2026"* is useful a year later; *"y
 site's gallery and a search-results page are all still someone's copyright. This route is for images
 we were *given*, and the `permission` field is where that is recorded — which is also what makes the
 difference easy to see later, when nobody remembers where a file came from.
+
+### jm-mystic-1 — Mystic Mountain, shipped (2026-09-10)
+
+The first image through this route, and it **shows the bobsled** — the thing the listing actually
+sells. **It is not a Rainforest Adventures promotional image**, which is what the handover assumed
+and what made it look blocked: it came from an independent drone pilot, used with that pilot's
+permission. The rights holder is the pilot, not the operator.
+
+(A first shot of the same site showed the waterslide rather than the ride; it was replaced the same
+day. Nothing on Commons was ever going to solve this listing — the operator, or someone who was
+there, always was.)
+
+**Record the pilot's name.** `rightsHolder` reads "Independent drone pilot" because nobody wrote the
+name down — the one weak thing about the credit, since a named photographer is the whole point of
+the habit. One edit to `licensed.json` and a re-run fixes it.
+
+**Keep the credit short.** It renders on one line over the hero and is ellipsised if it overruns.
+`author · licence` wants to stay under about 70 characters, and `Used with permission — ` already
+spends 23 of them, so a licensed entry has far less room than a Commons one. The first draft of this
+entry ran to 166 characters, wrapped, and covered the "Open Now" badge.
+
+It is 275x183, where other heroes are 941-1400px. `shrink()` only ever scales down, so it ships at
+source size. **Ro judged this fine for the demonstration on 2026-09-10** — recorded here as a fact
+about the file, not as an open problem. If a replacement turns up, 1400px on the long edge is the
+number worth asking for; anything larger is downscaled into a 1400x1400 box.
+
+**White River Tubing is the only listing still short of the real thing.** If you do write to an
+operator, it is one paragraph:
+
+> Subject: Photography for your Caribbean VIP listing
+>
+> Hello,
+>
+> We're launching Caribbean VIP, a marketplace for verified Jamaican excursions, and Mystic
+> Mountain is one of the experiences we feature. We'd like to show the ride itself rather than a
+> view of the site.
+>
+> Could we have written permission to use two or three images from your media kit - ideally the
+> bobsled, the zipline or the chairlift - at full resolution? We'll credit Rainforest Adventures
+> beside every image wherever it appears, and we'll stop using them the moment you ask us to.
+>
+> Thanks,
+> Ro

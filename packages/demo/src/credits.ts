@@ -252,11 +252,11 @@ export const DEMO_MEDIA_CREDITS: Record<string, DemoMediaCredit> = {
     source: "https://commons.wikimedia.org/wiki/File:John_Canoe_Dancers_Jamaica_1975_Dec_ver06.jpg",
   },
   "jm-mystic-1": {
-    subject: "The gardens at Konoko Falls, in the hills above Ocho Rios, Jamaica",
-    author: "Balou46",
-    licence: "CC BY-SA 4.0",
-    licenceUrl: "https://creativecommons.org/licenses/by-sa/4.0",
-    source: "https://commons.wikimedia.org/wiki/File:JM-ocho_rios-konoko-garden.jpg",
+    subject: "The bobsled at Mystic Mountain, above Ocho Rios, Jamaica",
+    author: "Independent drone pilot",
+    licence: "Used with permission \u2014 10 Sep 2026",
+    licenceUrl: "",
+    source: "",
   },
   "jm-negril-bay": {
     subject: "Sunset over the water, Jamaica",

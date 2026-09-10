@@ -320,6 +320,15 @@ describe('dataset integrity', () => {
   });
 });
 
+/**
+ * `fetch.py` writes this exact prefix for anything from `licensed.json` — a photograph given to us
+ * rather than found on Commons. The prefix is the only thing that distinguishes the two routes once
+ * they are both in `credits.ts`, so it is named here rather than spelled out at each use.
+ */
+const LICENSED_PREFIX = 'Used with permission —';
+
+const isLicensed = (credit: { licence: string }) => credit.licence.startsWith(LICENSED_PREFIX);
+
 describe('photography is present and attributed', () => {
   it('gives every visible listing at least one photograph', () => {
     for (const e of demoBackend.visibleExperiences()) {
@@ -346,15 +355,36 @@ describe('photography is present and attributed', () => {
     for (const [key, credit] of Object.entries(DEMO_MEDIA_CREDITS)) {
       expect(credit.author.length, `${key} has no author`).toBeGreaterThan(0);
       expect(credit.licence.length, `${key} has no licence`).toBeGreaterThan(0);
-      expect(credit.source.startsWith('https://'), `${key} has no source URL`).toBe(true);
       // The subject is what keeps the demo honest where a representative photograph is used, so
       // it has to say something rather than echo the key.
       expect(credit.subject.length, `${key} has no subject`).toBeGreaterThan(10);
+      // Only a Commons file has a public description page to point at. An operator- or
+      // photographer-supplied image has nowhere to link, and demanding a URL it cannot have would
+      // push the next person to invent one — so the permission string carries the provenance
+      // instead, and `accepts only images we are allowed to ship` is what checks it.
+      if (!isLicensed(credit)) {
+        expect(credit.source.startsWith('https://'), `${key} has no source URL`).toBe(true);
+      }
     }
   });
 
-  it('accepts only free licences', () => {
+  it('accepts only images we are allowed to ship', () => {
+    // Two routes in, and a photograph is shippable under either — but never under neither.
+    //
+    // Commons: a free licence, verified against Commons' own metadata by `fetch.py`.
+    // Supplied to us: no licence to look up, so the basis is written down by hand and rendered on
+    // the card. That cannot be machine-checked, which is exactly why it is checked for being
+    // *there* and for not being the placeholder the pipeline ships with.
     for (const [key, credit] of Object.entries(DEMO_MEDIA_CREDITS)) {
+      if (isLicensed(credit)) {
+        const basis = credit.licence.slice(LICENSED_PREFIX.length).trim();
+        expect(basis.length, `${key} records permission but not how we got it`).toBeGreaterThan(10);
+        expect(
+          /^REPLACE ME/i.test(basis),
+          `${key} still carries the placeholder permission`,
+        ).toBe(false);
+        continue;
+      }
       expect(
         /^(CC0|CC BY|CC BY-SA|Public domain|PDM|No restrictions)/i.test(credit.licence),
         `${key} carries a licence we cannot ship: ${credit.licence}`,

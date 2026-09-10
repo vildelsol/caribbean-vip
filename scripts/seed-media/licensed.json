@@ -19,11 +19,15 @@
     "Write what is actually true in `permission`: 'Email from Marketing, 12 Sep 2026' is useful a",
     "year later; 'yes' is not."
   ],
-
   "_example-jm-mystic-1": {
     "subject": "The bobsled at Mystic Mountain, Ocho Rios, Jamaica",
     "rightsHolder": "Rainforest Adventures (Mystic Mountain)",
     "permission": "REPLACE ME — e.g. 'Media kit supplied by <name>, <date>' or 'Written permission, email <date>'",
     "source": "https://www.rainforestadventure.com/jamaica-mystic-mountain"
+  },
+  "jm-mystic-1": {
+    "subject": "The bobsled at Mystic Mountain, above Ocho Rios, Jamaica",
+    "rightsHolder": "Independent drone pilot",
+    "permission": "10 Sep 2026"
   }
 }

@@ -63,7 +63,16 @@
 .detail__credit {
   position: absolute;
   right: 8px;
-  bottom: 40px;
+  /* Sits above `.detail__hero-flags` rather than beside it. Both were on the 40px baseline, which
+   * works only while every credit is short: a photograph from `licensed.json` carries the fixed
+   * "Used with permission — " prefix, and the first one to arrive wrapped back across the row and
+   * hid "Open Now". Its own line means no credit length can cover a badge, and attribution is not
+   * quietly ellipsised away to make room — the nowrap below is a backstop, not the plan. */
+  bottom: 64px;
+  max-width: calc(100% - 16px);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
   padding: 3px 6px;
   border-radius: 5px;
   background: rgba(7, 40, 33, 0.62);
