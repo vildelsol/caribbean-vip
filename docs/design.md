@@ -205,4 +205,4 @@ style is the exact failure the design's own notes call out.
 | Confirmation | built — reference, QR, and one next idea for the same day |
 | QR ticket | built — ticket stock, a genuinely scannable QR, the four voucher states |
 | Redemption | built — signature checked before lookup; second scan is terminal |
-| Search | **not built** — Nearby filters by category instead |
+| Search | built — pill field with a filter control, category rail, result count naming the place, sort inside Filters |

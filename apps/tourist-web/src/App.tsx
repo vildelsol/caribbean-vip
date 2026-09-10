@@ -3,6 +3,7 @@ import { useEffect } from 'react';
 import { BottomNav } from './components/BottomNav';
 import { Explore } from './screens/Explore';
 import { Nearby } from './screens/Nearby';
+import { Search } from './screens/Search';
 import { Irie } from './screens/Irie';
 import { Trips } from './screens/Trips';
 import { Profile } from './screens/Profile';
@@ -33,6 +34,7 @@ export function App() {
       <Routes>
         <Route path="/" element={<Explore />} />
         <Route path="/nearby" element={<Nearby />} />
+        <Route path="/search" element={<Search />} />
         <Route path="/irie" element={<Irie />} />
         <Route path="/trips" element={<Trips />} />
         <Route path="/profile" element={<Profile />} />

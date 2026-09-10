@@ -1,6 +1,6 @@
 # Handover — Caribbean VIP
 
-**Written:** 2026-08-02 · **Updated:** 2026-08-04 (Irie itinerary builder; contextual Ask Irie) · **Branch:** `master` · **Gates:** all green
+**Written:** 2026-08-02 · **Updated:** 2026-09-10 (Search rebuilt — T-03 closed) · **Branch:** `master` · **Gates:** all green
 
 Read this first, then [`PRD.md`](PRD.md) (product source of truth),
 [`architecture.md`](architecture.md) (the numbered decisions), and
@@ -82,13 +82,11 @@ refresh mid-presentation cannot lose a booking. Profile → *Reset the demonstra
 | **M3 — Booking, Stripe, redemption** | **complete in demo mode** — see §8 |
 | M4–M8 | not started |
 
-**T-01 and T-02 complete. T-03 regressed** — the rule and its tests hold, but the Search screen that
-exercised them was retired with the Expo app and is not rebuilt. **T-04, T-06, V-04, V-05 complete in
-demo mode. T-05 and T-09 partial:**
+**T-01, T-02 complete. T-03, T-04, T-06, V-04, V-05 complete in demo mode. T-05 and T-09 partial:**
 booking, capacity hold, cancellation and voucher invalidation all work, but **no Stripe payment has
 ever been taken and no refund has ever been issued**. Detail in [`traceability.md`](traceability.md).
 
-Gates: **251 unit tests (13 files), 7/7 SQL files, typecheck and lint clean across 9 workspaces.**
+Gates: **259 unit tests (14 files), 7/7 SQL files, typecheck and lint clean across 9 workspaces.**
 
 ---
 
@@ -258,20 +256,47 @@ Four things this work surfaced, all fixed, and all worth knowing before touching
 
 Gates after: **251 tests (13 files), 7/7 SQL, typecheck and lint clean.**
 
+### Search is rebuilt (2026-09-10) — T-03 closed
+
+`screens/Search.tsx`, reached from the Explore pill (which used to navigate to Nearby — that was the
+whole of the regression). Pill field with a filter control, a category rail, a result count that
+names the destination, and sort inside Filters where the design puts it.
+
+**None of its logic is new**, which is why it took an afternoon: filtering and sorting run through
+`applyFilters`/`sortResults` in `@cvip/types` — the same functions the server path will call, already
+covered by 27 unit tests. It filters *as you type* rather than on submit; the Expo screen waited for
+a return key because every keystroke was a round trip, and an island held in memory is about twenty
+listings.
+
+**`data/search.ts` holds the candidate set, and the screen and its test both import it.** That is
+deliberate: the whole of T-03's security property reduces to which set reaches `searchAndSort`, and a
+test that re-implemented the mapping would keep passing while the screen searched something else.
+Verified by mutation — bypassing `visibleExperiences()` fails 4 of the 8 assertions.
+
+One design call worth keeping: **distance is a tag on this screen, not the headline it is on Nearby.**
+Leading a result card with "167 MIN DRIVE" in the locator colour reads as a promise that the list is
+ordered by distance, and it is ordered by whatever the guest chose.
+
+### Deployment
+
+**Vercel is the target for the investor demo, and it is already configured** —
+`apps/tourist-web/vercel.json` carries the build command, the SPA rewrite and immutable cache headers
+for `/demo` and `/assets`. Verified on 2026-09-10: `pnpm tourist:build` produces a working bundle
+(464 kB JS, 139 kB gzipped; 42 kB CSS) and the built artifact was served and walked, with a clean
+console. **No environment variables are needed** — demo mode is the absence of configuration, so
+there is nothing to set and nothing that can fail on stage.
+
 Ideas raised but not started, in the order I would take them:
 
-1. **Search (T-03)** — still `regressed`. The Expo app had a built Search screen (pill field, filter
-   control, category chips, result count); the web app does not, and Nearby filters by category
-   instead. This is a port from `.archive/`, not a design job, and it flips a traceability row back
-   to complete.
-2. **Vendor portal visual language** — functional, no visual language. Next up, per Ro.
-3. **Commissioned photography** — see §8. The biggest single gap between this and a product.
+1. **Vendor portal visual language** — functional, no visual language. Next up, per Ro.
+2. **Commissioned photography** — see §8. The biggest single gap between this and a product, and the
+   one that moves an investor most: nobody in a pitch will know whether the catalogue came from
+   Postgres or a TypeScript file, but everyone will notice the images are not the actual vendors.
 
 ### Still not drawn to the mockups
 
-1. **Search** — not rebuilt in the web app at all; Nearby filters by category instead. T-03.
-2. **Vendor portal** — functional, no visual language. Next up, per Ro.
-3. **Map view** — blocked on OD-05; ships as a distance-sorted list with an explicit notice.
+1. **Vendor portal** — functional, no visual language. Next up, per Ro.
+2. **Map view** — blocked on OD-05; ships as a distance-sorted list with an explicit notice.
 
 ### Then: the Edge Function adapters
 

@@ -1,0 +1,206 @@
+/* Search — T-03. The pill field with a filter control beside it, a category rail, then results. */
+
+.search__head {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 18px var(--s-md) 0;
+}
+
+.search__back {
+  width: 40px;
+  height: 40px;
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--r-pill);
+  background: var(--ivory-raised);
+  border: 1px solid var(--border);
+}
+
+/* The field is the widest thing on the row; the two controls either side are fixed. */
+.search__field {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  height: 46px;
+  padding: 0 12px;
+  border-radius: var(--r-pill);
+  background: var(--ivory-raised);
+  border: 1px solid var(--border);
+}
+
+.search__input {
+  flex: 1;
+  min-width: 0;
+  border: 0;
+  outline: none;
+  background: transparent;
+  color: var(--ink);
+  font-family: var(--font-sans);
+}
+
+.search__input::placeholder {
+  color: var(--ink-faint);
+}
+
+/* Safari draws its own clear button on type="search"; ours is styled and keyboard-reachable. */
+.search__input::-webkit-search-cancel-button {
+  appearance: none;
+}
+
+.search__clear {
+  width: 24px;
+  height: 24px;
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--r-pill);
+  background: var(--ivory-sunken);
+}
+
+.search__filter {
+  position: relative;
+  width: 46px;
+  height: 46px;
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--r-pill);
+  background: var(--ivory-raised);
+  border: 1px solid var(--border);
+}
+
+/* An active filter set is a state the guest must be able to see without opening the panel. */
+.search__filter.is-on {
+  background: var(--green-900);
+  border-color: var(--green-900);
+}
+
+.search__filter-count {
+  position: absolute;
+  top: -3px;
+  right: -3px;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 4px;
+  border-radius: var(--r-pill);
+  background: var(--gold);
+  color: var(--green-950);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid var(--ivory);
+}
+
+.search__chips {
+  display: flex;
+  gap: 8px;
+  padding: 14px var(--s-md) 0;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.search__chips::-webkit-scrollbar {
+  display: none;
+}
+
+.search__count {
+  padding-top: 16px;
+  padding-bottom: 2px;
+}
+
+.search__list {
+  padding-top: 12px;
+}
+
+/* --- Filters --------------------------------------------------------------- */
+
+.filters {
+  margin-top: 14px;
+  background: var(--ivory-raised);
+  border: 1px solid var(--border);
+  border-radius: var(--r-lg);
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.filter-group__label {
+  letter-spacing: 0.1em;
+}
+
+.filter-group__row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+  margin-top: 9px;
+}
+
+.filter-chip {
+  min-height: 34px;
+  padding: 8px 12px;
+  border-radius: var(--r-pill);
+  background: var(--ivory-sunken);
+  border: 1px solid transparent;
+  color: var(--ink-muted);
+  font-family: var(--font-sans);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.filter-chip.is-on {
+  background: var(--green-900);
+  border-color: var(--green-900);
+  color: var(--on-dark);
+}
+
+.filters__clear {
+  align-self: flex-start;
+  min-height: 32px;
+}
+
+/* --- Result rows ----------------------------------------------------------- */
+
+.result-row {
+  padding: 11px;
+}
+
+.result-row__inner {
+  gap: 12px;
+  align-items: stretch;
+}
+
+.result-row__photo {
+  width: 92px;
+  flex: none;
+}
+
+.result-row__dist {
+  gap: 4px;
+  align-items: center;
+}
+
+.result-row__tags {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin-top: 7px;
+}
+
+.result-row__foot {
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 9px;
+}
+
+.result-row__cta {
+  padding: 6px 12px;
+}

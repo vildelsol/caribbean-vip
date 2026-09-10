@@ -221,7 +221,7 @@ export function Explore() {
 
       {/* ---------------- Search ---------------- */}
       <div className="pad">
-        <button type="button" className="search-pill" onClick={() => navigate('/nearby')}>
+        <button type="button" className="search-pill" onClick={() => navigate('/search')}>
           <Icon name="search" size={17} color="var(--green-900)" strokeWidth={2} />
           <span className="grow t-caption c-muted">Search experiences, food, beaches</span>
           <Icon name="filter" size={17} color="var(--gold)" strokeWidth={2} />
