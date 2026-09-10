@@ -1,6 +1,6 @@
 # Handover — Caribbean VIP
 
-**Written:** 2026-08-02 · **Updated:** 2026-09-10 (Search rebuilt — T-03 closed) · **Branch:** `master` · **Gates:** all green
+**Written:** 2026-08-02 · **Updated:** 2026-09-10 (Search, demo media, real geolocation) · **Branch:** `master` · **Gates:** all green
 
 Read this first, then [`PRD.md`](PRD.md) (product source of truth),
 [`architecture.md`](architecture.md) (the numbered decisions), and
@@ -49,7 +49,13 @@ Individually, if you prefer: `pnpm tourist` and `pnpm vendor`.
 > **Out of date.** This describes the retired Expo app. The web app's journey now runs end to
 > end: Explore → island switch → Nearby → simulated geofenced offer → save voucher → detail →
 > date/party selection → simulated payment → confirmation → Trips → QR ticket → redemption →
-> second scan refused. Search is the one screen not rebuilt. §5 has the current position.
+> second scan refused. **Search is rebuilt** (the Explore pill opens it), and **Nearby's distances
+> use the device's real position** when you allow it. §5 has the current position.
+>
+> Two additions worth showing deliberately, because they are the differentiators and both are real:
+> **Irie AI → "Plan my whole day"** composes a timed itinerary with travel between stops and a
+> running estimate; and **Nearby → "Use my location"** switches every distance to the real device
+> fix. Away from the Caribbean it says so and falls back — that is designed behaviour, not a fault.
 
 1. **Welcome** — crest, "Continue as Guest".
 2. **Explore** — greeting, destination selector, category tiles, Nearby Discoveries, rated cards.
@@ -86,7 +92,7 @@ refresh mid-presentation cannot lose a booking. Profile → *Reset the demonstra
 booking, capacity hold, cancellation and voucher invalidation all work, but **no Stripe payment has
 ever been taken and no refund has ever been issued**. Detail in [`traceability.md`](traceability.md).
 
-Gates: **259 unit tests (14 files), 7/7 SQL files, typecheck and lint clean across 9 workspaces.**
+Gates: **275 unit tests (15 files), 7/7 SQL files, typecheck and lint clean across 9 workspaces.**
 
 ---
 
@@ -129,6 +135,25 @@ applies** and has been superseded. The mockups now drive layout and visual langu
 ---
 
 ## 5. Pick up here
+
+> ### Read this before starting anything: what is being built right now
+>
+> **The target is the investor demonstration, not a working backend.** Ro's call, 2026-09-10, and it
+> decides what is and is not worth doing.
+>
+> On that day a full async data layer was started — a `CatalogueSource` port with demo and Supabase
+> adapters, replacing the synchronous `@cvip/demo` reads that every screen does. It got about 60% of
+> the way and was **deliberately reverted**, because it is worth nothing for a demonstration: when
+> finished the app would have looked identical. It is the right first move the day a real backend
+> matters, and the reasoning is in §7. Do not restart it without checking that the target has changed.
+>
+> What *is* worth doing for a demonstration, in order: **the vendor portal's visual language**, then
+> **photography of the actual operators**. Nobody in a pitch will know whether the catalogue came
+> from Postgres or a TypeScript file. Everyone will notice the images are not the real vendors.
+>
+> Two things the founder named as the moats, both of which must therefore *work* rather than be
+> mocked: **geolocation** (done, 2026-09-10 — see below) and **Irie AI** (still a guided demo, see
+> the open question at the end of this section).
 
 ### The 2026-08-03 design pass — what changed
 
@@ -286,12 +311,95 @@ for `/demo` and `/assets`. Verified on 2026-09-10: `pnpm tourist:build` produces
 console. **No environment variables are needed** — demo mode is the absence of configuration, so
 there is nothing to set and nothing that can fail on stage.
 
+### Demo photography — six heroes fixed, two blocked (2026-09-10)
+
+Ro spotted that Blue Mountain Coffee Tasting showed men cooking over a fire. It *was* coffee —
+Commons' own description of that file ends "Food is being cooked alongside the coffee" — but at card
+size in a dark smoky shed it reads as a jerk stand, and if the founder reads it that way an investor
+will.
+
+An audit of all 34 listings against their heroes found it was systemic: ~10 heroes did not show the
+activity being sold, and **two photographs were each doing two jobs**. `bb-oistins-1` is
+`File:Miami Beach, Barbados.jpg` and was the hero of *both* Oistins Friday Night Fish Fry and Miami
+Beach Day Pass; `ky-sail-1` was the hero of both Barrier Reef Snorkel and Sunset Sail. Every one of
+the 57 files was already referenced, so there were no spares — new photography was the only fix.
+
+Six replaced (coffee, MoBay→Negril, Sunrise Yoga, Barrier Reef, Swim with Turtles, Oistins). **No
+hero is now shared by two listings**, and there is a check for that in the audit script.
+
+**Two are blocked on the operator, and Commons cannot solve them.** Searched exhaustively — free
+text plus the `Ocho Rios`, `Saint Ann Parish`, `Negril` and `Tourism in Jamaica` categories:
+
+| Listing | Currently shows | Needs |
+|---|---|---|
+| Mystic Mountain Bobsled & Zipline | **Konoko Falls gardens — a different attraction** | The bobsled, zipline or chairlift |
+| White River Tubing | A bamboo raft on the White River — right river, wrong craft | Tubing |
+
+Ro has a photograph of the Mystic Mountain bobsled. It is a Rainforest Adventures promotional image
+and therefore their copyright, so it is **not shipped until there is written permission**. Getting it
+is a one-email task and a marketplace about to send an operator bookings is in a strong position to
+ask. `scripts/seed-media/README.md` carries the detail and the wording.
+
+**Do not "fix" these with a photograph of the right activity taken somewhere else.** The only free
+tubing images on Commons are of the Chattahoochee and Shenandoah rivers in the United States. A
+slightly wrong photograph of the right place is honest; the right activity in the wrong country is
+not, and that distinction is the whole point of the `subject` field.
+
+Two corrections worth recording, both found by reading `manifest.json` rather than eyeballing the
+images: **West End Cliffs was already correct** (it genuinely is Rick's Cafe, Negril — a watermarked
+replacement was rejected), and **`fetch.py` was writing to `apps/mobile/assets/demo`**, the retired
+Expo path. Re-running it would have downloaded images where nothing reads them.
+
+### Geolocation is real now (2026-09-10)
+
+One of the two moats, and it was a mock-up of itself: the `LocationProvider` port existed (AD-07) but
+the web app only ever had the mock behind it, so **every distance in the product came from a
+simulated point** — the centre of the selected destination.
+
+`data/browserLocation.ts` is the missing half. It honours the three rules the port exists to enforce:
+permission is read through the Permissions API, which *cannot* raise a prompt, and only a press calls
+`requestPermission`; there is no watch or background method (PRD §9); and it never throws — a
+refusal, a timeout, an insecure origin and a browser without geolocation are all just "no fix".
+
+**The part that makes it safe to demonstrate is that a real fix is not trusted unconditionally.**
+The same build gets opened on a laptop in another country, and a browser answering "London" turns
+every distance on screen into nonsense with nothing looking broken. `data/position.ts` uses the real
+fix only within `ON_ISLAND_METRES` (150 km) of a destination on the selected island — enough for a
+guest in Kingston with Ocho Rios selected to keep their real position, nowhere near enough for
+another country. It is a pure function with 16 tests because that judgement is the whole feature.
+
+Consent is checked **before** the fix is read, not after, so a position obtained while consent stood
+cannot keep being used once it is withdrawn; `disable()` drops the fix as well as the flag.
+`LocationBar` is the only control in the app that can raise the browser prompt, and it always names
+the source — "Using your location · ±35 m", "You're about 7,500 km away — distances are from Ocho
+Rios", "No fix from your device", or "Distances are from Ocho Rios".
+
+One display bug this surfaced, which could only ever appear once position was real: several listings
+share an operator and therefore one set of coordinates, so a guest standing at Dunn's River Falls is
+genuinely 0 m from three experiences — rendered as "1 MIN WALK · 0 M", because `travelFrom` floors at
+one minute. Under `AT_VENUE_METRES` the row now reads "YOU'RE HERE".
+
+Walked in a browser in all four states with the device stubbed: at a vendor, elsewhere in Ocho Rios,
+consent-but-no-fix, and from London. A fresh load raises no dialogue.
+
+### The open question for the next session
+
+**Irie AI is the other moat Ro named, and it is still a guided demo** — rule-matched over the
+catalogue, labelled `GUIDED DEMO`, structurally unable to invent a listing or a price (§"Irie AI is a
+guided demo, not a model" above). Ro was asked whether to leave it as an honest guided demo for the
+pitch or put a real model in front of it, **and has not answered yet.** If a model goes in, it goes
+*in front* of the rule matcher and the matcher stays behind it as the documented fallback — do not
+replace it.
+
 Ideas raised but not started, in the order I would take them:
 
-1. **Vendor portal visual language** — functional, no visual language. Next up, per Ro.
-2. **Commissioned photography** — see §8. The biggest single gap between this and a product, and the
-   one that moves an investor most: nobody in a pitch will know whether the catalogue came from
-   Postgres or a TypeScript file, but everyone will notice the images are not the actual vendors.
+1. **Vendor portal visual language** — functional, no visual language. The last screen with no design
+   applied, and the highest-value remaining demo work.
+2. **A licensed-media path in the pipeline** (~20 minutes). `manifest.json` and `fetch.py` are
+   Commons-only *by design*, and will refuse anything else. Operator-supplied photography needs its
+   own route with the permission recorded beside the file. Needed for every real vendor eventually,
+   and it is what lets the Mystic Mountain photograph drop straight in the moment permission arrives.
+3. **Commissioned photography** — see §8. The biggest single gap between this and a product.
 
 ### Still not drawn to the mockups
 
@@ -448,6 +556,15 @@ Still open: OD-01 (legal entity/MoR), OD-03 (tiers and commission), OD-04 (priva
 - **Photography is placeholder.** Freely licensed and correctly attributed, but it is not the actual
   vendors. Commissioned or licensed photography is still needed before anything ships publicly. See
   [`media-credits.md`](media-credits.md) and `scripts/seed-media/README.md`.
+- **Two listings are illustrated by the wrong subject and cannot be fixed from Commons.** Mystic
+  Mountain Bobsled & Zipline shows Konoko Falls gardens — a different Ocho Rios attraction — and
+  White River Tubing shows a bamboo raft. Both need operator-supplied photography with written
+  permission; §5 has the detail. Do not describe either card as showing the experience it sells.
+- **Geolocation is real but the position is still simulated whenever the device is not on the
+  selected island.** That is deliberate and is stated in the UI, but it means a demonstration given
+  outside the Caribbean is showing distances from a destination centre, not from the presenter.
+- **`experience_options` is not read through any port.** Pricing runs against `demoOptionsFor` in
+  `@cvip/demo`. Nothing may describe the pricing path as backed by the database.
 
 ---
 
