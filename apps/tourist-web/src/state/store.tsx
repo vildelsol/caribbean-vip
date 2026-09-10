@@ -82,6 +82,14 @@ export interface AppState {
   plannedExperienceIds: string[];
   /** The geofenced offer fires once per island per session-of-state, not on every Explore visit. */
   offerShownForIslands: string[];
+  /**
+   * Whether the guest has agreed to the app using their location — T-07's first gate.
+   *
+   * Persisted so a guest who consented once is not asked on every visit, and checked *before* any
+   * fix is read rather than after: a position obtained while consent stood must stop being used the
+   * moment it is withdrawn. Withdrawing it here is enough; nothing caches a fix past this flag.
+   */
+  locationConsent: boolean;
   onboarded: boolean;
 }
 
@@ -97,6 +105,7 @@ function initialState(): AppState {
     bookings: [],
     plannedExperienceIds: [],
     offerShownForIslands: [],
+    locationConsent: false,
     onboarded: false,
   };
 }
@@ -113,6 +122,7 @@ type Action =
   | { type: 'expireVoucher'; voucherId: string }
   | { type: 'planExperience'; experienceId: string }
   | { type: 'unplanExperience'; experienceId: string }
+  | { type: 'setLocationConsent'; granted: boolean }
   | { type: 'setOnboarded' }
   | { type: 'reset' };
 
@@ -241,6 +251,9 @@ function reducer(state: AppState, action: Action): AppState {
         ...state,
         plannedExperienceIds: state.plannedExperienceIds.filter((id) => id !== action.experienceId),
       };
+
+    case 'setLocationConsent':
+      return { ...state, locationConsent: action.granted };
 
     case 'setOnboarded':
       return { ...state, onboarded: true };

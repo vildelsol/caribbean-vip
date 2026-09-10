@@ -261,6 +261,21 @@ export function travelFrom(metres: number): Travel {
 /** Beyond this a listing is offered with pickup rather than as a walk. */
 export const WALKABLE_METRES = 1200;
 
+/**
+ * Below this the guest is standing at the operator's base, not travelling to it.
+ *
+ * Only reachable with a real position — the simulated origin is a destination centre, kilometres
+ * from any vendor. Several listings share one operator and therefore one set of coordinates, so a
+ * guest at Dunn's River Falls is genuinely 0 m from three different experiences, and rendering that
+ * as "1 min walk · 0 m" (the travel floor is one minute) reads as a broken calculation rather than
+ * as the truth. "You're here" is both shorter and correct.
+ */
+export const AT_VENUE_METRES = 75;
+
+export function isAtVenue(metres: number): boolean {
+  return metres <= AT_VENUE_METRES;
+}
+
 export function isWalkable(metres: number): boolean {
   return metres <= WALKABLE_METRES;
 }

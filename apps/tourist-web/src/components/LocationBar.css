@@ -1,0 +1,37 @@
+/* What distances are measured from — small, permanent, always names its source. */
+
+.locbar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0 var(--s-md);
+  padding: 9px 12px;
+  border-radius: var(--r-pill);
+  background: var(--aqua-soft);
+  color: var(--ink-muted);
+}
+
+/* A real fix is the one state worth marking, so it gets the brand rather than the informational tint. */
+.locbar--live {
+  background: var(--aqua);
+  color: var(--green-900);
+}
+
+.locbar__dot {
+  width: 9px;
+  height: 9px;
+  flex: none;
+  border-radius: 50%;
+  background: var(--teal);
+  box-shadow: 0 0 0 3px rgba(30, 127, 134, 0.22);
+}
+
+.locbar__btn {
+  flex: none;
+  min-height: 30px;
+  padding: 6px 10px;
+  border-radius: var(--r-pill);
+  background: var(--ivory-raised);
+  border: 1px solid var(--border-cool);
+  color: var(--teal-text);
+}

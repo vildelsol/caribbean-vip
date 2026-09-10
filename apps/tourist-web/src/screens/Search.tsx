@@ -17,6 +17,7 @@ import {
   formatKm,
   heroUrl,
   islandById,
+  isAtVenue,
   simulatedPosition,
   travelFrom,
 } from '../data/catalogue';
@@ -272,7 +273,7 @@ export function Search() {
                               color="var(--teal-text)"
                               strokeWidth={2}
                             />
-                            {formatKm(metres)}
+                            {isAtVenue(metres) ? "You're here" : formatKm(metres)}
                           </span>
                         ) : null}
                         <Rating average={experience.ratingAverage} compact />

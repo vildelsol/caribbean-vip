@@ -6,12 +6,14 @@ import {
   experiencesFor,
   heroUrl,
   islandById,
-  simulatedPosition,
   travelFrom,
   isWalkable,
+  isAtVenue,
   formatKm,
 } from '../data/catalogue';
 import { useStore } from '../state/store';
+import { useGuestPosition } from '../state/useGuestPosition';
+import { LocationBar } from '../components/LocationBar';
 import { Badge, Card, Chip, DemoNote, Photo, Price, SectionHeader } from '../components/kit';
 import { Icon } from '../components/Icon';
 import './Nearby.css';
@@ -58,13 +60,22 @@ export function Nearby() {
   const island = islandById(state.islandId);
   const destination = destinationBySlug(state.destinationSlug);
 
+  /**
+   * Real position where it is available and plausible, the destination centre otherwise.
+   *
+   * Every distance below is measured from `guest.position.coordinates`, and `LocationBar` names
+   * which of the two it is — so the numbers on this screen are never a claim the app cannot keep.
+   */
+  const guest = useGuestPosition();
+  const origin = guest.position.coordinates;
+
   const results = useMemo(() => {
     if (!destination) return [];
     const all = experiencesFor(state.islandId);
     const cats = CATEGORY_FOR[filter];
     const subset = cats ? all.filter((e) => cats.includes(e.category)) : all;
-    return byDistanceFrom(simulatedPosition(destination), subset);
-  }, [state.islandId, destination, filter]);
+    return byDistanceFrom(origin, subset);
+  }, [state.islandId, destination, filter, origin.lat, origin.lng]);
 
   const chosen = results.find((r) => r.experience.id === selected) ?? results[0];
 
@@ -118,10 +129,12 @@ export function Nearby() {
         </div>
       </div>
 
+      <LocationBar guest={guest} destinationName={destination.name} />
+
       <p className="nearby-notice t-micro">
         <Icon name="pin" size={13} color="var(--teal-text)" />
         Stylised map — it shows relative position and distance, not geography. Live mapping is not
-        part of this demonstration.
+        part of this demonstration. The distances themselves are real.
       </p>
 
       <section className="pad nearby-list">
@@ -150,11 +163,19 @@ export function Nearby() {
                   />
                   <div className="grow">
                     <p className="t-micro-strong c-locator near-row__dist">
-                      {travel.minutes} MIN {travel.mode.toUpperCase()} · {formatKm(metres).toUpperCase()}
+                      {isAtVenue(metres)
+                        ? "YOU'RE HERE"
+                        : `${travel.minutes} MIN ${travel.mode.toUpperCase()} · ${formatKm(metres).toUpperCase()}`}
                     </p>
                     <h3 className="t-caption-strong near-row__title">{experience.title}</h3>
                     <div className="near-row__tags">
-                      <Badge tone="aqua">{isWalkable(metres) ? 'Walking distance' : 'Pickup available'}</Badge>
+                      <Badge tone="aqua">
+                        {isAtVenue(metres)
+                          ? 'At this operator'
+                          : isWalkable(metres)
+                            ? 'Walking distance'
+                            : 'Pickup available'}
+                      </Badge>
                       <Badge tone="sand">Starts in 90 min</Badge>
                     </div>
                     <div className="row near-row__foot">
