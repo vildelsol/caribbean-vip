@@ -27,3 +27,26 @@ would put ~40 MB of photography in the mobile bundle for no visible gain on a ph
 
 All of this is demonstration content. Commissioned or licensed photography of the actual vendors is
 still needed before anything ships to the public.
+
+## Listings that still need licensed photography
+
+Searched exhaustively on Commons (2026-09-10): free-text queries plus the
+`Ocho Rios`, `Saint Ann Parish`, `Negril` and `Tourism in Jamaica` categories. These have **no
+freely-licensed photograph of the thing being sold**, and each currently carries a representative
+image of the right place instead:
+
+| Listing | Current image | What is actually needed |
+|---|---|---|
+| Mystic Mountain Bobsled & Zipline | Konoko Falls gardens — **a different Ocho Rios attraction** | The bobsled, the zipline or the chairlift |
+| White River Tubing | A bamboo raft on the White River — right river, wrong craft | Tubing on the White River |
+
+**Do not fix these by reaching for a photograph of the activity taken somewhere else.** The only
+free tubing images on Commons are of the Chattahoochee and Shenandoah rivers in the United States;
+a Georgia river standing in for a Jamaican one is not a representative image of the right island,
+it is a false one. A slightly wrong photograph of the right place is honest. The right activity in
+the wrong country is not.
+
+The operator is the answer. A marketplace about to send an operator bookings is in a strong position
+to ask for a media kit, and most have one ready. Ask for written permission alongside the files, and
+record it with the image — `manifest.json` is Commons-only by design, so vendor-supplied media needs
+a separate path with its permission noted.
