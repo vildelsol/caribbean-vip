@@ -22,7 +22,7 @@ from concurrent.futures import ThreadPoolExecutor
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.dirname(os.path.dirname(HERE))
-ASSETS = os.path.join(ROOT, "apps", "mobile", "assets", "demo")
+ASSETS = os.path.join(ROOT, "apps", "tourist-web", "public", "demo")
 CREDITS_TS = os.path.join(ROOT, "packages", "demo", "src", "credits.ts")
 CREDITS_DOC = os.path.join(ROOT, "docs", "media-credits.md")
 

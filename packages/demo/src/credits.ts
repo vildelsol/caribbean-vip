@@ -97,6 +97,13 @@ export const DEMO_MEDIA_CREDITS: Record<string, DemoMediaCredit> = {
     licenceUrl: "",
     source: "https://commons.wikimedia.org/wiki/File:Miami_Beach,_Barbados.jpg",
   },
+  "bb-oistins-port-1": {
+    subject: "Fishing boats at the port of Oistins, Christ Church, Barbados",
+    author: "Johnmartindavies",
+    licence: "CC BY-SA 3.0",
+    licenceUrl: "https://creativecommons.org/licenses/by-sa/3.0",
+    source: "https://commons.wikimedia.org/wiki/File:Port_of_Oistins_before_the_dives.jpg",
+  },
   "bb-rum-1": {
     subject: "The still at St Nicholas Abbey distillery, St Peter, Barbados",
     author: "Hiltrud Trottenberg",
@@ -110,6 +117,13 @@ export const DEMO_MEDIA_CREDITS: Record<string, DemoMediaCredit> = {
     licence: "CC BY-SA 4.0",
     licenceUrl: "https://creativecommons.org/licenses/by-sa/4.0",
     source: "https://commons.wikimedia.org/wiki/File:A_photo_of_a_beach_near_hastings.jpg",
+  },
+  "bb-turtle-1": {
+    subject: "A sea turtle swimming in clear Caribbean water",
+    author: "David Stanley from Nanaimo, Canada",
+    licence: "CC BY 2.0",
+    licenceUrl: "https://creativecommons.org/licenses/by/2.0",
+    source: "https://commons.wikimedia.org/wiki/File:Sea_Turtle_(32672440377).jpg",
   },
   "bb-west-coast-1": {
     subject: "A west coast beach, Barbados",
@@ -161,11 +175,11 @@ export const DEMO_MEDIA_CREDITS: Record<string, DemoMediaCredit> = {
     source: "https://commons.wikimedia.org/wiki/File:Tramonto_al_Rick%27s_Cafe_-_panoramio.jpg",
   },
   "jm-coffee-1": {
-    subject: "Roasting coffee in Section, Portland Parish, Jamaica",
-    author: "Matthew.kowal",
-    licence: "CC BY-SA 4.0",
-    licenceUrl: "https://creativecommons.org/licenses/by-sa/4.0",
-    source: "https://commons.wikimedia.org/wiki/File:Coffee_is_roasted_in_a_cast_iron_skillet_at_James_Dennis%27_Coffee_in_Section,_Portland_Parish,_Jamaica._Food_is_being_cooked_alongside_the_coffee.jpg",
+    subject: "A farmer among Blue Mountain coffee plants, Jamaica",
+    author: "Paul Dober",
+    licence: "CC BY 3.0",
+    licenceUrl: "https://creativecommons.org/licenses/by/3.0",
+    source: "https://commons.wikimedia.org/wiki/File:Farmer_assessing_his_blue_mountain_coffee_plants_-_panoramio.jpg",
   },
   "jm-coffee-2": {
     subject: "Barrels of Jamaica Blue Mountain coffee",
@@ -245,11 +259,11 @@ export const DEMO_MEDIA_CREDITS: Record<string, DemoMediaCredit> = {
     source: "https://commons.wikimedia.org/wiki/File:JM-ocho_rios-konoko-garden.jpg",
   },
   "jm-negril-bay": {
-    subject: "Bloody Bay, Negril, Jamaica",
-    author: "Jason Boldero",
+    subject: "Sunset over the water, Jamaica",
+    author: "VV Nincic from Toronto, Canada",
     licence: "CC BY 2.0",
     licenceUrl: "https://creativecommons.org/licenses/by/2.0",
-    source: "https://commons.wikimedia.org/wiki/File:Bloody_Bay_Negril_-_Flickr_-_J_a_s_o_n_B_o_l_d_e_r_o.jpg",
+    source: "https://commons.wikimedia.org/wiki/File:Jamaican_sunset_-_Flickr_-_VV_Nincic.jpg",
   },
   "jm-rafting-1": {
     subject: "Bamboo rafting on the Rio Grande, Portland, Jamaica",
@@ -301,11 +315,11 @@ export const DEMO_MEDIA_CREDITS: Record<string, DemoMediaCredit> = {
     source: "https://commons.wikimedia.org/wiki/File:Reggae_beach.jpg",
   },
   "jm-treasure-1": {
-    subject: "Treasure Beach, St Elizabeth, Jamaica",
-    author: "Ikaros1975",
+    subject: "A yoga pose on the beach at sunrise",
+    author: "Baruc Acosta",
     licence: "CC BY-SA 3.0",
     licenceUrl: "https://creativecommons.org/licenses/by-sa/3.0",
-    source: "https://commons.wikimedia.org/wiki/File:Treasure_Beach_Jamaica.JPG",
+    source: "https://commons.wikimedia.org/wiki/File:Morning_Yoga_(134921595).jpeg",
   },
   "jm-west-end-1": {
     subject: "Cliff jumping at Rick's Cafe, Negril, Jamaica",
@@ -362,6 +376,13 @@ export const DEMO_MEDIA_CREDITS: Record<string, DemoMediaCredit> = {
     licence: "CC BY-SA 4.0",
     licenceUrl: "https://creativecommons.org/licenses/by-sa/4.0",
     source: "https://commons.wikimedia.org/wiki/File:Cayman_Islands_-_Kaibo_Beach.jpg",
+  },
+  "ky-reef-1": {
+    subject: "Coral reef seen while snorkelling, Cayman Islands",
+    author: "Andie from Nanaimo, Canada",
+    licence: "CC BY 2.0",
+    licenceUrl: "https://creativecommons.org/licenses/by/2.0",
+    source: "https://commons.wikimedia.org/wiki/File:Snorkeling_in_Caymans_(5313235753).jpg",
   },
   "ky-rum-point-1": {
     subject: "Rum Point, Grand Cayman",
