@@ -17,6 +17,9 @@ export default tseslint.config(
       // is not type-checked, so linting it would report on a codebase nobody can act on. See
       // `.archive/README.md` for why the Expo app was retired and what replaced it.
       '.archive/**',
+      // Third-party Claude Code tooling vendored beside the project. Not our source, not in the
+      // pnpm workspace, not built or type-checked — and it is gitignored for the same reason.
+      'everything-claude-code/**',
     ],
   },
   js.configs.recommended,

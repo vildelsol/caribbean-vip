@@ -24,3 +24,6 @@ npm-debug.log*
 .vscode/
 .idea/
 .expo-export/
+
+# Third-party Claude Code tooling, vendored beside the project. Not part of the build.
+everything-claude-code/

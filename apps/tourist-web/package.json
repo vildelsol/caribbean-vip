@@ -13,6 +13,7 @@
     "@cvip/demo": "workspace:^",
     "@cvip/types": "workspace:*",
     "@cvip/ui": "workspace:*",
+    "@supabase/supabase-js": "^2.47.2",
     "qrcode": "^1.5.4",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",

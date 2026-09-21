@@ -13,6 +13,7 @@ import { Confirmation } from './screens/Confirmation';
 import { Ticket } from './screens/Ticket';
 import { Offer } from './screens/Offer';
 import { Redeem } from './screens/Redeem';
+import { BookingReturn } from './screens/BookingReturn';
 
 /**
  * Routes and the app frame.
@@ -45,6 +46,7 @@ export function App() {
         <Route path="/ticket/:bookingId" element={<Ticket />} />
         <Route path="/offer" element={<Offer />} />
         <Route path="/staff/redeem" element={<Redeem />} />
+        <Route path="/booking-return" element={<BookingReturn />} />
 
         {/* An unknown hash route lands on Explore rather than a blank frame. */}
         <Route path="*" element={<Explore />} />

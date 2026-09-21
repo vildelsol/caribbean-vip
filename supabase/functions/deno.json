@@ -1,0 +1,7 @@
+{
+  "imports": {
+    "@cvip/payments": "../../packages/payments/src/index.ts",
+    "@cvip/types": "../../packages/types/src/index.ts",
+    "zod": "npm:zod@^3.24.1"
+  }
+}

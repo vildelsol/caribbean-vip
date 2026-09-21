@@ -1,6 +1,6 @@
 # Handover — Caribbean VIP
 
-**Written:** 2026-08-02 · **Updated:** 2026-09-10 (Search, demo media, real geolocation) · **Branch:** `master` · **Gates:** all green
+**Written:** 2026-08-02 · **Updated:** 2026-09-21 (M3 live backend wired — Supabase schema + seed deployed, Edge Functions written, Stripe Checkout integrated) · **Branch:** `master` · **Gates:** all green
 
 Read this first, then [`PRD.md`](PRD.md) (product source of truth),
 [`architecture.md`](architecture.md) (the numbered decisions), and
@@ -85,14 +85,14 @@ refresh mid-presentation cannot lose a booking. Profile → *Reset the demonstra
 | M0 — Repository foundation | complete |
 | M1 — Auth and domain foundation | complete |
 | M2 — Tourist discovery | complete |
-| **M3 — Booking, Stripe, redemption** | **complete in demo mode** — see §8 |
+| **M3 — Booking, Stripe, redemption** | **backend wired — pending E2E test** — see §8 |
 | M4–M8 | not started |
 
 **T-01, T-02 complete. T-03, T-04, T-06, V-04, V-05 complete in demo mode. T-05 and T-09 partial:**
-booking, capacity hold, cancellation and voucher invalidation all work, but **no Stripe payment has
-ever been taken and no refund has ever been issued**. Detail in [`traceability.md`](traceability.md).
+booking, capacity hold, cancellation and voucher invalidation all work. **The real Stripe/Supabase
+path is now wired but has not yet been tested end-to-end** — see §5 pick-up point and §8.
 
-Gates: **275 unit tests (15 files), 7/7 SQL files, typecheck and lint clean across 9 workspaces.**
+Gates: **276 unit tests (15 files), typecheck and lint clean across 9 workspaces.**
 
 ---
 
@@ -456,6 +456,77 @@ the original time and scanner, and a tampered character rejected. Gates after: *
 > the design language. The portal on `:3001` is the vendor's own device, and is the one this pass
 > was about.
 
+### M3 live backend — what was done (2026-09-21)
+
+The tourist app's booking path now has a real Stripe Checkout + Supabase path. Here is everything
+that exists and what comes next.
+
+**Supabase project is provisioned and seeded.** All 13 migrations and the seed were applied manually
+via the Supabase SQL editor (DNS connectivity from psql was blocked). The database has all tables,
+RLS policies, functions, demo vendors, experiences and availability slots for the next 30 days.
+
+**Edge Functions written (4 files):**
+
+| Function | Path | Purpose |
+|---|---|---|
+| `checkout-session` | `supabase/functions/checkout-session/index.ts` | Creates Stripe Checkout session, inserts pending booking |
+| `stripe-webhook` | `supabase/functions/stripe-webhook/index.ts` | Handles `checkout.session.completed`, confirms booking, stores `ticket_token` |
+| `booking-status` | `supabase/functions/booking-status/index.ts` | Guest polls after Stripe redirect — returns status + ticketToken |
+| `resolve-slot` | `supabase/functions/resolve-slot/index.ts` | Maps (experience title + date + time) → DB slot UUID + option UUIDs |
+
+**Shared adapters written:**
+
+- `supabase/functions/_shared/supabaseStore.ts` — full `BookingStore` implementation
+- `supabase/functions/_shared/stripeProvider.ts` — full `PaymentProvider` using `npm:stripe@^17`
+- `supabase/functions/_shared/deps.ts` — factory; reads env vars; throws on missing secrets
+- `supabase/functions/deno.json` — Deno import map for `@cvip/payments`, `@cvip/types`, `zod`
+
+**Tourist app changes:**
+
+- `apps/tourist-web/src/lib/supabase.ts` — creates Supabase client when `VITE_SUPABASE_URL` is set; exports `isLiveMode`
+- `apps/tourist-web/src/lib/api.ts` — `callCheckout`, `resolveSlot`, `pollBookingStatus`
+- `apps/tourist-web/src/screens/Checkout.tsx` — branches on `isLiveMode`; live path: `resolveSlot` → build `lines` → `callCheckout` → redirect to Stripe
+- `apps/tourist-web/src/screens/BookingReturn.tsx` — new screen at `/booking-return`; polls `booking-status` up to 18×1700 ms, then dispatches `addBooking` and navigates to `/confirmation/:id`
+- `apps/tourist-web/src/App.tsx` — route `<Route path="/booking-return" element={<BookingReturn />} />`
+- `supabase/migrations/20260802000013_ticket_token.sql` — `alter table bookings add column ticket_token text`
+
+**What to do next to get the first real payment:**
+
+1. **Deploy Edge Functions** — from the project root:
+   ```bash
+   npx supabase functions deploy checkout-session --project-ref <YOUR_REF>
+   npx supabase functions deploy stripe-webhook --project-ref <YOUR_REF>
+   npx supabase functions deploy booking-status --project-ref <YOUR_REF>
+   npx supabase functions deploy resolve-slot --project-ref <YOUR_REF>
+   ```
+
+2. **Set Edge Function secrets** in Supabase dashboard → Settings → Edge Functions → Secrets:
+   - `STRIPE_SECRET_KEY` — from Stripe dashboard (test mode)
+   - `STRIPE_WEBHOOK_SECRET` — from step 3 below
+   - `VOUCHER_HMAC_SECRET` — any 32-char random string (e.g. `openssl rand -hex 32`)
+   - `APP_URL` — your deployed app URL (or `http://localhost:5173` for local testing)
+
+3. **Register Stripe webhook** — Stripe dashboard → Developers → Webhooks → Add endpoint:
+   - URL: `https://<project-ref>.supabase.co/functions/v1/stripe-webhook`
+   - Event: `checkout.session.completed`
+   - Copy the signing secret → paste as `STRIPE_WEBHOOK_SECRET` in step 2
+
+4. **Create `.env` in `apps/tourist-web/`:**
+   ```
+   VITE_SUPABASE_URL=https://<project-ref>.supabase.co
+   VITE_SUPABASE_ANON_KEY=<anon key from Settings → API>
+   ```
+
+5. **Run and test:**
+   ```bash
+   pnpm tourist
+   ```
+   Go to any experience → Checkout → Pay → Stripe test card `4242 4242 4242 4242` → any future date/CVC → Pay. Should redirect back to `/booking-return`, poll a few seconds, and arrive at Confirmation.
+
+**Security note:** Do not paste the `service_role` key into any file other than `.env`. If it ever leaks, rotate it in Supabase Settings → API → Generate new key.
+
+---
+
 ### The open question for the next session
 
 **Irie AI is the other moat Ro named, and it is still a guided demo** — rule-matched over the
@@ -610,8 +681,12 @@ Still open: OD-01 (legal entity/MoR), OD-03 (tiers and commission), OD-04 (priva
 
 ## 8. Known gaps — do not claim these work
 
-- **No payment has ever been taken.** The whole Stripe path is untested against Stripe.
-- **No hosted Supabase project.** Nothing has run end to end against a real backend.
+- **The real Stripe path has not been tested end-to-end yet.** Edge Functions are written and the
+  tourist app is wired, but the functions have not been deployed and no test card has been run
+  through Stripe. See §5 "M3 live backend" for the exact steps remaining.
+- **A hosted Supabase project now exists and is seeded.** Schema (13 migrations) and demo data
+  are applied. Edge Function secrets and webhook registration still need to be done before the
+  first payment can be taken.
 - **Storage bucket policies and real Auth are unverified.** The harness stubs them.
 - **The PostgREST embedded-select in `loadExperience()` is unverified.** Only a real Supabase can
   execute that nested syntax.

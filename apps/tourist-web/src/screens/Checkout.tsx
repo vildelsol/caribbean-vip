@@ -20,6 +20,8 @@ import {
   slotsFor,
 } from '../data/availability';
 import { useStore } from '../state/store';
+import { isLiveMode, callCheckout, resolveSlot } from '../lib/api';
+import { generateVoucherId } from '@cvip/types';
 import { Icon } from '../components/Icon';
 import {
   Badge,
@@ -96,8 +98,65 @@ export function Checkout() {
   const pay = async () => {
     if (!quote?.ok || !dateISO || !activeTime || paying) return;
     setPaying(true);
-    // A deliberate beat. A payment that returns in the same frame as the tap does not read as a
-    // payment, and the pause is where a presenter says what would be happening against Stripe.
+
+    if (isLiveMode) {
+      // Live path: resolve DB slot UUID, then redirect to Stripe Checkout.
+      const dbSlot = await resolveSlot({
+        experienceTitle: experience.title,
+        dateISO: dateISO!,
+        time: activeTime!,
+      });
+
+      if (!dbSlot) {
+        setPaying(false);
+        return;
+      }
+
+      const lines: { optionId: string; quantity: number }[] = [];
+      for (const opt of dbSlot.options) {
+        if (opt.kind === 'adult' && party.adults > 0) lines.push({ optionId: opt.id, quantity: party.adults });
+        else if (opt.kind === 'child' && party.children > 0) lines.push({ optionId: opt.id, quantity: party.children });
+        else if (opt.kind === 'addon' && party.photoPackage) lines.push({ optionId: opt.id, quantity: 1 });
+      }
+
+      if (lines.length === 0) {
+        setPaying(false);
+        return;
+      }
+
+      const idempotencyKey = generateVoucherId();
+
+      const storeContext = (bookingId: string) => {
+        try {
+          sessionStorage.setItem(`slot_date_${bookingId}`, `${dateISO}T${activeTime}`);
+          sessionStorage.setItem(`slot_time_${bookingId}`, activeTime);
+          sessionStorage.setItem(`party_${bookingId}`, JSON.stringify(party));
+        } catch {
+          // sessionStorage unavailable — BookingReturn falls back to sensible defaults.
+        }
+      };
+
+      const result = await callCheckout({
+        userId: idempotencyKey,
+        availabilitySlotId: dbSlot.slotId,
+        lines,
+        promotionId: rumPunch && liveVoucher ? liveVoucher.promotionId : null,
+        customerEmail: null,
+        idempotencyKey,
+        experienceId: dbSlot.experienceId,
+      });
+
+      if (!result.ok) {
+        setPaying(false);
+        return;
+      }
+
+      storeContext(result.bookingId);
+      window.location.href = result.checkoutUrl;
+      return;
+    }
+
+    // Demo path: simulated payment with a deliberate beat.
     await new Promise((r) => setTimeout(r, 900));
     const b = quote.breakdown;
     const booking = await createBooking({
@@ -302,15 +361,24 @@ export function Checkout() {
       {/* ---------------- Payment ---------------- */}
       <section className="checkout__block">
         <h3 className="t-caption-strong checkout__label">Payment</h3>
-        <div className="card-row">
-          <span className="card-row__chip" />
-          <span className="grow t-caption-strong">Visa ···· 4242</span>
-          <span className="t-micro c-faint">Demo card</span>
-        </div>
-        <p className="sim-strip t-micro">
-          <Icon name="lock" size={14} color="var(--ink-muted)" />
-          Simulated payment. No card is charged and no payment processor is contacted.
-        </p>
+        {isLiveMode ? (
+          <p className="sim-strip t-micro">
+            <Icon name="lock" size={14} color="var(--ink-muted)" />
+            You will be redirected to Stripe to complete payment securely.
+          </p>
+        ) : (
+          <>
+            <div className="card-row">
+              <span className="card-row__chip" />
+              <span className="grow t-caption-strong">Visa ···· 4242</span>
+              <span className="t-micro c-faint">Demo card</span>
+            </div>
+            <p className="sim-strip t-micro">
+              <Icon name="lock" size={14} color="var(--ink-muted)" />
+              Simulated payment. No card is charged and no payment processor is contacted.
+            </p>
+          </>
+        )}
       </section>
 
       <div className="checkout__pay">
@@ -320,13 +388,15 @@ export function Checkout() {
           aria-label={quote?.ok ? `Pay ${formatUsd(quote.breakdown.total.amountMinor)}` : 'Pay'}
         >
           {paying
-            ? 'Confirming…'
+            ? isLiveMode ? 'Redirecting…' : 'Confirming…'
             : quote?.ok
               ? `Pay ${formatUsd(quote.breakdown.total.amountMinor)}`
               : 'Choose a departure'}
         </PrimaryButton>
         <p className="t-micro c-faint checkout__reassure">
-          Operator confirms instantly · nothing is charged in this demonstration
+          {isLiveMode
+            ? 'Secure payment via Stripe · operator confirms instantly'
+            : 'Operator confirms instantly · nothing is charged in this demonstration'}
         </p>
       </div>
     </main>
