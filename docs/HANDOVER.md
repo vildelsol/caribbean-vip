@@ -492,13 +492,18 @@ RLS policies, functions, demo vendors, experiences and availability slots for th
 
 **What to do next to get the first real payment:**
 
-1. **Deploy Edge Functions** — from the project root:
+1. ~~**Deploy Edge Functions**~~ — **done, 2026-09-21.** All four are ACTIVE on
+   `caribbean-vip-staging` (ref `xtyuvtlnfougbjadkull`) and answer correctly. Redeploy with:
+
    ```bash
-   npx supabase functions deploy checkout-session --project-ref <YOUR_REF>
-   npx supabase functions deploy stripe-webhook --project-ref <YOUR_REF>
-   npx supabase functions deploy booking-status --project-ref <YOUR_REF>
-   npx supabase functions deploy resolve-slot --project-ref <YOUR_REF>
+   ./scripts/deploy-functions.sh xtyuvtlnfougbjadkull
    ```
+
+   Use the script, not bare `supabase functions deploy`. Two flags are load-bearing and neither is
+   discoverable from the error messages: `--import-map supabase/functions/deno.json` (the CLI does
+   not read it on its own, and the bundle fails on `@cvip/payments` without it), and
+   `--no-verify-jwt` for `stripe-webhook` only. Both are explained in the script and pinned in
+   `supabase/config.toml`.
 
 2. **Enable anonymous sign-in** in Supabase dashboard -> Authentication -> Providers -> Anonymous.
    The live path needs it: `bookings.user_id` is `uuid not null references profiles(id)`, and a
@@ -543,6 +548,27 @@ The same pass made the live path's three silent failures visible. Each was a bar
 indistinguishable from a misfire. They now render a coral hairline - deliberately a hairline and
 not a slab, the same call the vendor portal made: "we could not start the payment" must not look
 like "you were refused".
+
+### What deploying actually revealed (2026-09-21)
+
+Three further bugs, none of which any local gate could have found, because nothing on a dev machine
+runs Deno or talks to the hosted project.
+
+- **Deno does not resolve extensionless imports.** `@cvip/payments` and `@cvip/types` are bundled
+  into the functions from source, so their relative imports now carry an explicit `.ts`.
+  `allowImportingTsExtensions` is in the shared base config and in the three app tsconfigs that do
+  not extend it. Both packages are source-only and never built, so this costs nothing.
+- **`stripe-webhook` deployed with JWT verification ON.** Stripe signs with `Stripe-Signature`, not
+  a Supabase JWT, so the platform would have rejected every webhook before the handler ran — the
+  signature never checked, the booking never confirmed, and the guest charged for a booking stuck
+  on `pending_payment`. Now pinned off. `resolve-slot` and `booking-status` had the opposite
+  problem: the app called them with no credential at all and they would have 401'd. The app now
+  sends the anon key.
+- **`resolve-slot` 500'd on every call.** It passed a query builder to `.in()`, which supabase-js
+  does not support. Rewritten as two plain queries and verified against real seeded data: a real
+  title and date return real slot and option UUIDs with real prices.
+
+**Migration 13 (`ticket_token`) is confirmed applied** to the hosted database.
 
 **Security note:** Do not paste the `service_role` key into any file other than `.env`. If it ever leaks, rotate it in Supabase Settings → API → Generate new key.
 
@@ -710,9 +736,10 @@ Still open: OD-01 (legal entity/MoR), OD-03 (tiers and commission), OD-04 (priva
 - **`ensureLiveUser()` has not been run against a real Supabase.** It depends on anonymous sign-in
   being enabled in the dashboard, which has not been done. If that toggle is off, live checkout
   fails with a visible message rather than a charge.
-- **Migration 13 (`ticket_token`) may not be on the hosted database.** The other twelve were applied
-  by hand in the SQL editor; confirm this one was too, or `stripe-webhook`'s `ticket_token` write
-  silently no-ops and the guest gets a booking with no QR.
+- **The Edge Functions are deployed and individually verified, but the chain has never run.**
+  `resolve-slot` returns real UUIDs and `checkout-session` validates and rejects correctly, both
+  against the live project. Nothing past that has executed: no Stripe session has been created, no
+  webhook has ever fired, and `supabaseStore`'s write path is entirely unexercised.
 - **A hosted Supabase project now exists and is seeded.** Schema (13 migrations) and demo data
   are applied. Edge Function secrets and webhook registration still need to be done before the
   first payment can be taken.
