@@ -1,6 +1,6 @@
 # Handover — Caribbean VIP
 
-**Written:** 2026-08-02 · **Updated:** 2026-09-21 (M3 backend deployed and individually verified; design fixes applied against Caribbean VIP Journey spec) · **Branch:** `main` · **Gates:** all green (290 tests)
+**Written:** 2026-08-02 · **Updated:** 2026-09-21 (M3 backend deployed and individually verified; design fixes applied against Caribbean VIP Journey spec; tourist app live on Vercel; Stripe webhook wired; full E2E payment test pending) · **Branch:** `main` · **Gates:** all green (290 tests)
 
 Read this first, then [`PRD.md`](PRD.md) (product source of truth),
 [`architecture.md`](architecture.md) (the numbered decisions), and
@@ -85,7 +85,7 @@ refresh mid-presentation cannot lose a booking. Profile → *Reset the demonstra
 | M0 — Repository foundation | complete |
 | M1 — Auth and domain foundation | complete |
 | M2 — Tourist discovery | complete |
-| **M3 — Booking, Stripe, redemption** | **all backend pieces deployed; Vercel + E2E test pending** — see §5 |
+| **M3 — Booking, Stripe, redemption** | **tourist app live on Vercel; Stripe webhook registered; first live payment test pending** — see §5 |
 | M4–M8 | not started |
 
 **T-01, T-02 complete. T-03, T-04, T-06, V-04, V-05 complete in demo mode. T-05 and T-09 partial:**
@@ -520,24 +520,22 @@ RLS policies, functions, demo vendors, experiences and availability slots for th
    error the user saw locally was caused by processes from a previous run still holding port 5173.
    Kill those first: `lsof -ti:5173 | xargs kill -9`, then restart.
 
-**Remaining: end-to-end payment test on a real hosted URL.**
+### Vercel deployment — done (2026-09-21)
 
-The local test is partially blocked: anonymous sign-in may be working but the `ensureLiveUser()`
-call needs the .env to be present AND no stale processes on port 5173. The most reliable way to
-do the first real payment is to deploy to Vercel first:
+**Live URL:** `https://caribbean-vip-tourist-web.vercel.app`
 
-**To deploy to Vercel:**
+Deployed via the `vildelsol` Vercel account (team name "Caribbean VIP", Hobby plan). The
+`vildelsol/caribbean-vip` repo is connected; every push to `main` auto-deploys.
 
-1. Go to **vercel.com/new** → "Import Git Repository" → find `vildelsol/caribbean-vip`
-2. Set **Root Directory** to: `apps/tourist-web`
-3. Add Environment Variables:
-   - `VITE_SUPABASE_URL` = `https://xtyuvtlnfougbjadkull.supabase.co`
-   - `VITE_SUPABASE_ANON_KEY` = (anon key from Supabase Settings → API)
-4. Deploy → copy the live URL (e.g. `https://caribbean-vip-xxx.vercel.app`)
-5. In Supabase dashboard → Edge Functions → Secrets: update `APP_URL` to the live URL
-6. In Stripe dashboard → Developers → Webhooks: update endpoint URL to the live domain
+- Root Directory set to `apps/tourist-web` — picks up `vercel.json` which handles the pnpm monorepo build
+- `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY` were auto-detected from `.env` during first deploy
+- `APP_URL` in Supabase Edge Functions → Secrets updated to `https://caribbean-vip-tourist-web.vercel.app`
+- Stripe webhook `caribbean-vip-checkout` registered at `https://xtyuvtlnfougbjadkull.supabase.co/functions/v1/stripe-webhook` for 4 events: `checkout.session.completed`, `checkout.session.async_payment_succeeded`, `checkout.session.async_payment_failed`, `checkout.session.expired`
+- `STRIPE_WEBHOOK_SECRET` signing secret added to Supabase Edge Functions → Secrets
 
-**After deploy, test with Stripe card `4242 4242 4242 4242`**, any future expiry, any CVC.
+**Remaining: first live end-to-end payment test.**
+
+Test with Stripe card `4242 4242 4242 4242`, any future expiry, any CVC.
 Flow: Explore → View Experience → Check Availability → pick date/time/party → Pay → Stripe →
 return to `/booking-return` → poll ~5 s → Confirmation with QR ticket.
 
@@ -601,6 +599,18 @@ runs Deno or talks to the hosted project.
 **Migration 13 (`ticket_token`) is confirmed applied** to the hosted database.
 
 **Security note:** Do not paste the `service_role` key into any file other than `.env`. If it ever leaks, rotate it in Supabase Settings → API → Generate new key.
+
+---
+
+### Design skills installed (2026-09-21)
+
+Three Claude Code skills installed globally for UI redesign work:
+
+- `web-design-guidelines` (vercel-labs, 654K installs) — audits UI against design/accessibility standards
+- `design-taste-frontend` (leonxlnx, 503K installs) — anti-generic design system for landing pages and redesigns
+- `image-to-code` (leonxlnx, 303K installs) — generates design images then implements them to match
+
+**Next session:** redesign the tourist app screens starting with section headings ("Near you Now", "Hidden Gems" etc.). Current heading font is Cormorant Garamond (`--font-display`) via `.t-section` in `apps/tourist-web/src/design/global.css:194`. A font swap or type treatment change is the first task. Use the installed skills to mock up options before committing.
 
 ---
 
@@ -759,10 +769,10 @@ Still open: OD-01 (legal entity/MoR), OD-03 (tiers and commission), OD-04 (priva
 ## 8. Known gaps — do not claim these work
 
 - **The real Stripe path has not been tested end-to-end yet.** All infrastructure is deployed and
-  configured (Edge Functions active, anonymous sign-in on, secrets set, webhook registered), but
-  no test card has been run through Stripe. The chain from `callCheckout` → Stripe → webhook →
-  `supabaseStore.confirmBooking` → `BookingReturn` polling has never executed. Deploy to Vercel
-  first (see §5) — the most reliable path to a first payment is on a hosted URL, not localhost.
+  configured (Edge Functions active, anonymous sign-in on, secrets set, webhook registered, app
+  live on Vercel). The chain from `callCheckout` → Stripe → webhook → `supabaseStore.confirmBooking`
+  → `BookingReturn` polling has never executed. Run card `4242 4242 4242 4242` on the live URL
+  to confirm the full flow (see §5).
 - **`supabaseStore`'s write path is entirely unexercised.** `resolve-slot` and `checkout-session`
   individually verified against live data; nothing past the Stripe redirect has ever executed.
 - **Storage bucket policies and real Auth are unverified.** The harness stubs them.
