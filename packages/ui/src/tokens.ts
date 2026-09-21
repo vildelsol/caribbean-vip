@@ -316,7 +316,7 @@ export const typography = {
   /** Prices and totals — the heaviest weight in the interface, as the design sets them. */
   amount: {
     fontFamily: fonts.sansHeavy,
-    fontSize: 22,
+    fontSize: 26,
     fontWeight: '800' as const,
     lineHeight: 26,
   },

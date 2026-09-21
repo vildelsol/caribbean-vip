@@ -29,7 +29,7 @@ export function formatUsd(minor: number, opts: { withCode?: boolean; forceCents?
     minimumFractionDigits: hasCents || opts.forceCents ? 2 : 0,
     maximumFractionDigits: hasCents || opts.forceCents ? 2 : 0,
   });
-  return opts.withCode ? `US$${body} USD` : `US$${body}`;
+  return `US$${body}`;
 }
 
 export function Price({ minor, className = '', size = 'md' }: { minor: number; className?: string; size?: 'sm' | 'md' | 'lg' }) {
