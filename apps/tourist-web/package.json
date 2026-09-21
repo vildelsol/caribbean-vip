@@ -2,7 +2,7 @@
   "name": "@cvip/tourist-web",
   "version": "0.1.0",
   "private": true,
-  "description": "Caribbean VIP tourist app — investor-demo MVP. Mock data, LocalStorage, simulated payments.",
+  "description": "Caribbean VIP tourist app \u2014 investor-demo MVP. Mock data, LocalStorage, simulated payments.",
   "scripts": {
     "dev": "vite --port 5173",
     "build": "vite build",
@@ -21,6 +21,7 @@
   },
   "devDependencies": {
     "@cvip/config": "workspace:*",
+    "@cvip/payments": "workspace:*",
     "@types/qrcode": "^1.5.6",
     "@types/react": "^19.0.2",
     "@types/react-dom": "^19.0.2",

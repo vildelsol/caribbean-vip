@@ -20,8 +20,7 @@ import {
   slotsFor,
 } from '../data/availability';
 import { useStore } from '../state/store';
-import { isLiveMode, callCheckout, resolveSlot } from '../lib/api';
-import { generateVoucherId } from '@cvip/types';
+import { isLiveMode, callCheckout, resolveSlot, ensureLiveUser } from '../lib/api';
 import { Icon } from '../components/Icon';
 import {
   Badge,
@@ -57,6 +56,7 @@ export function Checkout() {
   const [time, setTime] = useState<string | null>(null);
   const [party, setParty] = useState<PartySelection>(DEFAULT_PARTY);
   const [paying, setPaying] = useState(false);
+  const [payError, setPayError] = useState<string | null>(null);
 
   const days = useMemo(() => (experience ? daysFor(experience) : []), [experience]);
   const slots = useMemo(
@@ -98,6 +98,14 @@ export function Checkout() {
   const pay = async () => {
     if (!quote?.ok || !dateISO || !activeTime || paying) return;
     setPaying(true);
+    setPayError(null);
+
+    // A failure in the live path must say so. A silent `setPaying(false)` reads to a guest as the
+    // Pay button simply un-pressing, which is indistinguishable from a misfire.
+    const fail = (message: string) => {
+      setPayError(message);
+      setPaying(false);
+    };
 
     if (isLiveMode) {
       // Live path: resolve DB slot UUID, then redirect to Stripe Checkout.
@@ -108,7 +116,7 @@ export function Checkout() {
       });
 
       if (!dbSlot) {
-        setPaying(false);
+        fail('We could not find that departure. Choose another time, or try again in a moment.');
         return;
       }
 
@@ -120,11 +128,20 @@ export function Checkout() {
       }
 
       if (lines.length === 0) {
-        setPaying(false);
+        fail('That departure has no tickets matching your party. Choose another time.');
         return;
       }
 
-      const idempotencyKey = generateVoucherId();
+      // `bookings.user_id` is a real foreign key onto `profiles`, so this has to be an auth id.
+      // It was a `generateVoucherId()` token, which is base64url and failed the request schema's
+      // `z.string().uuid()` before the foreign key ever got a chance to reject it.
+      const userId = await ensureLiveUser();
+      if (!userId) {
+        fail('We could not start a secure session. Check your connection and try again.');
+        return;
+      }
+
+      const idempotencyKey = crypto.randomUUID();
 
       const storeContext = (bookingId: string) => {
         try {
@@ -137,7 +154,7 @@ export function Checkout() {
       };
 
       const result = await callCheckout({
-        userId: idempotencyKey,
+        userId,
         availabilitySlotId: dbSlot.slotId,
         lines,
         promotionId: rumPunch && liveVoucher ? liveVoucher.promotionId : null,
@@ -147,7 +164,7 @@ export function Checkout() {
       });
 
       if (!result.ok) {
-        setPaying(false);
+        fail(result.message || 'Payment could not be started. Please try again.');
         return;
       }
 
@@ -382,6 +399,12 @@ export function Checkout() {
       </section>
 
       <div className="checkout__pay">
+        {payError && (
+          <p className="checkout__error t-micro" role="alert">
+            <Icon name="lock" size={14} color="var(--coral-text)" />
+            {payError}
+          </p>
+        )}
         <PrimaryButton
           onClick={pay}
           disabled={!quote?.ok || paying || seats === 0}

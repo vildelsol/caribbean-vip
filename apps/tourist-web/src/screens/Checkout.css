@@ -281,3 +281,21 @@
   margin-top: 10px;
   text-align: center;
 }
+
+/* A failed live checkout. A hairline rather than a coral slab: this is "we could not start the
+   payment", not "you were refused", and the two must not look alike. */
+.checkout__error {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+  padding: 10px 12px;
+  border: 1px solid var(--coral);
+  border-radius: var(--r-sm);
+  color: var(--coral-text);
+  text-align: left;
+}
+
+.checkout__error svg {
+  flex: none;
+}

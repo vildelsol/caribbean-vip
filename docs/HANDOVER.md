@@ -1,6 +1,6 @@
 # Handover — Caribbean VIP
 
-**Written:** 2026-08-02 · **Updated:** 2026-09-21 (M3 live backend wired — Supabase schema + seed deployed, Edge Functions written, Stripe Checkout integrated) · **Branch:** `master` · **Gates:** all green
+**Written:** 2026-08-02 · **Updated:** 2026-09-21 (M3 live backend wired and committed; live-checkout `userId` bug found and fixed before deployment) · **Branch:** `master` · **Gates:** all green
 
 Read this first, then [`PRD.md`](PRD.md) (product source of truth),
 [`architecture.md`](architecture.md) (the numbered decisions), and
@@ -500,28 +500,49 @@ RLS policies, functions, demo vendors, experiences and availability slots for th
    npx supabase functions deploy resolve-slot --project-ref <YOUR_REF>
    ```
 
-2. **Set Edge Function secrets** in Supabase dashboard → Settings → Edge Functions → Secrets:
+2. **Enable anonymous sign-in** in Supabase dashboard -> Authentication -> Providers -> Anonymous.
+   The live path needs it: `bookings.user_id` is `uuid not null references profiles(id)`, and a
+   profile row exists only because `handle_new_user()` writes one for every `auth.users` insert.
+   Without this toggle, `ensureLiveUser()` returns null and Checkout shows "We could not start a
+   secure session" rather than failing silently.
+
+3. **Set Edge Function secrets** in Supabase dashboard → Settings → Edge Functions → Secrets:
    - `STRIPE_SECRET_KEY` — from Stripe dashboard (test mode)
    - `STRIPE_WEBHOOK_SECRET` — from step 3 below
    - `VOUCHER_HMAC_SECRET` — any 32-char random string (e.g. `openssl rand -hex 32`)
    - `APP_URL` — your deployed app URL (or `http://localhost:5173` for local testing)
 
-3. **Register Stripe webhook** — Stripe dashboard → Developers → Webhooks → Add endpoint:
+4. **Register Stripe webhook** — Stripe dashboard → Developers → Webhooks → Add endpoint:
    - URL: `https://<project-ref>.supabase.co/functions/v1/stripe-webhook`
    - Event: `checkout.session.completed`
-   - Copy the signing secret → paste as `STRIPE_WEBHOOK_SECRET` in step 2
+   - Copy the signing secret → paste as `STRIPE_WEBHOOK_SECRET` in step 3
 
-4. **Create `.env` in `apps/tourist-web/`:**
+5. **Create `.env` in `apps/tourist-web/`:**
    ```
    VITE_SUPABASE_URL=https://<project-ref>.supabase.co
    VITE_SUPABASE_ANON_KEY=<anon key from Settings → API>
    ```
 
-5. **Run and test:**
+6. **Run and test:**
    ```bash
    pnpm tourist
    ```
    Go to any experience → Checkout → Pay → Stripe test card `4242 4242 4242 4242` → any future date/CVC → Pay. Should redirect back to `/booking-return`, poll a few seconds, and arrive at Confirmation.
+
+**A bug that four green gates did not catch (fixed 2026-09-21).** `Checkout.tsx` passed
+`generateVoucherId()` as `userId`. That returns a base64url token; `checkoutRequestSchema` requires
+a UUID, so every live checkout would have returned 422 - and even past the schema, the foreign key
+onto `profiles` would have rejected a fabricated id. It survived typecheck, lint, 276 tests and
+db:test because **nothing tested the live branch at all**. The fix: `ensureLiveUser()` in
+`lib/api.ts` returns a real auth id (signing in anonymously if needed), `idempotencyKey` is now
+`crypto.randomUUID()`, and `src/lib/checkoutContract.test.ts` asserts the request body against the
+schema the Edge Function actually validates with - no network, no keys, catchable on a laptop.
+
+The same pass made the live path's three silent failures visible. Each was a bare
+`setPaying(false); return;`, which reads to a guest as the Pay button un-pressing and is
+indistinguishable from a misfire. They now render a coral hairline - deliberately a hairline and
+not a slab, the same call the vendor portal made: "we could not start the payment" must not look
+like "you were refused".
 
 **Security note:** Do not paste the `service_role` key into any file other than `.env`. If it ever leaks, rotate it in Supabase Settings → API → Generate new key.
 
@@ -683,7 +704,15 @@ Still open: OD-01 (legal entity/MoR), OD-03 (tiers and commission), OD-04 (priva
 
 - **The real Stripe path has not been tested end-to-end yet.** Edge Functions are written and the
   tourist app is wired, but the functions have not been deployed and no test card has been run
-  through Stripe. See §5 "M3 live backend" for the exact steps remaining.
+  through Stripe. See §5 "M3 live backend" for the exact steps remaining. The live branch now has
+  contract tests over the request body, but a contract test is not a payment - nothing below the
+  schema has ever executed.
+- **`ensureLiveUser()` has not been run against a real Supabase.** It depends on anonymous sign-in
+  being enabled in the dashboard, which has not been done. If that toggle is off, live checkout
+  fails with a visible message rather than a charge.
+- **Migration 13 (`ticket_token`) may not be on the hosted database.** The other twelve were applied
+  by hand in the SQL editor; confirm this one was too, or `stripe-webhook`'s `ticket_token` write
+  silently no-ops and the guest gets a booking with no QR.
 - **A hosted Supabase project now exists and is seeded.** Schema (13 migrations) and demo data
   are applied. Edge Function secrets and webhook registration still need to be done before the
   first payment can be taken.

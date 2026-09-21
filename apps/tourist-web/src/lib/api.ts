@@ -34,6 +34,29 @@ export interface BookingStatusResponse {
   ticketToken: string | null;
 }
 
+/**
+ * The signed-in user's id for the live booking path, signing in anonymously if needed.
+ *
+ * `bookings.user_id` is `uuid not null references profiles(id)`, and a profile row exists only
+ * because the `handle_new_user()` trigger writes one for every `auth.users` insert — including an
+ * anonymous one. So this must return a real auth id: a locally generated UUID would pass the
+ * request schema and then be rejected by the foreign key.
+ *
+ * Returns null if sign-in fails, which the caller must surface rather than swallow.
+ *
+ * Requires anonymous sign-in to be enabled in the Supabase Auth dashboard.
+ */
+export async function ensureLiveUser(): Promise<string | null> {
+  if (!supabase) return null;
+
+  const { data: { session } } = await supabase.auth.getSession();
+  if (session?.user) return session.user.id;
+
+  const { data, error } = await supabase.auth.signInAnonymously();
+  if (error || !data.user) return null;
+  return data.user.id;
+}
+
 export async function callCheckout(body: {
   userId: string;
   availabilitySlotId: string;
