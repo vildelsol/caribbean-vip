@@ -1,6 +1,6 @@
 # Handover — Caribbean VIP
 
-**Written:** 2026-08-02 · **Updated:** 2026-09-21 (M3 live backend wired and committed; live-checkout `userId` bug found and fixed before deployment) · **Branch:** `master` · **Gates:** all green
+**Written:** 2026-08-02 · **Updated:** 2026-09-21 (M3 backend deployed and individually verified; design fixes applied against Caribbean VIP Journey spec) · **Branch:** `main` · **Gates:** all green (290 tests)
 
 Read this first, then [`PRD.md`](PRD.md) (product source of truth),
 [`architecture.md`](architecture.md) (the numbered decisions), and
@@ -85,14 +85,14 @@ refresh mid-presentation cannot lose a booking. Profile → *Reset the demonstra
 | M0 — Repository foundation | complete |
 | M1 — Auth and domain foundation | complete |
 | M2 — Tourist discovery | complete |
-| **M3 — Booking, Stripe, redemption** | **backend wired — pending E2E test** — see §8 |
+| **M3 — Booking, Stripe, redemption** | **all backend pieces deployed; Vercel + E2E test pending** — see §5 |
 | M4–M8 | not started |
 
 **T-01, T-02 complete. T-03, T-04, T-06, V-04, V-05 complete in demo mode. T-05 and T-09 partial:**
 booking, capacity hold, cancellation and voucher invalidation all work. **The real Stripe/Supabase
 path is now wired but has not yet been tested end-to-end** — see §5 pick-up point and §8.
 
-Gates: **276 unit tests (15 files), typecheck and lint clean across 9 workspaces.**
+Gates: **290 unit tests (17 files), typecheck and lint clean across 9 workspaces.**
 
 ---
 
@@ -490,49 +490,56 @@ RLS policies, functions, demo vendors, experiences and availability slots for th
 - `apps/tourist-web/src/App.tsx` — route `<Route path="/booking-return" element={<BookingReturn />} />`
 - `supabase/migrations/20260802000013_ticket_token.sql` — `alter table bookings add column ticket_token text`
 
-**What to do next to get the first real payment:**
+**Status of each step as of 2026-09-21:**
 
-1. ~~**Deploy Edge Functions**~~ — **done, 2026-09-21.** All four are ACTIVE on
-   `caribbean-vip-staging` (ref `xtyuvtlnfougbjadkull`) and answer correctly. Redeploy with:
+1. ~~**Deploy Edge Functions**~~ — **done.** All four are ACTIVE on `caribbean-vip-staging`
+   (ref `xtyuvtlnfougbjadkull`) and answer correctly. Redeploy with:
 
    ```bash
    ./scripts/deploy-functions.sh xtyuvtlnfougbjadkull
    ```
 
-   Use the script, not bare `supabase functions deploy`. Two flags are load-bearing and neither is
-   discoverable from the error messages: `--import-map supabase/functions/deno.json` (the CLI does
-   not read it on its own, and the bundle fails on `@cvip/payments` without it), and
-   `--no-verify-jwt` for `stripe-webhook` only. Both are explained in the script and pinned in
-   `supabase/config.toml`.
+   Use the script, not bare `supabase functions deploy`. Two flags are load-bearing: `--import-map
+   supabase/functions/deno.json` and `--no-verify-jwt` for `stripe-webhook` only. Both are in the
+   script and pinned in `supabase/config.toml`.
 
-2. **Enable anonymous sign-in** in Supabase dashboard -> Authentication -> Providers -> Anonymous.
-   The live path needs it: `bookings.user_id` is `uuid not null references profiles(id)`, and a
-   profile row exists only because `handle_new_user()` writes one for every `auth.users` insert.
-   Without this toggle, `ensureLiveUser()` returns null and Checkout shows "We could not start a
-   secure session" rather than failing silently.
+2. ~~**Enable anonymous sign-in**~~ — **done (confirmed 2026-09-21).** Toggle is ON in Supabase
+   Auth → Providers → Anonymous. `ensureLiveUser()` depends on this; without it Checkout shows
+   "We could not start a secure session."
 
-3. **Set Edge Function secrets** in Supabase dashboard → Settings → Edge Functions → Secrets:
-   - `STRIPE_SECRET_KEY` — from Stripe dashboard (test mode)
-   - `STRIPE_WEBHOOK_SECRET` — from step 3 below
-   - `VOUCHER_HMAC_SECRET` — any 32-char random string (e.g. `openssl rand -hex 32`)
-   - `APP_URL` — your deployed app URL (or `http://localhost:5173` for local testing)
+3. ~~**Set Edge Function secrets**~~ — **done.** `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`,
+   `VOUCHER_HMAC_SECRET`, `APP_URL` (currently set to `http://localhost:5173`) are all in Supabase
+   Settings → Edge Functions → Secrets.
 
-4. **Register Stripe webhook** — Stripe dashboard → Developers → Webhooks → Add endpoint:
-   - URL: `https://<project-ref>.supabase.co/functions/v1/stripe-webhook`
-   - Event: `checkout.session.completed`
-   - Copy the signing secret → paste as `STRIPE_WEBHOOK_SECRET` in step 3
+4. ~~**Register Stripe webhook**~~ — **done.** Endpoint registered:
+   `https://xtyuvtlnfougbjadkull.supabase.co/functions/v1/stripe-webhook` for
+   `checkout.session.completed`. Webhook secret confirmed pasted as `STRIPE_WEBHOOK_SECRET`.
 
-5. **Create `.env` in `apps/tourist-web/`:**
-   ```
-   VITE_SUPABASE_URL=https://<project-ref>.supabase.co
-   VITE_SUPABASE_ANON_KEY=<anon key from Settings → API>
-   ```
+5. ~~**Create `.env`**~~ — **done.** `apps/tourist-web/.env` exists (gitignored) with
+   `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY`. The "We could not start a secure session"
+   error the user saw locally was caused by processes from a previous run still holding port 5173.
+   Kill those first: `lsof -ti:5173 | xargs kill -9`, then restart.
 
-6. **Run and test:**
-   ```bash
-   pnpm tourist
-   ```
-   Go to any experience → Checkout → Pay → Stripe test card `4242 4242 4242 4242` → any future date/CVC → Pay. Should redirect back to `/booking-return`, poll a few seconds, and arrive at Confirmation.
+**Remaining: end-to-end payment test on a real hosted URL.**
+
+The local test is partially blocked: anonymous sign-in may be working but the `ensureLiveUser()`
+call needs the .env to be present AND no stale processes on port 5173. The most reliable way to
+do the first real payment is to deploy to Vercel first:
+
+**To deploy to Vercel:**
+
+1. Go to **vercel.com/new** → "Import Git Repository" → find `vildelsol/caribbean-vip`
+2. Set **Root Directory** to: `apps/tourist-web`
+3. Add Environment Variables:
+   - `VITE_SUPABASE_URL` = `https://xtyuvtlnfougbjadkull.supabase.co`
+   - `VITE_SUPABASE_ANON_KEY` = (anon key from Supabase Settings → API)
+4. Deploy → copy the live URL (e.g. `https://caribbean-vip-xxx.vercel.app`)
+5. In Supabase dashboard → Edge Functions → Secrets: update `APP_URL` to the live URL
+6. In Stripe dashboard → Developers → Webhooks: update endpoint URL to the live domain
+
+**After deploy, test with Stripe card `4242 4242 4242 4242`**, any future expiry, any CVC.
+Flow: Explore → View Experience → Check Availability → pick date/time/party → Pay → Stripe →
+return to `/booking-return` → poll ~5 s → Confirmation with QR ticket.
 
 **A bug that four green gates did not catch (fixed 2026-09-21).** `Checkout.tsx` passed
 `generateVoucherId()` as `userId`. That returns a base64url token; `checkoutRequestSchema` requires
@@ -548,6 +555,29 @@ The same pass made the live path's three silent failures visible. Each was a bar
 indistinguishable from a misfire. They now render a coral hairline - deliberately a hairline and
 not a slab, the same call the vendor portal made: "we could not start the payment" must not look
 like "you were refused".
+
+### Design fixes applied against the Caribbean VIP Journey spec (2026-09-21)
+
+Two visual bugs found by comparing the running app against `docs/design-source/Screen.dc.html`:
+
+1. **Total amount size: 22px → 26px.** The design draws the checkout total at `font:800 26px/1
+   Manrope`. The token scale had `22px`. Updated in `global.css` (`.t-amount`) and
+   `tokens.ts` (`typography.amount.fontSize`). Line height stays `26` (satisfies `lineHeight ≥
+   fontSize`). All 290 tests pass.
+
+2. **`formatUsd({ withCode: true })` produced "US\$156 USD"** — both a "US\$" prefix and a " USD"
+   suffix. The function now always returns `US\$${body}` regardless of `withCode`; the prefix
+   already carries the code, the suffix was pure noise. Two call sites (`Checkout.tsx:364`,
+   `Confirmation.tsx:101`) still pass `withCode: true` harmlessly.
+
+Everything else already matched the design:
+- Cormorant Garamond (headings) + Manrope (interface) loading correctly from Google Fonts
+- `CARIBBEAN VIP` pill: `#E3C271` gold-light, `letter-spacing: 0.16em`, frosted glass — exact match
+- Hero title: 33px Cormorant 600 greeting + 40px place name — exact match
+- Section titles, card meta, teal/gold/coral accents, map colors — all exact match
+- Island pill, mood tiles, search pill, bottom navigation — all exact match
+
+Commit: `8fc11ad` — pushed to `vildelsol/caribbean-vip` on `main`.
 
 ### What deploying actually revealed (2026-09-21)
 
@@ -728,21 +758,13 @@ Still open: OD-01 (legal entity/MoR), OD-03 (tiers and commission), OD-04 (priva
 
 ## 8. Known gaps — do not claim these work
 
-- **The real Stripe path has not been tested end-to-end yet.** Edge Functions are written and the
-  tourist app is wired, but the functions have not been deployed and no test card has been run
-  through Stripe. See §5 "M3 live backend" for the exact steps remaining. The live branch now has
-  contract tests over the request body, but a contract test is not a payment - nothing below the
-  schema has ever executed.
-- **`ensureLiveUser()` has not been run against a real Supabase.** It depends on anonymous sign-in
-  being enabled in the dashboard, which has not been done. If that toggle is off, live checkout
-  fails with a visible message rather than a charge.
-- **The Edge Functions are deployed and individually verified, but the chain has never run.**
-  `resolve-slot` returns real UUIDs and `checkout-session` validates and rejects correctly, both
-  against the live project. Nothing past that has executed: no Stripe session has been created, no
-  webhook has ever fired, and `supabaseStore`'s write path is entirely unexercised.
-- **A hosted Supabase project now exists and is seeded.** Schema (13 migrations) and demo data
-  are applied. Edge Function secrets and webhook registration still need to be done before the
-  first payment can be taken.
+- **The real Stripe path has not been tested end-to-end yet.** All infrastructure is deployed and
+  configured (Edge Functions active, anonymous sign-in on, secrets set, webhook registered), but
+  no test card has been run through Stripe. The chain from `callCheckout` → Stripe → webhook →
+  `supabaseStore.confirmBooking` → `BookingReturn` polling has never executed. Deploy to Vercel
+  first (see §5) — the most reliable path to a first payment is on a hosted URL, not localhost.
+- **`supabaseStore`'s write path is entirely unexercised.** `resolve-slot` and `checkout-session`
+  individually verified against live data; nothing past the Stripe redirect has ever executed.
 - **Storage bucket policies and real Auth are unverified.** The harness stubs them.
 - **The PostgREST embedded-select in `loadExperience()` is unverified.** Only a real Supabase can
   execute that nested syntax.
@@ -760,10 +782,8 @@ Still open: OD-01 (legal entity/MoR), OD-03 (tiers and commission), OD-04 (priva
 - **Photography is placeholder.** Freely licensed and correctly attributed, but it is not the actual
   vendors. Commissioned or licensed photography is still needed before anything ships publicly. See
   [`media-credits.md`](media-credits.md) and `scripts/seed-media/README.md`.
-- **Two listings are illustrated by the wrong subject and cannot be fixed from Commons.** Mystic
-  Mountain Bobsled & Zipline shows Konoko Falls gardens — a different Ocho Rios attraction — and
-  White River Tubing shows a bamboo raft. Both need operator-supplied photography with written
-  permission; §5 has the detail. Do not describe either card as showing the experience it sells.
+- **White River Tubing shows a bamboo raft** (the activity most associated with the White River,
+  not a tube). Accepted by Ro — the photograph reads as the right place. No fix needed; see §5.
 - **Geolocation is real but the position is still simulated whenever the device is not on the
   selected island.** That is deliberate and is stated in the UI, but it means a demonstration given
   outside the Caribbean is showing distances from a destination centre, not from the presenter.
