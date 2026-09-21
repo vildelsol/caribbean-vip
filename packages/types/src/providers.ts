@@ -10,7 +10,7 @@
  * usable from React Native, Next.js and Deno alike.
  */
 
-import type { Coordinates } from './geo';
+import type { Coordinates } from './geo.ts';
 
 // ---------------------------------------------------------------------------
 // Location

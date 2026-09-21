@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
-import { startCheckout } from './checkout';
-import { handleStripeWebhook } from './webhook';
-import type { PaymentCoreDeps } from './ports';
+import { startCheckout } from './checkout.ts';
+import { handleStripeWebhook } from './webhook.ts';
+import type { PaymentCoreDeps } from './ports.ts';
 import {
   FakeBookingStore,
   FakeClock,
@@ -10,7 +10,7 @@ import {
   optionFixture,
   slotFixture,
   stripeEvent,
-} from './testing';
+} from './testing.ts';
 
 const USER = '55555555-5555-4555-8555-555555555555';
 const ADULT = '44444444-4444-4444-8444-444444444444';

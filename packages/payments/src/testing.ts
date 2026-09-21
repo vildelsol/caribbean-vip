@@ -25,7 +25,7 @@ import type {
   PromotionSnapshot,
   SlotSnapshot,
   StripeLikeEvent,
-} from './ports';
+} from './ports.ts';
 
 export class FakeClock implements Clock {
   constructor(private current: Date = new Date('2026-08-02T12:00:00Z')) {}

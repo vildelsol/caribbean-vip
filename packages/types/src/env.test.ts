@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { assertProductionReady, clientEnvSchema, serverEnvSchema } from './env';
+import { assertProductionReady, clientEnvSchema, serverEnvSchema } from './env.ts';
 
 describe('env split (PRD §14: no secrets client-side)', () => {
   it('the client schema contains no secret key names', () => {

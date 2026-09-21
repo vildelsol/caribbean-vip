@@ -1,0 +1,23 @@
+# Supabase CLI project configuration.
+#
+# This file exists mainly to pin `verify_jwt` per function, so a redeploy cannot quietly
+# re-enable it. Everything here is also passed on the command line by `scripts/deploy-functions.sh`.
+
+project_id = "caribbean-vip"
+
+# Stripe signs its webhooks with `Stripe-Signature`, not a Supabase JWT. With `verify_jwt = true`
+# the platform rejects the request before our handler runs, so the signature is never checked, the
+# booking is never confirmed, and the guest is charged for a booking that stays `pending_payment`.
+# The authentication here is the HMAC signature, verified in `handleStripeWebhook`.
+[functions.stripe-webhook]
+verify_jwt = false
+
+# These two are called from the browser with the anon key, so the platform check stays on.
+[functions.checkout-session]
+verify_jwt = true
+
+[functions.resolve-slot]
+verify_jwt = true
+
+[functions.booking-status]
+verify_jwt = true

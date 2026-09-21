@@ -25,7 +25,7 @@ import {
   type PriceBreakdown,
   type PriceLine,
 } from '@cvip/types';
-import type { PaymentCoreDeps, PromotionSnapshot } from './ports';
+import type { PaymentCoreDeps, PromotionSnapshot } from './ports.ts';
 
 export const checkoutRequestSchema = z.object({
   userId: z.string().uuid(),

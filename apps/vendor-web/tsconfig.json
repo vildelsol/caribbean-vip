@@ -7,6 +7,10 @@
     "strict": true,
     "noUncheckedIndexedAccess": true,
     "noEmit": true,
+    // `@cvip/types` and `@cvip/payments` are compiled from source here, and their relative
+    // imports carry an explicit `.ts` so Supabase Edge Functions can bundle them with Deno, which
+    // does not resolve extensionless paths. Safe with `noEmit`, which this project sets.
+    "allowImportingTsExtensions": true,
     "esModuleInterop": true,
     "module": "esnext",
     "moduleResolution": "bundler",

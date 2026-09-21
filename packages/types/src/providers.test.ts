@@ -5,7 +5,7 @@ import {
   mapProviderInfo,
   regionForMarkers,
   type MapMarker,
-} from './providers';
+} from './providers.ts';
 
 const OCHO_RIOS = { lat: 18.4074, lng: -77.103 };
 const NEGRIL = { lat: 18.2683, lng: -78.348 };

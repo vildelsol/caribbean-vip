@@ -5,12 +5,12 @@
  * a network or a running app, which is why the money-critical rules live here.
  */
 
-export * from './money';
-export * from './pricing';
-export * from './voucher';
-export * from './states';
-export * from './domain';
-export * from './geo';
-export * from './search';
-export * from './providers';
-export * from './env';
+export * from './money.ts';
+export * from './pricing.ts';
+export * from './voucher.ts';
+export * from './states.ts';
+export * from './domain.ts';
+export * from './geo.ts';
+export * from './search.ts';
+export * from './providers.ts';
+export * from './env.ts';

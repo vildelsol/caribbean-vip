@@ -20,6 +20,13 @@
     "sourceMap": true,
     "skipLibCheck": true,
     "isolatedModules": true,
+
+    // `@cvip/types` and `@cvip/payments` write relative imports with an explicit `.ts`, because
+    // Supabase Edge Functions bundle them with Deno and Deno does not resolve extensionless
+    // paths. Every consumer compiles those files from source, so the flag has to be shared rather
+    // than set per package. It requires `noEmit`, which every project here already sets; nothing
+    // in this repo emits from tsc.
+    "allowImportingTsExtensions": true,
     "verbatimModuleSyntax": true
   }
 }

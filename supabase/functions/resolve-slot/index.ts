@@ -16,7 +16,7 @@ import { createClient } from 'npm:@supabase/supabase-js@^2';
 
 const CORS = {
   'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, content-type',
+  'Access-Control-Allow-Headers': 'apikey, authorization, content-type',
   'Access-Control-Allow-Methods': 'GET, OPTIONS',
 };
 
@@ -43,39 +43,43 @@ Deno.serve(async (req) => {
     { auth: { persistSession: false, autoRefreshToken: false } },
   );
 
-  const { data: slot, error: slotError } = await supabase
-    .from('availability_slots')
-    .select('id, experience_id')
-    .eq('starts_at', startsAt)
-    .in('experience_id',
-      supabase.from('experiences').select('id').eq('title', title)
-    )
-    .eq('status', 'open')
-    .single();
+  try {
+    // Two plain queries rather than one nested one. This was `.in('experience_id', <query
+    // builder>)`, which supabase-js does not support — `.in()` takes an array — and the malformed
+    // request surfaced as a 500 with no usable message.
+    const { data: experience, error: expError } = await supabase
+      .from('experiences')
+      .select('id')
+      .eq('title', title)
+      .maybeSingle();
 
-  if (slotError || !slot) {
-    // Try without status filter — closed slots still exist and the checkout will reject them.
-    const { data: slotAny, error: anyError } = await supabase
+    if (expError) return json({ error: 'Lookup failed', detail: expError.message }, 500);
+    if (!experience) return json({ error: 'Experience not found', title }, 404);
+
+    // `maybeSingle` rather than `single`: a missing slot is an ordinary outcome the guest caused
+    // by picking a time we do not run, and it must read as 404, not as a server fault.
+    const { data: slot, error: slotError } = await supabase
       .from('availability_slots')
-      .select(`id, experience_id, experiences!inner(title)`)
+      .select('id, experience_id')
+      .eq('experience_id', experience.id)
       .eq('starts_at', startsAt)
-      .eq('experiences.title', title)
-      .single();
+      .maybeSingle();
 
-    if (anyError || !slotAny) {
-      return json({ error: 'Slot not found', detail: slotError?.message ?? anyError?.message }, 404);
-    }
+    if (slotError) return json({ error: 'Lookup failed', detail: slotError.message }, 500);
+    if (!slot) return json({ error: 'Slot not found', title, startsAt }, 404);
 
-    const { data: options } = await supabase
+    const { data: options, error: optError } = await supabase
       .from('experience_options')
       .select('id, kind, label, unit_amount_minor')
-      .eq('experience_id', slotAny.experience_id)
+      .eq('experience_id', slot.experience_id)
       .eq('is_active', true)
       .order('sort_order');
 
+    if (optError) return json({ error: 'Lookup failed', detail: optError.message }, 500);
+
     return json({
-      slotId: slotAny.id,
-      experienceId: slotAny.experience_id,
+      slotId: slot.id,
+      experienceId: slot.experience_id,
       options: (options ?? []).map((o) => ({
         id: o.id,
         kind: o.kind,
@@ -83,25 +87,10 @@ Deno.serve(async (req) => {
         unitAmountMinor: o.unit_amount_minor,
       })),
     });
+  } catch (err) {
+    console.error('resolve-slot failed:', err);
+    return json({ error: 'Lookup failed' }, 500);
   }
-
-  const { data: options } = await supabase
-    .from('experience_options')
-    .select('id, kind, label, unit_amount_minor')
-    .eq('experience_id', slot.experience_id)
-    .eq('is_active', true)
-    .order('sort_order');
-
-  return json({
-    slotId: slot.id,
-    experienceId: slot.experience_id,
-    options: (options ?? []).map((o) => ({
-      id: o.id,
-      kind: o.kind,
-      label: o.label,
-      unitAmountMinor: o.unit_amount_minor,
-    })),
-  });
 });
 
 function json(body: unknown, status = 200): Response {

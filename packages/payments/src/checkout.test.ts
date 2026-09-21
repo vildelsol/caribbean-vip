@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { quoteBooking, startCheckout, type CheckoutRequest } from './checkout';
-import type { PaymentCoreDeps, PromotionSnapshot } from './ports';
+import { quoteBooking, startCheckout, type CheckoutRequest } from './checkout.ts';
+import type { PaymentCoreDeps, PromotionSnapshot } from './ports.ts';
 import {
   FakeBookingStore,
   FakeClock,
@@ -8,7 +8,7 @@ import {
   SequentialIds,
   optionFixture,
   slotFixture,
-} from './testing';
+} from './testing.ts';
 
 const USER = '55555555-5555-4555-8555-555555555555';
 const ADULT = '44444444-4444-4444-8444-444444444444';

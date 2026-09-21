@@ -6,6 +6,18 @@ import { supabase } from './supabase';
 
 export { isLiveMode } from './supabase';
 
+const FUNCTIONS_BASE = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1`;
+
+/**
+ * Every Edge Function except `stripe-webhook` is deployed with `verify_jwt = true`, so the
+ * platform rejects a request with no credential before our handler runs. The anon key is the
+ * publishable one — it is compiled into the bundle by design and grants nothing RLS does not.
+ */
+function anonHeaders(): Record<string, string> {
+  const key = import.meta.env.VITE_SUPABASE_ANON_KEY as string | undefined;
+  return key ? { apikey: key, Authorization: `Bearer ${key}` } : {};
+}
+
 export interface CheckoutResponse {
   ok: true;
   checkoutUrl: string;
@@ -71,17 +83,16 @@ export async function callCheckout(body: {
   const { data: { session } } = await supabase.auth.getSession();
   const token = session?.access_token;
 
-  const res = await fetch(
-    `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/checkout-session`,
-    {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        ...(token ? { Authorization: `Bearer ${token}` } : {}),
-      },
-      body: JSON.stringify(body),
+  const res = await fetch(`${FUNCTIONS_BASE}/checkout-session`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      ...anonHeaders(),
+      // A signed-in guest's own token supersedes the anon key when there is one.
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
     },
-  );
+    body: JSON.stringify(body),
+  });
 
   return res.json() as Promise<CheckoutResponse | CheckoutErrorResponse>;
 }
@@ -103,10 +114,10 @@ export async function resolveSlot(params: {
     date: params.dateISO,
     time: params.time,
   });
-  const res = await fetch(
-    `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/resolve-slot?${qs}`,
-    { method: 'GET' },
-  );
+  const res = await fetch(`${FUNCTIONS_BASE}/resolve-slot?${qs}`, {
+    method: 'GET',
+    headers: anonHeaders(),
+  });
   if (!res.ok) return null;
   return res.json() as Promise<ResolvedSlot>;
 }
@@ -115,8 +126,8 @@ export async function pollBookingStatus(sessionId: string): Promise<BookingStatu
   if (!supabase) return null;
 
   const res = await fetch(
-    `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/booking-status?session_id=${encodeURIComponent(sessionId)}`,
-    { method: 'GET' },
+    `${FUNCTIONS_BASE}/booking-status?session_id=${encodeURIComponent(sessionId)}`,
+    { method: 'GET', headers: anonHeaders() },
   );
 
   if (!res.ok) return null;

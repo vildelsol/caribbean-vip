@@ -18,7 +18,7 @@ import {
   type Currency,
   type Money,
   currencySchema,
-} from './money';
+} from './money.ts';
 
 export const priceLineSchema = z.object({
   /** `experience_options.id` — the priced variant (adult, child, add-on, ticket type). */

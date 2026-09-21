@@ -6,8 +6,8 @@ import {
   canTransitionVoucher,
   isBookingRedeemable,
   isVoucherTerminal,
-} from './states';
-import { isPubliclyVisible, mayTriggerGeofencedOffer } from './domain';
+} from './states.ts';
+import { isPubliclyVisible, mayTriggerGeofencedOffer } from './domain.ts';
 
 describe('voucher state machine (PRD §9)', () => {
   it('defines exactly the eight PRD states', () => {

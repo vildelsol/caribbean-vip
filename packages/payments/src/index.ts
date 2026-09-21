@@ -6,6 +6,6 @@
  * are thin adapters over this.
  */
 
-export * from './ports';
-export * from './checkout';
-export * from './webhook';
+export * from './ports.ts';
+export * from './checkout.ts';
+export * from './webhook.ts';

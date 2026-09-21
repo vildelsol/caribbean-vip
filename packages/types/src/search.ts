@@ -8,8 +8,8 @@
  */
 
 import { z } from 'zod';
-import { EXPERIENCE_CATEGORIES, type ExperienceCategory } from './domain';
-import { distanceMetres, type Coordinates } from './geo';
+import { EXPERIENCE_CATEGORIES, type ExperienceCategory } from './domain.ts';
+import { distanceMetres, type Coordinates } from './geo.ts';
 
 export const SORT_OPTIONS = [
   'recommended',

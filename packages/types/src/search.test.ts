@@ -8,8 +8,8 @@ import {
   searchFiltersSchema,
   sortResults,
   type SearchableExperience,
-} from './search';
-import { boundsFor, distanceMetres, formatDistance, isWithinRadius } from './geo';
+} from './search.ts';
+import { boundsFor, distanceMetres, formatDistance, isWithinRadius } from './geo.ts';
 
 const OCHO_RIOS = { lat: 18.4074, lng: -77.103 };
 const MONTEGO_BAY = { lat: 18.4762, lng: -77.8939 };

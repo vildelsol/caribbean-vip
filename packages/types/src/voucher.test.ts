@@ -7,7 +7,7 @@ import {
   verifyVoucherToken,
   voucherPayloadSchema,
   VOUCHER_TOKEN_VERSION,
-} from './voucher';
+} from './voucher.ts';
 
 const SECRET = 'test-secret-at-least-32-characters-long!!';
 const OTHER_SECRET = 'a-different-secret-also-32-chars-long!!!!';

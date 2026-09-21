@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { calculateBookingTotal, type PriceInput } from './pricing';
+import { calculateBookingTotal, type PriceInput } from './pricing.ts';
 
 const config = { taxRate: 0.15, serviceFeeRate: 0.05, commissionRate: 0.12 };
 

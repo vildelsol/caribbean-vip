@@ -20,8 +20,8 @@
  * handled, and whichever lands first confirms the booking.
  */
 
-import type { PaymentCoreDeps } from './ports';
-import { mintVoucherToken } from './checkout';
+import type { PaymentCoreDeps } from './ports.ts';
+import { mintVoucherToken } from './checkout.ts';
 
 export type WebhookOutcome =
   | { status: 'ignored'; reason: string; eventId?: string }
