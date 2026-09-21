@@ -10,6 +10,7 @@
 
 import { startCheckout, checkoutRequestSchema } from '@cvip/payments';
 import { makeDeps } from '../_shared/deps.ts';
+import { cancelUrl, successUrl } from '../_shared/returnUrls.ts';
 
 const CORS = {
   'Access-Control-Allow-Origin': '*',
@@ -41,8 +42,8 @@ Deno.serve(async (req) => {
   let deps;
   try {
     deps = makeDeps({
-      successUrl: `${appUrl}/booking-return?session_id={CHECKOUT_SESSION_ID}`,
-      cancelUrl: experienceId ? `${appUrl}/checkout/${experienceId}` : `${appUrl}/`,
+      successUrl: successUrl(appUrl),
+      cancelUrl: cancelUrl(appUrl, experienceId),
     });
   } catch (err) {
     console.error('deps init failed:', err);
