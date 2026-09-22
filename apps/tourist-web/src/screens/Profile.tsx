@@ -1,7 +1,7 @@
 import { useNavigate } from 'react-router-dom';
 import { ISLANDS, destinationsFor, experienceById, heroUrl, islandById } from '../data/catalogue';
 import { useStore } from '../state/store';
-import { Badge, Card, DemoNote, EmptyState, Photo, SecondaryButton, formatUsd } from '../components/kit';
+import { Badge, Card, EmptyState, Photo, SecondaryButton, formatUsd } from '../components/kit';
 import { Icon } from '../components/Icon';
 import './Profile.css';
 
@@ -32,7 +32,7 @@ export function Profile() {
           <span className="crest__island">{island?.name.toUpperCase() ?? 'CARIBBEAN'}</span>
         </span>
         <div>
-          <h1 className="t-display-md">Alex Bennett</h1>
+          <h1 className="t-display-md">{state.guestName || 'Guest'}</h1>
           <p className="t-caption c-muted">Guest · {island?.in_app_brand}</p>
         </div>
       </header>
@@ -110,7 +110,7 @@ export function Profile() {
                   </span>
                   <div className="grow">
                     <p className="t-caption-strong">Complimentary Rum Punch</p>
-                    <p className="t-micro c-muted">One per adult guest · demo offer</p>
+                    <p className="t-micro c-muted">One per adult guest</p>
                   </div>
                   <Badge
                     tone={
@@ -182,26 +182,14 @@ export function Profile() {
         )}
       </section>
 
-      {/* --- Demonstration controls --- */}
       <section className="pad profile__block">
-        <h2 className="t-section">Demonstration</h2>
-        <div className="sim-note">
-          <p className="t-caption-strong">What is simulated</p>
-          <ul className="t-caption c-muted sim-note__list">
-            <li>Payment is simulated — no card is charged and no payment processor is contacted.</li>
-            <li>Position is simulated at the centre of the selected destination, not from your device.</li>
-            <li>The offer is triggered on a timer rather than by a real geofence.</li>
-            <li>Irie AI is rule-matched over the demo catalogue — there is no language model.</li>
-            <li>Inventory, ratings and review counts are seeded demonstration data.</li>
-          </ul>
-        </div>
-        <SecondaryButton onClick={reset}>Reset the demonstration</SecondaryButton>
+        <h2 className="t-section">Start over</h2>
+        <SecondaryButton onClick={reset}>Reset this device</SecondaryButton>
         <p className="t-micro c-faint profile__reset-note">
           Clears bookings, vouchers, saved items and the day plan, and returns to {ISLANDS[0]?.in_app_brand}.
         </p>
       </section>
 
-      <DemoNote>Demonstration build · not a live account</DemoNote>
     </main>
   );
 }

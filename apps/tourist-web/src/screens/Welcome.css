@@ -1,0 +1,223 @@
+.welcome {
+  position: relative;
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  background: var(--green-900);
+  overflow: hidden;
+}
+
+/* ---------- hero ---------- */
+
+.welcome__hero {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+}
+
+.welcome__hero-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center 30%;
+}
+
+.welcome__hero-scrim {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    to bottom,
+    rgba(7, 40, 33, 0.35) 0%,
+    rgba(7, 40, 33, 0.55) 45%,
+    rgba(7, 40, 33, 0.92) 72%,
+    rgba(7, 40, 33, 1) 100%
+  );
+}
+
+/* ---------- body ---------- */
+
+.welcome__body {
+  position: relative;
+  z-index: 1;
+  margin-top: auto;
+  padding: 0 var(--pad) calc(var(--pad) + env(safe-area-inset-bottom));
+  display: flex;
+  flex-direction: column;
+  gap: 28px;
+}
+
+/* ---------- header ---------- */
+
+.welcome__header {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 6px;
+  padding-top: 48px;
+}
+
+.welcome__crest {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  border: 1.5px solid rgba(251, 246, 236, 0.4);
+  margin-bottom: 6px;
+}
+
+.welcome__crest .crest__vip {
+  font-family: var(--font-display);
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  color: var(--ivory);
+}
+
+.welcome__title {
+  font-family: var(--font-display);
+  font-size: 32px;
+  font-weight: 700;
+  line-height: 1.1;
+  color: var(--ivory);
+  letter-spacing: -0.01em;
+}
+
+.welcome__sub {
+  font-size: 14px;
+  line-height: 1.4;
+  color: rgba(251, 246, 236, 0.7);
+}
+
+/* ---------- form ---------- */
+
+.welcome__form {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.welcome__field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.welcome__label {
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: rgba(251, 246, 236, 0.6);
+}
+
+.welcome__input {
+  height: 48px;
+  padding: 0 14px;
+  border-radius: var(--r-md);
+  border: 1.5px solid rgba(251, 246, 236, 0.2);
+  background: rgba(251, 246, 236, 0.08);
+  color: var(--ivory);
+  font-size: 16px;
+  font-family: var(--font-ui);
+  outline: none;
+  transition: border-color 0.15s;
+  -webkit-appearance: none;
+}
+
+.welcome__input::placeholder {
+  color: rgba(251, 246, 236, 0.35);
+}
+
+.welcome__input:focus {
+  border-color: rgba(251, 246, 236, 0.5);
+  background: rgba(251, 246, 236, 0.12);
+}
+
+/* ---------- island grid ---------- */
+
+.welcome__islands {
+  border: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.welcome__islands > .welcome__label {
+  display: block;
+  margin-bottom: 2px;
+}
+
+.welcome__island-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.welcome__island-btn {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  padding: 12px 14px;
+  border-radius: var(--r-md);
+  border: 1.5px solid rgba(251, 246, 236, 0.15);
+  background: rgba(251, 246, 236, 0.06);
+  cursor: pointer;
+  text-align: left;
+  touch-action: manipulation;
+  transition: background 0.12s, border-color 0.12s;
+}
+
+.welcome__island-btn.is-on {
+  border-color: rgba(251, 246, 236, 0.45);
+  background: rgba(251, 246, 236, 0.14);
+}
+
+.welcome__island-name {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ivory);
+  line-height: 1.2;
+}
+
+.welcome__island-dest {
+  font-size: 11px;
+  color: rgba(251, 246, 236, 0.5);
+}
+
+.welcome__island-check {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+}
+
+/* ---------- CTA ---------- */
+
+.welcome__cta {
+  height: 52px;
+  border-radius: var(--r-full);
+  border: none;
+  background: var(--ivory);
+  color: var(--green-900);
+  font-size: 15px;
+  font-weight: 700;
+  font-family: var(--font-ui);
+  letter-spacing: 0.01em;
+  cursor: pointer;
+  touch-action: manipulation;
+  transition: opacity 0.15s, transform 0.1s;
+}
+
+.welcome__cta:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.welcome__cta:not(:disabled):active {
+  transform: scale(0.98);
+}

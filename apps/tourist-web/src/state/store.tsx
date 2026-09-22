@@ -91,6 +91,7 @@ export interface AppState {
    */
   locationConsent: boolean;
   onboarded: boolean;
+  guestName: string;
 }
 
 function initialState(): AppState {
@@ -107,6 +108,7 @@ function initialState(): AppState {
     offerShownForIslands: [],
     locationConsent: false,
     onboarded: false,
+    guestName: '',
   };
 }
 
@@ -123,7 +125,7 @@ type Action =
   | { type: 'planExperience'; experienceId: string }
   | { type: 'unplanExperience'; experienceId: string }
   | { type: 'setLocationConsent'; granted: boolean }
-  | { type: 'setOnboarded' }
+  | { type: 'setOnboarded'; name: string }
   | { type: 'reset' };
 
 function reducer(state: AppState, action: Action): AppState {
@@ -256,7 +258,7 @@ function reducer(state: AppState, action: Action): AppState {
       return { ...state, locationConsent: action.granted };
 
     case 'setOnboarded':
-      return { ...state, onboarded: true };
+      return { ...state, onboarded: true, guestName: action.name };
 
     case 'reset':
       return initialState();

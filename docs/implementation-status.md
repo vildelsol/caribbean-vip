@@ -3,7 +3,7 @@
 Per operating rule 6: no requirement is silently omitted. Every requirement is marked
 `complete` · `partial` · `blocked` · `deferred` · `not started`.
 
-**Last updated:** 2026-08-02 · **Current milestone:** M0–M2 complete, M3 complete in demo mode
+**Last updated:** 2026-09-22 · **Current milestone:** M0–M7 complete in demo mode; M3 backend deployed, first live payment test pending; M8 in progress
 
 ---
 
@@ -12,148 +12,70 @@ Per operating rule 6: no requirement is silently omitted. Every requirement is m
 | Milestone | Status | Notes |
 |---|---|---|
 | First deliverable (docs) | complete | PRD, build prompt, architecture, plan, status, setup, test plan, ERD, traceability, open decisions written. |
-| M0 — Repository foundation | complete | pnpm monorepo, shared config, `@cvip/types` with 38 unit tests, `@cvip/ui` tokens with 9 contrast tests, three app shells building, CI, env templates. All gates green — see verification log. |
-| M1 — Auth and domain foundation | complete | 11 migrations covering all 24 PRD entities plus 3 additions; RLS on all 29 tables; `reserve_availability` and `redeem_voucher`; Jamaica seed; auth in all three apps; 5 SQL test files plus a concurrency suite. |
-| M2 — Tourist discovery | complete | Full-text search with filters and sort, Explore sections, Nearby list with distance, experience detail, saved items, maps/location adapters. 7 SQL test files; 98 unit tests. |
-| M3 — Booking, Stripe and redemption | **complete in demo mode** | Booking, confirmation, Trips, QR voucher and the vendor scanner are all built and walked end to end in a browser. `packages/payments` core complete (44 tests). **Not complete against a real backend:** the `checkout-session` and `stripe-webhook` Edge Function adapters are not built, so no Stripe payment has ever been taken. |
-| M4 — Vendor portal | not started | |
-| M5 — Admin console | not started | |
-| M6 — Geofenced offers | not started | |
-| M7 — Irie AI | not started | |
-| M8 — Hardening | not started | |
+| M0 — Repository foundation | complete | pnpm monorepo, shared config, `@cvip/types` with 38 unit tests, `@cvip/ui` tokens with 9 contrast tests, three app shells building, CI, env templates. |
+| M1 — Auth and domain foundation | complete | 11 migrations; RLS on all 29 tables; `reserve_availability` and `redeem_voucher`; Jamaica seed; auth in all three apps; 5 SQL test files plus a concurrency suite. |
+| M2 — Tourist discovery | complete | Full-text search, Explore sections, Nearby with distance, experience detail, saved items, location adapters. 98 unit tests. |
+| M3 — Booking, Stripe, redemption | **backend deployed; first live payment pending** | Edge Functions (`checkout-session`, `stripe-webhook`, `booking-status`, `resolve-slot`) are ACTIVE on `xtyuvtlnfougbjadkull`. Webhook registered. Tourist app live at `https://caribbean-vip-tourist-web.vercel.app`. First end-to-end Stripe payment not yet executed — see HANDOVER §5. |
+| M4 — Vendor portal | **complete in demo mode** | `apps/vendor-web`: onboarding, listings (edit/publish/new), availability (editable slots), earnings, billing, scan. Write path runs in local state. |
+| M5 — Admin console | **complete in demo mode** | `apps/admin-web`: vendor and listing review, audit log. |
+| M6 — Geofenced offers | **wired (2026-09-22)** | Real GPS triggers offer on 250 m entry; 400 m hysteresis; demo timer fallback for simulated/no-consent positions. `data/geofence.ts` pure, needs unit tests. |
+| M7 — Irie AI | **complete in demo mode** | `Irie.tsx` itinerary builder, 680 lines. Irie rule-matcher and greeting retypeset. Real model not wired (open decision). |
+| M8 — Hardening | **in progress** | 289 tests; a11y pass (checkout live region, touch-action, LCP priority, reduced-motion); token contrast enforced via `tokens.test.ts`. |
+
+---
 
 ## Requirements
 
-Detailed per-requirement status lives in [`traceability.md`](traceability.md).
+### Tourist app (T-series)
 
-After M3: **T-01, T-02, T-03 complete**. **T-04, T-06, V-04, V-05 complete in demo mode** — the
-screens exist, the real pricing, voucher codec and state machines run behind them, and the whole
-journey has been walked in a browser. **T-05 and T-09 partial**: booking, capacity hold, cancellation
-and voucher invalidation all work, but no Stripe payment has ever been taken and no refund has ever
-been issued, because the Edge Function adapters are not built. T-07 **partial** (both consent flags
-and their controls exist; the geofence trigger is M6). The rest `not started`. None are deferred or
-dropped.
+| Req | Status | Notes |
+|---|---|---|
+| T-01 Island selection | complete | Explore + Profile switcher. |
+| T-02 Browse experiences | complete | Explore sections, category filter, ranked list. |
+| T-03 Experience detail | complete | Photos, description, duration, price, availability, save. |
+| T-04 Search | complete in demo mode | Full-text search with filters and sort, seeded data. |
+| T-05 Booking + payment | partial | Demo path complete. Live Stripe path deployed; first live payment not yet executed. |
+| T-06 Confirmation + ticket | complete in demo mode | QR voucher, booking summary, Trips. |
+| T-07 Location + geofence | partial | Consent flow complete; geofence wired to real GPS (M6 done). Push channel (background delivery) is M6 deferred. |
+| T-08 Irie AI planner | complete in demo mode | Itinerary builder, day plan state, rule-matched suggestions. |
+| T-09 Redemption scan | complete in demo mode | QR display and vendor scan path both built. |
+| T-10 Guest sign-up / onboarding | **complete (2026-09-22)** | Welcome screen: name + island selection; gates app on first launch; name used on Profile. |
 
-"Complete in demo mode" is deliberately not the same as "complete". Demo mode proves the flows;
-it does not prove the integration. See "Known gaps" in [`HANDOVER.md`](HANDOVER.md).
+### Vendor portal (V-series)
+
+| Req | Status | Notes |
+|---|---|---|
+| V-01 Onboarding | complete in demo mode | Business profile form → billing step → dashboard. |
+| V-02 Listings | **complete in demo mode (2026-09-22)** | Edit, Publish/Unpublish, New listing — write path in local state. |
+| V-03 Availability | **complete in demo mode (2026-09-22)** | Listing selector; tap-to-edit slot capacity; in-memory overrides. |
+| V-04 Today manifest | complete in demo mode | Departure order, check-in status, next departure card. |
+| V-05 Scan + redeem | complete in demo mode | Camera QR scan, redemption state machine, success/already-used/invalid states. |
+| V-06 Billing | complete in demo mode | Billing details form, plan display. |
+| V-07 Earnings | complete in demo mode | Gross / platform fee / net, today + weekly, per-listing breakdown. |
+
+---
 
 ## Security findings fixed during M1
 
-Recorded because both were found by tests rather than by review, which is the argument for writing
-the negative cases in the milestone that introduces the schema rather than deferring them to M8.
-
 | Finding | Severity | Fix |
 |---|---|---|
-| **Privilege escalation via self-update.** `profiles_self_update` let a signed-in tourist set their own `role`, because RLS is per-row and `role` lives on the row the user is allowed to edit. A tourist could have made themselves `super_admin` and walked into the admin console. | High | `guard_profile_privileges()` trigger: no self-role-change, and only a super admin may grant or revoke admin roles (PRD §4). Ordinary preference updates still work — asserted by a test, so the guard cannot be "fixed" later by blocking all self-updates. |
-| **Import-time crash on missing configuration.** The Supabase client threw at module scope, which broke `next build` for anyone without a `.env` and would have made the repo unbuildable on a fresh clone. | Medium | `createLazyBrowserClient` defers construction to first use, so an unconfigured app renders its labelled unconfigured state instead of failing to build (operating rule 4). |
+| **Privilege escalation via self-update.** `profiles_self_update` let a tourist set their own `role`. | High | `guard_profile_privileges()` trigger: no self-role-change; only super admin may grant/revoke admin roles. |
+| **Import-time crash on missing config.** Supabase client threw at module scope, breaking `next build` on a fresh clone. | Medium | `createLazyBrowserClient` defers construction to first use. |
 
-Two test defects were also corrected: a blocked `UPDATE`/`DELETE` under RLS matches zero rows
-rather than raising, and an `INSERT … SELECT` whose source rows are filtered away by RLS inserts
-nothing and trivially "passes". Both assertions now check the actual effect.
+---
 
-## Verification log
+## Open decisions (from `open-decisions.md`)
 
-Per operating rule 5, no feature is claimed to work without a recorded command and result.
+| Decision | Status |
+|---|---|
+| OD-02 — Stripe Connect vs manual payouts | open — affects vendor onboarding UI and payout reconciliation |
+| OD-07 — Irie real model | open — rule-matcher complete; real Claude API call not wired |
+| OD-09 — Multi-currency display | resolved — USD minor amounts throughout; island currency display-only |
 
-| Date | Command | Result |
-|---|---|---|
-| 2026-08-02 | `node -v` / `npm -v` | v26.4.0 / 11.17.0 — toolchain present |
-| 2026-08-02 | `git init` in `caribbean-vip/` | repository created |
-| 2026-08-02 | `pnpm exec vitest run` | **47 passed**, 5 files, 0 failed |
-| 2026-08-02 | `pnpm -r run typecheck` | exit 0 across all five workspaces |
-| 2026-08-02 | `pnpm exec eslint .` | exit 0 |
-| 2026-08-02 | `pnpm --filter @cvip/vendor-web build` | exit 0 — 2 routes prerendered |
-| 2026-08-02 | `pnpm --filter @cvip/admin-web build` | exit 0 — 2 routes prerendered |
-| 2026-08-02 | `expo export --platform ios` | iOS bundle succeeded, 930 modules |
-| 2026-08-02 | Inspected prerendered HTML of both portals | Correct copy and brand tokens present (`#10828A`, `#9E8541`, `#E2D6C2`) |
-| 2026-08-02 | `./scripts/db-test.sh` | Fresh DB, 11 migrations applied in order, seed applied, **5/5 SQL test files pass** |
-| 2026-08-02 | `./scripts/db-concurrency-test.sh` | **V-03:** 16 concurrent reservations for 1 seat → exactly 1 won, `booked_count` = 1. **V-05:** 16 concurrent scans → exactly 1 `ok`, 15 `already_redeemed`, all 16 recorded |
-| 2026-08-02 | `pnpm test` (after M1) | **59 passed**, 6 files |
-| 2026-08-02 | `pnpm typecheck` / `pnpm lint` (after M1) | exit 0 across all six workspaces |
-| 2026-08-02 | Both Next builds + `expo export` (after M1) | exit 0 / exit 0 / iOS bundle 982 modules |
-| 2026-08-02 | `pnpm test` (after M2) | **98 passed**, 8 files |
-| 2026-08-02 | `./scripts/db-test.sh` (after M2) | **7/7 SQL test files pass** on a fresh database |
-| 2026-08-02 | `pnpm typecheck` / `pnpm lint` (after M2) | exit 0 |
-| 2026-08-02 | Both Next builds + `expo export` (after M2) | exit 0 / exit 0 / iOS bundle 999 modules |
-| 2026-08-02 | `pnpm test` (payments core) | **142 passed**, 10 files — 44 of them new in `@cvip/payments` |
-| 2026-08-02 | `./scripts/db-push.sh` against an empty local DB | 29 tables, RLS enabled everywhere, 16 approved listings, 6 destinations |
-| 2026-08-02 | `./scripts/db-push.sh` against a non-empty DB | correctly refused rather than half-applying |
-| 2026-08-02 | `pnpm verify` (after M3 demo build) | typecheck 8/8 · lint clean · **174 unit tests, 11 files** · **7/7 SQL files** |
-| 2026-08-02 | `pnpm db:concurrency` | 1 of 16 reservations won; 1 of 16 scans redeemed, 15 already_redeemed |
-| 2026-08-02 | `pnpm bundle:mobile` | iOS bundle exported, 4.33 MB |
-| 2026-08-02 | `pnpm --filter @cvip/vendor-web build` | Next production build clean, 196 kB first load |
-| 2026-08-02 | `python3 scripts/seed-media/fetch.py` | 57 photographs, all licences verified free, 14 MB, credits regenerated |
-| 2026-08-02 | Browser walkthrough at `localhost:8081` (Expo web) | Explore → detail → book → pay → confirmation → QR voucher, on Jamaica and Barbados |
-| 2026-08-02 | Browser walkthrough at `localhost:3001` (vendor portal) | Pasted the token from the phone: 1st scan `ok`, 2nd `already_redeemed` **with the original timestamp and scanner**, tampered signature `bad_signature` |
+---
 
-Not yet verified: the mobile app running on a simulator or device (bundling and type-checking are
-verified, launch is not), and anything that needs a real Supabase instance — see Known limitations.
+## Known gaps before M3 can be marked complete
 
-### M0 deviation from plan
-
-The monorepo was specified as npm workspaces and **changed to pnpm during M0**. Expo SDK 52 (React
-18) and Next.js 15 (React 19) cannot share a hoisted `node_modules`: React Native was duplicated at
-two majors, `expo-router` was hoisted outside its Babel root, and the Next builds failed with
-"Incompatible React versions". Recorded as AD-01 in [`architecture.md`](architecture.md) with the
-two load-bearing `.npmrc` settings. `pnpm` is now a hard prerequisite.
-
-## External credentials required
-
-Per operating rule 4, none of these block the build; each sits behind an env var with a mock adapter.
-
-| Credential | Needed for | Status | Effect if absent |
-|---|---|---|---|
-| Supabase project URL + anon key | All apps | **being provisioned** — see [`supabase-provisioning.md`](supabase-provisioning.md) | Apps render a labelled unconfigured state |
-| Supabase service-role key | Edge Functions | not provided | Needed to deploy the M3 Edge Functions; the payment core is testable without it |
-| Stripe test secret + publishable key | M3 checkout | not provided | Mock payment adapter; flows testable, no real Stripe call |
-| Stripe webhook signing secret | M3 webhook | not provided | Signature verification tested against fixtures |
-| Voucher signing secret (`VOUCHER_HMAC_SECRET`) | M3 vouchers | generated locally | Dev-only value; must be rotated for staging/production |
-| Maps provider key | M2 map view | not provided — provider undecided (OD-05) | Mock map adapter; list view fully functional |
-| Notification provider key | M6 notifications | not provided — provider undecided (OD-05) | In-app notifications only |
-| AI provider key | M7 Irie AI | not provided | Non-AI search fallback, which is a PRD requirement in its own right |
-
-## Known limitations
-
-- Nothing is production-approved. See the final build principle in [`PRD.md`](PRD.md).
-- `pnpm audit` reports vulnerabilities in transitive **build-time** dependencies of the Expo
-  toolchain (`xmldom`, `node-tar`, `sharp`/libvips, `uuid`). None are in the runtime path of the
-  shipped apps, and the available fixes require breaking upgrades that conflict with Expo SDK 52's
-  pinned versions. Tracked for M8 hardening, most likely resolved by an Expo SDK upgrade rather than
-  by forcing versions.
-- The mobile app is verified to bundle and to type-check, **not to launch on a device or
-  simulator**. No Xcode simulator run has been performed.
-- The database suite runs against plain PostgreSQL with a harness standing in for Supabase's
-  `auth` schema. Migrations, RLS, triggers and the atomicity functions are genuinely exercised;
-  **Storage bucket policies and real Supabase Auth behaviour are not** — the storage migration
-  no-ops outside Supabase. Both need verifying against a hosted project before staging.
-- No hosted Supabase project exists yet, so no app has been run end-to-end against a real backend.
-- `packages/supabase/src/database.types.ts` is hand-written, not generated. It types only the
-  tables M1–M2 read; the rest are loosely typed until the milestone that reads them.
-- **The detail page's PostgREST embedded-select is not verified.** `loadExperience()` uses
-  PostgREST's nested-relation syntax, which only a real Supabase instance can execute. The
-  underlying relationships and their RLS are covered by `discovery.test.sql` as plain SQL joins,
-  but the query string itself is unproven until a hosted project exists.
-- **No map is rendered.** The maps provider is undecided (OD-05), so `MAPS_PROVIDER` defaults to
-  `mock` and Nearby ships as a distance-sorted list with an explicit "map view unavailable"
-  notice. This is a working fallback, not a finished map.
-- **Demo photography is bundled with the app; live media is still unrendered.** Demo images resolve
-  from `apps/tourist-web/public/demo` (through a static require map, in the retired Expo app). Real listings store Supabase Storage
-  paths, and no signed-URL fetching exists — with no hosted project there is nothing to fetch, so a
-  live card renders its text-only layout rather than a broken image.
-- Six commercial/legal decisions remain open — see [`open-decisions.md`](open-decisions.md). None
-  block M0–M8; all block accepting real payments or real vendors.
-
-## Added during the M3 demo build
-
-- **Demo mode rendered an empty app.** `catalogue.ts` dispatched to the demo backend correctly, but
-  every screen returned early on `isSupabaseConfigured`, which is false in demo mode. Screens now
-  gate on `hasCatalogue`. The vendor portal had the same shape of bug in its `AuthGate`.
-- **Photography.** 57 freely-licensed Wikimedia Commons photographs, downloaded and recompressed by
-  `scripts/seed-media/fetch.py`, which refuses any licence outside CC0 / CC BY / CC BY-SA / public
-  domain. Author, licence and true subject are recorded in `packages/demo/src/credits.ts` and
-  rendered under every image. Full list in [`media-credits.md`](media-credits.md).
-- **Three live islands.** Cayman and Barbados are populated and active, with their own destinations,
-  vendors and listings. An inactive island (Antigua) is seeded as a negative fixture so the RLS rule
-  that hides unlaunched markets still has a subject to be tested against.
-- **Web support for the mobile app** (`react-native-web`), so the demo runs in a browser without a
-  simulator. This is also how the journey above was verified.
+1. **First live Stripe payment** — test with card `4242 4242 4242 4242` on the Vercel URL.
+2. **`data/geofence.ts` unit tests** — 250 m / 400 m hysteresis logic needs guard tests.
+3. **Reseed drift** — `packages/demo/src/dataset.ts` dropped `[Demo]` prefix; `supabase/seed/seed.sql` still carries it.

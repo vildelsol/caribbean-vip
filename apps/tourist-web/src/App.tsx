@@ -1,6 +1,8 @@
 import { Route, Routes, useLocation } from 'react-router-dom';
 import { useEffect } from 'react';
 import { BottomNav } from './components/BottomNav';
+import { useStore } from './state/store';
+import { Welcome } from './screens/Welcome';
 import { Explore } from './screens/Explore';
 import { Nearby } from './screens/Nearby';
 import { Search } from './screens/Search';
@@ -22,7 +24,10 @@ import { BookingReturn } from './screens/BookingReturn';
  * 390pt, so a desktop letterboxes around it rather than stretching a layout nobody drew.
  */
 export function App() {
+  const { state } = useStore();
   const { pathname } = useLocation();
+
+  if (!state.onboarded) return <Welcome />;
 
   // A new screen starts at the top. Without this, navigating from the foot of Explore into a
   // listing opens the listing already scrolled halfway down it.
