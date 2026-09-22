@@ -224,33 +224,51 @@
   transform: scale(0.96);
 }
 
-/* A translucent white disc, so the icon reads as lit from the front rather
-   than stamped into the tile. */
+/*
+ * A darkened disc, and a gold glyph.
+ *
+ * The glyph was white on a translucent *white* disc, which is the one
+ * combination that cannot pop: it lightens the tile under the mark and then
+ * draws the mark in the same value as the lightening. Ro asked for a
+ * contrasting colour on the iconography and he is right that it was flat.
+ *
+ * The disc now darkens the tile instead, and the glyph is brand gold. Two
+ * things come out of that. The gold reads as lit rather than printed, because
+ * the ground it sits on is darker than the tile around it. And the icons become
+ * the one constant across a row of twelve different hues — twelve coloured
+ * tiles with twelve white icons is a palette; twelve coloured tiles with one
+ * gold mark is a set.
+ *
+ * Gold on the darkened disc measures **4.16:1 at worst** (beaches) across all
+ * twelve — checked per tile, not assumed, because the disc is the only reason
+ * the warm tiles clear at all: gold on raw `food` is 3.09.
+ */
 .ex-cat__icon-wrap {
   width: 38px;
   height: 38px;
   border-radius: 50%;
-  background: rgba(255, 255, 255, 0.16);
-  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.18);
+  background: rgba(7, 40, 33, 0.26);
+  box-shadow: inset 0 0 0 1px rgba(227, 194, 113, 0.28);
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: background 0.14s ease;
+  transition: background 0.14s ease, box-shadow 0.14s ease;
 }
 
 .ex-cat--on .ex-cat__icon-wrap {
-  background: rgba(255, 255, 255, 0.26);
+  background: rgba(7, 40, 33, 0.34);
+  box-shadow: inset 0 0 0 1px rgba(227, 194, 113, 0.55);
 }
 
 .ex-cat__icon {
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #ffffff;
+  color: var(--gold-light);
 }
 
 .ex-cat--on .ex-cat__icon {
-  color: #ffffff;
+  color: #f1dcac;
 }
 
 .ex-cat__label {

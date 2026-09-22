@@ -304,19 +304,18 @@
   margin-bottom: 1px;
 }
 
-/* The three sparkles twinkle out of phase, so the group reads as light on
-   water rather than as one blinking element. */
-.wl-crest__stars > * {
-  animation: wl-twinkle 4.4s ease-in-out infinite;
-}
-.wl-crest__stars > *:nth-child(2) { animation-delay: 0.9s; }
-.wl-crest__stars > *:nth-child(3) { animation-delay: 1.9s; }
-
-@keyframes wl-twinkle {
-  0%,
-  100% { opacity: 0.55; transform: scale(0.9); }
-  50% { opacity: 1; transform: scale(1.08); }
-}
+/*
+ * The crest's sparkles are animated by the global `.spark` rule in global.css,
+ * which twinkles the glyph's three stars individually wherever Irie's mark
+ * appears.
+ *
+ * A local `wl-twinkle` used to scale the three `<svg>` elements here as well.
+ * Once the spark rule went global that became two animations on one mark — the
+ * outer element pulsing while the paths inside it pulsed on a different cycle —
+ * which reads as a flicker rather than as a twinkle. The local one is the one
+ * that went, because the global rule is the finer effect and it is the one that
+ * keeps the mark identical on every screen it appears on.
+ */
 
 .wl-crest__word {
   font-family: var(--font-display);
@@ -926,7 +925,7 @@
   .wl__frame-img,
   .wl-crest,
   .wl-crest::before,
-  .wl-crest__stars > * {
+  .wl-crest__stars .spark {
     animation: none !important;
     transform: none !important;
   }

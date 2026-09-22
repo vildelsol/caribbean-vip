@@ -52,7 +52,14 @@ export type IconName =
   | 'moon'
   | 'bus'
   | 'family'
-  | 'bag';
+  | 'bag'
+  // --- The concierge's own suggestion glyphs --------------------------------------
+  // Drawn for the Irie rows, where the icon is the only colour on the row and so has to
+  // carry the suggestion on its silhouette alone.
+  | 'sun'
+  | 'wine'
+  | 'price-tag'
+  | 'umbrella';
 
 const STROKE: Partial<Record<IconName, string>> = {
   home: 'M4 10.5 12 4l8 6.5V20a1 1 0 0 1-1 1h-4v-6H9v6H5a1 1 0 0 1-1-1z',
@@ -84,6 +91,21 @@ const STROKE: Partial<Record<IconName, string>> = {
   pin: 'M12 21s7-6.2 7-11a7 7 0 1 0-14 0c0 4.8 7 11 7 11z',
   'shield-check': 'M12 3l7 3v5.5c0 4.4-3 8-7 9.5-4-1.5-7-5.1-7-9.5V6zM9 12l2.2 2.2L15.5 10',
   ticket: 'M3.5 12.5h17M12 8.5v12',
+
+  // --- Suggestion glyphs ------------------------------------------------------------
+  // A disc and eight rays. Six read as a flower and twelve as a cog, so the count is the
+  // whole design; the rays stop short of the edge so the glyph keeps its optical margin
+  // beside a label rather than filling the box.
+  sun: 'M12 7.6a4.4 4.4 0 1 1 0 8.8 4.4 4.4 0 0 1 0-8.8M12 2.6v2.2M12 19.2v2.2M21.4 12h-2.2M4.8 12H2.6M18.6 5.4l-1.6 1.6M7 17l-1.6 1.6M18.6 18.6L17 17M7 7L5.4 5.4',
+  // A stemmed glass. The bowl is a shallow V rather than a U: at 17px a U-bowl on a stem
+  // reads as a lightbulb, and the straight taper is what says wine.
+  wine: 'M7.8 3.5h8.4l-.7 5.1a3.6 3.6 0 0 1-7 0zM12 12.2v6.5M8.6 20.5h6.8',
+  // A tag with its eyelet. The eyelet is a separate dot below, drawn in the switch, because
+  // a hole small enough to be right is a fill and not a stroke at this size.
+  'price-tag': 'M12.4 3.2H20a.8.8 0 0 1 .8.8v7.6a1 1 0 0 1-.3.7l-8.3 8.3a1 1 0 0 1-1.4 0l-7-7a1 1 0 0 1 0-1.4l8.3-8.3a1 1 0 0 1 .7-.3z',
+  // Canopy and hook. The scalloped underside of the canopy is what separates an umbrella
+  // from a mushroom at small sizes.
+  umbrella: 'M3 12.4a9 9 0 0 1 18 0c-1.5-1.2-3-1.2-4.5 0s-3 1.2-4.5 0-3-1.2-4.5 0-3 1.2-4.5 0zM12 12.4v6.2a2.2 2.2 0 0 0 4.4 0',
 
   // --- Categories -----------------------------------------------------------------
   // Each is a silhouette first. At 13px in a chip the outline is all that survives, so these are
@@ -125,6 +147,29 @@ export function Icon({ name, size = 20, color = 'currentColor', strokeWidth = 1.
 
   // The handful that need a fill or extra geometry rather than a single stroked path.
   switch (name) {
+    /*
+     * The tag's eyelet.
+     *
+     * Drawn as a filled circle rather than as part of the path: a hole small enough to be
+     * in proportion at 17px has a diameter of about 2.4 units, and a stroked circle that
+     * small closes up into a dot anyway — so it is a dot, deliberately, at a size that
+     * survives instead of one that muddies.
+     */
+    case 'price-tag':
+      return (
+        <svg
+          {...common}
+          fill="none"
+          stroke={color}
+          strokeWidth={strokeWidth}
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        >
+          <path d={STROKE['price-tag']} />
+          <circle cx="16.4" cy="7.6" r="1.35" fill={color} stroke="none" />
+        </svg>
+      );
+
     /*
      * Three stars, each on its own class so a caller can twinkle them independently.
      *

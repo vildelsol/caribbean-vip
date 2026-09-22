@@ -416,6 +416,75 @@ button.badge::after {
   flex: none;
 }
 
+/* ---------------------------------------------------------------------------
+   The concierge's spark
+   --------------------------------------------------------------------------- */
+
+/*
+ * Wherever Irie is named, Irie is awake.
+ *
+ * This lived in `BottomNav.css` and was scoped to `.irie-badge`, so the mark
+ * twinkled in the tab bar and sat dead everywhere else it appears — the
+ * concierge header, the day-builder chips, the "ideas for you" label, the Ask
+ * Irie rows on Explore and Trips. One mark behaving two ways is worse than a
+ * still one, because the live version teaches you to expect it.
+ *
+ * It is now keyed on the glyph's own classes, which `Icon`'s `sparkle` case
+ * emits, so any sparkle anywhere animates without its caller opting in.
+ *
+ * The three stars twinkle on offset cycles rather than together: a synchronised
+ * pulse reads as a notification badge demanding attention, staggered ones read
+ * as something quietly alive and available, which is the claim. Slow and
+ * shallow on purpose — this is on every screen, and anything faster or deeper
+ * becomes the thing you cannot stop looking at.
+ *
+ * The `prefers-reduced-motion` block below collapses all of it to a stop.
+ */
+@keyframes irie-twinkle {
+  0%,
+  100% {
+    transform: scale(1);
+    opacity: var(--spark-base, 1);
+  }
+  50% {
+    transform: scale(1.18);
+    opacity: 1;
+  }
+}
+
+.spark {
+  animation: irie-twinkle 1.8s ease-in-out infinite;
+}
+
+.spark--1 {
+  --spark-base: 0.92;
+  animation-delay: 0s;
+}
+
+.spark--2 {
+  --spark-base: 0.5;
+  animation-duration: 1.4s;
+  animation-delay: 0.35s;
+}
+
+.spark--3 {
+  --spark-base: 0.38;
+  animation-duration: 1.55s;
+  animation-delay: 0.75s;
+}
+
+.spark--4 {
+  --spark-base: 0.32;
+  animation-duration: 1.3s;
+  animation-delay: 0.55s;
+}
+
+.spark--5 {
+  --spark-base: 0.28;
+  animation-duration: 1.65s;
+  animation-delay: 0.95s;
+}
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,

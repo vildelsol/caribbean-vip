@@ -211,75 +211,72 @@
 /*
  * The suggestion rows.
  *
- * Full-width rows with a coloured glyph and a chevron, rather than a wrap of
- * grey lozenges. Three things change at once and all three matter: the row is a
- * 48px target instead of a 40px pill, the colour tells you what kind of answer
- * you are asking for before you read it, and the chevron says these lead
- * somewhere — which the pills did not.
+ * Near-transparent, and identical to one another.
+ *
+ * The first version tinted each row with its own colour at 26% and put the
+ * glyph in a filled tile. Side by side with the reference it read as corporate
+ * — five coloured bars — because the colour was in the container and the glyph
+ * had been drained to white to survive it. That is a settings list.
+ *
+ * Here the row is barely there: one translucent wash, one hairline, the same
+ * for all five. All of the colour is in the glyph, at full strength, with
+ * nothing around it. Restraint in the container, expression in the mark.
  */
 .irie__intents {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 9px;
   padding: 18px var(--s-md) 0;
 }
 
 .irie-intent {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 14px;
   width: 100%;
-  min-height: 56px;
-  padding: 9px 13px 9px 9px;
+  min-height: 58px;
+  padding: 10px 14px;
   border-radius: var(--r-lg);
-  background: linear-gradient(
-    100deg,
-    color-mix(in srgb, var(--intent-color, var(--teal)) 26%, transparent) 0%,
-    rgba(251, 246, 236, 0.09) 52%,
-    rgba(251, 246, 236, 0.07) 100%
-  );
-  border: 1px solid rgba(251, 246, 236, 0.14);
+  background: rgba(251, 246, 236, 0.055);
+  border: 1px solid rgba(251, 246, 236, 0.1);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
   text-align: left;
   transition: background 0.16s ease, border-color 0.16s ease, transform 0.12s ease;
 }
 
 .irie-intent:hover {
-  border-color: color-mix(in srgb, var(--intent-color, var(--teal)) 60%, transparent);
-  background: linear-gradient(
-    100deg,
-    color-mix(in srgb, var(--intent-color, var(--teal)) 38%, transparent) 0%,
-    rgba(251, 246, 236, 0.12) 52%,
-    rgba(251, 246, 236, 0.09) 100%
-  );
+  background: rgba(251, 246, 236, 0.1);
+  border-color: rgba(251, 246, 236, 0.2);
 }
 
 .irie-intent:active {
   transform: scale(0.99);
 }
 
+/*
+ * No tile.
+ *
+ * The glyph sits on the row itself, at 22px rather than 17px — with no
+ * container to give it presence, the mark has to have its own. The faint glow
+ * is the only thing standing in for the tile, and it is the glyph's own colour,
+ * so it reads as the icon being lit rather than as a shape behind it.
+ */
 .irie-intent__icon {
   flex: none;
-  width: 38px;
-  height: 38px;
-  border-radius: var(--r-md);
+  width: 30px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  background: linear-gradient(
-    160deg,
-    color-mix(in srgb, var(--intent-color, var(--teal)) 88%, white) 0%,
-    var(--intent-color, var(--teal)) 100%
-  );
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.2),
-    0 4px 12px color-mix(in srgb, var(--intent-color, var(--teal)) 40%, transparent);
+  filter: drop-shadow(0 0 10px color-mix(in srgb, var(--intent-color, var(--gold-light)) 42%, transparent));
 }
 
 .irie-intent__label {
   flex: 1;
   min-width: 0;
-  font-size: 14.5px;
-  font-weight: 600;
+  font-size: 15.5px;
+  font-weight: 500;
+  letter-spacing: 0.002em;
   color: var(--on-dark);
 }
 
@@ -396,26 +393,27 @@
 }
 
 /*
- * The day builders lead the screen, so they are filled gold with dark type
- * rather than gold type on a 16% wash. Composing a day is the thing this tab
- * does that a search box cannot, and at a glance these were indistinguishable
- * from the five narrower questions beneath them.
+ * Gold outline, not gold fill.
+ *
+ * The fill was tried and reverted. It made these read as three solid gold
+ * buttons stacked above five coloured bars, which is the loudest possible
+ * arrangement of a screen whose subject is a concierge quietly offering to
+ * help. The hierarchy these needed is now carried by shape — a pill among
+ * rows — which leaves the fill free to come back off.
  */
 .irie-chip--gold {
   display: inline-flex;
   align-items: center;
-  gap: 7px;
-  background: linear-gradient(180deg, #f0d391 0%, var(--gold-light) 48%, #d3ab5b 100%);
-  border: none;
-  color: var(--green-950);
-  font-weight: 700;
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.5),
-    0 5px 16px rgba(227, 194, 113, 0.2);
+  gap: 8px;
+  background: rgba(227, 194, 113, 0.11);
+  border: 1px solid rgba(227, 194, 113, 0.44);
+  color: var(--gold-light);
+  font-weight: 600;
 }
 
 .irie-chip--gold:hover {
-  background: linear-gradient(180deg, #f5dca4 0%, #e8cb80 48%, #d9b263 100%);
+  background: rgba(227, 194, 113, 0.2);
+  border-color: rgba(227, 194, 113, 0.66);
 }
 
 /* --- A built day ----------------------------------------------------------- */
@@ -695,4 +693,45 @@
   font-weight: 600;
   letter-spacing: 0.004em;
   color: rgba(255, 253, 247, 0.94);
+}
+
+/* --- The foliage ------------------------------------------------------------ */
+
+/*
+ * Fixed rather than absolute, so the fronds stay put while the screen scrolls
+ * under them. A backdrop that scrolls away leaves the bottom two-thirds of a
+ * long screen exactly as flat as it was before it was added.
+ */
+.irie__fronds {
+  position: fixed;
+  top: 0;
+  right: 0;
+  width: min(88%, 420px);
+  height: 430px;
+  z-index: 0;
+  pointer-events: none;
+  /* Faded toward the left and the foot, so the fronds never reach the column
+     the body copy sits in. The text keeps the same contrast it had against the
+     flat fill; the foliage happens around it. */
+  mask-image: linear-gradient(255deg, #000 0%, rgba(0, 0, 0, 0.72) 42%, transparent 82%);
+  -webkit-mask-image: linear-gradient(255deg, #000 0%, rgba(0, 0, 0, 0.72) 42%, transparent 82%);
+}
+
+/*
+ * The breeze.
+ *
+ * A two-degree rotation about the corner the fronds are rooted in, on a 14s
+ * cycle. At this amplitude it is not visible as motion — it is only visible as
+ * the screen not being a still image, which is the whole intention.
+ */
+@media (prefers-reduced-motion: no-preference) {
+  .irie__fronds {
+    transform-origin: 96% 4%;
+    animation: irie-breeze 14s ease-in-out infinite alternate;
+  }
+}
+
+@keyframes irie-breeze {
+  from { transform: rotate(-0.9deg) scale(1); }
+  to { transform: rotate(1.1deg) scale(1.022); }
 }

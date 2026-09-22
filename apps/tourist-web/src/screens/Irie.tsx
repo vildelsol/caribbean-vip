@@ -28,6 +28,7 @@ import {
 } from '../data/itinerary';
 import { useStore } from '../state/store';
 import { Icon, type IconName } from '../components/Icon';
+import { PalmFronds } from '../components/PalmFronds';
 import { Badge, Photo, Price, Stepper, formatUsd, type BadgeTone } from '../components/kit';
 import './Irie.css';
 
@@ -70,20 +71,34 @@ interface Intent {
    * The row's glyph and its colour.
    *
    * These were unadorned text pills, which on a dark ground reads as a wall of
-   * grey lozenges — the concierge's opening move looked like a tag cloud. An
-   * icon in its own jewel tone gives each suggestion a shape you can aim at
-   * without reading, which is what the reference board does with its rows.
-   * The hues are the same twelve-tone set the category tiles use.
+   * grey lozenges — the concierge's opening move looked like a tag cloud.
+   *
+   * The first fix put each glyph in a filled tile of its own jewel tone. That
+   * was backwards, and Ro called it: it puts the colour in the container and
+   * drains the glyph to white, which is how a settings list is built, not a
+   * concierge. The colour belongs in the *glyph*, on a row that barely exists.
+   * Restraint in the container, expression in the mark.
+   *
+   * So these are light, warm hues meant to sit on near-black green — not the
+   * dark jewel tones the category tiles use, which are chosen to carry white
+   * type on top of them and would disappear here.
    */
   icon: IconName;
   color: string;
 }
 
+/** Which glyph stands for which shape of day. Keyed by `ItineraryShape.id`. */
+const SHAPE_ICONS: Record<string, IconName> = {
+  'full-day': 'sun',
+  afternoon: 'sun',
+  evening: 'moon',
+};
+
 const INTENTS: Intent[] = [
   {
     chip: 'Something under $50',
-    icon: 'ticket',
-    color: '#92600E',
+    icon: 'price-tag',
+    color: '#E3C271',
     reply: 'Here is what I can find under US$50 per person nearby.',
     categories: [],
     maxMinor: 5000,
@@ -92,15 +107,15 @@ const INTENTS: Intent[] = [
   {
     chip: 'Quiet beach nearby',
     icon: 'beach',
-    color: '#0E7490',
+    color: '#5AC8D8',
     reply: 'These stay calm even when the cruise ships are in.',
     categories: ['beaches', 'water_sports'],
     reason: (_e, m) => `${formatKm(m)} out, so it misses the port crowds.`,
   },
   {
     chip: 'Dinner with a view',
-    icon: 'food',
-    color: '#B04E1C',
+    icon: 'wine',
+    color: '#E2674A',
     reply: 'Somewhere to end the day.',
     categories: ['food', 'nightlife'],
     reason: () => 'Good at sunset, and it takes a same-day table.',
@@ -108,15 +123,15 @@ const INTENTS: Intent[] = [
   {
     chip: 'Family activity',
     icon: 'family',
-    color: '#A62F5E',
+    color: '#E884A8',
     reply: 'These work well with children along.',
     categories: ['family', 'beaches', 'adventure'],
     reason: () => 'Suits mixed ages, and there is shade.',
   },
   {
     chip: 'Rainy-day option',
-    icon: 'drum',
-    color: '#9E2F27',
+    icon: 'umbrella',
+    color: '#8FB8E0',
     reply: 'Mostly indoors, or fine whatever the weather does.',
     categories: ['culture', 'food'],
     reason: () => 'Indoors and shaded — good after a hot morning.',
@@ -238,6 +253,10 @@ export function Irie() {
 
   return (
     <main className="screen screen--deep irie">
+      {/* Drawn, not photographed — see PalmFronds for why. It is the first child
+          so everything else stacks above it without a z-index on each one. */}
+      <PalmFronds className="irie__fronds" />
+
       <header className="irie__head">
         {/* The mark reads left to right as a name, then its spark, then its
             role — the reference board's order. The sparkle trailed the name
@@ -276,7 +295,9 @@ export function Irie() {
           <span className="ctx">{ranked.length} experiences nearby</span>
           <span className="ctx">{state.bookings.filter((b) => b.status === 'confirmed').length} booked</span>
           {planned > 0 ? <span className="ctx">{planned} planned</span> : null}
-          <span className="ctx">{state.vouchers.length} vouchers</span>
+          <span className="ctx">
+            {state.vouchers.length} {state.vouchers.length === 1 ? 'voucher' : 'vouchers'}
+          </span>
         </div>
       </section>
 
@@ -292,9 +313,15 @@ export function Irie() {
               className="irie-chip irie-chip--gold"
               onClick={() => askForDay(shape)}
             >
-              {/* Dark, not gold — the chip is now a gold fill, and a gold glyph
-                  on it disappears. */}
-              <Icon name="sparkle" size={13} color="var(--green-950)" />
+              {/* The glyph says which part of the day it builds. A sparkle on
+                  all three said only "this is the AI one", which the whole
+                  screen already says. */}
+              <Icon
+                name={SHAPE_ICONS[shape.id] ?? 'sparkle'}
+                size={15}
+                color="var(--gold-light)"
+                strokeWidth={1.8}
+              />
               {shape.chip}
             </button>
           ))}
@@ -311,7 +338,7 @@ export function Irie() {
             style={{ '--intent-color': i.color } as CSSProperties}
           >
             <span className="irie-intent__icon" aria-hidden="true">
-              <Icon name={i.icon} size={17} strokeWidth={1.9} color="#FFFFFF" />
+              <Icon name={i.icon} size={22} strokeWidth={1.75} color={i.color} />
             </span>
             <span className="irie-intent__label">{i.chip}</span>
             <Icon name="chevron-right" size={16} color="rgba(251,246,236,0.5)" />
