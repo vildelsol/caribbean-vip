@@ -1201,6 +1201,63 @@ checkout, and checkout cannot complete locally (`.env` configures Supabase, so `
 and `ensureLiveUser()` fails). The Ticket fix is a one-line data substitution in a field that
 already rendered, but neither screen has had a visual pass and neither should be assumed good.
 
+### More picture, same screen (2026-09-22)
+
+Ro on the Nearby list: *"there is a lot more empty space, I don't want it to look congested, use
+the space for imagery."*
+
+**The measurement first.** Each row was 343x120 with a 92x92 photograph floating inside 13px of
+padding on all four sides — **21% of the card was image**, on a screen whose entire job is to make
+someone want to go somewhere. The rest was ivory.
+
+The photograph now bleeds to three edges and widens to 118px: **34%**, and the row height does not
+change. The space it gains is the gutter that was being spent framing it, so the same number of
+rows still fit on a screen. That is the version of "use the space for imagery" that does not also
+mean "fit less on the screen" — which is what growing the row would have meant.
+
+The negative margins on `.near-row__photo` must match `.near-row__inner`'s padding exactly. If one
+changes, the other changes with it.
+
+**The detail gallery — half the photography was never seen.** 24 of the 38 listings carry two or
+three photographs and `ExperienceDetail` only ever rendered `media[0]`. A scroll-snap rail now
+shows all of them, with dots. No new assets, no library: native scrolling brings momentum,
+rubber-banding, keyboard and screen-reader behaviour for free, and degrades to a plain scrollable
+strip where the snap properties are unsupported.
+
+**`shown` exists for a licence reason before a design one.** Each photograph carries its own
+attribution, so a credit line pinned to `media[0]` while frame two is on screen is the wrong author
+under the wrong picture — a licence breach, not a cosmetic slip. `creditFor(frames[shown])` follows
+the scroll. Verified: scrolling to frame two changes the credit from "Don Ramey Logan" to
+"Breakyunit at English Wikipedia".
+
+The dots were initially placed at `bottom: 14px` and were invisible — `.detail__sheet` overlaps the
+foot of the hero by 24px and painted over them. They sit on the flags' baseline now, right-aligned
+so they cannot collide with the availability badge.
+
+**The Nearby filter bar's scroll edge is faded.** It is a 239px window onto ~500px of chips, so the
+last visible chip is always sliced part-way through; with a hard edge that reads as a rendering
+fault rather than as "there is more". The dots the chips gained made the overflow more likely,
+which is what surfaced it.
+
+### Rejected: cycling imagery in list cards (2026-09-22)
+
+Ro asked whether a hover/thumb-over effect cycling through scenes would bloat the app. Recorded
+because the answer is not about bytes.
+
+**In a list, no — and the reason is legibility, not weight.** A list where every row animates
+competes with itself; the eye cannot settle anywhere, so a screen built for scanning becomes one
+you have to fight. The payload cost is real too — 18 rows x 3 photos is 54 decodes where 18 were
+needed, on a device that may be roaming — but the scanning cost is what rules it out.
+
+There is no hover on a phone, so the mobile forms would be press-and-hold (which fights the scroll
+gesture, and is invisible as an affordance) or a per-row carousel (which eats the horizontal
+gesture and turns every row into a mini-gallery).
+
+**Where it is right: one surface at a time, on purpose.** The onboarding splash cross-fades four
+stills because it is a single full-screen frame with nothing to scan. The detail gallery swipes
+because the guest has already chosen that listing and is looking, not scanning. Both are one
+subject with the viewer's full attention; a list is neither.
+
 ### Geofencing — wired (2026-09-22)
 
 `apps/tourist-web/src/data/geofence.ts` is pure: `evaluateFences(origin, fences, previous)` returns

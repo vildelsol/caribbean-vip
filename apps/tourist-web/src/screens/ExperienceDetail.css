@@ -403,3 +403,81 @@
   flex: 1;
   min-height: 48px;
 }
+
+/* --- Hero gallery ---------------------------------------------------------- */
+
+/*
+ * A scroll-snap rail, not a carousel library.
+ *
+ * Native scrolling gives momentum, rubber-banding, keyboard and screen-reader
+ * behaviour for free, and it degrades to a plain scrollable strip anywhere the
+ * snap properties are unsupported. A JS carousel would have had to reimplement
+ * all of that and would arrive as a dependency on the screen that already has
+ * the largest image payload in the app.
+ */
+.detail__gallery {
+  display: flex;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
+  /* The scrim and the controls sit above this; without a stacking context of
+     its own a scrolled frame can paint over them on iOS. */
+  isolation: isolate;
+}
+
+.detail__gallery::-webkit-scrollbar {
+  display: none;
+}
+
+.detail__frame {
+  flex: 0 0 100%;
+  scroll-snap-align: center;
+  scroll-snap-stop: always;
+}
+
+/*
+ * The dots sit above the scrim and below the flags.
+ *
+ * Centred rather than aligned to the flags: they are a position indicator, not
+ * a label, and a centred row is the one arrangement that cannot be mistaken for
+ * something with content in it.
+ */
+.detail__dots {
+  position: absolute;
+  left: 0;
+  right: 0;
+  /*
+   * Clear of the sheet, not centred in the hero.
+   *
+   * The sheet overlaps the foot of the hero by 24px, so dots at `bottom: 14px`
+   * were painted underneath it and never seen once. They now sit on the flags'
+   * own baseline — the last band of the photograph that is actually visible —
+   * and are pushed to the right so they cannot collide with the availability
+   * badge on the left.
+   */
+  bottom: 42px;
+  display: flex;
+  justify-content: flex-end;
+  padding-right: var(--s-md);
+  gap: 6px;
+  pointer-events: none;
+  z-index: 2;
+}
+
+.detail__dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: rgba(251, 246, 236, 0.45);
+  box-shadow: 0 1px 3px rgba(7, 40, 33, 0.5);
+  transition: width 0.2s ease, background 0.2s ease;
+}
+
+/* The active dot stretches rather than growing: a larger circle among circles
+   reads as a different kind of thing, a capsule reads as "you are here". */
+.detail__dot.is-on {
+  width: 18px;
+  border-radius: var(--r-pill);
+  background: var(--gold-light);
+}

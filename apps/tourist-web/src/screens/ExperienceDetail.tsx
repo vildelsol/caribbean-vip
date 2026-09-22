@@ -1,3 +1,4 @@
+import { useRef, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import {
   creditFor,
@@ -5,6 +6,7 @@ import {
   formatKm,
   heroUrl,
   isWalkable,
+  mediaUrl,
   qualifiesForRumPunch,
   simulatedPosition,
   travelFrom,
@@ -71,7 +73,33 @@ export function ExperienceDetail() {
   const day = firstBookableDay(experience);
   const slots = day ? slotsFor(experience, day.iso) : [];
   const soonest = slots.find((s) => s.capacityRemaining > 0);
-  const credit = creditFor(experience.media[0]);
+  /**
+   * The gallery.
+   *
+   * 24 of the 38 listings carry two or three photographs and this screen only
+   * ever rendered `media[0]` — half the photography already in the repository
+   * was never seen by anyone. A scroll-snap row costs no new assets and no
+   * library.
+   *
+   * `shown` tracks which frame is in view, and it exists for a licence reason
+   * before a design one: each photograph carries its own attribution, so a
+   * credit line pinned to `media[0]` while frame two is on screen is the wrong
+   * author under the wrong picture. The credit follows the scroll.
+   */
+  const frames = experience.media.length > 0 ? experience.media : [undefined];
+  const [shown, setShown] = useState(0);
+  const railRef = useRef<HTMLDivElement>(null);
+  const credit = creditFor(frames[shown]);
+
+  const onGalleryScroll = () => {
+    const el = railRef.current;
+    if (!el) return;
+    // Round rather than floor: at rest a snapped frame can sit a sub-pixel
+    // short of its offset, which floors to the previous index and flickers the
+    // dots back and forth as the scroll settles.
+    const i = Math.round(el.scrollLeft / el.clientWidth);
+    setShown((prev) => (prev === i ? prev : Math.max(0, Math.min(frames.length - 1, i))));
+  };
 
   const facts = [
     { label: 'Duration', value: durationLabel(experience.durationMinutes) },
@@ -86,15 +114,49 @@ export function ExperienceDetail() {
     <main className="screen detail">
       {/* ---------------- Hero ---------------- */}
       <header className="detail__hero">
-        <Photo
-          src={heroUrl(experience)}
-          mediaKey={experience.media[0]}
-          alt={experience.title}
-          ratio="390 / 308"
-          radius="0"
-          priority
-        />
+        {frames.length > 1 ? (
+          <div
+            className="detail__gallery"
+            ref={railRef}
+            onScroll={onGalleryScroll}
+            role="group"
+            aria-label={`${frames.length} photographs of ${experience.title}`}
+          >
+            {frames.map((key, i) => (
+              <div className="detail__frame" key={key ?? i}>
+                <Photo
+                  src={mediaUrl(key)}
+                  mediaKey={key}
+                  alt={i === 0 ? experience.title : ''}
+                  ratio="390 / 308"
+                  radius="0"
+                  priority={i === 0}
+                />
+              </div>
+            ))}
+          </div>
+        ) : (
+          <Photo
+            src={heroUrl(experience)}
+            mediaKey={experience.media[0]}
+            alt={experience.title}
+            ratio="390 / 308"
+            radius="0"
+            priority
+          />
+        )}
         <span className="detail__scrim" />
+
+        {frames.length > 1 ? (
+          <div className="detail__dots" aria-hidden="true">
+            {frames.map((key, i) => (
+              <span
+                key={key ?? i}
+                className={`detail__dot ${i === shown ? 'is-on' : ''}`}
+              />
+            ))}
+          </div>
+        ) : null}
 
         <div className="detail__hero-controls">
           <RoundButton icon="chevron-left" label="Back" onClick={() => navigate(-1)} />

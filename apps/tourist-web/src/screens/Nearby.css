@@ -286,6 +286,16 @@
   border-bottom: 1px solid var(--border-cool);
 }
 
+/*
+ * The scroll edge is faded, not cut.
+ *
+ * This is a 239px window onto about 500px of chips, so the last visible chip is
+ * always sliced part-way through. With a hard edge that slice reads as a
+ * rendering fault — something clipped by mistake — rather than as "there is
+ * more if you push". The fade is the whole difference, and it costs one
+ * property. The dots the chips gained made the overflow more likely, which is
+ * what surfaced it.
+ */
 .nearby-filters-bar {
   display: flex;
   gap: 8px;
@@ -293,6 +303,8 @@
   scrollbar-width: none;
   padding-bottom: 2px;
   flex: 1;
+  mask-image: linear-gradient(90deg, #000 0%, #000 86%, transparent 100%);
+  -webkit-mask-image: linear-gradient(90deg, #000 0%, #000 86%, transparent 100%);
 }
 
 .nearby-filters-bar::-webkit-scrollbar {
@@ -341,12 +353,43 @@
 .near-row__inner {
   gap: 13px;
   padding: 13px;
-  align-items: flex-start;
+  align-items: stretch;
 }
 
+/*
+ * The photograph is a panel, not a thumbnail.
+ *
+ * It was a 92px square floating inside 13px of padding on all four sides, which
+ * made the picture **21% of the card** — on a screen whose entire job is to make
+ * you want to go somewhere. The rest was ivory.
+ *
+ * Bleeding it to three edges and widening it to 118px takes that to about 36%
+ * without the row growing by a single pixel: the space it gains is the gutter
+ * that was being spent on framing it, and the same number of rows still fit on
+ * a screen. More picture, no more scrolling — which is the version of "use the
+ * space for imagery" that does not also mean "fit less on the screen".
+ *
+ * The negative margins are what escape the inner padding. They have to match it
+ * exactly; if the padding changes, these change with it.
+ */
 .near-row__photo {
-  width: 92px;
+  width: 118px;
   flex: none;
+  align-self: stretch;
+  margin: -13px 0 -13px -13px;
+  border-radius: 0 !important;
+}
+
+/* The card clips, so the photo takes the card's own left corners rather than
+   drawing its own — a panel with its own radius inside a rounded card reads as
+   a sticker on a card. */
+.near-row {
+  overflow: hidden;
+}
+
+.near-row__photo img {
+  height: 100%;
+  object-fit: cover;
 }
 
 .near-row__dist {
