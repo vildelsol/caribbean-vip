@@ -942,6 +942,76 @@ missing"* — on the single most important transition in the app. The effect now
 return. Caught from the browser console while working on the screens either side of it, not by a
 test; there is no test that walks that transition, and that remains a gap.
 
+### The offer, Trips, and the Irie detail pass (2026-09-22, evening)
+
+**A script face joined the brand.** `--font-script` — Parisienne — is in `packages/ui/tokens.css`
+and loaded in `apps/tourist-web/index.html`. It is used for **one word on one screen**: "Special"
+in the geofenced offer's headline, *You're Near Something **Special***. Ro asked for this
+specifically off the reference board and he is right about why it works — the sentence turns from a
+statement into a flourish exactly where the offer does. **Do not use it a second time.** A second
+use makes it a typeface; one use keeps it a moment. It has no React Native counterpart in `fonts`
+yet; when the native app needs it, add `Parisienne_400Regular` rather than falling back to the
+system cursive, which is a different letterform on every platform.
+
+**The offer screen.** It was a flat `--green-950` behind a very tall ivory ticket pinned 150px from
+the top, so the green was a 96px strip and the ticket ran off the foot — the drama the screen
+exists for was not on screen. It is now a dark map: a faint two-gradient road grid (masked at the
+edges), a warm bloom under the guest's position, and a radar ping expanding out of it on a 3.4s
+cycle. The ticket floats with `margin: auto` on the block axis rather than a fixed offset, which is
+what makes it land correctly on every phone instead of only on the one it was measured against.
+
+Getting it to float meant finding ~160px. Where it came from, and why each is a real improvement
+rather than a cut:
+
+- **"Not now" removed.** It did exactly what the × does. `.voucher__close` is in the 44px hit-area
+  list in `global.css` and carries an aria-label, so the labelled escape is still there.
+- **"YOU'RE NEAR" removed from the card.** The screen's headline now opens with those words.
+- **The terms collapsed** into a `<details>` whose summary names the restriction that actually
+  catches people out — 18+, one per adult. Still on the screen, still one tap from the price.
+- **The walk pill became a line.** It was a third rounded container nested inside two others.
+
+The stub is now **sand rather than ivory**: a perforation between two identical creams is a dashed
+line, between two different creams it is a ticket you could tear.
+
+**Trips.** The day total was two pale ivory rows on an ivory ground, which gave the number the
+screen exists to total no more weight than the hairline beside it. It is now a **dark green bar**
+with the amount at display weight and a gold-outlined *View details*. Beneath it, a **VIP Pass
+card**. The reference board draws one pass for the whole day; this shows the **next booking's own
+ticket** instead, because a single day-pass QR is a credential no vendor scanner can verify, and
+the one claim this product cannot fake is that the code on the screen scans.
+
+While rebuilding it: the timeline could show a suggested stop at US$65 above a total reading US$0,
+because the total sums confirmed bookings only. That invariant is right and stays — no figure on
+this screen is recomputed. The suggestions' "from" sum is now shown on **its own line**
+(`plannedFromMinor`), so both numbers are correct and the screen no longer looks broken.
+
+**Irie, the finer detail.** Ro asked for alignment, type scale, structure and iconography to match
+the board or better:
+
+- The name was 15px sans — the smallest type on the concierge's own screen, smaller than the row
+  labels it introduces. It is now 21px in the display serif, with the sparkle **after** it: leading
+  with the glyph makes the glyph the subject and the name its caption.
+- The intro was one 16px paragraph carrying both a statement of identity and an open question. It
+  is now two sizes — 19px/500 for the introduction, 14px muted for the question — with a short gold
+  rule under them. The rule is the pause between "how can I help" and the list of ways.
+- `POPULAR RIGHT NOW` became **"Here are some ideas for you"** with the spark: all-caps micro type
+  is a filing label, and it was introducing the one part of the screen where Irie offers something
+  unprompted.
+
+**Not verified locally, and why.** The VIP Pass card and the day total with real bookings could not
+be seen in this environment. `apps/tourist-web/.env` configures Supabase, so `isLiveMode` is true
+and `Checkout` takes the live path, which fails at `ensureLiveUser()` with "We could not start a
+secure session". No booking can be created locally, so the confirmed-booking states of Trips are
+unreachable by hand. The code typechecks and follows the same `booking.ticketToken` → `<QR>` path
+as `Ticket.tsx` and `Confirmation.tsx`, both of which work — but it has not been seen rendered.
+
+**Found, not fixed: `Open Now` is hardcoded.** `Explore.tsx` renders `<Badge tone="brand">Open
+Now</Badge>` unconditionally, and there is no opening-hours field anywhere in the dataset. It sits
+beside the from-price, the rating and the next bookable departure — all of which are real — so it
+reads as fact. It was deliberately **not** propagated to the Irie idea cards for that reason, even
+though the board shows it there. `firstBookableDay`/`slotsFor` already drive a truthful
+"Available today" elsewhere and are the obvious replacement.
+
 ### Geofencing — wired (2026-09-22)
 
 `apps/tourist-web/src/data/geofence.ts` is pure: `evaluateFences(origin, fences, previous)` returns

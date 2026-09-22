@@ -3,6 +3,7 @@ import { destinationBySlug, experienceById, heroUrl, islandById, type DemoExperi
 import { useStore } from '../state/store';
 import { Badge, Card, EmptyState, Photo, SectionHeader, formatUsd } from '../components/kit';
 import { Icon } from '../components/Icon';
+import { QR } from '../components/QR';
 import './Trips.css';
 
 function transitMinutes(from: DemoExperience | undefined, to: DemoExperience | undefined): number {
@@ -90,6 +91,18 @@ export function Trips() {
     .filter((e): e is NonNullable<typeof e> => Boolean(e) && e!.islandId === state.islandId);
 
   const dayTotalMinor = bookings.reduce((sum, b) => sum + b.totalMinor, 0);
+
+  /**
+   * What the suggested stops would add, kept *separate* from the booked total.
+   *
+   * The booked total sums the `totalMinor` each booking was confirmed at and is
+   * never recomputed — that is what keeps this screen identical to checkout and
+   * confirmation, and it must stay true. So a suggestion's price is not folded
+   * into it. It is shown on its own line, as a "from" figure, because a plan
+   * showing a suggested stop priced at US$65 above a total reading US$0 is a
+   * screen that looks broken even though both numbers are correct.
+   */
+  const plannedFromMinor = planned.reduce((sum, e) => sum + e.fromAmountMinor, 0);
   const next = bookings[0];
   const countdown = next ? startsIn(next.time) : null;
 
@@ -257,19 +270,76 @@ export function Trips() {
           <span className="trips__route-label t-micro-strong">Route · {routeKm(bookings.length)} km</span>
         </div>
 
-        <div className="trips__summary-rows">
-          <div className="row trips__summary-row">
-            <span className="t-caption c-muted grow">Estimated day total</span>
-            <span className="t-amount-sm c-brand">{formatUsd(dayTotalMinor)}</span>
+        {/*
+          * The day total, as a dark green bar.
+          *
+          * This was two pale ivory rows on an ivory ground, which put the one
+          * number the screen exists to total at the same visual weight as the
+          * hairlines around it. Reversed out of brand green with a gold-outlined
+          * action, it reads as the foot of a bill — which is what it is.
+          */}
+        <div className="trips__total">
+          <div className="grow">
+            <p className="t-micro trips__total-label">
+              {bookings.length > 0 ? 'Your day total' : 'Nothing booked yet'}
+            </p>
+            <p className="t-amount c-on-dark trips__total-amount">{formatUsd(dayTotalMinor)}</p>
+            <p className="t-micro trips__total-count">
+              {bookings.length} booked
+              {planned.length > 0
+                ? ` · ${planned.length} suggested, from ${formatUsd(plannedFromMinor)}`
+                : ''}
+            </p>
           </div>
-          <div className="row trips__summary-row">
-            <span className="t-caption c-muted grow">Ticket wallet</span>
-            <span className="t-caption-strong c-locator">
-              {bookings.length} {bookings.length === 1 ? 'pass' : 'passes'}
-            </span>
-          </div>
+          <button
+            type="button"
+            className="trips__total-cta t-caption-strong"
+            onClick={() => navigate(next ? `/ticket/${next.id}` : '/profile')}
+          >
+            View details
+          </button>
         </div>
       </section>
+
+      {/*
+        * The VIP pass.
+        *
+        * The reference board draws one pass for the whole day. This shows the
+        * *next booking's own* ticket instead, because a single day-pass QR is a
+        * credential no vendor scanner can verify — and the one claim this
+        * product cannot fake is that the code on the screen scans. So the card
+        * looks like the board's and encodes something real; when there is
+        * nothing confirmed it does not appear at all.
+        */}
+      {next ? (
+        <section className="pad">
+          <button
+            type="button"
+            className="vip-pass"
+            onClick={() => navigate(`/ticket/${next.id}`)}
+          >
+            <span className="vip-pass__crest" aria-hidden="true">
+              <span className="vip-pass__crest-word">VIP</span>
+              <span className="vip-pass__crest-rule" />
+              <span className="vip-pass__crest-sub">{island.code}</span>
+            </span>
+            <span className="vip-pass__body">
+              <span className="t-caption-strong vip-pass__title">Your VIP Pass</span>
+              <span className="t-micro vip-pass__note">
+                Show at {experienceById(next.experienceId)?.title ?? 'your next stop'}
+              </span>
+              <span className="t-micro vip-pass__ref">
+                {bookings.length > 1
+                  ? `Next of ${bookings.length} · tap for the full ticket`
+                  : 'Tap to view the full ticket'}
+              </span>
+            </span>
+            <span className="vip-pass__qr" aria-hidden="true">
+              <QR value={next.ticketToken} size={62} />
+            </span>
+          </button>
+        </section>
+      ) : null}
 
       <div className="pad">
         <button type="button" className="trips__ask" onClick={() => navigate('/irie')}>

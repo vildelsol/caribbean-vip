@@ -1,20 +1,71 @@
+/**
+ * The geofenced offer.
+ *
+ * ## The ground
+ *
+ * This was one flat `--green-950` behind a very tall ivory ticket pinned 150px
+ * from the top, which meant the green was a 96px strip at the head of the
+ * screen and the card ran off the foot. The drama the screen is supposed to
+ * have — you are standing somewhere, and somewhere has noticed — was not on
+ * screen at all.
+ *
+ * It is now a dark map: a faint road grid, a warm bloom under the guest's
+ * position, and a radar ping expanding out of it. The ticket floats centred in
+ * that, with green visible above and below it, which is the whole composition.
+ *
+ * The grid is two repeating gradients rather than an image. A map tile here
+ * would be a network request at the exact moment the app is claiming to know
+ * where you are standing, and a stylised grid says "map" at this opacity
+ * without pretending to be one.
+ */
 .offer {
-  background: var(--green-950);
+  position: relative;
+  min-height: 100dvh;
   display: flex;
   flex-direction: column;
   align-items: center;
   padding-top: 26px;
+  overflow: hidden;
+  background:
+    radial-gradient(ellipse 70% 34% at 50% 20%, rgba(227, 194, 113, 0.17) 0%, rgba(227, 194, 113, 0) 68%),
+    radial-gradient(ellipse 90% 50% at 50% 104%, rgba(12, 74, 63, 0.6) 0%, rgba(12, 74, 63, 0) 72%),
+    linear-gradient(176deg, #0a3229 0%, #072821 52%, #061e19 100%);
+}
+
+/* The road grid. Offset on purpose — a grid centred on the pin reads as a
+   target, and the screen is offering hospitality, not acquiring one. */
+.offer::before {
+  content: '';
+  position: absolute;
+  inset: -10%;
+  pointer-events: none;
+  background-image:
+    repeating-linear-gradient(
+      92deg,
+      rgba(251, 246, 236, 0.045) 0 1.5px,
+      rgba(251, 246, 236, 0) 1.5px 74px
+    ),
+    repeating-linear-gradient(
+      2deg,
+      rgba(251, 246, 236, 0.045) 0 1.5px,
+      rgba(251, 246, 236, 0) 1.5px 96px
+    );
+  /* Faded at the edges so the grid never reaches a bezel, where a hard-ruled
+     line would read as a rendering artefact rather than as cartography. */
+  mask-image: radial-gradient(ellipse 72% 56% at 50% 26%, #000 0%, rgba(0, 0, 0, 0.35) 62%, transparent 88%);
+  -webkit-mask-image: radial-gradient(ellipse 72% 56% at 50% 26%, #000 0%, rgba(0, 0, 0, 0.35) 62%, transparent 88%);
 }
 
 /* Proximity rings behind the voucher — the same language as the Nearby map. */
 .offer__rings {
   position: absolute;
-  top: 96px;
+  top: 118px;
   left: 50%;
   transform: translateX(-50%);
-  width: 160px;
-  height: 160px;
+  width: 210px;
+  height: 210px;
   pointer-events: none;
+  z-index: 1;
 }
 
 .offer__ring {
@@ -26,15 +77,38 @@
 }
 
 .offer__ring--out {
-  width: 160px;
-  height: 160px;
-  border: 1.5px dashed rgba(227, 194, 113, 0.45);
+  width: 210px;
+  height: 210px;
+  border: 1.5px dashed rgba(227, 194, 113, 0.4);
 }
 
+/*
+ * The ping.
+ *
+ * One ring expanding out of the pin on a 3.4s cycle, fading as it goes. It is
+ * the only thing on the screen that moves, and it is doing the screen's
+ * argument for it: something nearby has just noticed you. Slower than a real
+ * radar sweep on purpose — this is a greeting, not an alarm.
+ */
 .offer__ring--in {
-  width: 74px;
-  height: 74px;
-  background: rgba(227, 194, 113, 0.14);
+  width: 92px;
+  height: 92px;
+  background: rgba(227, 194, 113, 0.15);
+  box-shadow: 0 0 40px rgba(227, 194, 113, 0.22);
+  animation: offer-ping 3.4s cubic-bezier(0.22, 0.61, 0.36, 1) infinite;
+}
+
+@keyframes offer-ping {
+  0% { transform: translate(-50%, -50%) scale(0.42); opacity: 0.85; }
+  70% { transform: translate(-50%, -50%) scale(2.2); opacity: 0; }
+  100% { transform: translate(-50%, -50%) scale(2.2); opacity: 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .offer__ring--in {
+    animation: none !important;
+    transform: translate(-50%, -50%) !important;
+  }
 }
 
 .offer__dot {
@@ -47,28 +121,96 @@
   border-radius: 50%;
   background: var(--gold-light);
   border: 4px solid rgba(251, 246, 236, 0.9);
+  box-shadow: 0 0 22px rgba(227, 194, 113, 0.6);
 }
 
-.offer__eyebrow {
+/* --- The headline --------------------------------------------------------- */
+
+.offer__intro {
   position: relative;
   z-index: 2;
-  color: rgba(227, 194, 113, 0.92);
-  font-size: 11px;
-  letter-spacing: 0.18em;
-  text-align: center;
+  width: 100%;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 0 var(--s-md);
+}
+
+.offer__title {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: 23px;
+  font-weight: 600;
+  line-height: 1.1;
+  letter-spacing: 0.002em;
+  color: #ffffff;
+  text-shadow: 0 1px 10px rgba(7, 40, 33, 0.6);
+  max-width: 15ch;
+}
+
+/*
+ * The flourish.
+ *
+ * Parisienne has a small x-height and a high cap, so at the serif's own size it
+ * reads as a smaller word rather than a larger gesture — hence 1.72em and the
+ * negative top margin that pulls it back under the line above. The overhanging
+ * descender of the "S" is why this sits on its own line: inline, it collides
+ * with the baseline of the words beside it.
+ */
+.offer__title-script {
+  display: block;
+  margin-top: -4px;
+  font-family: var(--font-script);
+  font-size: 1.72em;
+  font-weight: 400;
+  line-height: 1.02;
+  letter-spacing: 0.01em;
+  color: var(--gold-light);
+  text-shadow: 0 2px 14px rgba(7, 40, 33, 0.55);
+}
+
+/* The board puts a gold locator in the corner: the screen is telling you it
+   knows where you are, so the instrument that knows is on it. */
+.offer__pin {
+  flex: none;
+  width: 34px;
+  height: 34px;
+  margin-top: 2px;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(180deg, #f0d391 0%, var(--gold-light) 52%, #d3ab5b 100%);
+  box-shadow: 0 0 0 1px rgba(227, 194, 113, 0.4), 0 6px 18px rgba(7, 40, 33, 0.4);
 }
 
 /* --- The voucher ------------------------------------------------------------- */
 
+/*
+ * `margin: auto` on the block axis, not a 150px top offset.
+ *
+ * The fixed offset put the card in a different place on every phone — halfway
+ * down an SE, a third of the way down a Pro Max — and on the short ones it
+ * pushed the foot of the ticket off screen. Auto margins centre it in whatever
+ * space is left under the eyebrow, so the green reads as ground on every
+ * device instead of as a strip that happened to survive.
+ */
 .voucher {
   position: relative;
   z-index: 2;
-  margin: 150px var(--s-md) 0;
+  margin: auto var(--s-md);
   background: var(--ivory-ticket);
   border-radius: var(--r-xxl);
-  box-shadow: var(--e-modal);
+  box-shadow: var(--e-modal), 0 0 0 1px rgba(227, 194, 113, 0.18);
   color: var(--ink);
   width: calc(100% - var(--s-md) * 2);
+  animation: offer-rise 460ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+@keyframes offer-rise {
+  from { opacity: 0; transform: translate3d(0, 18px, 0) scale(0.985); }
+  to { opacity: 1; transform: none; }
 }
 
 .voucher__close {
@@ -87,13 +229,13 @@
 }
 
 .voucher__top {
-  padding: 24px 22px 16px;
+  padding: 14px 22px 11px;
   text-align: center;
 }
 
 .voucher__mark {
-  width: 40px;
-  height: 40px;
+  width: 34px;
+  height: 34px;
   border-radius: var(--r-md);
   background: var(--gold);
   display: inline-flex;
@@ -102,27 +244,31 @@
 }
 
 .voucher__eyebrow {
-  margin-top: 14px;
+  margin-top: 10px;
   letter-spacing: 0.14em;
 }
 
 .voucher__place {
-  margin-top: 8px;
+  margin-top: 9px;
 }
 
+/*
+ * A line, not a pill.
+ *
+ * The pill was a third rounded container nested inside the photo's and the
+ * ticket's, and the card has no height to spare for its padding — this screen
+ * only works if the ticket floats clear of the map above and below it.
+ */
 .voucher__walk {
   display: inline-flex;
   align-items: center;
-  gap: 7px;
-  margin-top: 10px;
-  padding: 7px 12px;
-  border-radius: var(--r-pill);
-  background: var(--aqua-soft);
-  color: var(--green-900);
+  gap: 6px;
+  margin-top: 7px;
+  color: var(--teal-text);
 }
 
 .voucher__photo {
-  padding: 0 14px;
+  padding: 0 12px;
 }
 
 /* --- Perforation --------------------------------------------------------------- */
@@ -131,7 +277,7 @@
 .stub__perf {
   position: relative;
   height: 1px;
-  margin-top: 18px;
+  margin-top: 14px;
   border-top: 1.5px dashed var(--border-strong);
   margin-inline: 14px;
 }
@@ -143,7 +289,9 @@
   width: 18px;
   height: 18px;
   border-radius: 50%;
-  background: var(--green-950);
+  /* Punched through to the ground behind, so it tracks the screen's own dark
+     green rather than the flat token the ground used to be. */
+  background: #082a23;
 }
 
 .voucher__notch--l,
@@ -158,9 +306,19 @@
 
 /* --- Bottom half ------------------------------------------------------------------ */
 
+/*
+ * The stub is sand, not ivory.
+ *
+ * A perforation between two identical creams is a dashed line; between two
+ * different creams it is a ticket you could tear. The reference board makes the
+ * same move, and it is what carries the gold eyebrow beneath it.
+ */
 .voucher__bottom {
-  padding: 20px 22px 22px;
+  padding: 14px 22px 15px;
   text-align: center;
+  background: linear-gradient(180deg, var(--sand) 0%, #f7ecd6 100%);
+  border-radius: 0 0 var(--r-xxl) var(--r-xxl);
+  border-top: 1px solid rgba(235, 223, 192, 0.9);
 }
 
 .voucher__label {
@@ -169,15 +327,32 @@
   letter-spacing: 0.16em;
 }
 
+/* Hairlines either side of the eyebrow — the same masthead move the splash uses
+   for the island names, at stub scale. */
+.voucher__label {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+}
+
+.voucher__label::before,
+.voucher__label::after {
+  content: '';
+  width: 20px;
+  height: 1px;
+  background: rgba(185, 141, 47, 0.45);
+}
+
 .voucher__headline {
-  margin-top: 10px;
+  margin-top: 8px;
 }
 
 .voucher__expiry {
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  margin-top: 12px;
+  margin-top: 10px;
   color: var(--coral-text);
 }
 
@@ -191,13 +366,52 @@
 .voucher__actions {
   display: flex;
   flex-direction: column;
-  gap: 9px;
-  margin-top: 18px;
+  gap: 8px;
+  margin-top: 12px;
 }
 
 .voucher__terms {
-  margin-top: 14px;
+  margin-top: 10px;
   color: var(--ink-faint);
   text-align: left;
+  line-height: 1.45;
+}
+
+.voucher__terms-summary {
+  cursor: pointer;
+  list-style: none;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 24px;
+  color: var(--ink-faint);
+  text-decoration: underline;
+  text-decoration-color: rgba(94, 114, 105, 0.4);
+  text-underline-offset: 3px;
+}
+
+.voucher__terms-summary::-webkit-details-marker {
+  display: none;
+}
+
+/* A caret drawn here rather than left to the platform, because Safari and
+   Chrome disagree about the default marker's size, colour and position. */
+.voucher__terms-summary::after {
+  content: '';
+  width: 5px;
+  height: 5px;
+  border-right: 1.5px solid currentColor;
+  border-bottom: 1.5px solid currentColor;
+  transform: rotate(45deg) translate(-1px, -1px);
+  transition: transform 0.15s ease;
+}
+
+.voucher__terms[open] .voucher__terms-summary::after {
+  transform: rotate(-135deg) translate(-1px, -1px);
+}
+
+.voucher__terms-body {
+  margin-top: 7px;
+  color: var(--ink-faint);
   line-height: 1.45;
 }

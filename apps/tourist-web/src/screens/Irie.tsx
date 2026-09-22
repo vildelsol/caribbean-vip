@@ -239,9 +239,13 @@ export function Irie() {
   return (
     <main className="screen screen--deep irie">
       <header className="irie__head">
-        <div className="row" style={{ gap: 9 }}>
-          <Icon name="sparkle" size={19} color="var(--gold-light)" />
-          <span className="t-body-strong c-on-dark">Irie AI</span>
+        {/* The mark reads left to right as a name, then its spark, then its
+            role — the reference board's order. The sparkle trailed the name
+            there for a reason: leading with it makes the glyph the subject and
+            the name its caption. */}
+        <div className="irie__brand">
+          <span className="irie__name">Irie AI</span>
+          <Icon name="sparkle" size={15} color="var(--gold-light)" />
           <span className="irie__tag t-micro">CONCIERGE</span>
         </div>
         {turns.length > 0 ? (
@@ -253,9 +257,17 @@ export function Irie() {
 
       <section className="irie__intro">
         <h1 className="t-display irie__hello">Wah Gwaan!</h1>
-        <p className="t-body irie__lead">
-          I&rsquo;m Irie AI, your Caribbean concierge. How can I make your day extraordinary?
-        </p>
+        {/*
+          * Two sentences, two sizes.
+          *
+          * These were one 16px paragraph, which gave a statement of identity and
+          * an open question the same weight and let them run together into a
+          * single grey block. Split, the introduction carries and the question
+          * invites — which is the order the rows beneath it answer in.
+          */}
+        <p className="irie__lead">I&rsquo;m Irie AI, your Caribbean concierge.</p>
+        <p className="irie__ask">How can I make your day extraordinary?</p>
+        <span className="irie__rule" aria-hidden="true" />
 
         {/* Context chips make the reasoning visible before a word is typed. Each one is real state:
             the island, the catalogue size, the wallet, the day plan. */}
@@ -345,7 +357,10 @@ export function Irie() {
       */}
       {turns.length === 0 && ranked.length > 0 ? (
         <section className="irie__popular">
-          <p className="t-micro-strong irie__builder-label">POPULAR RIGHT NOW</p>
+          <p className="irie__ideas-label">
+            <Icon name="sparkle" size={14} color="var(--gold-light)" />
+            Here are some ideas for you
+          </p>
           <div className="irie__pop-rail">
             {ranked.slice(0, 3).map(({ experience, metres }) => (
               <button

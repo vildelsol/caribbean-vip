@@ -66,6 +66,19 @@
      alone rather than across the display scale, so it stays a deliberate moment. */
   --font-voice: 'Fraunces', 'Cormorant Garamond', Georgia, serif;
   --font-sans: 'Manrope', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  /*
+   * The script.
+   *
+   * One word at a time, and only ever one: the word a screen is built around —
+   * "Special" on the geofenced offer. Parisienne rather than a casual script
+   * because the brand is a concierge, not a beach bar, and its thick-thin
+   * contrast sits with Cormorant rather than fighting it.
+   *
+   * It has no React Native counterpart in `fonts` yet. When the native app
+   * needs it, add `Parisienne_400Regular` there rather than substituting the
+   * system cursive, which is a different letterform on every platform.
+   */
+  --font-script: 'Parisienne', 'Snell Roundhand', 'Apple Chancery', cursive;
 
   /* --- Radius ------------------------------------------------------------- */
   --r-xs: 6px;

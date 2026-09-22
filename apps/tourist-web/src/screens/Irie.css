@@ -87,11 +87,35 @@
   padding: 20px var(--s-md) 0;
 }
 
+.irie__brand {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+/*
+ * The name, in the display serif.
+ *
+ * It was 15px sans at body-strong weight, which made the concierge's own name
+ * the smallest piece of type on its own screen — smaller than the row labels
+ * it introduces. The serif at 21px is the same voice the greeting uses two
+ * lines below it, so the header and the greeting read as one masthead.
+ */
+.irie__name {
+  font-family: var(--font-display);
+  font-size: 21px;
+  font-weight: 600;
+  line-height: 1;
+  letter-spacing: 0.005em;
+  color: var(--on-dark);
+}
+
 .irie__tag {
   border: 1px solid rgba(227, 194, 113, 0.45);
   color: var(--gold-light);
   letter-spacing: 0.1em;
-  padding: 5px 8px;
+  padding: 4px 7px;
   border-radius: var(--r-xs);
   white-space: nowrap;
 }
@@ -128,19 +152,43 @@
  * size and gold, where it does what it is good at.
  */
 .irie__lead {
-  margin-top: 12px;
-  color: rgba(255, 253, 247, 0.92);
+  margin-top: 10px;
+  color: rgba(255, 253, 247, 0.96);
   font-family: var(--font-sans);
-  font-size: 16px;
+  font-size: 19px;
+  font-weight: 500;
+  line-height: 1.32;
+  letter-spacing: -0.004em;
+  max-width: 19ch;
+}
+
+.irie__ask {
+  margin-top: 8px;
+  color: rgba(251, 246, 236, 0.7);
+  font-family: var(--font-sans);
+  font-size: 14px;
   font-weight: 400;
-  line-height: 1.5;
+  line-height: 1.4;
+  max-width: 24ch;
+}
+
+/* A short gold rule between the greeting and the suggestions. It is the pause
+   between "how can I help" and the list of ways — without it the rows read as
+   a continuation of the sentence rather than as an answer to it. */
+.irie__rule {
+  display: block;
+  width: 52px;
+  height: 2px;
+  margin-top: 16px;
+  border-radius: var(--r-pill);
+  background: linear-gradient(90deg, var(--gold-light) 0%, rgba(227, 194, 113, 0.25) 100%);
 }
 
 .irie__context {
   display: flex;
   flex-wrap: wrap;
   gap: 6px;
-  margin-top: 16px;
+  margin-top: 14px;
 }
 
 .ctx {
@@ -625,4 +673,26 @@
   font-weight: 700;
   color: rgba(251, 246, 236, 0.82);
   white-space: nowrap;
+}
+
+
+/* --- Ideas rail label ------------------------------------------------------ */
+
+/*
+ * "POPULAR RIGHT NOW" became "Here are some ideas for you".
+ *
+ * All-caps micro type is a filing label, and it was doing the introducing for
+ * the one part of this screen where the concierge is offering something
+ * unprompted. Sentence case in the concierge's own voice, at reading size,
+ * with the spark that marks everything Irie says.
+ */
+.irie__ideas-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--font-sans);
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: 0.004em;
+  color: rgba(255, 253, 247, 0.94);
 }
