@@ -1,6 +1,6 @@
 # Handover — Caribbean VIP
 
-**Written:** 2026-08-02 · **Updated:** 2026-09-22 (design pass against Ro's reference images; **all demo/simulation labelling stripped from both apps — see §5 "Demo labelling removed"**; vendor portal built out to a real portal; Irie greeting retypeset and given a live rail; geofence wired — real GPS triggers offer within 250 m of promoted vendor, demo timer retained as fallback) · **Branch:** `main` · **Gates:** green — 289 tests, both apps typecheck clean (one guard test removed with the labelling it guarded; see §8)
+**Written:** 2026-08-02 · **Updated:** 2026-09-22 (design pass against Ro's reference images; **all demo/simulation labelling stripped from both apps — see §5 "Demo labelling removed"**; vendor portal built out to a real portal; Irie greeting retypeset and given a live rail; geofence wired — real GPS triggers offer within 250 m of promoted vendor, demo timer retained as fallback; **guest sign-up flow added and the onboarding rebuilt splash-first against the VIP Cayman journey — see §5 "UI evolution"**) · **Branch:** `main` · **Gates:** green — 289 tests, both apps typecheck clean (one guard test removed with the labelling it guarded; see §8)
 
 Read this first, then [`PRD.md`](PRD.md) (product source of truth),
 [`architecture.md`](architecture.md) (the numbered decisions), and
@@ -96,6 +96,10 @@ refresh mid-presentation cannot lose a booking. Profile → *Reset the demonstra
 booking, capacity hold, cancellation and voucher invalidation all work. **The real Stripe/Supabase
 path is now wired but has not yet been tested end-to-end** — see §5 pick-up point and §8.
 
+**T-10 (guest sign-up / onboarding) complete, 2026-09-22.** Welcome screen gates first launch and
+the name it collects is used on Profile; the journey can be walked from sign-up to redemption. See
+§5 "Guest sign-up exists now".
+
 Gates: **290 unit tests (17 files), typecheck and lint clean across 9 workspaces.**
 
 ---
@@ -111,6 +115,13 @@ Gates: **290 unit tests (17 files), typecheck and lint clean across 9 workspaces
 > split that resolves it.
 >
 > The rest of this section is kept as the record of what governed before, and why.
+>
+> **Extended, 2026-09-22.** Ro re-supplied the VIP Cayman journey and held the build against it. The
+> onboarding was rebuilt splash-first as a result, and with it came a **gold CTA language** —
+> gold-filled primary, gold-outlined secondary, uppercase and tracked — currently used only on
+> `Welcome`. Whether it spreads to the rest of the app is an open call, not an oversight; the green
+> primary elsewhere is still the design's. See §5 "UI evolution against Ro's reference images" for
+> the decisions and the three that are load-bearing.
 
 There are four images in the parent folder and they do **not** all agree. Standing at the time:
 
@@ -751,23 +762,117 @@ prices against — so vendor net reconciles with what the guest was actually cha
 Two judgement calls: **Today replaced the scanner as the landing page.** The old reasoning was that
 a vendor opens this standing in front of a guest, which is true of one moment and not of the rest of
 the day, and it left them with no answer to "how is today going". Scan is one tap from everywhere
-instead. And **the buttons are inert** — Edit, Publish/Unpublish, New listing and the capacity slots
-render but write nothing. They need the Supabase write path.
+instead.
 
-### Geofencing — logic written, not wired (2026-09-22)
+**The write path landed later the same day.** The buttons were inert when the routes above were
+first drawn; they are not now. `/listings` and `/availability` are `'use client'`, seed local state
+from `vendorListings()`, and mutate it — Edit opens a modal that merges back, Publish/Unpublish
+flips status, New listing appends a draft, and slot capacities are tap-to-edit with an inline number
+field. A "Saved" flash confirms each write.
 
-`apps/tourist-web/src/data/geofence.ts` exists and is pure: `evaluateFences(origin, fences,
-previous)` returns `entered` **only on the transition** into a fence, so a caller needs no "have I
-shown this" flag of its own. 250m entry radius, 400m exit radius — the asymmetry is hysteresis, so a
-fix jittering across the boundary cannot re-fire the offer.
+Everything is **in-memory and resets on reload**. That is the right behaviour for a demonstration —
+the portal has to survive being clicked through in front of a room — and the wrong behaviour for a
+product. The Supabase write path is still owed; `lib/vendorData.ts` remains read-only.
 
-**Not done:** no unit tests yet, and nothing calls it. `Explore.tsx` still fires the offer on a
-6-second `setTimeout`. The wiring is `useGuestPosition()` (which already gives a real consent-gated
-fix and falls back to simulated) → `evaluateFences` against the promoted vendor's coordinates.
+### Guest sign-up exists now — T-10 (2026-09-22)
 
-The thing to solve is **how to test it** without standing in Negril. The pure function is unit
-testable, which covers correctness; demonstrating it live needs either a dev-only position override
-or `watchPosition` with a simulated coordinate feed. Ro has not been asked which he wants.
+The store had an `onboarded: boolean` that **nothing ever read and nothing ever dispatched**. The
+journey therefore started mid-app, with a Profile screen that said "Alex Bennett" — a hardcoded
+name — to a room being told this was their app.
+
+- `AppState` gained `guestName: string`; the `setOnboarded` action now carries `{ name }`.
+- `App.tsx` gates on it: `if (!state.onboarded) return <Welcome />;`
+- Profile reads `state.guestName || 'Guest'`. The hardcoded name is gone.
+
+So the full journey — install → sign up → browse → book → redeem — can now be walked end to end in
+a demonstration without the operator explaining a missing first step.
+
+### UI evolution against Ro's reference images (2026-09-22)
+
+Ro supplied three references: a VIP Cayman premium app, a three-step onboarding, and an eight-step
+customer-journey map. His notes: image pills too solid and blocky, Profile "terrible" and not
+premium, Irie's animation should appear everywhere Irie is, sign-up needs to be more exciting with a
+different image, categories need background and contrast to pop.
+
+**Welcome — rebuilt twice, and the second rebuild is the one that matters.**
+
+The first attempt kept a form on the first screen and merely restyled it. Ro rejected it: *"still
+very poor and does not look like the premium flow i gave you."* He was right, and the reason is
+structural, not cosmetic — **the reference's first screen asks for nothing.** It is the mark, the
+promise, and three ways in. The form is a second step.
+
+`Welcome.tsx` is now a two-step flow:
+
+- **Step one, splash.** 152px crest — gold ring plus an inner hairline, sparkles over a serif `VIP`
+  and a ruled `CARIBBEAN` — then the tagline, then gold-filled *Continue as Guest*, gold-outlined
+  *Sign In*, and an underlined *Create an Account*.
+- **Step two, setup.** Name and island on an ivory card over the same photograph, reframed down onto
+  the waterline, with a small brand lockup above the card. Guests may skip the name (it defaults to
+  `Guest`); the sign-in path requires it.
+
+Three decisions in there are load-bearing and should not be casually undone:
+
+1. **The photograph is `ky-hero.jpg`** — Seven Mile Beach, bright turquoise, white sand. It replaced
+   `jm-hero.jpg`, a dark jungle shot that read as cold and overgrown. Ro asked specifically for the
+   bright, inviting image. *The remaining gap to the reference is that his is an aerial down a
+   coastline and ours is at ground level with jet-skis mid-frame. If an aerial beach shot is dropped
+   into `public/demo/`, swapping it is a one-line change.*
+2. **The tagline is set in the UI sans, not the display serif.** It sits directly under a serif
+   wordmark; two serifs stacked at different sizes read as one heading broken in half rather than a
+   mark and a line of copy. This will look like an oversight to anyone who has not stood the two
+   versions side by side. It is not.
+3. **The scrim is held off until ~72%**, and the white type is carried instead by a soft ellipse
+   behind the mark and copy only (`.wl__splash-top::before`). A global wash dark enough to float
+   white text over white sand sinks the photograph — which is the one thing the screen is selling.
+   Local protection buys the contrast where the type actually is and leaves the sand and the
+   turquoise at full strength at the edges.
+
+**Profile.** The compact header row — 76px crest beside a name — became a full-bleed dark green hero:
+96px crest with a gold glow, the guest's name large in the display serif, island subtitle, and
+Bookings / Spent / Vouchers in a frosted glass row along the hero's foot. The functional blocks
+below (island switch, wallet, saved, reset) are unchanged.
+
+**Category chips.** Each chip carries a coloured circle behind its icon, driven by a `--cat-color`
+custom property set per category in `CAT_COLORS` (Explore.tsx) — adventure green, beaches sky, food
+orange, nightlife purple, and so on. Selection lights the chip in *its own* colour rather than a
+universal green. This is what Ro meant by "make them pop".
+
+**Feature card badges.** *Open Now* and *Cruise-Friendly* moved out of the image overlay into the
+card body. Frosted glass was considered and rejected for the same reason recorded against
+`.badge--travel` in `kit.css`: a blurred surface takes the colour of whatever is behind it, and over
+pale sand in bright outdoor light the type vanishes. Moving them below the photograph solves the
+"don't block the image" note without that trade.
+
+**Irie.** `.irie-badge` gained an `irie-aura` keyframe — a gold halo breathing on a 3.2s cycle, 7px
+spread, 18% at peak. Slow and shallow on purpose: it sits on every screen, and anything faster
+becomes the thing you cannot stop looking at. The existing inner spark twinkle is untouched.
+`prefers-reduced-motion` is honoured globally in `global.css`, which collapses both to a stop.
+
+### Geofencing — wired (2026-09-22)
+
+`apps/tourist-web/src/data/geofence.ts` is pure: `evaluateFences(origin, fences, previous)` returns
+`entered` **only on the transition** into a fence, so a caller needs no "have I shown this" flag of
+its own. 250m entry radius, 400m exit radius — the asymmetry is hysteresis, so a fix jittering
+across the boundary cannot re-fire the offer.
+
+**Now wired.** `Explore.tsx` runs two effects rather than one timer:
+
+- **Real GPS.** When `useGuestPosition()` reports `position.kind === 'real'`, the fence set is built
+  from the promoted experience's vendor coordinates filtered to the current island, and
+  `evaluateFences` is called against it. The offer fires on `entered`. Hysteresis state is held in a
+  `useRef<FenceState>` so it survives re-renders without causing them.
+- **Demo fallback.** When the position is simulated or consent was refused, the original 6-second
+  timer runs exactly as before.
+
+Both paths are kept deliberately: the demo must never break in a room, and the real path must be
+real when a phone is actually on the island. Nothing about the demo flow changed.
+
+**Still not done: unit tests.** The 250m/400m hysteresis logic has no guard tests. This is the
+highest-value remaining test work — the function is pure, so it is cheap to cover, and the whole
+moat rests on it. Do this before the next demo.
+
+Demonstrating it live still needs either a dev-only position override or `watchPosition` with a
+simulated coordinate feed. Ro has not been asked which he wants.
 
 ---
 
@@ -783,11 +888,27 @@ replace it.
 Ideas raised but not started, in the order I would take them:
 
 1. ~~**Vendor portal visual language**~~ — **done, 2026-09-10.** See the section above.
-2. **A licensed-media path in the pipeline** (~20 minutes). `manifest.json` and `fetch.py` are
+2. **`geofence.ts` unit tests** — the 250m/400m hysteresis has no guard tests and the function is
+   pure, so they are cheap. The geofence is one of the two moats Ro named; it should not be the
+   untested file. Do this first.
+3. **The first live Stripe payment.** The backend is deployed and the webhook registered, but no
+   end-to-end payment has ever been executed. Card `4242 4242 4242 4242` on the Vercel URL. Until
+   that is done, M3 is not complete no matter what the code says.
+4. **A licensed-media path in the pipeline** (~20 minutes). `manifest.json` and `fetch.py` are
    Commons-only *by design*, and will refuse anything else. Operator-supplied photography needs its
    own route with the permission recorded beside the file. Needed for every real vendor eventually,
    and it is what lets the Mystic Mountain photograph drop straight in the moment permission arrives.
-3. **Commissioned photography** — see §8. The biggest single gap between this and a product.
+5. **Commissioned photography** — see §8. The biggest single gap between this and a product.
+
+**Screens not yet taken through the reference pass.** The 2026-09-22 UI work covered Welcome,
+Profile, Explore's chips and the feature card. Against the eight-step journey map, these were
+looked at and left:
+
+- **Explore header** — the reference leads with the destination ("Welcome to Cayman Islands") more
+  prominently than ours does.
+- **Experience detail** — the reference pairs *Top Rated* / *Bestseller* badges above the title.
+- **Offer/voucher popup** — works and reads well, but the reference uses a gold CTA where ours is
+  green. Worth aligning if the gold CTA language from the new Welcome is adopted more widely.
 
 ### Still not drawn to the mockups
 
@@ -928,14 +1049,19 @@ Still open: OD-01 (legal entity/MoR), OD-03 (tiers and commission), OD-04 (priva
 ## 8. Known gaps — do not claim these work
 
 - **Nothing in either app now discloses that it is a demonstration.** All labelling was removed on
-  2026-09-22 at Ro's instruction (§5). The seeded inventory, simulated payment, simulated position,
-  timer-based offer and rule-matched Irie all still are what they were. This is the single most
-  important thing to know before showing the app to anyone who is not Ro.
-- **The vendor portal's write actions are inert.** Edit, Publish/Unpublish, New listing and the
-  availability slots render and respond to a press but persist nothing. `lib/vendorData.ts` is
-  read-only and derived from `@cvip/demo`.
-- **The geofence is written but not wired.** `data/geofence.ts` is pure and correct; nothing calls
-  it, it has no tests, and `Explore.tsx` still fires the offer on a 6-second timer.
+  2026-09-22 at Ro's instruction (§5). The seeded inventory, simulated payment, simulated position
+  and rule-matched Irie all still are what they were. *(The offer is no longer purely timer-based —
+  it fires on a real fix when there is one, and falls back to the timer otherwise.)* This is the
+  single most important thing to know before showing the app to anyone who is not Ro.
+- **The vendor portal's write actions are in-memory, not persisted.** *(Revised 2026-09-22 — they
+  were previously inert.)* Edit, Publish/Unpublish, New listing and the availability slot capacities
+  now all work: the pages are `'use client'`, seed local state from `vendorListings()`, and mutate
+  it. Nothing reaches Supabase and everything resets on reload, which is correct for a demonstration
+  and wrong for a product. `lib/vendorData.ts` itself remains read-only.
+- **The geofence is wired but untested.** *(Revised 2026-09-22 — it was previously not wired at
+  all.)* `Explore.tsx` calls `evaluateFences` on a real GPS fix and keeps the 6-second timer only as
+  the fallback for simulated or consent-refused positions. **It still has no unit tests**, and the
+  250m/400m hysteresis is exactly the kind of logic that needs them. See §5.
 - **`packages/demo` and `supabase/seed/seed.sql` are out of step.** The `[Demo]` trading-name
   prefix was stripped from the TypeScript dataset only. They were deliberately kept identical
   before this; reseeding will reintroduce the prefix.
