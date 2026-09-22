@@ -5,121 +5,168 @@ import { Icon } from '../components/Icon';
 import './Welcome.css';
 
 /**
- * First-launch onboarding — name + island selection.
+ * First-launch onboarding, in two steps.
  *
- * Card-up layout: hero takes the top ~55%, ivory card rises from the bottom
- * with the form on a crisp light surface. Matches the VIP Cayman reference.
+ * Step one is a splash: the mark, the promise, and three ways in. No form —
+ * a guest arriving in the Caribbean should meet the brand before a text field.
+ * Step two collects the name and starting island on an ivory card over the
+ * same photograph.
  */
 export function Welcome() {
   const { dispatch } = useStore();
+  const [step, setStep] = useState<'splash' | 'setup'>('splash');
+  const [guestPath, setGuestPath] = useState(false);
   const [name, setName] = useState('');
   const [islandId, setIslandId] = useState(ISLANDS[0]?.id ?? 'island-jm');
 
   const trimmed = name.trim();
-  const canContinue = trimmed.length >= 2;
+  // A guest need not name themselves; anyone signing in or registering does.
+  const canContinue = guestPath || trimmed.length >= 2;
+
+  const enter = (asGuest: boolean) => {
+    setGuestPath(asGuest);
+    setStep('setup');
+  };
 
   const submit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!canContinue) return;
     dispatch({ type: 'selectIsland', islandId });
-    dispatch({ type: 'setOnboarded', name: trimmed });
-  };
-
-  const continueAsGuest = () => {
-    dispatch({ type: 'selectIsland', islandId });
-    dispatch({ type: 'setOnboarded', name: 'Guest' });
+    dispatch({ type: 'setOnboarded', name: trimmed || 'Guest' });
   };
 
   return (
-    <main className="welcome">
-      {/* Full-bleed hero — catamaran on turquoise Caribbean water */}
-      <div className="welcome__hero" aria-hidden="true">
+    <main className="wl">
+      <div className="wl__hero" aria-hidden="true">
         <img
-          src={`${import.meta.env.BASE_URL}demo/jm-catamaran-1.jpg`}
+          src={`${import.meta.env.BASE_URL}demo/ky-hero.jpg`}
           alt=""
-          className="welcome__hero-img"
+          className={`wl__hero-img ${step === 'setup' ? 'wl__hero-img--setup' : ''}`}
           loading="eager"
           fetchPriority="high"
           decoding="sync"
         />
-        <div className="welcome__hero-warm" />
-        <div className="welcome__hero-scrim" />
+        <div className={`wl__scrim ${step === 'setup' ? 'wl__scrim--deep' : ''}`} />
       </div>
 
-      {/* Brand section floats in the hero */}
-      <div className="welcome__brand">
-        <div className="welcome__crest" aria-hidden="true">
-          <span className="welcome__crest-vip">VIP</span>
-        </div>
-        <div className="welcome__tagline">
-          <p className="welcome__eyebrow">CARIBBEAN VIP</p>
-          <h1 className="welcome__title">Your Island.<br />Your Way.</h1>
-        </div>
-      </div>
+      {/* ---------------- Step one — the splash ---------------- */}
+      {step === 'splash' ? (
+        <div className="wl__splash">
+          <div className="wl__splash-top">
+            <div className="wl-crest">
+              <span className="wl-crest__stars" aria-hidden="true">
+                <Icon name="sparkle" size={11} color="var(--gold-light)" />
+                <Icon name="sparkle" size={15} color="var(--gold-light)" />
+                <Icon name="sparkle" size={11} color="var(--gold-light)" />
+              </span>
+              <span className="wl-crest__word">VIP</span>
+              <span className="wl-crest__rule" aria-hidden="true" />
+              <span className="wl-crest__sub">CARIBBEAN</span>
+            </div>
 
-      {/* Ivory card rises from the bottom */}
-      <form className="welcome__card" onSubmit={submit} noValidate>
-        <label className="welcome__field">
-          <span className="welcome__label">What should we call you?</span>
-          <input
-            type="text"
-            className="welcome__input"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            placeholder="Your first name"
-            autoComplete="given-name"
-            autoFocus
-            required
-          />
-        </label>
-
-        <fieldset className="welcome__islands">
-          <legend className="welcome__label">Which island are you visiting?</legend>
-          <div className="welcome__island-grid">
-            {ISLANDS.map((island) => {
-              const first = destinationsFor(island.id)[0];
-              const on = island.id === islandId;
-              return (
-                <button
-                  key={island.id}
-                  type="button"
-                  className={`welcome__island-btn ${on ? 'is-on' : ''}`}
-                  onClick={() => setIslandId(island.id)}
-                  aria-pressed={on}
-                >
-                  {on && (
-                    <span className="welcome__island-check" aria-hidden="true">
-                      <Icon name="check" size={11} strokeWidth={2.8} color="var(--on-dark)" />
-                    </span>
-                  )}
-                  <span className="welcome__island-name">{island.in_app_brand}</span>
-                  {first ? (
-                    <span className="welcome__island-dest">{first.name}</span>
-                  ) : null}
-                </button>
-              );
-            })}
+            <div className="wl__pitch">
+              <h1 className="wl__tagline">Your Island. Your Way.</h1>
+              <p className="wl__sub">
+                Premium experiences across Jamaica, Cayman and Barbados.
+              </p>
+            </div>
           </div>
-        </fieldset>
 
-        <div className="welcome__ctas">
-          <button
-            type="submit"
-            className="welcome__cta welcome__cta--primary"
-            disabled={!canContinue}
-            aria-disabled={!canContinue}
-          >
-            Start Exploring
-          </button>
+          <div className="wl__actions">
+            <button type="button" className="wl-cta wl-cta--gold" onClick={() => enter(true)}>
+              Continue as Guest
+            </button>
+            <button type="button" className="wl-cta wl-cta--outline" onClick={() => enter(false)}>
+              Sign In
+            </button>
+            <button type="button" className="wl__link" onClick={() => enter(false)}>
+              Create an Account
+            </button>
+          </div>
+        </div>
+      ) : (
+        /* ---------------- Step two — name and island ---------------- */
+        <form className="wl__setup" onSubmit={submit} noValidate>
           <button
             type="button"
-            className="welcome__cta welcome__cta--ghost"
-            onClick={continueAsGuest}
+            className="wl__back"
+            onClick={() => setStep('splash')}
+            aria-label="Back"
           >
-            Continue as Guest
+            <Icon name="chevron-left" size={18} strokeWidth={2.2} color="var(--ivory)" />
           </button>
-        </div>
-      </form>
+
+          {/* Brand continuity — the mark stays with you between the two steps. */}
+          <div className="wl__mark" aria-hidden="true">
+            <span className="wl__mark-crest">VIP</span>
+            <span className="wl__mark-word">CARIBBEAN VIP</span>
+          </div>
+
+          <div className="wl__card">
+            <header className="wl__card-head">
+              <h2 className="wl__card-title">
+                {guestPath ? 'Welcome aboard' : 'Create your profile'}
+              </h2>
+              <p className="wl__card-note">
+                {guestPath
+                  ? 'Tell us where you are and we will do the rest.'
+                  : 'Two details and you are in.'}
+              </p>
+            </header>
+
+            <label className="wl__field">
+              <span className="wl__label">
+                Your name {guestPath ? <span className="wl__optional">optional</span> : null}
+              </span>
+              <input
+                type="text"
+                className="wl__input"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                placeholder="Your first name"
+                autoComplete="given-name"
+                autoFocus
+              />
+            </label>
+
+            <fieldset className="wl__islands">
+              <legend className="wl__label">Which island are you visiting?</legend>
+              <div className="wl__island-grid">
+                {ISLANDS.map((island) => {
+                  const first = destinationsFor(island.id)[0];
+                  const on = island.id === islandId;
+                  return (
+                    <button
+                      key={island.id}
+                      type="button"
+                      className={`wl__island ${on ? 'is-on' : ''}`}
+                      onClick={() => setIslandId(island.id)}
+                      aria-pressed={on}
+                    >
+                      {on && (
+                        <span className="wl__island-check" aria-hidden="true">
+                          <Icon name="check" size={11} strokeWidth={2.8} color="var(--on-dark)" />
+                        </span>
+                      )}
+                      <span className="wl__island-name">{island.in_app_brand}</span>
+                      {first ? <span className="wl__island-dest">{first.name}</span> : null}
+                    </button>
+                  );
+                })}
+              </div>
+            </fieldset>
+
+            <button
+              type="submit"
+              className="wl-cta wl-cta--gold"
+              disabled={!canContinue}
+              aria-disabled={!canContinue}
+            >
+              Start Exploring
+            </button>
+          </div>
+        </form>
+      )}
     </main>
   );
 }

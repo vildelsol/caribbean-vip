@@ -1,145 +1,419 @@
-.welcome {
+/**
+ * Onboarding.
+ *
+ * The photograph is the pitch, so the scrim is kept as light as legibility
+ * allows: dense only along the bottom edge where the controls sit, and nearly
+ * clear across the sky. A heavier wash would turn a bright Caribbean beach
+ * into the dark, cool image the brand is trying not to be.
+ */
+
+.wl {
   position: relative;
   min-height: 100dvh;
   display: flex;
   flex-direction: column;
   background: var(--green-950);
-  overflow: hidden;
+  /* Only the horizontal axis is clipped — the text-protection ellipse is
+     deliberately wider than the frame. Vertical scroll stays available so the
+     setup card cannot be cut off on a short phone. */
+  overflow-x: hidden;
 }
 
-/* ---------- full-bleed hero ------------------------------------------------ */
+/* ---------- hero ---------------------------------------------------------- */
 
-.welcome__hero {
+.wl__hero {
   position: absolute;
   inset: 0;
   z-index: 0;
 }
 
-.welcome__hero-img {
+.wl__hero-img {
   width: 100%;
   height: 100%;
   object-fit: cover;
-  /* Pull the image up to show the water/valley rather than the canopy */
-  object-position: center 45%;
+  /* Framed on the catamaran and the open turquoise rather than the jet-ski
+     cluster, which reads as clutter directly behind the tagline. */
+  object-position: 38% 46%;
 }
 
-/* Warm-tone overlay to lift the image out of cool-grey territory */
-.welcome__hero-warm {
-  position: absolute;
-  inset: 0;
-  background: rgba(255, 210, 120, 0.08);
-  pointer-events: none;
-}
-
-/* Scrim is heavier in the middle (behind tagline) and dense at the bottom
-   edge so the card sits cleanly. Light at the very top so sky reads. */
-.welcome__hero-scrim {
+/*
+ * Weighted to the last quarter.
+ *
+ * The gold button carries its own fill and the outlined one its own backdrop,
+ * so the only thing the scrim has to protect is the white "Create an Account"
+ * link at the foot. Holding the wash off until ~72% keeps the sand and the
+ * waterline in the picture instead of sinking the bottom half in green.
+ */
+.wl__scrim {
   position: absolute;
   inset: 0;
   background: linear-gradient(
     180deg,
-    rgba(7, 40, 33, 0.12) 0%,
-    rgba(7, 40, 33, 0.50) 38%,
-    rgba(7, 40, 33, 0.75) 56%,
-    rgba(7, 40, 33, 0.92) 72%,
-    rgba(7, 40, 33, 1)    100%
+    rgba(7, 40, 33, 0.05) 0%,
+    rgba(7, 40, 33, 0.07) 34%,
+    rgba(7, 40, 33, 0.20) 56%,
+    rgba(7, 40, 33, 0.46) 72%,
+    rgba(7, 40, 33, 0.82) 88%,
+    rgba(7, 40, 33, 0.94) 100%
   );
 }
 
-/* ---------- floating brand section (top half of hero) ---------------------- */
+/* Step two puts an ivory card over the lower half, so the photo underneath it
+   is darkened further to stop bright sand reading through the card's shadow. */
+.wl__scrim--deep {
+  background: linear-gradient(
+    180deg,
+    rgba(7, 40, 33, 0.18) 0%,
+    rgba(7, 40, 33, 0.38) 34%,
+    rgba(7, 40, 33, 0.72) 58%,
+    rgba(7, 40, 33, 0.95) 80%,
+    rgba(7, 40, 33, 1) 100%
+  );
+}
 
-.welcome__brand {
+/* ---------- step one: splash ---------------------------------------------- */
+
+.wl__splash {
   position: relative;
   z-index: 1;
   flex: 1;
   display: flex;
   flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 20px;
-  padding: max(56px, env(safe-area-inset-top, 0px) + 28px) var(--pad) 32px;
+  padding: max(40px, env(safe-area-inset-top, 0px) + 24px) var(--pad)
+    calc(28px + env(safe-area-inset-bottom, 0px));
 }
 
-/* Gold-ring crest badge */
-.welcome__crest {
-  width: 80px;
-  height: 80px;
-  border-radius: 50%;
-  border: 1.5px solid rgba(212, 175, 106, 0.6);
-  background: rgba(12, 74, 63, 0.6);
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
+.wl__splash-top {
+  position: relative;
+  flex: 1;
   display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 26px;
+}
+
+/*
+ * Local text protection.
+ *
+ * A global scrim dark enough to carry white type over white sand would sink the
+ * whole photograph, which is the one thing this screen is selling. So the wash
+ * is a soft ellipse behind the mark and the copy only: it holds the type at
+ * WCAG contrast where the type actually is, and fades to nothing well before
+ * the edges, where the sand and the turquoise stay at full strength.
+ */
+.wl__splash-top::before {
+  content: '';
+  position: absolute;
+  inset: -10% -20%;
+  background: radial-gradient(
+    ellipse 62% 42% at 50% 50%,
+    rgba(7, 40, 33, 0.62) 0%,
+    rgba(7, 40, 33, 0.44) 42%,
+    rgba(7, 40, 33, 0.18) 68%,
+    rgba(7, 40, 33, 0) 84%
+  );
+  pointer-events: none;
+}
+
+.wl-crest,
+.wl__pitch {
+  position: relative;
+  z-index: 1;
+}
+
+/* --- the crest --- */
+
+.wl-crest {
+  position: relative;
+  width: 152px;
+  height: 152px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 50% 32%, #10604F 0%, #072821 78%);
+  border: 3px solid var(--gold-light);
+  display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
   box-shadow:
-    0 0 0 1px rgba(212, 175, 106, 0.15),
-    0 0 24px rgba(212, 175, 106, 0.18),
-    0 12px 32px rgba(7, 40, 33, 0.5);
+    0 0 0 1px rgba(227, 194, 113, 0.3),
+    0 0 44px rgba(227, 194, 113, 0.26),
+    0 20px 52px rgba(7, 40, 33, 0.55);
 }
 
-.welcome__crest-vip {
+/* Inner hairline ring — the detail that separates a crest from a circle. */
+.wl-crest::after {
+  content: '';
+  position: absolute;
+  inset: 7px;
+  border-radius: 50%;
+  border: 1px solid rgba(227, 194, 113, 0.42);
+  pointer-events: none;
+}
+
+.wl-crest__stars {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  margin-bottom: 1px;
+}
+
+.wl-crest__word {
+  font-family: var(--font-display);
+  font-size: 46px;
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: 0.04em;
+  color: var(--gold-light);
+}
+
+.wl-crest__rule {
+  width: 42px;
+  height: 1px;
+  margin: 7px 0 5px;
+  background: rgba(227, 194, 113, 0.55);
+}
+
+.wl-crest__sub {
+  font-size: 8.5px;
+  font-weight: 800;
+  letter-spacing: 0.26em;
+  color: rgba(227, 194, 113, 0.9);
+  padding-left: 0.26em;
+}
+
+/* --- the promise --- */
+
+.wl__pitch {
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+
+/*
+ * Sans, not the display serif.
+ *
+ * The serif is the brand's voice for editorial headings inside the app. Here it
+ * sits directly under a serif wordmark, and two serifs stacked at different
+ * sizes read as one heading broken in half rather than a mark and a line of
+ * copy. The sans separates them.
+ */
+.wl__tagline {
+  font-family: var(--font-ui);
+  font-size: 20px;
+  font-weight: 600;
+  line-height: 1.25;
+  letter-spacing: 0.005em;
+  color: #FFFFFF;
+  text-shadow: 0 1px 3px rgba(7, 40, 33, 0.55), 0 2px 16px rgba(7, 40, 33, 0.45);
+}
+
+.wl__sub {
+  font-size: 13px;
+  line-height: 1.5;
+  color: rgba(255, 255, 255, 0.9);
+  max-width: 252px;
+  text-shadow: 0 1px 3px rgba(7, 40, 33, 0.55), 0 2px 14px rgba(7, 40, 33, 0.45);
+}
+
+/* --- the three ways in --- */
+
+.wl__actions {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 11px;
+}
+
+.wl-cta {
+  width: 100%;
+  height: 52px;
+  border-radius: var(--r-pill);
+  border: none;
+  font-family: var(--font-ui);
+  font-size: 12.5px;
+  font-weight: 800;
+  letter-spacing: 0.13em;
+  text-transform: uppercase;
+  text-align: center;
+  cursor: pointer;
+  touch-action: manipulation;
+  transition: transform 0.1s ease, opacity 0.15s ease;
+}
+
+.wl-cta:active {
+  transform: scale(0.985);
+}
+
+.wl-cta--gold {
+  background: var(--gold-light);
+  color: var(--green-950);
+  box-shadow: 0 6px 20px rgba(7, 40, 33, 0.4);
+}
+
+.wl-cta--gold:disabled {
+  opacity: 0.42;
+  cursor: default;
+  box-shadow: none;
+}
+
+.wl-cta--outline {
+  background: rgba(7, 40, 33, 0.28);
+  border: 1.5px solid rgba(227, 194, 113, 0.72);
+  color: var(--gold-light);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+
+.wl-cta--outline:active {
+  background: rgba(7, 40, 33, 0.45);
+}
+
+.wl__link {
+  margin-top: 3px;
+  min-height: 34px;
+  padding: 0 8px;
+  background: none;
+  border: none;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.88);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  cursor: pointer;
+  touch-action: manipulation;
+}
+
+/* ---------- step two: setup ----------------------------------------------- */
+
+.wl__setup {
+  position: relative;
+  z-index: 1;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+}
+
+/* The hero is reframed down onto the waterline for this step: the splash
+   framing puts open sky behind the card, which reads as an empty screen. */
+.wl__hero-img--setup {
+  object-position: 34% 64%;
+}
+
+.wl__mark {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 0 var(--pad) 22px;
+}
+
+.wl__mark-crest {
+  width: 62px;
+  height: 62px;
+  border-radius: 50%;
+  border: 1.5px solid rgba(227, 194, 113, 0.6);
+  background: rgba(7, 40, 33, 0.5);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-display);
+  font-size: 21px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  color: var(--gold-light);
+  box-shadow: 0 0 22px rgba(227, 194, 113, 0.2), 0 10px 28px rgba(7, 40, 33, 0.45);
+}
+
+.wl__mark-word {
+  font-size: 9.5px;
+  font-weight: 800;
+  letter-spacing: 0.24em;
+  color: rgba(227, 194, 113, 0.85);
+  text-shadow: 0 1px 8px rgba(7, 40, 33, 0.6);
+  padding-left: 0.24em;
+}
+
+.wl__back {
+  position: absolute;
+  top: max(18px, env(safe-area-inset-top, 0px) + 10px);
+  left: 12px;
+  width: 40px;
+  height: 40px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--r-pill);
+  background: rgba(7, 40, 33, 0.42);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: 1px solid rgba(251, 246, 236, 0.16);
+  cursor: pointer;
+}
+
+.wl__card {
+  background: var(--ivory);
+  border-radius: 26px 26px 0 0;
+  padding: 26px var(--pad) calc(26px + env(safe-area-inset-bottom, 0px));
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  box-shadow: 0 -10px 36px rgba(7, 40, 33, 0.34);
+}
+
+.wl__card-head {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.wl__card-title {
   font-family: var(--font-display);
   font-size: 26px;
   font-weight: 700;
-  letter-spacing: 0.05em;
-  color: rgba(212, 175, 106, 0.95);
-  line-height: 1;
+  line-height: 1.15;
+  color: var(--ink);
 }
 
-.welcome__tagline {
-  text-align: center;
+.wl__card-note {
+  font-size: 13px;
+  color: var(--ink-muted);
 }
 
-.welcome__eyebrow {
-  font-size: 10px;
-  font-weight: 800;
-  letter-spacing: 0.22em;
-  color: rgba(212, 175, 106, 0.8);
-  text-transform: uppercase;
-  margin-bottom: 8px;
-}
-
-.welcome__title {
-  font-family: var(--font-display);
-  font-size: 44px;
-  font-weight: 700;
-  line-height: 1.06;
-  color: #FFFFFF;
-  letter-spacing: -0.015em;
-}
-
-/* ---------- ivory card that rises from the bottom -------------------------- */
-
-.welcome__card {
-  position: relative;
-  z-index: 1;
-  background: var(--ivory);
-  border-radius: 24px 24px 0 0;
-  padding: 28px var(--pad) calc(28px + env(safe-area-inset-bottom, 0px));
-  display: flex;
-  flex-direction: column;
-  gap: 20px;
-  /* Subtle lift shadow so the card feels elevated off the hero */
-  box-shadow: 0 -8px 32px rgba(7, 40, 33, 0.28);
-}
-
-/* ---------- form inside the card ------------------------------------------ */
-
-.welcome__field {
+.wl__field {
   display: flex;
   flex-direction: column;
   gap: 6px;
 }
 
-.welcome__label {
+.wl__label {
+  display: flex;
+  align-items: center;
+  gap: 7px;
   font-size: 12px;
   font-weight: 600;
-  letter-spacing: 0.03em;
   color: var(--ink-muted);
 }
 
-.welcome__input {
+.wl__optional {
+  font-size: 9.5px;
+  font-weight: 700;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--r-pill);
+  padding: 2px 7px;
+}
+
+.wl__input {
   height: 50px;
   padding: 0 16px;
   border-radius: var(--r-md);
@@ -149,22 +423,20 @@
   font-size: 16px;
   font-family: var(--font-ui);
   outline: none;
-  transition: border-color 0.15s, box-shadow 0.15s;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
   -webkit-appearance: none;
 }
 
-.welcome__input::placeholder {
+.wl__input::placeholder {
   color: var(--ink-faint);
 }
 
-.welcome__input:focus {
+.wl__input:focus {
   border-color: var(--green-900);
   box-shadow: 0 0 0 3px rgba(12, 74, 63, 0.1);
 }
 
-/* ---------- island grid ---------------------------------------------------- */
-
-.welcome__islands {
+.wl__islands {
   border: none;
   padding: 0;
   margin: 0;
@@ -173,18 +445,17 @@
   gap: 8px;
 }
 
-.welcome__islands > .welcome__label {
-  display: block;
+.wl__islands > .wl__label {
   margin-bottom: 4px;
 }
 
-.welcome__island-grid {
+.wl__island-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 8px;
 }
 
-.welcome__island-btn {
+.wl__island {
   position: relative;
   display: flex;
   flex-direction: column;
@@ -197,20 +468,20 @@
   cursor: pointer;
   text-align: left;
   touch-action: manipulation;
-  transition: border-color 0.12s, background 0.12s, box-shadow 0.12s;
+  transition: border-color 0.12s ease, background 0.12s ease, box-shadow 0.12s ease;
 }
 
-.welcome__island-btn.is-on {
+.wl__island.is-on {
   border-color: var(--green-900);
   background: var(--aqua-soft);
   box-shadow: 0 0 0 1px var(--green-900);
 }
 
-.welcome__island-btn:active {
+.wl__island:active {
   transform: scale(0.98);
 }
 
-.welcome__island-check {
+.wl__island-check {
   position: absolute;
   top: 10px;
   right: 10px;
@@ -223,67 +494,14 @@
   justify-content: center;
 }
 
-.welcome__island-name {
+.wl__island-name {
   font-size: 13px;
   font-weight: 700;
   color: var(--ink);
   line-height: 1.2;
 }
 
-.welcome__island-dest {
+.wl__island-dest {
   font-size: 11px;
   color: var(--ink-muted);
-}
-
-/* ---------- CTAs ----------------------------------------------------------- */
-
-.welcome__ctas {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
-
-.welcome__cta {
-  width: 100%;
-  border: none;
-  font-size: 15px;
-  font-weight: 700;
-  font-family: var(--font-ui);
-  letter-spacing: 0.01em;
-  cursor: pointer;
-  touch-action: manipulation;
-  transition: opacity 0.15s, transform 0.1s;
-  text-align: center;
-}
-
-.welcome__cta:active {
-  transform: scale(0.98);
-}
-
-/* Primary: dark green fill, ivory text — highest contrast */
-.welcome__cta--primary {
-  height: 52px;
-  border-radius: var(--r-pill);
-  background: var(--green-900);
-  color: var(--on-dark);
-  box-shadow: 0 4px 16px rgba(12, 74, 63, 0.35);
-}
-
-.welcome__cta--primary:disabled {
-  opacity: 0.4;
-  cursor: default;
-  box-shadow: none;
-}
-
-/* Ghost: text link style — no border clutter, clear action */
-.welcome__cta--ghost {
-  height: 44px;
-  border-radius: var(--r-pill);
-  background: transparent;
-  color: var(--ink-muted);
-  border: 1.5px solid var(--border-strong);
-}
-
-.welcome__cta--ghost:active {
-  background: var(--ivory-sunken);
 }
