@@ -215,11 +215,37 @@
   font-variant-numeric: tabular-nums;
 }
 
+/*
+ * The total is a band, not a row with a rule above it.
+ *
+ * Every line in this list looked the same weight: a hairline and a slightly
+ * bolder figure was all that separated "Service fee US$6.50" from the number
+ * the guest is about to be charged. On the one screen in the app where money
+ * changes hands, the amount should be unmistakable at arm's length before any
+ * of the breakdown is read.
+ *
+ * Reversed out of brand green, the same treatment the Trips day total uses, so
+ * "this is what it comes to" looks identical wherever the app says it.
+ */
 .summary__row--total {
-  margin-top: 10px;
-  padding-top: 14px;
-  border-top: 1px solid var(--border);
+  margin-top: 14px;
+  padding: 13px 15px;
+  border-radius: var(--r-lg);
+  background: linear-gradient(150deg, #0e5647 0%, var(--green-900) 46%, #083a31 100%);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08), var(--e-card);
   align-items: center;
+}
+
+.summary__row--total dt {
+  color: rgba(227, 194, 113, 0.9);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.summary__row--total dd {
+  color: var(--on-dark);
 }
 
 .checkout__policy {
@@ -273,6 +299,16 @@
 
 /* --- Pay ------------------------------------------------------------------------------ */
 
+/*
+ * The pay action follows the page; it is not pinned.
+ *
+ * A sticky pay bar was considered and rejected. This form is a sequence of
+ * decisions — day, departure, party, add-ons — and the total does not exist
+ * until a departure is chosen. A button reading "Choose a departure" floating
+ * over the day strip is an instruction the guest cannot follow yet, and one
+ * that stays in front of them while they try. Reaching the button at the foot
+ * *is* the confirmation that the sequence is complete.
+ */
 .checkout__pay {
   padding: 26px var(--s-md) 0;
 }

@@ -1142,6 +1142,65 @@ From a sweep of every screen against the reference board:
    open question of **four mood tiles versus twelve taxonomy filters** has not been decided.
 5. **Checkout / Confirmation / Ticket** have had no design pass at all this session.
 
+### The remaining screens, in priority order (2026-09-22, done)
+
+Worked the list recorded in the previous entry. All five are through.
+
+**One colour language.** Explore's categories had become jewel tiles while Nearby's and Search's
+chip rows were still the app's plain grey — three sibling screens filtering the same catalogue by
+the same five words in three visual systems. `Chip` now takes an optional `dotColor` and both rows
+carry the hue of the category they lead with. A dot, not a tile: a filter bar that becomes a second
+row of tiles has stopped being a filter bar. The dot is `aria-hidden`; the label carries meaning.
+
+**Nearby.** `Starts in 90 min` was hardcoded on every row of every listing — the same fabrication
+`Open Now` was, next to a real distance and a real price. It now uses `availabilityLabel` and omits
+the badge when nothing is bookable. The rating was missing entirely, on the one screen sorted by
+*distance*, where it is the only thing telling you whether the nearest is worth the walk. And the
+`View` badge is gone: a button-shaped element that was not a button, inside a card that already
+was, taking enough width that the price had nowhere to sit beside anything else.
+
+**Search.** The sort is now always named in the results line, including `recommended`. It was
+omitted for the default, so a recommended list had no stated order while every row led with a large
+distance — it looked like a nearest-first list that had got the order wrong. Both facts were
+correct; the missing label was what made them contradict each other.
+
+**Profile.** The subtitle read `Guest · VIP Jamaica` beneath a heading that already said `Guest`.
+It states island and destination now. The hero also opened with `max(52px, …+28px)` above a 96px
+crest — a band of empty green taller than the mark itself.
+
+**Explore.** The board's two missing rows are in.
+
+- **Special Offers.** The board's copy is "Save up to 20% on select experiences" and there is no
+  discount anywhere in this catalogue, so that row would have been a number invented to fill a
+  shape — on the screen a guest uses to decide what to spend. There *is* a real promotion, so the
+  row states that instead, and renders only when `PROMOTION` applies to something on the current
+  island. It shares one derivation with the geofence, so the row can never advertise an offer the
+  fence would not fire.
+- **Hidden Gems**, three across rather than two. Two cards read as a pair of equals to choose
+  between; three reads as a selection to browse. `:has()` rules fall back to two and one columns so
+  a thin island does not leave a hole in the grid.
+
+**Checkout.** The total was a row with a hairline above it, the same weight as "Service fee
+US$6.50". It is now a dark green band — the same treatment as the Trips day total, so "this is what
+it comes to" looks identical wherever the app says it.
+
+A sticky pay bar was **considered and rejected**, and the reason should survive: the form is a
+sequence of decisions and the total does not exist until a departure is chosen, so the button would
+spend that time reading "Choose a departure" while floating over the day strip — an instruction the
+guest cannot follow yet, permanently in front of them while they try. Reaching the button at the
+foot is itself the signal that the sequence is complete.
+
+**Ticket — a real defect, not a cosmetic one.** The `GUEST` field was the literal string
+**"Alex Bennett"**, on every ticket, for every guest. It is the field a vendor reads off the screen
+when they scan, so it was the one hardcoded string in the app a real person could have been turned
+away over. It now uses `state.guestName`, falling back to "Guest" for anyone who skipped the name
+at onboarding — the honest answer rather than someone else's.
+
+**Still not seen rendered: Confirmation and Ticket.** Both are reachable only after a completed
+checkout, and checkout cannot complete locally (`.env` configures Supabase, so `isLiveMode` is true
+and `ensureLiveUser()` fails). The Ticket fix is a one-line data substitution in a field that
+already rendered, but neither screen has had a visual pass and neither should be assumed good.
+
 ### Geofencing — wired (2026-09-22)
 
 `apps/tourist-web/src/data/geofence.ts` is pure: `evaluateFences(origin, fences, previous)` returns

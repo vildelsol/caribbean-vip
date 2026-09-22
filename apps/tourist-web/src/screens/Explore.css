@@ -387,10 +387,28 @@
 
 /* --- Hidden gems ------------------------------------------------------------ */
 
+/*
+ * Three across, not two.
+ *
+ * At three the cards are narrow, so the gap comes in and the overlaid title
+ * needs the tighter type set on `.gem__title` below. Two cards read as a pair
+ * of equals to choose between; three reads as a selection to browse, which is
+ * what a "hidden gems" row is for.
+ */
 .ex-gems {
   display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 12px;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+}
+
+/* One island could return fewer than three. Left alone, two cards in a
+   three-column grid sit at two thirds width with a hole beside them. */
+.ex-gems:has(> :last-child:nth-child(2)) {
+  grid-template-columns: repeat(2, 1fr);
+}
+
+.ex-gems:has(> :only-child) {
+  grid-template-columns: 1fr;
 }
 
 .gem {
@@ -432,10 +450,13 @@
 
 .gem__title {
   margin: 0;
-  font-size: 13.5px;
+  /* Down from 13.5px with the row at three across: at the narrower card width
+     a 13.5px title wrapped to three lines on most names and clipped to two,
+     which loses the second half of the title rather than the tail of it. */
+  font-size: 12px;
   font-weight: 700;
   color: var(--on-dark);
-  line-height: 1.26;
+  line-height: 1.22;
   letter-spacing: -0.008em;
   text-shadow: 0 1px 4px rgba(4, 24, 20, 0.7);
   /* Two lines keeps a long title from climbing back up over the subject. */
@@ -639,4 +660,66 @@
 .tonight__photo {
   width: 96px;
   border-radius: var(--r-md);
+}
+
+/* --- Special offers -------------------------------------------------------- */
+
+/*
+ * The one gold panel on a screen of ivory cards.
+ *
+ * Gold is reserved in `tokens.css` for offers, ratings and rewards, and this is
+ * the only *offer* on the home screen — so it is the only place the home screen
+ * gets to use the brand's own dark-and-gold treatment. Reversed out of green it
+ * separates from the feed without needing a border, a shadow or a bigger
+ * typeface to do it.
+ */
+.ex-offer {
+  display: flex;
+  align-items: center;
+  gap: 13px;
+  width: 100%;
+  margin-top: 12px;
+  padding: 13px 14px;
+  border-radius: var(--r-lg);
+  background: linear-gradient(140deg, #0e5647 0%, var(--green-900) 52%, #083a31 100%);
+  border: 1px solid rgba(227, 194, 113, 0.3);
+  box-shadow: var(--e-card);
+  text-align: left;
+  transition: transform 0.12s ease, border-color 0.16s ease;
+}
+
+.ex-offer:active {
+  transform: scale(0.99);
+}
+
+.ex-offer:hover {
+  border-color: rgba(227, 194, 113, 0.55);
+}
+
+.ex-offer__mark {
+  flex: none;
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(227, 194, 113, 0.14);
+  box-shadow: inset 0 0 0 1px rgba(227, 194, 113, 0.32);
+}
+
+.ex-offer__body {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+  flex: 1;
+}
+
+.ex-offer__title {
+  color: var(--on-dark);
+}
+
+.ex-offer__note {
+  color: rgba(227, 194, 113, 0.82);
 }

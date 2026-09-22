@@ -76,7 +76,15 @@ export function Ticket() {
         <dl className="stub__grid">
           <div>
             <dt className="t-micro c-faint">GUEST</dt>
-            <dd className="t-caption-strong">Alex Bennett</dd>
+            {/*
+              * This read "Alex Bennett" — a literal, on every ticket, for every
+              * guest. It is the field a vendor reads off the screen when they
+              * scan, so it was the one hardcoded string in the app that a real
+              * person could be turned away over. `guestName` is what onboarding
+              * collected; guests who skipped it are stored as "Guest", which is
+              * the honest answer rather than someone else's name.
+              */}
+            <dd className="t-caption-strong">{state.guestName || 'Guest'}</dd>
           </div>
           <div>
             <dt className="t-micro c-faint">GUESTS</dt>

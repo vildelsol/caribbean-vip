@@ -20,7 +20,7 @@ import {
 import { evaluateFences, type FenceState } from '../data/geofence';
 import { useGuestPosition } from '../state/useGuestPosition';
 import { useNavigate } from 'react-router-dom';
-import { firstBookableDay, slotsFor } from '../data/availability';
+import { availabilityLabel, firstBookableDay, slotsFor } from '../data/availability';
 import { useStore } from '../state/store';
 import { Icon, type IconName } from '../components/Icon';
 import {
@@ -149,6 +149,22 @@ export function Explore() {
     return byDistanceFrom(origin, ranked).slice(0, 6);
   }, [destination, ranked, resolvedCoords]);
 
+  /**
+   * The promoted listing on this island, if there is one.
+   *
+   * Shared by the Special Offers row and, below, by the geofence that fires the
+   * offer when a guest walks near its vendor — one derivation, so the row can
+   * never advertise something the fence would not trigger.
+   */
+  const offerExperience = useMemo(
+    () =>
+      PROMOTION.appliesToExperienceIds
+        .map((id) => experienceById(id))
+        .find((e) => e && e.islandId === state.islandId),
+    [state.islandId],
+  );
+  const offerVendor = offerExperience ? vendorFor(offerExperience) : undefined;
+
   // Fences: one per vendor that the on-island promotion applies to.
   const offerFences = useMemo(() => {
     return PROMOTION.appliesToExperienceIds
@@ -199,7 +215,15 @@ export function Explore() {
 
   const hero = ranked[0];
   const nearYou = nearby.slice(1, 4);
-  const gems = ranked.slice(4, 6);
+  /*
+   * Three, not two.
+   *
+   * The reference board runs this row three across, and three is also the right
+   * number for what it is: two cards read as a pair of equals that the guest
+   * must choose between, while three reads as a selection to browse. The row
+   * renders whatever it gets, so a thin island still lays out correctly.
+   */
+  const gems = ranked.slice(4, 7);
   const evening = ranked.find((e) => e.category === 'nightlife' || e.category === 'food');
 
   if (!island || !destination) return null;
@@ -353,10 +377,47 @@ export function Explore() {
         </section>
       ) : null}
 
+      {/* ---------------- Special offers ---------------- */}
+      {/*
+        * The reference board runs a Special Offers row here, and its copy is
+        * "Save up to 20% on select experiences". There is no discount anywhere
+        * in this catalogue, so that row would have been a number invented to
+        * fill a shape — on the screen a guest uses to decide what to spend.
+        *
+        * There *is* a real promotion: `PROMOTION`, the complimentary rum punch,
+        * with real terms and a real list of listings it applies to. So the row
+        * exists and states that, and it renders only when the offer actually
+        * applies to something on this island. On an island with no live
+        * promotion there is no row rather than an empty one.
+        */}
+      {offerExperience ? (
+        <section className="pad ex-section">
+          <SectionHeader title="Special Offers" note="VIP only" />
+          <button
+            type="button"
+            className="ex-offer"
+            onClick={() => navigate('/offer')}
+          >
+            <span className="ex-offer__mark" aria-hidden="true">
+              <Icon name="ticket" size={19} color="var(--gold-light)" />
+            </span>
+            <span className="ex-offer__body">
+              <span className="t-caption-strong ex-offer__title">
+                Complimentary rum punch with today&rsquo;s booking
+              </span>
+              <span className="t-micro ex-offer__note">
+                At {offerVendor?.location.name ?? 'selected operators'} · 18+, one per adult
+              </span>
+            </span>
+            <Icon name="chevron-right" size={17} color="var(--gold-light)" strokeWidth={2.2} />
+          </button>
+        </section>
+      ) : null}
+
       {/* ---------------- Local finds ---------------- */}
       {gems.length > 0 ? (
         <section className="pad ex-section">
-          <SectionHeader title="Local Finds" />
+          <SectionHeader title="Hidden Gems" action="See all" onAction={() => navigate('/search')} />
           <div className="ex-gems">
             {gems.map((e) => (
               <GemCard key={e.id} experience={e} />
@@ -444,6 +505,7 @@ function FeatureCard({ experience }: { experience: DemoExperience }) {
   const navigate = useNavigate();
   const saved = state.savedExperienceIds.includes(experience.id);
   const vendor = vendorFor(experience);
+  const availability = availabilityLabel(experience);
 
   return (
     <Card className="feature">
@@ -467,7 +529,7 @@ function FeatureCard({ experience }: { experience: DemoExperience }) {
       </div>
       <div className="feature__body">
         <div className="feature__flags">
-          <Badge tone="brand">Open Now</Badge>
+          {availability ? <Badge tone="brand">{availability}</Badge> : null}
           <Badge tone="plain">Cruise-Friendly</Badge>
         </div>
         <h3 className="t-display-sm">{experience.title}</h3>
