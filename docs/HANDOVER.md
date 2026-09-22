@@ -201,12 +201,26 @@ The same commit answered Ro's question about the foliage. Two changes:
 
 **Open, added to the list below:**
 
-0. **Nothing since `72e50a4` is deployed.** The Vercel CLI is installed but **logged out** on this
-   machine, and there is no `.vercel` link directory, so a deploy could not be run from here. Either
-   `vercel login` and `vercel --prod` from `apps/tourist-web`, or connect the GitHub repository to
-   the Vercel project so `main` deploys on push — the second is the better answer for a demo, since
-   it removes the step that is currently being forgotten. `vercel.json` is already correct and needs
-   no environment variables.
+0. **The demo URL is a deployment-specific one, and there is no production alias.** Corrected the
+   same day, and the original entry here was wrong: **deployment is automatic.** The Vercel GitHub
+   app builds every push to `main` — each of `72e50a4`, `2d246ee`, `3ea27e5`, `89f0c5a` and
+   `1a8cd86` deployed to Production and succeeded. The local `vercel` CLI being logged out says
+   nothing about it; check `gh api repos/vildelsol/caribbean-vip/deployments` instead.
+
+   What *was* true: every deployment 302'd to `vercel.com/sso-api`, because **Vercel Authentication
+   (Standard Protection) was on** — the link opened only for someone logged into the team, which is
+   not a link you can hand to an investor. Ro turned it off on 2026-09-22 and the live build was
+   walked and verified: Irie's three frond clusters, the foliage stopping at the frame on a desktop
+   viewport, and the widened Nearby rows.
+
+   The URL that works today is
+   `https://caribbean-vip-tourist-li58ewgtb-caribbean-vip.vercel.app` — but that is **pinned to
+   `1a8cd86` forever** and will not follow the next push. `caribbean-vip-tourist.vercel.app` is a
+   404, so **the project has no production alias**. Assign one before any link goes into a deck.
+
+   Note for the Hobby plan: Standard Protection covers production and previews together, so turning
+   it off makes preview URLs public too. Nothing here is a secret — demo mode is the absence of
+   configuration, there are no environment variables and no backend to reach.
 
 ### Session close — 2026-09-22, first session
 
