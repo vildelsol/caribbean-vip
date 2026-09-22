@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState, type CSSProperties } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import {
   byDistanceFrom,
@@ -27,7 +27,7 @@ import {
   type ItineraryStop,
 } from '../data/itinerary';
 import { useStore } from '../state/store';
-import { Icon } from '../components/Icon';
+import { Icon, type IconName } from '../components/Icon';
 import { Badge, Photo, Price, Stepper, formatUsd, type BadgeTone } from '../components/kit';
 import './Irie.css';
 
@@ -66,11 +66,24 @@ interface Intent {
   categories: string[];
   maxMinor?: number;
   reason: (e: DemoExperience, metres: number) => string;
+  /**
+   * The row's glyph and its colour.
+   *
+   * These were unadorned text pills, which on a dark ground reads as a wall of
+   * grey lozenges — the concierge's opening move looked like a tag cloud. An
+   * icon in its own jewel tone gives each suggestion a shape you can aim at
+   * without reading, which is what the reference board does with its rows.
+   * The hues are the same twelve-tone set the category tiles use.
+   */
+  icon: IconName;
+  color: string;
 }
 
 const INTENTS: Intent[] = [
   {
     chip: 'Something under $50',
+    icon: 'ticket',
+    color: '#92600E',
     reply: 'Here is what I can find under US$50 per person nearby.',
     categories: [],
     maxMinor: 5000,
@@ -78,24 +91,32 @@ const INTENTS: Intent[] = [
   },
   {
     chip: 'Quiet beach nearby',
+    icon: 'beach',
+    color: '#0E7490',
     reply: 'These stay calm even when the cruise ships are in.',
     categories: ['beaches', 'water_sports'],
     reason: (_e, m) => `${formatKm(m)} out, so it misses the port crowds.`,
   },
   {
     chip: 'Dinner with a view',
+    icon: 'food',
+    color: '#B04E1C',
     reply: 'Somewhere to end the day.',
     categories: ['food', 'nightlife'],
     reason: () => 'Good at sunset, and it takes a same-day table.',
   },
   {
     chip: 'Family activity',
+    icon: 'family',
+    color: '#A62F5E',
     reply: 'These work well with children along.',
     categories: ['family', 'beaches', 'adventure'],
     reason: () => 'Suits mixed ages, and there is shade.',
   },
   {
     chip: 'Rainy-day option',
+    icon: 'drum',
+    color: '#9E2F27',
     reply: 'Mostly indoors, or fine whatever the weather does.',
     categories: ['culture', 'food'],
     reason: () => 'Indoors and shaded — good after a hot morning.',
@@ -259,17 +280,29 @@ export function Irie() {
               className="irie-chip irie-chip--gold"
               onClick={() => askForDay(shape)}
             >
-              <Icon name="sparkle" size={13} color="var(--gold-light)" />
+              {/* Dark, not gold — the chip is now a gold fill, and a gold glyph
+                  on it disappears. */}
+              <Icon name="sparkle" size={13} color="var(--green-950)" />
               {shape.chip}
             </button>
           ))}
         </div>
       </section>
 
-      <div className="irie__chips">
+      <div className="irie__intents">
         {INTENTS.map((i) => (
-          <button key={i.chip} type="button" className="irie-chip" onClick={() => ask(i)}>
-            {i.chip}
+          <button
+            key={i.chip}
+            type="button"
+            className="irie-intent"
+            onClick={() => ask(i)}
+            style={{ '--intent-color': i.color } as CSSProperties}
+          >
+            <span className="irie-intent__icon" aria-hidden="true">
+              <Icon name={i.icon} size={17} strokeWidth={1.9} color="#FFFFFF" />
+            </span>
+            <span className="irie-intent__label">{i.chip}</span>
+            <Icon name="chevron-right" size={16} color="rgba(251,246,236,0.5)" />
           </button>
         ))}
       </div>
@@ -333,8 +366,17 @@ export function Irie() {
                   <span className="pop-card__meta">
                     {formatKm(metres)} · {travelFrom(metres).minutes} min
                   </span>
-                  <span className="pop-card__price">
-                    {formatUsd(experience.fromAmountMinor)}
+                  {/* Price and rating on one line, the way the reference board
+                      foots its cards. The rating was missing entirely, and it is
+                      the number that decides a tap on a rail like this one. */}
+                  <span className="pop-card__foot">
+                    <span className="pop-card__price">
+                      {formatUsd(experience.fromAmountMinor)}
+                    </span>
+                    <span className="pop-card__rating">
+                      <Icon name="star" size={11} color="var(--gold-light)" />
+                      {experience.ratingAverage.toFixed(1)}
+                    </span>
                   </span>
                 </span>
               </button>

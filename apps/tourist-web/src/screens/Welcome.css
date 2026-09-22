@@ -1,13 +1,23 @@
 /**
  * Onboarding.
  *
- * The photograph is the pitch, so the scrim is kept as light as legibility
+ * The photograph is the pitch, so the grade is kept as light as legibility
  * allows: dense only along the bottom edge where the controls sit, and nearly
- * clear across the sky. A heavier wash would turn a bright Caribbean beach
+ * clear across the middle. A heavier wash would turn a bright Caribbean beach
  * into the dark, cool image the brand is trying not to be.
+ *
+ * Two variables used to be referenced here and defined nowhere — `--pad` and
+ * `--font-ui`. An undefined custom property invalidates the whole declaration
+ * at computed-value time, so every `padding: … var(--pad) …` on this screen
+ * resolved to `0`: the splash buttons ran edge to edge and the setup card's
+ * copy sat flush against the left bezel. They are declared on `.wl` below.
+ * Do not reintroduce a bare `var(--pad)` without a fallback.
  */
 
 .wl {
+  --pad: 22px;
+  --font-ui: var(--font-sans);
+
   position: relative;
   min-height: 100dvh;
   display: flex;
@@ -15,60 +25,135 @@
   background: var(--green-950);
   /* Only the horizontal axis is clipped — the text-protection ellipse is
      deliberately wider than the frame. Vertical scroll stays available so the
-     setup card cannot be cut off on a short phone. */
+     setup sheet cannot be cut off on a short phone. */
   overflow-x: hidden;
 }
 
-/* ---------- hero ---------------------------------------------------------- */
+/* ---------- hero: the cross-fading stack -------------------------------- */
 
-.wl__hero {
+.wl__stage {
   position: absolute;
   inset: 0;
   z-index: 0;
+  overflow: hidden;
+  background: var(--green-950);
 }
 
-.wl__hero-img {
+.wl__frame {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  animation: wl-frame-fade 28s linear infinite;
+  will-change: opacity;
+}
+
+/* The first frame carries the screen before its animation has ticked, so the
+   splash is never blank for the length of one paint. */
+.wl__frame:first-child {
+  opacity: 1;
+}
+
+.wl__frame-img {
   width: 100%;
   height: 100%;
   object-fit: cover;
-  /* Framed on the catamaran and the open turquoise rather than the jet-ski
-     cluster, which reads as clutter directly behind the tagline. */
-  object-position: 38% 46%;
+  transform-origin: 50% 50%;
+  /* Stock photography is graded for print, not for a phone held in sunlight.
+     A light saturation and contrast lift is what makes the turquoise read as
+     Caribbean rather than as municipal swimming pool — and it costs nothing,
+     unlike re-shooting or re-exporting four assets. */
+  filter: saturate(1.16) contrast(1.05) brightness(1.02);
+  animation: wl-frame-drift 28s ease-out infinite;
+  will-change: transform;
 }
 
 /*
- * Weighted to the last quarter.
+ * Four frames, 28s, each held for a quarter of it.
  *
- * The gold button carries its own fill and the outlined one its own backdrop,
- * so the only thing the scrim has to protect is the white "Create an Account"
- * link at the foot. Holding the wash off until ~72% keeps the sand and the
- * waterline in the picture instead of sinking the bottom half in green.
+ * The fade occupies 5% at each end — about 1.4s — which is long enough to read
+ * as a dissolve rather than a cut and short enough that two photographs are
+ * never both half-present for long enough to look like a mistake.
  */
-.wl__scrim {
+@keyframes wl-frame-fade {
+  0% { opacity: 0; }
+  5% { opacity: 1; }
+  25% { opacity: 1; }
+  30% { opacity: 0; }
+  100% { opacity: 0; }
+}
+
+/*
+ * The Ken Burns drift.
+ *
+ * It starts at 1.04 rather than 1 so the edges never expose the stage behind,
+ * and it snaps home at 31% — one percent after the frame has finished fading
+ * out, where nothing can be seen to snap.
+ */
+@keyframes wl-frame-drift {
+  0% { transform: scale(1.04) translate3d(0, 0, 0); }
+  30% { transform: scale(1.15) translate3d(-1.4%, -1%, 0); }
+  30.5% { transform: scale(1.04) translate3d(0, 0, 0); }
+  100% { transform: scale(1.04) translate3d(0, 0, 0); }
+}
+
+/*
+ * The colour grade.
+ *
+ * Weighted to the last quarter. The gold button carries its own fill and the
+ * outlined one its own backdrop, so the only thing this has to protect is the
+ * white "Create an Account" link at the foot. Holding the wash off until ~66%
+ * keeps the sand and the waterline in the picture instead of sinking the
+ * bottom half in green. The warm tint along the top edge is what stops the
+ * whole frame reading cold when the jungle and sunset frames come round.
+ */
+.wl__grade {
   position: absolute;
   inset: 0;
-  background: linear-gradient(
-    180deg,
-    rgba(7, 40, 33, 0.05) 0%,
-    rgba(7, 40, 33, 0.07) 34%,
-    rgba(7, 40, 33, 0.20) 56%,
-    rgba(7, 40, 33, 0.46) 72%,
-    rgba(7, 40, 33, 0.82) 88%,
-    rgba(7, 40, 33, 0.94) 100%
+  background:
+    linear-gradient(180deg, rgba(185, 141, 47, 0.16) 0%, rgba(185, 141, 47, 0) 26%),
+    linear-gradient(
+      180deg,
+      rgba(7, 40, 33, 0.06) 0%,
+      rgba(7, 40, 33, 0.05) 30%,
+      rgba(7, 40, 33, 0.22) 52%,
+      rgba(7, 40, 33, 0.52) 66%,
+      rgba(7, 40, 33, 0.86) 84%,
+      rgba(7, 40, 33, 0.96) 100%
+    );
+}
+
+/* Corner fall-off. Four photographs of different exposures sit under the same
+   type; the vignette gives them one common edge so the mark reads identically
+   through every frame of the loop. */
+.wl__vignette {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(
+    ellipse 88% 70% at 50% 40%,
+    rgba(7, 40, 33, 0) 58%,
+    rgba(7, 40, 33, 0.22) 100%
   );
 }
 
-/* Step two puts an ivory card over the lower half, so the photo underneath it
-   is darkened further to stop bright sand reading through the card's shadow. */
-.wl__scrim--deep {
-  background: linear-gradient(
-    180deg,
-    rgba(7, 40, 33, 0.18) 0%,
-    rgba(7, 40, 33, 0.38) 34%,
-    rgba(7, 40, 33, 0.72) 58%,
-    rgba(7, 40, 33, 0.95) 80%,
-    rgba(7, 40, 33, 1) 100%
-  );
+/* Step two puts an ivory sheet over the lower two-thirds, so the strip that
+   remains is graded harder — it is now a header, not the picture. */
+.wl--setup .wl__grade {
+  background:
+    linear-gradient(180deg, rgba(185, 141, 47, 0.18) 0%, rgba(185, 141, 47, 0) 30%),
+    linear-gradient(
+      180deg,
+      rgba(7, 40, 33, 0.34) 0%,
+      rgba(7, 40, 33, 0.46) 40%,
+      rgba(7, 40, 33, 0.74) 78%,
+      rgba(7, 40, 33, 0.9) 100%
+    );
+}
+
+/* The splash framing puts open sky behind the sheet, which reads as an empty
+   screen. For step two the stack is pushed down onto the waterline. */
+.wl--setup .wl__frame-img {
+  object-position: 50% 62% !important;
+  animation-duration: 44s;
 }
 
 /* ---------- step one: splash ---------------------------------------------- */
@@ -79,8 +164,9 @@
   flex: 1;
   display: flex;
   flex-direction: column;
-  padding: max(40px, env(safe-area-inset-top, 0px) + 24px) var(--pad)
-    calc(28px + env(safe-area-inset-bottom, 0px));
+  gap: 22px;
+  padding: max(36px, env(safe-area-inset-top, 0px) + 22px) var(--pad, 22px)
+    calc(26px + env(safe-area-inset-bottom, 0px));
 }
 
 .wl__splash-top {
@@ -90,7 +176,7 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 26px;
+  gap: 24px;
 }
 
 /*
@@ -108,9 +194,9 @@
   inset: -10% -20%;
   background: radial-gradient(
     ellipse 62% 42% at 50% 50%,
-    rgba(7, 40, 33, 0.62) 0%,
-    rgba(7, 40, 33, 0.44) 42%,
-    rgba(7, 40, 33, 0.18) 68%,
+    rgba(7, 40, 33, 0.6) 0%,
+    rgba(7, 40, 33, 0.42) 42%,
+    rgba(7, 40, 33, 0.17) 68%,
     rgba(7, 40, 33, 0) 84%
   );
   pointer-events: none;
@@ -129,16 +215,15 @@
   width: 152px;
   height: 152px;
   border-radius: 50%;
-  background: radial-gradient(circle at 50% 32%, #10604F 0%, #072821 78%);
+  background: radial-gradient(circle at 50% 32%, #10604f 0%, #072821 78%);
   border: 3px solid var(--gold-light);
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  box-shadow:
-    0 0 0 1px rgba(227, 194, 113, 0.3),
-    0 0 44px rgba(227, 194, 113, 0.26),
-    0 20px 52px rgba(7, 40, 33, 0.55);
+  animation:
+    wl-crest-in 900ms cubic-bezier(0.16, 1, 0.3, 1) both,
+    wl-crest-glow 6s ease-in-out 900ms infinite;
 }
 
 /* Inner hairline ring — the detail that separates a crest from a circle. */
@@ -151,11 +236,86 @@
   pointer-events: none;
 }
 
+/*
+ * The sheen.
+ *
+ * A single highlight travelling across the disc on a long cycle. 7s with a 4s
+ * gap built into the keyframes: this sits on the first screen of the app and a
+ * shine that repeats every two seconds stops being jewellery and becomes a
+ * notification.
+ */
+.wl-crest::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  overflow: hidden;
+  background: linear-gradient(
+    104deg,
+    rgba(255, 255, 255, 0) 38%,
+    rgba(255, 246, 224, 0.22) 47%,
+    rgba(255, 255, 255, 0.34) 50%,
+    rgba(255, 246, 224, 0.22) 53%,
+    rgba(255, 255, 255, 0) 62%
+  );
+  background-size: 260% 100%;
+  background-repeat: no-repeat;
+  animation: wl-sheen 7s ease-in-out 1.4s infinite;
+  pointer-events: none;
+}
+
+@keyframes wl-sheen {
+  0% { background-position: 180% 0; }
+  38% { background-position: -80% 0; }
+  100% { background-position: -80% 0; }
+}
+
+@keyframes wl-crest-glow {
+  0%,
+  100% {
+    box-shadow:
+      0 0 0 1px rgba(227, 194, 113, 0.3),
+      0 0 38px rgba(227, 194, 113, 0.22),
+      0 20px 52px rgba(7, 40, 33, 0.55);
+  }
+  50% {
+    box-shadow:
+      0 0 0 1px rgba(227, 194, 113, 0.42),
+      0 0 62px rgba(227, 194, 113, 0.4),
+      0 20px 52px rgba(7, 40, 33, 0.55);
+  }
+}
+
+@keyframes wl-crest-in {
+  from {
+    opacity: 0;
+    transform: scale(0.86);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
 .wl-crest__stars {
   display: flex;
   align-items: center;
   gap: 3px;
   margin-bottom: 1px;
+}
+
+/* The three sparkles twinkle out of phase, so the group reads as light on
+   water rather than as one blinking element. */
+.wl-crest__stars > * {
+  animation: wl-twinkle 4.4s ease-in-out infinite;
+}
+.wl-crest__stars > *:nth-child(2) { animation-delay: 0.9s; }
+.wl-crest__stars > *:nth-child(3) { animation-delay: 1.9s; }
+
+@keyframes wl-twinkle {
+  0%,
+  100% { opacity: 0.55; transform: scale(0.9); }
+  50% { opacity: 1; transform: scale(1.08); }
 }
 
 .wl-crest__word {
@@ -189,7 +349,7 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 8px;
+  gap: 9px;
 }
 
 /*
@@ -201,21 +361,113 @@
  * copy. The sans separates them.
  */
 .wl__tagline {
-  font-family: var(--font-ui);
-  font-size: 20px;
+  margin: 0;
+  font-family: var(--font-ui, var(--font-sans));
+  font-size: 21px;
   font-weight: 600;
   line-height: 1.25;
   letter-spacing: 0.005em;
-  color: #FFFFFF;
+  color: #ffffff;
   text-shadow: 0 1px 3px rgba(7, 40, 33, 0.55), 0 2px 16px rgba(7, 40, 33, 0.45);
+  animation: wl-rise 720ms cubic-bezier(0.16, 1, 0.3, 1) 260ms both;
 }
 
 .wl__sub {
-  font-size: 13px;
-  line-height: 1.5;
+  margin: 0;
+  font-size: 12.5px;
+  line-height: 1.65;
+  letter-spacing: 0.01em;
   color: rgba(255, 255, 255, 0.9);
-  max-width: 252px;
+  max-width: 300px;
   text-shadow: 0 1px 3px rgba(7, 40, 33, 0.55), 0 2px 14px rgba(7, 40, 33, 0.45);
+  animation: wl-rise 720ms cubic-bezier(0.16, 1, 0.3, 1) 380ms both;
+}
+
+/*
+ * The markets, set as a rule rather than as a sentence.
+ *
+ * Three island names inside the body copy read as the end of a paragraph. Set
+ * in gold, letterspaced, between hairlines, they read as a masthead — which is
+ * the claim being made: this is not one island's app.
+ */
+.wl__islands-line {
+  margin: 4px 0 0;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 9.5px;
+  font-weight: 800;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--gold-light);
+  text-shadow: 0 1px 8px rgba(7, 40, 33, 0.7);
+  animation: wl-rise 720ms cubic-bezier(0.16, 1, 0.3, 1) 440ms both;
+}
+
+.wl__islands-line::before,
+.wl__islands-line::after {
+  content: '';
+  width: 22px;
+  height: 1px;
+  background: linear-gradient(90deg, rgba(227, 194, 113, 0) 0%, rgba(227, 194, 113, 0.8) 100%);
+}
+
+.wl__islands-line::after {
+  transform: scaleX(-1);
+}
+
+/* --- the proof row --- */
+
+/*
+ * Three claims, borrowed from the marketing board so the splash says something
+ * about the product and not only about the weather. Icons in gold hairline
+ * rings: the same jewellery language as the crest, a quarter of the size.
+ */
+.wl__proof {
+  position: relative;
+  z-index: 1;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 6px;
+  animation: wl-rise 720ms cubic-bezier(0.16, 1, 0.3, 1) 500ms both;
+}
+
+.wl__proof-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 7px;
+  text-align: center;
+}
+
+.wl__proof-ring {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid rgba(227, 194, 113, 0.5);
+  background: rgba(7, 40, 33, 0.34);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+
+.wl__proof-label {
+  /* The label is authored with a newline so the three columns break at the same
+     point regardless of string length — a ragged proof row is the detail that
+     makes a premium screen look assembled rather than composed. */
+  white-space: pre-line;
+  font-size: 9.5px;
+  font-weight: 700;
+  line-height: 1.35;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.82);
+  text-shadow: 0 1px 6px rgba(7, 40, 33, 0.6);
 }
 
 /* --- the three ways in --- */
@@ -225,14 +477,26 @@
   flex-direction: column;
   align-items: center;
   gap: 11px;
+  animation: wl-rise 720ms cubic-bezier(0.16, 1, 0.3, 1) 620ms both;
+}
+
+@keyframes wl-rise {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 14px, 0);
+  }
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
+  }
 }
 
 .wl-cta {
   width: 100%;
-  height: 52px;
+  height: 54px;
   border-radius: var(--r-pill);
   border: none;
-  font-family: var(--font-ui);
+  font-family: var(--font-ui, var(--font-sans));
   font-size: 12.5px;
   font-weight: 800;
   letter-spacing: 0.13em;
@@ -240,20 +504,25 @@
   text-align: center;
   cursor: pointer;
   touch-action: manipulation;
-  transition: transform 0.1s ease, opacity 0.15s ease;
+  transition: transform 0.1s ease, opacity 0.15s ease, box-shadow 0.2s ease;
 }
 
 .wl-cta:active {
   transform: scale(0.985);
 }
 
+/* A brushed-gold fill rather than a flat one. The band across the middle is
+   what separates a metal from a yellow rectangle. */
 .wl-cta--gold {
-  background: var(--gold-light);
+  background: linear-gradient(180deg, #f0d391 0%, var(--gold-light) 46%, #d3ab5b 100%);
   color: var(--green-950);
-  box-shadow: 0 6px 20px rgba(7, 40, 33, 0.4);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.55),
+    0 8px 24px rgba(7, 40, 33, 0.42);
 }
 
 .wl-cta--gold:disabled {
+  background: var(--gold-light);
   opacity: 0.42;
   cursor: default;
   box-shadow: none;
@@ -272,7 +541,7 @@
 }
 
 .wl__link {
-  margin-top: 3px;
+  margin-top: 1px;
   min-height: 34px;
   padding: 0 8px;
   background: none;
@@ -288,36 +557,51 @@
 
 /* ---------- step two: setup ----------------------------------------------- */
 
+/*
+ * The sheet fills the screen.
+ *
+ * The previous version let the card size to its content and pinned it to the
+ * bottom, which left 45% of a 812pt phone as empty sky with a small crest
+ * floating in it — the "doesn't even fill the screen" complaint, exactly. The
+ * strip is now a bounded header (clamped, not flexible) and the card takes
+ * every remaining pixel with `flex: 1`, pushing its submit button to the foot.
+ */
 .wl__setup {
   position: relative;
   z-index: 1;
   flex: 1;
   display: flex;
   flex-direction: column;
-  justify-content: flex-end;
 }
 
-/* The hero is reframed down onto the waterline for this step: the splash
-   framing puts open sky behind the card, which reads as an empty screen. */
-.wl__hero-img--setup {
-  object-position: 34% 64%;
-}
-
-.wl__mark {
-  flex: 1;
+.wl__strip {
+  position: relative;
+  flex: 0 0 auto;
+  /* Enough to establish the place, capped so a tall phone does not turn the
+     header into the screen. The upper bound is what keeps the submit button
+     above the fold on a 812pt phone without the sheet having to scroll. */
+  height: clamp(148px, 21dvh, 196px);
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   gap: 10px;
-  padding: 0 var(--pad) 22px;
+  padding: max(16px, env(safe-area-inset-top, 0px)) var(--pad, 22px) 18px;
+}
+
+.wl__mark {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 9px;
+  animation: wl-rise 640ms cubic-bezier(0.16, 1, 0.3, 1) both;
 }
 
 .wl__mark-crest {
   width: 62px;
   height: 62px;
   border-radius: 50%;
-  border: 1.5px solid rgba(227, 194, 113, 0.6);
+  border: 1.5px solid rgba(227, 194, 113, 0.65);
   background: rgba(7, 40, 33, 0.5);
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
@@ -329,16 +613,41 @@
   font-weight: 700;
   letter-spacing: 0.05em;
   color: var(--gold-light);
-  box-shadow: 0 0 22px rgba(227, 194, 113, 0.2), 0 10px 28px rgba(7, 40, 33, 0.45);
+  box-shadow: 0 0 22px rgba(227, 194, 113, 0.22), 0 10px 28px rgba(7, 40, 33, 0.45);
 }
 
 .wl__mark-word {
   font-size: 9.5px;
   font-weight: 800;
   letter-spacing: 0.24em;
-  color: rgba(227, 194, 113, 0.85);
+  color: rgba(227, 194, 113, 0.88);
   text-shadow: 0 1px 8px rgba(7, 40, 33, 0.6);
   padding-left: 0.24em;
+}
+
+/* Two steps, and you are told which one you are on. The absence of this is
+   why step two felt like a dead end rather than a penultimate screen. */
+.wl__steps {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.wl__step {
+  height: 3px;
+  border-radius: var(--r-pill);
+  background: rgba(251, 246, 236, 0.28);
+  transition: width 0.25s ease, background 0.25s ease;
+}
+
+.wl__step.is-done {
+  width: 14px;
+  background: rgba(227, 194, 113, 0.55);
+}
+
+.wl__step.is-on {
+  width: 26px;
+  background: var(--gold-light);
 }
 
 .wl__back {
@@ -359,47 +668,79 @@
 }
 
 .wl__card {
+  flex: 1;
   background: var(--ivory);
-  border-radius: 26px 26px 0 0;
-  padding: 26px var(--pad) calc(26px + env(safe-area-inset-bottom, 0px));
+  border-radius: 28px 28px 0 0;
+  padding: 24px var(--pad, 22px) calc(20px + env(safe-area-inset-bottom, 0px));
   display: flex;
   flex-direction: column;
-  gap: 18px;
-  box-shadow: 0 -10px 36px rgba(7, 40, 33, 0.34);
+  gap: 17px;
+  box-shadow: 0 -12px 40px rgba(7, 40, 33, 0.38);
+  animation: wl-sheet-in 520ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+/* A gold hairline along the sheet's lip. It is one pixel and it is the whole
+   difference between a white panel and a piece of the brand. */
+.wl__card::before {
+  content: '';
+  display: block;
+  width: 38px;
+  height: 3px;
+  margin: -8px auto 2px;
+  border-radius: var(--r-pill);
+  background: var(--gold-light);
+  opacity: 0.55;
+}
+
+@keyframes wl-sheet-in {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 22px, 0);
+  }
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
+  }
 }
 
 .wl__card-head {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 5px;
 }
 
 .wl__card-title {
+  margin: 0;
   font-family: var(--font-display);
-  font-size: 26px;
+  font-size: 28px;
   font-weight: 700;
-  line-height: 1.15;
+  line-height: 1.12;
+  letter-spacing: 0.005em;
   color: var(--ink);
 }
 
 .wl__card-note {
-  font-size: 13px;
+  margin: 0;
+  font-size: 13.5px;
+  line-height: 1.45;
   color: var(--ink-muted);
 }
 
 .wl__field {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 7px;
 }
 
 .wl__label {
   display: flex;
   align-items: center;
   gap: 7px;
-  font-size: 12px;
-  font-weight: 600;
-  color: var(--ink-muted);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
 }
 
 .wl__optional {
@@ -414,14 +755,14 @@
 }
 
 .wl__input {
-  height: 50px;
+  height: 52px;
   padding: 0 16px;
   border-radius: var(--r-md);
   border: 1.5px solid var(--border-strong);
   background: var(--ivory-raised);
   color: var(--ink);
   font-size: 16px;
-  font-family: var(--font-ui);
+  font-family: var(--font-ui, var(--font-sans));
   outline: none;
   transition: border-color 0.15s ease, box-shadow 0.15s ease;
   -webkit-appearance: none;
@@ -442,66 +783,184 @@
   margin: 0;
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 9px;
 }
 
 .wl__islands > .wl__label {
-  margin-bottom: 4px;
+  margin-bottom: 2px;
+  padding: 0;
 }
 
-.wl__island-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 8px;
+.wl__island-list {
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
 }
 
 .wl__island {
   position: relative;
   display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 2px;
-  padding: 12px 14px;
-  border-radius: var(--r-md);
+  align-items: center;
+  gap: 13px;
+  padding: 10px 14px 10px 10px;
+  border-radius: var(--r-lg);
   border: 1.5px solid var(--border-strong);
   background: var(--ivory-raised);
   cursor: pointer;
   text-align: left;
   touch-action: manipulation;
-  transition: border-color 0.12s ease, background 0.12s ease, box-shadow 0.12s ease;
+  transition:
+    border-color 0.14s ease,
+    background 0.14s ease,
+    box-shadow 0.14s ease,
+    transform 0.1s ease;
 }
 
 .wl__island.is-on {
   border-color: var(--green-900);
   background: var(--aqua-soft);
-  box-shadow: 0 0 0 1px var(--green-900);
+  box-shadow: 0 0 0 1px var(--green-900), var(--e-card);
 }
 
 .wl__island:active {
-  transform: scale(0.98);
+  transform: scale(0.99);
 }
 
-.wl__island-check {
-  position: absolute;
-  top: 10px;
-  right: 10px;
-  width: 18px;
-  height: 18px;
-  border-radius: 50%;
-  background: var(--green-900);
+.wl__island-thumb {
+  width: 50px;
+  height: 50px;
+  flex: 0 0 auto;
+  border-radius: var(--r-md);
+  object-fit: cover;
+  background: var(--ivory-sunken);
+}
+
+.wl__island-text {
   display: flex;
-  align-items: center;
-  justify-content: center;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+  flex: 1;
 }
 
 .wl__island-name {
-  font-size: 13px;
+  font-size: 14.5px;
   font-weight: 700;
   color: var(--ink);
   line-height: 1.2;
 }
 
 .wl__island-dest {
-  font-size: 11px;
+  font-size: 11.5px;
   color: var(--ink-muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* The check keeps its slot in every row rather than appearing only on the
+   selected one, so choosing an island does not shift the row's layout. */
+.wl__island-check {
+  flex: 0 0 auto;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  border: 1.5px solid var(--border-strong);
+  background: transparent;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.14s ease, border-color 0.14s ease;
+}
+
+.wl__island-check > * {
+  opacity: 0;
+  transition: opacity 0.14s ease;
+}
+
+.wl__island.is-on .wl__island-check {
+  background: var(--green-900);
+  border-color: var(--green-900);
+}
+
+.wl__island.is-on .wl__island-check > * {
+  opacity: 1;
+}
+
+/* `margin-top: auto` is what pins the submit to the foot of a sheet that is now
+   taller than its content on most phones. */
+.wl__card-foot {
+  margin-top: auto;
+  padding-top: 4px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+}
+
+.wl__foot-note {
+  margin: 0;
+  font-size: 11.5px;
+  color: var(--ink-faint);
+  text-align: center;
+}
+
+/*
+ * Reduced motion.
+ *
+ * `global.css` already collapses every duration to ~0, which would leave the
+ * four stacked frames all at their keyframe start (opacity 0) and the screen
+ * black. The loop is therefore stopped explicitly here and the first frame
+ * pinned on — a static splash, which is the correct reduced-motion answer.
+ */
+@media (prefers-reduced-motion: reduce) {
+  .wl__frame {
+    animation: none !important;
+    opacity: 0;
+  }
+
+  .wl__frame:first-child {
+    opacity: 1;
+  }
+
+  .wl__frame-img,
+  .wl-crest,
+  .wl-crest::before,
+  .wl-crest__stars > * {
+    animation: none !important;
+    transform: none !important;
+  }
+}
+
+/*
+ * Short phones (iPhone SE / 8, and anything in landscape-ish letterboxing).
+ *
+ * The setup sheet is a form with a submit at its foot, and a submit that needs
+ * a scroll to reach is the difference between "two taps" and "where is the
+ * button". At 667pt the default metrics overflow by about 66px, so the header
+ * strip gives back a third of itself, the sheet tightens, and the reassurance
+ * line — the one element on the screen that is purely nice to have — goes.
+ */
+@media (max-height: 720px) {
+  .wl__strip {
+    height: clamp(116px, 17dvh, 150px);
+  }
+
+  .wl__card {
+    gap: 13px;
+    padding-top: 20px;
+  }
+
+  .wl__card-title {
+    font-size: 25px;
+  }
+
+  .wl__foot-note {
+    display: none;
+  }
+
+  .wl__island-thumb {
+    width: 46px;
+    height: 46px;
+  }
 }

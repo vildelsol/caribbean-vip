@@ -27,13 +27,18 @@ export function App() {
   const { state } = useStore();
   const { pathname } = useLocation();
 
-  if (!state.onboarded) return <Welcome />;
-
   // A new screen starts at the top. Without this, navigating from the foot of Explore into a
   // listing opens the listing already scrolled halfway down it.
+  //
+  // This must sit ABOVE the onboarding early return, not below it. It used to sit below, which
+  // meant the component called three hooks while onboarding and four afterwards — so the moment a
+  // guest finished setup, React hit a changed hook order and threw "Internal React error: Expected
+  // static flag was missing" into the console on the single most important transition in the app.
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: 'instant' as ScrollBehavior });
   }, [pathname]);
+
+  if (!state.onboarded) return <Welcome />;
 
   return (
     <div className="app">

@@ -848,6 +848,100 @@ spread, 18% at peak. Slow and shallow on purpose: it sits on every screen, and a
 becomes the thing you cannot stop looking at. The existing inner spark twinkle is untouched.
 `prefers-reduced-motion` is honoured globally in `global.css`, which collapses both to a stop.
 
+### Welcome — the lifeless-splash pass (2026-09-22, later)
+
+Ro on the state before this pass: *"the first two screens look and feel lifeless … the second screen
+is terrible, doesn't even fill the screen."* Both complaints had one root cause and one design cause.
+
+**The root cause was a bug, not taste.** `Welcome.css` referenced `--pad` and `--font-ui`, and
+neither was defined anywhere in the repo — not in `tokens.css`, not in `global.css`, nowhere. An
+undefined custom property invalidates its whole declaration at computed-value time, so every
+`padding: … var(--pad) …` on this screen resolved to **0**. The splash CTAs ran bezel to bezel and
+the setup card's heading, input and island grid sat flush against the left edge. Nothing else in the
+app used either variable, which is why only these two screens were affected. They are now declared
+on `.wl` itself, and every use carries a fallback. Do not reintroduce a bare `var(--pad)`.
+
+**Step one is now a four-frame loop.** Stills, not video: `ky-hero` → `jm-dunns-2` →
+`bb-south-coast-1` → `jm-catamaran-1`, 28s cycle, 7s each, ~1.4s cross-fade, with a Ken Burns drift
+from scale 1.04 to 1.15. The order is a colour arc — turquoise, jungle, aerial coast, gold sunset —
+so it moves through a day rather than shuffling postcards. It is CSS keyframes with staggered
+`animation-delay` and no React state, so it never re-renders and cannot stall. `bb-south-coast-1` is
+the **aerial down a coastline** recorded as missing in the earlier pass; it was in the library all
+along.
+
+Also on step one: a `saturate(1.16) contrast(1.05)` grade on the frames (the stock photography is
+graded for print and reads flat on a phone in sun), a warm gold tint along the top edge of the wash,
+a sheen that crosses the crest every 7s, out-of-phase twinkles on the three sparkles, a breathing
+gold glow, staggered entrance choreography, the markets set as a gold rule rather than a sentence,
+and a three-up proof row — *Curated experiences · Verified operators · VIP benefits* — lifted from
+the marketing board so the splash makes a claim about the product and not only about the weather.
+
+**Step two now fills the screen.** The old version let the card size to its content and pinned it to
+the bottom, which left ~45% of an 812pt phone as empty sky with a small crest floating in it. The
+photograph is now a bounded header strip (`clamp(148px, 21dvh, 196px)`) and the sheet takes every
+remaining pixel with `flex: 1`, its submit pinned to the foot with `margin-top: auto`. The island
+picker changed from a two-across grid — whose fourth, empty cell was the loudest "unfinished" signal
+on the screen — to three full-width rows carrying the island's photograph and its live inventory
+count. A two-dot step indicator was added; its absence is why step two read as a dead end.
+
+Zero vertical overflow at 375×812. A `max-height: 720px` block tightens the strip and drops the
+reassurance line so the submit stays above the fold on an SE too.
+
+**Reduced motion needed an explicit rule.** `global.css` collapses every duration to ~0.001ms
+globally, which would have left all four stacked frames at their keyframe start — opacity 0 — and
+the splash black. `Welcome.css` therefore stops the loop outright under
+`prefers-reduced-motion: reduce` and pins frame one on. Any future stacked-fade animation in this
+codebase needs the same explicit handling; the global collapse is not sufficient on its own.
+
+### The colour pass — Explore and Irie (2026-09-22, later still)
+
+Ro: *"it's the refinement touches, colour contrasts in the screenshot … it needs that colour and
+excitement."* Two changes carry most of it.
+
+**Category tiles.** The chips were white cards with the category's colour showing only as a 13%
+tint behind the icon, and the palette was bright utility colour — Tailwind's sky-500, orange-600,
+red-600 — chosen for that tint. They are now **filled tiles** carrying white icon and label, which
+is the row the reference board leads with. The palette went with them: the same twelve hues taken
+down in lightness and up in depth, jewel tones rather than utility colour, because at full strength
+the old values read as a generic app-store icon grid beside the brand green and gold. Every value
+carries white type at **5.3:1 or better** — checked, not eyeballed, because the type now sits
+directly on the fill. `CAT_COLORS` in `Explore.tsx` is the single source.
+
+Selection cannot be signalled by colour on a row that is already twelve colours, so it is a **gold
+ring plus a lift**. Dimming the unselected tiles was tried and reverted: "All" is selected on load,
+so it greyed eleven of twelve tiles in the state most users see first.
+
+**The concierge.** `.irie` was one flat fill of `--green-950` behind 900px of scroll, which reads as
+absence rather than depth — the screen looked switched off. It is now a lit room: a warm gold bloom
+behind the greeting where Irie "is", a cool teal bloom low and left, a deeper base, and a gold
+hairline along the top edge. All gradients, no image — an asset here would need attribution, would
+cost a decode on tab switch, and would have to survive white text scrolling over it. A second layer
+drifts on a 24s alternating cycle, stopped under `prefers-reduced-motion`.
+
+The five question chips became **suggestion rows**: a coloured glyph tile in its own jewel tone, the
+label, and a chevron. Three things change at once — a 56px target instead of a 40px pill, colour
+that says what kind of answer you are asking for before you read it, and a chevron that says the row
+leads somewhere. `Intent` in `Irie.tsx` grew `icon` and `color` for this. The three **day builders**
+above them went from gold-on-a-16%-wash to a filled gold gradient with dark type, because composing
+a day is what this tab does that a search box cannot and it was previously indistinguishable at a
+glance from the narrower questions. The popular rail's cards gained the **rating** beside the price;
+without it the rail's only decision cue was distance, and distance does not tell you if a thing is
+any good.
+
+**Not changed, deliberately.** `See all` stays teal. Gold is reserved in `tokens.css` for offers,
+ratings and rewards; the board sets that link in gold, but moving it there would dilute the one
+signal the app uses gold for. The photo credit pill stays as it is — it is a licence condition, and
+it is already the smallest it can legibly be.
+
+### Fixed in passing: a conditional hook in `App.tsx` (2026-09-22)
+
+`App()` called `useEffect` **below** the `if (!state.onboarded) return <Welcome />` early return, so
+the component ran three hooks during onboarding and four afterwards. The moment a guest finished
+setup, React hit a changed hook order and threw *"Internal React error: Expected static flag was
+missing"* — on the single most important transition in the app. The effect now sits above the
+return. Caught from the browser console while working on the screens either side of it, not by a
+test; there is no test that walks that transition, and that remains a gap.
+
 ### Geofencing — wired (2026-09-22)
 
 `apps/tourist-web/src/data/geofence.ts` is pure: `evaluateFences(origin, fences, previous)` returns

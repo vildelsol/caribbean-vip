@@ -67,19 +67,33 @@ const CATEGORIES = [
   { id: 'shopping',      label: 'Shopping',     icon: 'bag' },
 ] as const satisfies readonly { id: string; label: string; icon: IconName }[];
 
+/**
+ * The category palette.
+ *
+ * These were bright utility colours — Tailwind's sky-500, orange-600, red-600 —
+ * chosen when the chips were white cards and the colour appeared only as a 13%
+ * tint behind the icon. The chips are now filled tiles, and at full strength
+ * those hues read as a generic app-store icon grid rather than as a premium
+ * travel brand. They are now jewel tones: the same twelve hues, taken down in
+ * lightness and up in depth, so a row of them sits beside the brand green and
+ * the gold instead of shouting over them.
+ *
+ * Every value carries white type at 5.3:1 or better — checked, not eyeballed,
+ * because the label and icon sit directly on the fill.
+ */
 const CAT_COLORS: Record<string, string> = {
-  all:         'var(--green-900)',
-  adventure:   '#16803C',
-  beaches:     '#0EA5E9',
-  water_sports:'#0284C7',
-  waterfalls:  '#06B6D4',
-  food:        '#EA580C',
-  culture:     '#DC2626',
-  wellness:    '#65A30D',
-  nightlife:   '#7C3AED',
-  day_trips:   '#D97706',
-  family:      '#DB2777',
-  shopping:    '#BE185D',
+  all:         '#0C4A3F',
+  adventure:   '#17683D',
+  beaches:     '#0E7490',
+  water_sports:'#125E7C',
+  waterfalls:  '#0F766E',
+  food:        '#B04E1C',
+  culture:     '#9E2F27',
+  wellness:    '#466F1E',
+  nightlife:   '#573593',
+  day_trips:   '#92600E',
+  family:      '#A62F5E',
+  shopping:    '#8A2751',
 };
 
 /** The design labels a card by what kind of thing it is, not by its raw category id. */
