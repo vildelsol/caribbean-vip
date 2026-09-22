@@ -11,21 +11,58 @@
   pointer-events: none;
 }
 
+/*
+ * Spacing here is the parent's `gap`, deliberately.
+ *
+ * Every `t-*` type class in global.css sets `margin: 0`, at the same specificity as a screen rule
+ * and in a stylesheet that loads after this one — so `.confirm__title { margin-top: 12px }` on an
+ * element that also carries `t-display` never applied. There are around fifty rules across the app
+ * in that shape and none of them do anything; `.confirm__total` below is one of them, which is why
+ * the paid line runs edge to edge. Until that cascade is fixed, spacing on a typed element belongs
+ * to its container.
+ */
 .confirm__hero-body {
   position: absolute;
   left: var(--s-md);
   right: var(--s-md);
-  bottom: 34px;
+  bottom: 30px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 10px;
 }
 
-.confirm__flag {
-  gap: 8px;
+/* The mark a guest reads before any word: a gold disc with a green tick. */
+.confirm__seal {
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  background: var(--gold-light);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 6px 18px rgba(3, 20, 16, 0.45);
+}
+
+/*
+ * The word itself.
+ *
+ * Larger than `t-display` and in gold, because it is the only thing on this screen that is *news*.
+ * The listing title under it is set at `t-title`, which is where the old headline's weight goes —
+ * the hierarchy is inverted rather than inflated, so the hero is no taller than it was.
+ */
+.confirm__shout {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: 44px;
+  line-height: 1;
+  letter-spacing: -0.02em;
   color: var(--gold-light);
+  text-shadow: 0 2px 14px rgba(3, 20, 16, 0.55);
 }
 
-.confirm__title {
-  margin-top: 12px;
-  color: var(--on-dark);
+.confirm__going {
+  text-wrap: balance;
 }
 
 /* --- Receipt card ---------------------------------------------------------- */
@@ -108,13 +145,20 @@
   flex: 1;
 }
 
+/*
+ * The paid line ran edge to edge: this margin is on an element that also carries `t-caption`,
+ * which zeroes margin from a later stylesheet, so it was dropped. Padding is not zeroed by the
+ * type classes, so the inset is expressed as padding and the gap above it as a wrapper margin
+ * this rule owns outright.
+ */
 .confirm__total {
   display: flex;
   align-items: center;
   gap: 12px;
-  margin: 20px var(--s-md) 0;
-  padding-top: 14px;
+  margin-top: 20px;
+  padding: 14px var(--s-md) 0;
   border-top: 1px solid var(--border);
+  border-image: linear-gradient(90deg, transparent 0 16px, var(--border) 16px calc(100% - 16px), transparent calc(100% - 16px)) 1;
 }
 
 /* --- Next idea ---------------------------------------------------------------- */

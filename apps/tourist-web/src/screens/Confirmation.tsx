@@ -53,12 +53,24 @@ export function Confirmation() {
       <header className="confirm__hero">
         <Photo src={heroUrl(experience)} mediaKey={experience.media[0]} alt="" ratio="390 / 290" radius="0" />
         <span className="confirm__scrim" />
+        {/*
+          The confirmation states itself first.
+          It used to open with "BOOKING CONFIRMED" as a 11px gold overline above a display-size
+          "You're going to <title>!" — so the largest thing on the screen was the listing name,
+          which the guest had just spent three screens looking at, and the one fact they came here
+          for was the smallest. The order is now reversed: the outcome shouts, the listing follows.
+
+          Every line here is spaced by the parent's `gap`. Margins on these elements would be
+          silently dropped — see the note in Confirmation.css.
+        */}
         <div className="confirm__hero-body">
-          <p className="row confirm__flag">
-            <Icon name="sparkle" size={16} color="var(--gold-light)" />
-            <span className="t-overline">Booking confirmed</span>
+          <p className="confirm__seal">
+            <Icon name="check" size={22} color="var(--green-900)" strokeWidth={3} />
           </p>
-          <h1 className="t-display c-on-dark confirm__title">You&rsquo;re going to {experience.title}!</h1>
+          <h1 className="confirm__shout">Confirmed!</h1>
+          <p className="t-title c-on-dark confirm__going">
+            You&rsquo;re going to {experience.title}
+          </p>
         </div>
       </header>
 

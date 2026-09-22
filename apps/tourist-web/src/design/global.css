@@ -50,6 +50,36 @@ label {
   touch-action: manipulation;
 }
 
+/*
+ * The margin reset lives on the elements, not on the type classes.
+ *
+ * Every `.t-*` class used to carry `margin: 0` of its own. That reads as tidy and is a trap: a
+ * type class has the same specificity as a screen's own class, and `global.css` loads *after*
+ * every screen stylesheet, so `.confirm__total { margin: 20px var(--s-md) 0 }` on an element that
+ * also carried `t-caption` lost — silently, with no warning anywhere. Around fifty rules across
+ * eleven screens were in that shape and none of them did anything: the paid line on the
+ * confirmation screen ran edge to edge, and the spacing inside half the cards was whatever the
+ * line-height happened to leave.
+ *
+ * At element specificity the browser defaults are still cleared and any class can still override,
+ * which is what a reset is supposed to do.
+ */
+h1,
+h2,
+h3,
+h4,
+h5,
+h6,
+p,
+figure,
+blockquote,
+ul,
+ol,
+dl,
+dd {
+  margin: 0;
+}
+
 body {
   margin: 0;
   background: var(--green-980);
@@ -229,7 +259,6 @@ button.badge::after {
   text-wrap: balance;
   font-weight: 700;
   letter-spacing: -0.012em;
-  margin: 0;
 }
 
 .t-display {
@@ -255,38 +284,32 @@ button.badge::after {
   line-height: 1.27;
   font-weight: 700;
   letter-spacing: -0.013em;
-  margin: 0;
 }
 .t-heading {
   font-size: 18px;
   line-height: 1.33;
   font-weight: 700;
   letter-spacing: -0.011em;
-  margin: 0;
 }
 .t-body {
   font-size: 16px;
   line-height: 1.5;
   font-weight: 500;
-  margin: 0;
 }
 .t-body-strong {
   font-size: 16px;
   line-height: 1.5;
   font-weight: 700;
-  margin: 0;
 }
 .t-caption {
   font-size: 14px;
   line-height: 1.43;
   font-weight: 500;
-  margin: 0;
 }
 .t-caption-strong {
   font-size: 14px;
   line-height: 1.43;
   font-weight: 600;
-  margin: 0;
 }
 /* The floor. The source design goes to 8.5px; PRD §16 requires this to be readable outdoors in
    sun, so the scale is kept and the floor is not. */
@@ -294,13 +317,11 @@ button.badge::after {
   font-size: 11px;
   line-height: 1.36;
   font-weight: 600;
-  margin: 0;
 }
 .t-micro-strong {
   font-size: 11px;
   line-height: 1.36;
   font-weight: 700;
-  margin: 0;
 }
 /*
  * A title on a list or rail card. Sans, not serif — the design reserves the serif for screen and
@@ -313,7 +334,6 @@ button.badge::after {
   font-weight: 700;
   letter-spacing: -0.012em;
   color: var(--ink);
-  margin: 0;
 }
 
 .t-overline {
@@ -322,7 +342,6 @@ button.badge::after {
   font-weight: 800;
   letter-spacing: 0.125em;
   text-transform: uppercase;
-  margin: 0;
 }
 
 .t-amount {
@@ -330,14 +349,12 @@ button.badge::after {
   line-height: 1;
   font-weight: 800;
   font-variant-numeric: tabular-nums;
-  margin: 0;
 }
 .t-amount-sm {
   font-size: 16px;
   line-height: 1.25;
   font-weight: 800;
   font-variant-numeric: tabular-nums;
-  margin: 0;
 }
 
 /* ---------------------------------------------------------------------------
