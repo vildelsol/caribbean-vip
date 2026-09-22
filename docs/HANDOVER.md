@@ -1,6 +1,6 @@
 # Handover — Caribbean VIP
 
-**Written:** 2026-08-02 · **Updated:** 2026-09-22 (design pass against Ro's reference images; **all demo/simulation labelling stripped from both apps — see §5 "Demo labelling removed"**; vendor portal built out to a real portal; Irie greeting retypeset and given a live rail; geofence wired — real GPS triggers offer within 250 m of promoted vendor, demo timer retained as fallback; **guest sign-up flow added and the onboarding rebuilt splash-first against the VIP Cayman journey — see §5 "UI evolution"**) · **Branch:** `main` · **Gates:** green — 289 tests, both apps typecheck clean (one guard test removed with the labelling it guarded; see §8)
+**Written:** 2026-08-02 · **Updated:** 2026-09-22 (a long design session against Ro's reference board — **start at §5 "Session close" for the state and the open list**; onboarding rebuilt, a script face added for one word, the whole app taken through a colour and imagery pass, and four real defects fixed in passing) · **Branch:** `main`, pushed to `origin` at `72e50a4` · **Gates:** green — 289 tests, tourist-web typechecks clean, and **HEAD verified building from a clean `git archive` checkout** (see §5 "Session close" for why that check now matters)
 
 Read this first, then [`PRD.md`](PRD.md) (product source of truth),
 [`architecture.md`](architecture.md) (the numbered decisions), and
@@ -150,6 +150,73 @@ applies** and has been superseded. The mockups now drive layout and visual langu
 ---
 
 ## 5. Pick up here
+
+### Session close — 2026-09-22 (read this first)
+
+**Where it is.** `main`, pushed to `origin` at `72e50a4`. Working tree clean. 289 tests pass,
+tourist-web typechecks clean, and HEAD builds from a clean checkout. Everything described in the
+dated entries below this one is committed and deployed.
+
+**The one process lesson worth carrying forward.** Midway through, `HEAD` could not build: two
+screens imported `availabilityLabel`, and the file defining it was sitting uncommitted in the
+working tree. **Neither `tsc --noEmit` nor `vitest run` caught it**, because both run against the
+working directory, where the file was present. It would have failed on the first clean checkout —
+which is exactly what a deploy is.
+
+So the gate before any push is now three things, not two:
+
+```bash
+git archive HEAD | tar -x -C /tmp/headcheck
+cd /tmp/headcheck && npx pnpm@9 install --frozen-lockfile
+npx pnpm@9 --filter @cvip/tourist-web build
+```
+
+Do not skip it when the tree is dirty, which is precisely when it matters.
+
+**Four defects found while doing design work, all fixed.** Recorded together because the pattern is
+worth noticing — every one of them had been invisible for as long as the data happened to be
+convenient:
+
+1. **`Ticket`'s `GUEST` field was the literal string "Alex Bennett"** — on every ticket, for every
+   guest. It is the field a vendor reads when they scan.
+2. **`App()` called `useEffect` below the onboarding early return**, so React threw a changed-hook
+   -order error on the single most important transition in the app.
+3. **`--pad` and `--font-ui` were referenced in `Welcome.css` and defined nowhere**, so every
+   padding on both onboarding screens computed to `0`.
+4. **`.trips__head-photo` had no height**, so the header was as tall as whatever aspect ratio the
+   photograph happened to have — 210px or 615px depending on which listing ranked first.
+
+Three more fabrications were removed: `Open Now`, `Starts in 90 min` and a hardcoded `Alex Bennett`
+all sat beside real prices and real distances, so they read as fact. The rule this leaves behind:
+**if a badge states something the dataset cannot support, it does not ship.** `availabilityLabel`
+is the pattern — derive it, and return `null` so the caller omits the badge rather than guessing.
+
+**Open, in the order I would take them:**
+
+1. **Confirmation and Ticket have never been seen rendered.** Both need a completed checkout, and
+   checkout cannot complete locally: `apps/tourist-web/.env` configures Supabase, so `isLiveMode`
+   is true and `ensureLiveUser()` fails with "We could not start a secure session". Unsetting
+   `VITE_SUPABASE_*` engages demo mode and makes both reachable. **This is also true of the
+   deployment** — if those vars are set on Vercel and Supabase is not reachable, nobody in a pitch
+   can complete a booking.
+2. **Four mood tiles versus twelve taxonomy filters on Explore.** The reference board leads with
+   four moods — *Adventure / Relax & Unwind / Taste Jamaica / Explore Like a Local*. The build has
+   twelve categories, from the PRD. The board's version is more premium precisely because it is
+   fewer and they are moods. **This is Ro's call, not a design one**, and it has been raised twice
+   without a decision.
+3. **Nearby's sort.** The screen says "Closest to you" and sorts by distance, but with 18 results
+   every row reads "8 MIN DRIVE · 3.6 KM" — distance has stopped discriminating. Price and rating
+   are the axes that would actually change the order.
+4. **The detail page's meeting-point map.** Vendor lat/lng already exists. Reviews do not: there is
+   `ratingCount` but no review text, so a reviews section cannot be built honestly from this data.
+5. **The 250m/400m geofence hysteresis still has no unit tests.** Carried over, still true.
+
+**The hardest thing to get right this session, in one line:** colour belongs in the *glyph*, not in
+the container. The first attempt tinted every row and drained its icon to white, which is how a
+settings list is built. Restraint in the container, expression in the mark. If a future pass starts
+adding tinted panels, that is the thing being forgotten.
+
+---
 
 > ### Read this before starting anything: what is being built right now
 >
