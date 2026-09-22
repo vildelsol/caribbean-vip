@@ -201,69 +201,30 @@ The same commit answered Ro's question about the foliage. Two changes:
 
 **Open, added to the list below:**
 
-0. **The demo URL is a deployment-specific one, and there is no production alias.** Corrected the
-   same day, and the original entry here was wrong: **deployment is automatic.** The Vercel GitHub
-   app builds every push to `main` — each of `72e50a4`, `2d246ee`, `3ea27e5`, `89f0c5a` and
-   `1a8cd86` deployed to Production and succeeded. The local `vercel` CLI being logged out says
-   nothing about it; check `gh api repos/vildelsol/caribbean-vip/deployments` instead.
+0. **Nothing — the deploy is fine.** Kept as an entry only because this list carried two wrong
+   claims about it in one day, and both were mine rather than the project's.
 
-   What *was* true: every deployment 302'd to `vercel.com/sso-api`, because **Vercel Authentication
-   (Standard Protection) was on** — the link opened only for someone logged into the team, which is
-   not a link you can hand to an investor. Ro turned it off on 2026-09-22 and the live build was
-   walked and verified: Irie's three frond clusters, the foliage stopping at the frame on a desktop
-   viewport, and the widened Nearby rows.
+   **The live demo is https://caribbean-vip-tourist-web.vercel.app.** That is the production alias
+   Vercel derives from the project name; it always points at the newest Production deployment, so
+   it is the link for a deck. A `...-li58ewgtb-...` URL is a *deployment* URL, permanently pinned
+   to the commit that built it — never put one in front of anyone.
 
-   The URL that works today is
-   `https://caribbean-vip-tourist-li58ewgtb-caribbean-vip.vercel.app` — but that is **pinned to
-   `1a8cd86` forever** and will not follow the next push. `caribbean-vip-tourist.vercel.app` is a
-   404, so **the project has no production alias**. Assign one before any link goes into a deck.
+   **Deployment is automatic.** The Vercel GitHub app builds every push to `main`, and every push
+   this session succeeded. The local `vercel` CLI is logged out, which says nothing about it; the
+   check that answers the question is
+   `gh api repos/vildelsol/caribbean-vip/deployments --jq '.[0].sha'`.
 
-   Note for the Hobby plan: Standard Protection covers production and previews together, so turning
-   it off makes preview URLs public too. Nothing here is a secret — demo mode is the absence of
-   configuration, there are no environment variables and no backend to reach.
+   The one thing that was really wrong: **Vercel Authentication (Standard Protection) was on**, so
+   every deployment 302'd to `vercel.com/sso-api` and the link opened only for someone logged into
+   the team. Ro turned it off on 2026-09-22, and the live build was then walked and verified —
+   Irie's three frond clusters, the foliage stopping at the frame on a desktop viewport, and the
+   widened Nearby rows. On the Hobby plan that setting covers production and previews together;
+   nothing here is a secret, since demo mode is the absence of configuration.
 
-### Session close — 2026-09-22, first session
-
-**Where it is** *(superseded — HEAD is `89f0c5a`; see the entry above)*. `main` at `72e50a4`.
-Working tree clean. 289 tests pass,
-tourist-web typechecks clean, and HEAD builds from a clean checkout. Everything described in the
-dated entries below this one is committed and deployed.
-
-**The one process lesson worth carrying forward.** Midway through, `HEAD` could not build: two
-screens imported `availabilityLabel`, and the file defining it was sitting uncommitted in the
-working tree. **Neither `tsc --noEmit` nor `vitest run` caught it**, because both run against the
-working directory, where the file was present. It would have failed on the first clean checkout —
-which is exactly what a deploy is.
-
-So the gate before any push is now three things, not two:
-
-```bash
-git archive HEAD | tar -x -C /tmp/headcheck
-cd /tmp/headcheck && npx pnpm@9 install --frozen-lockfile
-npx pnpm@9 --filter @cvip/tourist-web build
-```
-
-Do not skip it when the tree is dirty, which is precisely when it matters.
-
-**Four defects found while doing design work, all fixed.** Recorded together because the pattern is
-worth noticing — every one of them had been invisible for as long as the data happened to be
-convenient:
-
-1. **`Ticket`'s `GUEST` field was the literal string "Alex Bennett"** — on every ticket, for every
-   guest. It is the field a vendor reads when they scan.
-2. **`App()` called `useEffect` below the onboarding early return**, so React threw a changed-hook
-   -order error on the single most important transition in the app.
-3. **`--pad` and `--font-ui` were referenced in `Welcome.css` and defined nowhere**, so every
-   padding on both onboarding screens computed to `0`.
-4. **`.trips__head-photo` had no height**, so the header was as tall as whatever aspect ratio the
-   photograph happened to have — 210px or 615px depending on which listing ranked first.
-
-Three more fabrications were removed: `Open Now`, `Starts in 90 min` and a hardcoded `Alex Bennett`
-all sat beside real prices and real distances, so they read as fact. The rule this leaves behind:
-**if a badge states something the dataset cannot support, it does not ship.** `availabilityLabel`
-is the pattern — derive it, and return `null` so the caller omits the badge rather than guessing.
-
-**Open, in the order I would take them:**
+   Both wrong claims came from checking the wrong thing: a logged-out CLI was read as "not
+   deployed", and a *guessed* project name 404ing was read as "no alias exists" — while the real
+   name, `caribbean-vip-tourist-web`, was on screen at the time. Check the artefact, not a proxy
+   for it.
 
 1. **Confirmation and Ticket have never been seen rendered.** Both need a completed checkout, and
    checkout cannot complete locally: `apps/tourist-web/.env` configures Supabase, so `isLiveMode`
