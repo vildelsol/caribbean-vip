@@ -1,9 +1,11 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   ISLANDS,
+  PROMOTION,
   byDistanceFrom,
   destinationBySlug,
   destinationsFor,
+  experienceById,
   experiencesFor,
   heroUrl,
   islandById,
@@ -15,13 +17,15 @@ import {
   formatKm,
   type DemoExperience,
 } from '../data/catalogue';
+import { evaluateFences, type FenceState } from '../data/geofence';
+import { useGuestPosition } from '../state/useGuestPosition';
 import { useNavigate } from 'react-router-dom';
+import { firstBookableDay, slotsFor } from '../data/availability';
 import { useStore } from '../state/store';
-import { Icon } from '../components/Icon';
+import { Icon, type IconName } from '../components/Icon';
 import {
   Badge,
   Card,
-  DemoNote,
   Photo,
   Price,
   Rating,
@@ -40,19 +44,46 @@ import './Explore.css';
  */
 
 /**
- * The four moods, and the categories each one ranks up.
+ * The category row.
  *
- * Their photographs are **not** hard-coded. Each tile borrows the hero of a real listing in that
- * category on the current island, falling back to the island hero when there is none — so the tiles
- * localise with everything else when the guest switches island, and a tile can never point at a
- * file that does not exist. Two of them did, before this was derived rather than written down.
+ * These were emoji until the design pass. Emoji are a different typeface on every platform, so the
+ * row that reads as one set on an iPhone read as twelve unrelated pictures on Android, at a weight
+ * nothing else in the app uses — and the family group is a ZWJ sequence that splits into three
+ * separate people wherever that sequence is unsupported. They are now the app's own glyphs, so the
+ * row inherits `--ink-muted` and the brand green like every other control.
  */
-const MOODS = [
-  { id: 'adventure', label: 'Adventure', categories: ['adventure', 'waterfalls', 'water_sports'] },
-  { id: 'relax', label: 'Relax & Unwind', categories: ['beaches', 'wellness'] },
-  { id: 'taste', label: 'Taste the Island', categories: ['food'] },
-  { id: 'local', label: 'Explore Like a Local', categories: ['culture', 'day_trips'] },
-] as const;
+const CATEGORIES = [
+  { id: 'all',           label: 'All',          icon: 'compass' },
+  { id: 'adventure',     label: 'Adventure',    icon: 'mountain' },
+  { id: 'beaches',       label: 'Beaches',      icon: 'beach' },
+  { id: 'water_sports',  label: 'Water Sports', icon: 'snorkel' },
+  { id: 'waterfalls',    label: 'Waterfalls',   icon: 'waterfall' },
+  { id: 'food',          label: 'Food',         icon: 'food' },
+  { id: 'culture',       label: 'Culture',      icon: 'drum' },
+  { id: 'wellness',      label: 'Wellness',     icon: 'lotus' },
+  { id: 'nightlife',     label: 'Nightlife',    icon: 'moon' },
+  { id: 'day_trips',     label: 'Day Trips',    icon: 'bus' },
+  { id: 'family',        label: 'Family',       icon: 'family' },
+  { id: 'shopping',      label: 'Shopping',     icon: 'bag' },
+] as const satisfies readonly { id: string; label: string; icon: IconName }[];
+
+/** The design labels a card by what kind of thing it is, not by its raw category id. */
+function categoryLabel(category: string): string {
+  const map: Record<string, string> = {
+    adventure: 'Adventure',
+    beaches: 'Beach',
+    water_sports: 'Water',
+    waterfalls: 'Nature',
+    food: 'Food',
+    culture: 'Culture',
+    wellness: 'Wellness',
+    nightlife: 'Nightlife',
+    day_trips: 'Day trip',
+    family: 'Family',
+    shopping: 'Shopping',
+  };
+  return map[category] ?? 'Experience';
+}
 
 function greeting(): string {
   const h = new Date().getHours();
@@ -65,7 +96,7 @@ export function Explore() {
   const { state, dispatch } = useStore();
   const navigate = useNavigate();
   const [islandOpen, setIslandOpen] = useState(false);
-  const [mood, setMood] = useState<string | null>(null);
+  const [category, setCategory] = useState<string>('all');
 
   const island = islandById(state.islandId);
   const destination = destinationBySlug(state.destinationSlug);
@@ -73,54 +104,69 @@ export function Explore() {
 
   const experiences = useMemo(() => experiencesFor(state.islandId), [state.islandId]);
 
-  /**
-   * The feed, composed rather than listed.
-   *
-   * Mood ranks, it never filters — picking "Adventure" floats adventure up, it does not hide the
-   * waterfalls. A first-run control that quietly removes half the catalogue is a trap, because the
-   * guest has no way to connect the short list back to the tile they tapped a minute earlier.
-   */
   const ranked = useMemo(() => {
-    if (!mood) return experiences;
-    const cats = new Set<string>(MOODS.find((m) => m.id === mood)?.categories ?? []);
-    const hits = experiences.filter((e) => cats.has(e.category));
-    const rest = experiences.filter((e) => !cats.has(e.category));
+    if (category === 'all') return experiences;
+    const hits = experiences.filter((e) => e.category === category);
+    const rest = experiences.filter((e) => e.category !== category);
     return [...hits, ...rest];
-  }, [experiences, mood]);
+  }, [experiences, category]);
 
-  /** A representative photograph per mood, drawn from this island's own catalogue. */
-  const moodTiles = useMemo(
-    () =>
-      MOODS.map((m) => {
-        const match = experiences.find((e) => (m.categories as readonly string[]).includes(e.category));
-        return { ...m, src: match ? heroUrl(match) : mediaUrl(island?.hero_media_path ?? undefined) };
-      }),
-    [experiences, island],
-  );
+  const guestPosition = useGuestPosition();
+  const resolvedCoords = guestPosition.position.coordinates;
 
   const nearby = useMemo(() => {
     if (!destination) return [];
-    return byDistanceFrom(simulatedPosition(destination), ranked).slice(0, 6);
-  }, [destination, ranked]);
+    const origin = resolvedCoords.lat !== 0 ? resolvedCoords : simulatedPosition(destination);
+    return byDistanceFrom(origin, ranked).slice(0, 6);
+  }, [destination, ranked, resolvedCoords]);
+
+  // Fences: one per vendor that the on-island promotion applies to.
+  const offerFences = useMemo(() => {
+    return PROMOTION.appliesToExperienceIds
+      .map((id) => experienceById(id))
+      .filter((e): e is NonNullable<typeof e> => !!e && e.islandId === state.islandId)
+      .map((e) => vendorFor(e))
+      .filter((v): v is NonNullable<typeof v> => !!v)
+      .map((v) => ({ id: v.id, coordinates: { lat: v.location.lat, lng: v.location.lng } }));
+  }, [state.islandId]);
+
+  // Hysteresis state — a ref so evaluateFences can read previous state without triggering renders.
+  const fenceStateRef = useRef<FenceState>({ insideId: null });
 
   /**
-   * The simulated geofence.
+   * Real geofence — fires when the guest walks within 250 m of a promoted vendor.
    *
-   * Fires once per island, a few seconds after Explore settles — long enough that it reads as
-   * "you have walked near something" rather than as a launch interstitial. `offerShownForIslands`
-   * is persisted, so it does not re-fire on every visit or after a refresh.
-   *
-   * The trigger is the only simulated part. See `Offer.tsx` for why a real geolocation prompt is
-   * deliberately not used in a demonstration.
+   * Runs only when we have a real GPS fix (position.kind === 'real'). The `offerShownForIslands`
+   * guard ensures it fires at most once per island regardless of how many position updates arrive.
    */
   useEffect(() => {
+    if (guestPosition.position.kind !== 'real') return;
+    if (state.offerShownForIslands.includes(state.islandId)) return;
+    if (offerFences.length === 0) return;
+
+    const result = evaluateFences(guestPosition.position.coordinates, offerFences, fenceStateRef.current);
+    fenceStateRef.current = result.state;
+
+    if (result.entered) {
+      dispatch({ type: 'markOfferShown', islandId: state.islandId });
+      navigate('/offer');
+    }
+  }, [guestPosition.position, offerFences, state.islandId, state.offerShownForIslands, dispatch, navigate]);
+
+  /**
+   * Demo fallback — when no real fix is available, fires on a timer so the offer still appears
+   * in a demonstration or on a device without GPS consent. The real geofence above takes over
+   * the moment consent is granted and a plausible position arrives.
+   */
+  useEffect(() => {
+    if (guestPosition.position.kind === 'real') return;
     if (state.offerShownForIslands.includes(state.islandId)) return;
     const t = setTimeout(() => {
       dispatch({ type: 'markOfferShown', islandId: state.islandId });
       navigate('/offer');
     }, 6000);
     return () => clearTimeout(t);
-  }, [state.islandId, state.offerShownForIslands, dispatch, navigate]);
+  }, [guestPosition.position.kind, state.islandId, state.offerShownForIslands, dispatch, navigate]);
 
   const hero = ranked[0];
   const nearYou = nearby.slice(1, 4);
@@ -139,6 +185,7 @@ export function Explore() {
           alt={`${destination.name}, ${island.name}`}
           ratio="390 / 322"
           radius="0"
+          priority
           className="ex-hero__photo"
         />
         <div className="ex-hero__scrim" />
@@ -228,26 +275,28 @@ export function Explore() {
         </button>
       </div>
 
-      {/* ---------------- Mood ---------------- */}
-      <section className="pad ex-moods">
-        {moodTiles.map((m) => {
-          const on = mood === m.id;
-          return (
-            <button
-              key={m.id}
-              type="button"
-              className={`mood ${on ? 'mood--on' : ''}`}
-              onClick={() => setMood(on ? null : m.id)}
-              aria-pressed={on}
-            >
-              <Photo src={m.src} alt="" ratio="163 / 88" radius="var(--r-lg)" />
-              <span className="mood__scrim" />
-              <span className="mood__label">{m.label}</span>
-              {on ? <span className="mood__flag t-micro-strong">PICKED</span> : null}
-            </button>
-          );
-        })}
-      </section>
+      {/* ---------------- Categories ---------------- */}
+      <div className="ex-cats-wrap">
+        <div className="ex-cats" role="group" aria-label="Filter by category">
+          {CATEGORIES.map((c) => {
+            const on = category === c.id;
+            return (
+              <button
+                key={c.id}
+                type="button"
+                className={`ex-cat ${on ? 'ex-cat--on' : ''}`}
+                onClick={() => setCategory(c.id)}
+                aria-pressed={on}
+              >
+                <span className="ex-cat__icon">
+                  <Icon name={c.icon} size={22} strokeWidth={1.8} />
+                </span>
+                <span className="ex-cat__label">{c.label}</span>
+              </button>
+            );
+          })}
+        </div>
+      </div>
 
       {/* ---------------- Experience of the day ---------------- */}
       {hero ? (
@@ -271,10 +320,10 @@ export function Explore() {
         </section>
       ) : null}
 
-      {/* ---------------- Hidden gems ---------------- */}
+      {/* ---------------- Local finds ---------------- */}
       {gems.length > 0 ? (
         <section className="pad ex-section">
-          <SectionHeader title="Hidden Gems" />
+          <SectionHeader title="Local Finds" />
           <div className="ex-gems">
             {gems.map((e) => (
               <GemCard key={e.id} experience={e} />
@@ -289,9 +338,9 @@ export function Explore() {
           <SectionHeader title="Tonight Near You" />
           <button type="button" className="tonight" onClick={() => navigate(`/experience/${evening.id}`)}>
             <div className="grow">
-              <Badge tone="sand">7:30 PM · 3 tables left</Badge>
+              <Badge tone="gold-glass">7:30 PM · 3 tables left</Badge>
               <h3 className="t-display-sm c-on-dark tonight__title">{evening.title}</h3>
-              <p className="t-micro tonight__sub">{evening.summary}</p>
+              <p className="t-caption tonight__sub">{evening.summary}</p>
             </div>
             <Photo
               src={heroUrl(evening)}
@@ -305,9 +354,54 @@ export function Explore() {
         </section>
       ) : null}
 
-      <DemoNote>Demo inventory · sample pricing</DemoNote>
+      {/* ---------------- Plan the gap ---------------- */}
+      <section className="pad ex-section">
+        <button
+          type="button"
+          className="ex-nudge"
+          onClick={() => navigate('/irie')}
+        >
+          <span className="ex-nudge__mark">
+            <Icon name="sparkle" size={19} color="var(--gold-light)" />
+          </span>
+          <span className="grow ex-nudge__text">
+            <span className="t-caption-strong">You have {freeHours()} free hours this afternoon</span>
+            <span className="t-micro c-locator">Ask Irie AI to plan it</span>
+          </span>
+          <Icon name="chevron-right" size={16} color="var(--green-900)" strokeWidth={2.2} />
+        </button>
+      </section>
+
+      {/* ---------------- Map teaser ---------------- */}
+      <section className="pad ex-section">
+        <div className="ex-map">
+          <span className="ex-map__road ex-map__road--a" />
+          <span className="ex-map__road ex-map__road--b" />
+          <span className="ex-map__blob" />
+          <span className="ex-map__ring" />
+          <span className="ex-map__you" />
+          {nearby.slice(0, 2).map(({ experience }, i) => (
+            <span key={experience.id} className={`ex-map__pin ex-map__pin--${i}`}>
+              {`US$${Math.round(experience.fromAmountMinor / 100)}`}
+            </span>
+          ))}
+          <span className="ex-map__count t-caption-strong">
+            {nearby.length} experiences within 5 km
+          </span>
+          <button type="button" className="ex-map__cta" onClick={() => navigate('/nearby')}>
+            Open map
+          </button>
+        </div>
+      </section>
+
     </main>
   );
+}
+
+/** Hours between now and a 7pm dinner, floored at two — the nudge should never read as nagging. */
+function freeHours(): number {
+  const h = new Date().getHours();
+  return Math.max(2, Math.min(6, 19 - h));
 }
 
 // ---------------------------------------------------------------------------
@@ -377,13 +471,23 @@ function NearCard({ experience, metres }: { experience: DemoExperience; metres: 
       <div className="near__media">
         <Photo src={heroUrl(experience)} mediaKey={experience.media[0]} alt={experience.title} ratio="206 / 112" radius="0" />
         <span className="near__flag">
-          <Badge tone="plain">{travel.minutes} min {travel.mode}</Badge>
+          <Badge tone="travel">
+            {/* 1.9 is the set's native weight — at 2.2 the wheels fill in and the car blobs. */}
+            <Icon
+              name={travel.mode === 'walk' ? 'walk' : 'car'}
+              size={14}
+              color="var(--teal-text)"
+              strokeWidth={1.9}
+            />
+            {travel.minutes} min
+          </Badge>
         </span>
       </div>
       <div className="near__body">
-        <h3 className="t-caption-strong near__title">{experience.title}</h3>
-        <p className="t-micro c-locator">
-          {formatKm(metres)} · {isWalkable(metres) ? 'Walking distance' : 'Pickup available'}
+        <h3 className="t-card-title near__title">{experience.title}</h3>
+        <p className="t-micro c-locator near__meta">
+          <span className="near__cat">{categoryLabel(experience.category)}</span> · {formatKm(metres)} ·{' '}
+          {isWalkable(metres) ? 'Walking distance' : 'Pickup available'}
         </p>
         <div className="row near__foot">
           <Price minor={experience.fromAmountMinor} />
@@ -396,14 +500,23 @@ function NearCard({ experience, metres }: { experience: DemoExperience; metres: 
 
 function GemCard({ experience }: { experience: DemoExperience }) {
   const navigate = useNavigate();
+  /*
+   * The next departure, not the group size.
+   *
+   * A guest off a ship is deciding against a deadline — "small group" does not help them work out
+   * whether this fits before they have to be back on board, and the departure time does.
+   */
+  const day = firstBookableDay(experience);
+  const next = day ? slotsFor(experience, day.iso).find((s) => s.capacityRemaining > 0) : undefined;
   return (
     <button type="button" className="gem" onClick={() => navigate(`/experience/${experience.id}`)}>
-      <Photo src={heroUrl(experience)} mediaKey={experience.media[0]} alt={experience.title} ratio="163 / 132" radius="var(--r-lg)" />
+      <Photo src={heroUrl(experience)} mediaKey={experience.media[0]} alt={experience.title} ratio="163 / 150" radius="var(--r-lg)" />
       <span className="gem__scrim" />
       <div className="gem__body">
-        <h3 className="t-micro-strong c-on-dark">{experience.title}</h3>
+        <h3 className="gem__title">{experience.title}</h3>
         <p className="gem__price">
-          {`US$${Math.round(experience.fromAmountMinor / 100)}`} · Small group
+          {`US$${Math.round(experience.fromAmountMinor / 100)}`}
+          {next ? ` · leaves ${next.label}` : ' · check dates'}
         </p>
       </div>
     </button>

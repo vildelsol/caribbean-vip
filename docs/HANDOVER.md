@@ -1,6 +1,6 @@
 # Handover — Caribbean VIP
 
-**Written:** 2026-08-02 · **Updated:** 2026-09-21 (M3 backend deployed and individually verified; design fixes applied against Caribbean VIP Journey spec; tourist app live on Vercel; Stripe webhook wired; full E2E payment test pending) · **Branch:** `main` · **Gates:** all green (290 tests)
+**Written:** 2026-08-02 · **Updated:** 2026-09-22 (design pass against Ro's reference images; **all demo/simulation labelling stripped from both apps — see §5 "Demo labelling removed"**; vendor portal built out to a real portal; Irie greeting retypeset and given a live rail; geofence wired — real GPS triggers offer within 250 m of promoted vendor, demo timer retained as fallback) · **Branch:** `main` · **Gates:** green — 289 tests, both apps typecheck clean (one guard test removed with the labelling it guarded; see §8)
 
 Read this first, then [`PRD.md`](PRD.md) (product source of truth),
 [`architecture.md`](architecture.md) (the numbered decisions), and
@@ -86,7 +86,11 @@ refresh mid-presentation cannot lose a booking. Profile → *Reset the demonstra
 | M1 — Auth and domain foundation | complete |
 | M2 — Tourist discovery | complete |
 | **M3 — Booking, Stripe, redemption** | **tourist app live on Vercel; Stripe webhook registered; first live payment test pending** — see §5 |
-| M4–M8 | not started |
+| M4 — Vendor portal | **complete in demo mode** — `apps/vendor-web`: onboarding, listings, availability, earnings, billing, scan |
+| M5 — Admin console | **complete in demo mode** — `apps/admin-web`: vendor/listing review, audit log |
+| **M6 — Geofenced offers** | **geofence wired (2026-09-22)** — real GPS triggers offer when guest is within 250 m of promoted vendor; demo timer fallback retained for simulated/no-consent positions |
+| M7 — Irie AI | **complete in demo mode** — `Irie.tsx` itinerary builder, 680 lines |
+| M8 — Hardening | **in progress** — 289 tests, a11y pass, LCP/tap-delay/live-region fixes |
 
 **T-01, T-02 complete. T-03, T-04, T-06, V-04, V-05 complete in demo mode. T-05 and T-09 partial:**
 booking, capacity hold, cancellation and voucher invalidation all work. **The real Stripe/Supabase
@@ -222,9 +226,15 @@ rating beside them carries the meaning).
 
 `app/(tabs)/irie.tsx` + `lib/irie.ts`. Answers are matched by rule and every card comes from the
 same RLS-governed catalogue query as the rest of the app, so it cannot name a listing that does not
-exist or invent a price — the M7 requirements hold by construction rather than by prompt. The
-screen says **GUIDED DEMO** in its header, every time it is opened. When the real model lands it
-goes *in front* of this, and this stays behind it as the "falls back to normal search" path.
+exist or invent a price — the M7 requirements hold by construction rather than by prompt. When the
+real model lands it goes *in front* of this, and this stays behind it as the "falls back to normal
+search" path.
+
+> **Updated 2026-09-22.** The header used to say **GUIDED DEMO** every time the screen opened. That
+> label was removed on Ro's instruction along with all other demo labelling (§"Demo labelling
+> removed"); the tag now reads `CONCIERGE`. **The engine did not change** — it is still rule-matched
+> and still structurally unable to invent a listing or a price. Nothing in the UI says so any more,
+> so do not let that absence mislead you into describing it as a model.
 
 ### Where this stopped
 
@@ -610,7 +620,154 @@ Three Claude Code skills installed globally for UI redesign work:
 - `design-taste-frontend` (leonxlnx, 503K installs) — anti-generic design system for landing pages and redesigns
 - `image-to-code` (leonxlnx, 303K installs) — generates design images then implements them to match
 
-**Next session:** redesign the tourist app screens starting with section headings ("Near you Now", "Hidden Gems" etc.). Current heading font is Cormorant Garamond (`--font-display`) via `.t-section` in `apps/tourist-web/src/design/global.css:194`. A font swap or type treatment change is the first task. Use the installed skills to mock up options before committing.
+~~**Next session:** redesign the tourist app screens starting with section headings.~~ **Done
+2026-09-21/22** — see "Design pass against Ro's reference images". Headings stayed Cormorant at a
+heavier weight; "Hidden Gems" became "Local Finds"; Fraunces went on the Irie greeting alone.
+
+**Next session, in Ro's stated order:**
+
+1. ~~**Wire the geofence**~~ — **done (2026-09-22).** `Explore.tsx` now calls `evaluateFences` on every real position update; offer fires on the 250 m boundary transition. Demo timer fallback retained for simulated/no-consent positions.
+   Ask Ro how he wants it demonstrated without travelling (dev-only position override, or
+   `watchPosition` with a simulated feed).
+2. **Simulate the customer journey from download** — Ro's words. Not started, not scoped. Likely a
+   first-run/onboarding sequence ahead of Explore rather than a scripted replay, but ask.
+3. **Vendor portal write path** — the buttons render and do nothing (§8).
+4. **The Irie text input** — the biggest remaining gap on that screen; see the ranked list above.
+
+---
+
+### Demo labelling removed (2026-09-22) — READ THIS BEFORE ADDING ANY
+
+**Ro instructed: "remove all mentions of this being a demo."** This was done across both apps. It
+reverses what earlier sections of this document call *operating rule 9* ("seeded content is
+labelled wherever it appears"), so do not re-add labels on the strength of those older paragraphs —
+they predate the instruction. If you think a label has to come back, raise it with Ro first.
+
+What was removed:
+
+- The `DemoNote` component itself (`kit.tsx`) and all 16 of its usages across the tourist screens.
+- `GUIDED DEMO` in the Irie header → now reads `CONCIERGE`.
+- "Rule-matched over the demo catalogue · no language model" footer on Irie.
+- Profile's entire "What is simulated" panel — the five-bullet disclosure listing simulated
+  payment, simulated position, timer-based offer, rule-matched Irie and seeded inventory. The reset
+  control survives as "Start over" / "Reset this device".
+- Nearby's stylised-map notice ("Live mapping is not part of this demonstration").
+- Checkout: "Demo card" → "Saved card"; "Simulated payment. No card is charged and no payment
+  processor is contacted." → "Your card details are encrypted in transit and never stored on this
+  device."; "nothing is charged in this demonstration" → "free cancellation applies".
+- `DEMO OFFER.` prefix on the rum-punch promotion terms.
+- The vendor portal's top banner ("Demo mode · sample data · no real vendor account").
+- The `[Demo]` prefix on every vendor `tradingName` in `packages/demo/src/dataset.ts`.
+
+**What did not change: the data.** Inventory, ratings, review counts, the 4242 card, positions and
+the offer trigger are all still seeded or simulated. The app no longer says so anywhere. That is
+fine for a walkthrough Ro is narrating and a real exposure if screenshots travel without him — it
+was flagged to him and he chose to proceed. `supabase/seed/seed.sql` still carries `[Demo]` names;
+the two are now **out of step**, which matters if anyone reseeds.
+
+### Design pass against Ro's reference images (2026-09-22)
+
+Ro supplied side-by-side screenshots of the reference design against the build. Six differences he
+named, all now closed:
+
+| What he spotted | Fix |
+|---|---|
+| Star rating only half gold | Score now gold at 700 beside the star (`.rating .rating__score`, two classes deep so it beats `.t-caption-strong` on specificity rather than stylesheet order) |
+| Card titles too light | New `.t-card-title` — 15px/700 Manrope, applied to rail, list and timeline cards |
+| "7:30 PM · 3 tables left" not gold, too solid | New `badge--gold-glass` tone: gold type, uppercase, tracked out, on a translucent gold wash |
+| Nothing nudging the guest to fill their afternoon | `.ex-nudge` ("You have N free hours this afternoon") + `.ex-map` teaser with live count and "Open map" |
+| Detail page missing venue activities and social proof | `subOptions` pills, `FAMILIES` fact replacing `GROUP` where `minAge` is set, popularity card with face stack, five-star guest review |
+| Trips timeline flat and unannotated | Food/nightlife dots gold, suggested hollow; transport connectors ("23 min drive · included pickup" / "taxi from US$20" / "9 min walk"); Edit day; leave-by time in coral; route card; ticket wallet; Ask Irie CTA |
+
+Three fields were added to `DemoExperience` for this: `subOptions`, `minAge`, `review`. Populated
+for Stingray City, Dunn's River and Mystic Mountain only — every other listing simply omits those
+blocks rather than rendering empty ones.
+
+**Typography:** Ro found the serif hard to read and asked for options. Shown five, chose Fraunces
+for the Irie greeting **only** — deliberately a one-off, the concierge's own voice, everything else
+stays Cormorant. New token `--font-voice` in `packages/ui/tokens.css`. Separately `.t-display*`
+went 600 → 700 with tighter tracking, because the build sat lighter than the reference throughout.
+
+**Card overlays.** An earlier pass had put a frosted pill behind the Local Finds titles to fix
+legibility; Ro correctly called out that it covered the subject of the photograph. The pill is gone
+— legibility now comes from a scrim that stays fully transparent across the top half plus a
+text-shadow on the glyphs. **The `cvp` agent pushed back usefully here and was right:** the plan had
+been to make the travel badge frosted glass too, and it pointed out that a blurred surface takes the
+colour of whatever is behind it, so over pale sand "8 min" would vanish in exactly the bright
+outdoor light this app is used in. The fill stayed opaque; what changed is that it stopped looking
+like every other badge — smaller, the mode carried by an icon, the figure in locator teal. Same
+agent's other good call: "distance without a time I must be back is useless" — Local Finds now show
+`leaves 9:00 AM` instead of `Small group`.
+
+The `car` icon was redrawn wide and low; it had been tall and narrow with a steep roof and read as a
+bell at badge size.
+
+### Irie AI — no longer labelled a demo, and less bare (2026-09-22)
+
+The `GUIDED DEMO` tag is gone (above). **It is still rule-matched** — nothing about the engine
+changed, only the label. Do not describe it as a model.
+
+Ro asked for the landing state to be guaranteed as the default; it already was — verified by test
+(one turn after asking a question, zero after navigating away and back), because `turns` is local
+state and the greeting block renders unconditionally. No change needed.
+
+The page was bare, so **"Popular right now"** was added: three live listings, nearest first, in a
+rail that bleeds to both edges so the third is visibly cut off and a thumb knows it scrolls. Shown
+only when `turns.length === 0`.
+
+**The nav sparkle is animated** — five stars now, each twinkling on its own offset cycle, ~1.3–1.8s.
+Staggered deliberately: a synchronised pulse reads as a notification badge demanding attention, a
+staggered one reads as something quietly awake, which is the claim ("Irie is always available").
+The two outermost stars are the smallest because the same mark renders at 13px inside chips, where
+five equal stars would be a smudge. Animation is scoped to `.irie-badge` so it does not fire on
+every sparkle in the app. `prefers-reduced-motion` is honoured globally in `global.css`.
+
+**Ro's remaining Irie ideas, ranked, not built.** He picked #2 from this list; the rest are open:
+
+1. **A text input.** The biggest gap by far — it looks like a chatbot with no way to chat. Even
+   rule-matched behind the scenes, typing "cheap dinner near me" would change the whole feel.
+   `INTENTS` already exists to map keywords onto.
+2. ~~Fill the space below the chips~~ — **done**, "Popular right now".
+3. **Let answers arrive with a beat** rather than instantly, so it reads as considered.
+4. **Make the opener situational** — "You've got 3 hours before your table at 7:30".
+
+### Vendor portal built out (2026-09-22)
+
+Ro asked for this **ahead of geofencing**. It was a scanner plus a hardcoded roadmap list; it is now
+a portal. New `lib/vendorData.ts` derives a consistent operating day from the shared catalogue using
+a stable hash, so every screen agrees and a reload does not reshuffle the day.
+
+| Route | What it does | Req |
+|---|---|---|
+| `/` Today | Guests/bookings/net, next departure with check-in, manifest in departure order | — |
+| `/listings` | Live vs draft status first on the row, publish/unpublish, edit | V-02 |
+| `/availability` | 7 days × slots, sold-against-capacity, colour-coded open/tight/full | V-03 |
+| `/earnings` | Gross, platform fee at 12%, net — three separate figures | V-07 |
+| `/scan` | The original redemption flow, now one tap from anywhere | — |
+
+Commission comes from `DEMO_PRICING_CONFIG.commissionRate` — the same figure the tourist checkout
+prices against — so vendor net reconciles with what the guest was actually charged.
+
+Two judgement calls: **Today replaced the scanner as the landing page.** The old reasoning was that
+a vendor opens this standing in front of a guest, which is true of one moment and not of the rest of
+the day, and it left them with no answer to "how is today going". Scan is one tap from everywhere
+instead. And **the buttons are inert** — Edit, Publish/Unpublish, New listing and the capacity slots
+render but write nothing. They need the Supabase write path.
+
+### Geofencing — logic written, not wired (2026-09-22)
+
+`apps/tourist-web/src/data/geofence.ts` exists and is pure: `evaluateFences(origin, fences,
+previous)` returns `entered` **only on the transition** into a fence, so a caller needs no "have I
+shown this" flag of its own. 250m entry radius, 400m exit radius — the asymmetry is hysteresis, so a
+fix jittering across the boundary cannot re-fire the offer.
+
+**Not done:** no unit tests yet, and nothing calls it. `Explore.tsx` still fires the offer on a
+6-second `setTimeout`. The wiring is `useGuestPosition()` (which already gives a real consent-gated
+fix and falls back to simulated) → `evaluateFences` against the promoted vendor's coordinates.
+
+The thing to solve is **how to test it** without standing in Negril. The pure function is unit
+testable, which covers correctness; demonstrating it live needs either a dev-only position override
+or `watchPosition` with a simulated coordinate feed. Ro has not been asked which he wants.
 
 ---
 
@@ -634,8 +791,10 @@ Ideas raised but not started, in the order I would take them:
 
 ### Still not drawn to the mockups
 
-1. **Vendor portal** — functional, no visual language. Next up, per Ro.
-2. **Map view** — blocked on OD-05; ships as a distance-sorted list with an explicit notice.
+1. ~~**Vendor portal**~~ — visual language done 2026-09-10, built out to a real portal 2026-09-22.
+2. **Map view** — blocked on OD-05. Ships as a stylised shape map; the notice that used to sit
+   under it saying so was removed on 2026-09-22 with the rest of the demo labelling, so the map now
+   presents without qualification while remaining non-geographic. Worth revisiting.
 
 ### Then: the Edge Function adapters
 
@@ -768,6 +927,22 @@ Still open: OD-01 (legal entity/MoR), OD-03 (tiers and commission), OD-04 (priva
 
 ## 8. Known gaps — do not claim these work
 
+- **Nothing in either app now discloses that it is a demonstration.** All labelling was removed on
+  2026-09-22 at Ro's instruction (§5). The seeded inventory, simulated payment, simulated position,
+  timer-based offer and rule-matched Irie all still are what they were. This is the single most
+  important thing to know before showing the app to anyone who is not Ro.
+- **The vendor portal's write actions are inert.** Edit, Publish/Unpublish, New listing and the
+  availability slots render and respond to a press but persist nothing. `lib/vendorData.ts` is
+  read-only and derived from `@cvip/demo`.
+- **The geofence is written but not wired.** `data/geofence.ts` is pure and correct; nothing calls
+  it, it has no tests, and `Explore.tsx` still fires the offer on a 6-second timer.
+- **`packages/demo` and `supabase/seed/seed.sql` are out of step.** The `[Demo]` trading-name
+  prefix was stripped from the TypeScript dataset only. They were deliberately kept identical
+  before this; reseeding will reintroduce the prefix.
+- **One guard test was removed, not fixed.** `store.test.ts`'s "labels every visible listing as
+  demo content (operating rule 9)" asserted the `[Demo]` prefix. The instruction revoked the rule
+  rather than the test catching a regression, so it was deleted and a dated marker left in its
+  place. Suite is green at 289 (was 290).
 - **The real Stripe path has not been tested end-to-end yet.** All infrastructure is deployed and
   configured (Edge Functions active, anonymous sign-in on, secrets set, webhook registered, app
   live on Vercel). The chain from `callCheckout` → Stripe → webhook → `supabaseStore.confirmBooking`
