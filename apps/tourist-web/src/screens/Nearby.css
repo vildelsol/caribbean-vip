@@ -373,7 +373,7 @@
  * exactly; if the padding changes, these change with it.
  */
 .near-row__photo {
-  width: 118px;
+  width: 130px;
   flex: none;
   align-self: stretch;
   margin: -13px 0 -13px -13px;
@@ -403,8 +403,17 @@
 .near-row__tags {
   display: flex;
   flex-wrap: wrap;
-  gap: 5px;
+  gap: 4px;
   margin-top: 7px;
+}
+
+/* The two badges have to stay on one line: the photograph took 12px of this
+   column, and a tag row that wraps buys the picture its width back out of the
+   row's height, which is the trade this whole change exists to avoid. 5px of
+   side padding is what makes both fit at 130px. */
+.near-row__tags .badge {
+  padding-left: 5px;
+  padding-right: 5px;
 }
 
 /*

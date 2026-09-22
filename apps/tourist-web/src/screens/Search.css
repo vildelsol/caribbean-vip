@@ -177,9 +177,25 @@
   align-items: stretch;
 }
 
+/* Same trade as Nearby's rows: the photograph was a 92px square framed by 11px
+   of ivory on four sides. It bleeds to three edges and takes the gutter's width
+   instead, so the picture grows sideways rather than the row growing downwards.
+   The negative margins must match .result-row's padding exactly. */
+.result-row {
+  overflow: hidden;
+}
+
 .result-row__photo {
-  width: 92px;
+  width: 118px;
   flex: none;
+  align-self: stretch;
+  margin: -11px 0 -11px -11px;
+  border-radius: 0 !important;
+}
+
+.result-row__photo img {
+  height: 100%;
+  object-fit: cover;
 }
 
 .result-row__dist {

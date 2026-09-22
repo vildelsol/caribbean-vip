@@ -477,12 +477,27 @@
 
 .starter__row {
   gap: 13px;
-  align-items: center;
+  align-items: stretch;
+}
+
+/* As on Nearby and Search: the photograph bleeds to three edges and spends the
+   framing gutter on width instead. The negative margins must match .starter's
+   padding exactly. */
+.starter {
+  overflow: hidden;
 }
 
 .starter__photo {
-  width: 74px;
+  width: 104px;
   flex: none;
+  align-self: stretch;
+  margin: -10px 0 -10px -10px;
+  border-radius: 0 !important;
+}
+
+.starter__photo img {
+  height: 100%;
+  object-fit: cover;
 }
 
 .starter__title {
