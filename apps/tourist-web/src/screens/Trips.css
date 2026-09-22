@@ -222,15 +222,29 @@
 
 .trips__summary {
   display: grid;
-  grid-template-columns: 132px 1fr;
+  /*
+   * One column. The route map sits above the total rather than beside it.
+   *
+   * This was `132px 1fr`, and `1fr` is `minmax(auto, 1fr)` — a track that
+   * cannot shrink below its content. The day total's content does not shrink:
+   * "US$117.60" at display size is unbreakable, and the "View details" pill is
+   * `nowrap`. Measured on a 375px phone, the card needed 298px and the track
+   * offered 217, so it ran 81px past the right edge of the frame. Nobody saw
+   * it because `.app` is `overflow-x: clip` — the money and half the button
+   * were being quietly cut off rather than causing a scrollbar.
+   *
+   * `minmax(0, 1fr)` and a wrapping card were both tried and both are worse:
+   * the track then shrinks, and the amount — which still will not break —
+   * overlaps the button inside the card. A 217px column cannot hold this
+   * content at any setting. Stacking is the only honest fix, and it is what
+   * the rest of the app does anyway (single column everywhere, Ro's call).
+   *
+   * The 359px breakpoint this replaces was guarding the wrong number: the
+   * layout was already broken at 375 and at 430.
+   */
+  grid-template-columns: minmax(0, 1fr);
   gap: 10px;
   margin-top: 18px;
-}
-
-@media (max-width: 359px) {
-  .trips__summary {
-    grid-template-columns: 1fr;
-  }
 }
 
 .trips__route {
@@ -238,7 +252,10 @@
   border-radius: var(--r-lg);
   background: var(--map-water);
   overflow: hidden;
-  min-height: 108px;
+  /* A band now that it runs the full width, rather than the square-ish panel it
+     was in a 132px column — at 108px tall and 343px wide it read as an empty
+     field with three dots in it. */
+  min-height: 88px;
 }
 
 .trips__route-road {
