@@ -1012,6 +1012,136 @@ reads as fact. It was deliberately **not** propagated to the Irie idea cards for
 though the board shows it there. `firstBookableDay`/`slotsFor` already drive a truthful
 "Available today" elsewhere and are the obvious replacement.
 
+### Colour in the glyph, not the container (2026-09-22, late)
+
+Ro, with the reference board and my build side by side: *"I prefer the more subtle options of the
+first screenshot as opposed to the changes you made, warmer, less corporate."* He was right, and
+the diagnosis is worth writing down because it is a rule and not a preference.
+
+**I had put the colour in the container and drained the glyph to white.** Each Irie row was tinted
+26% with its own hue and carried a filled tile with a white icon in it. Five coloured bars. That is
+how a settings list is built. The reference does the opposite: the row is barely there — one
+translucent wash, one hairline, identical for all of them — and *all* of the colour is in the
+glyph, at full strength, with nothing around it. **Restraint in the container, expression in the
+mark.**
+
+So the rows are now `rgba(251,246,236,0.055)` with a 10% hairline, the same for every one, and the
+glyphs are light warm hues chosen to sit on near-black green — not the dark jewel tones the
+category tiles use, which exist to carry white type on top of them and would vanish here.
+
+Four new glyphs were drawn for it, because the board's are specific and Ro asked for them by name:
+**`wine`** for *Dinner with a view*, **`price-tag`** for *Something under $50*, **`sun`** for the
+day builders, and **`umbrella`** for *Rainy-day option*. The tag's eyelet is a filled circle in its
+own `switch` case: a hole in proportion at 17px is about 2.4 units across, and a stroked circle
+that small closes into a dot anyway — so it is a dot at a size that survives.
+
+**The gold builder fill came back off.** Filled gold pills above five coloured bars was the loudest
+possible arrangement of a screen whose subject is a concierge quietly offering to help. The
+hierarchy is carried by *shape* now — a pill among rows — which leaves the fill free to go.
+
+**Category tiles: gold glyphs.** Ro asked for a contrasting colour on the iconography. The glyph
+was white on a translucent *white* disc, which is the one combination that cannot pop — it lightens
+the tile under the mark and then draws the mark in the same value as the lightening. The disc now
+*darkens* the tile and the glyph is brand gold, which reads as lit rather than printed. Twelve
+coloured tiles with twelve white icons is a palette; twelve coloured tiles with one gold mark is a
+set. Gold on the darkened disc measures **4.16:1 at worst** across all twelve — checked per tile,
+and the disc is the only reason the warm ones clear at all (gold on raw `food` is 3.09).
+
+### Foliage, drawn rather than photographed (2026-09-22)
+
+Ro preferred the board's palm backdrop to a flat green — *"it adds more life"* — and added that it
+*"doesn't have to be a palm tree, but whatever it is must have enough contrast."* Agreed on both,
+and `components/PalmFronds.tsx` is the answer.
+
+**Why not a photograph.** Every photograph in this app is CC BY or CC BY-SA and carries a visible
+credit wherever it appears. A decorative backdrop would have to wear an attribution pill on the one
+screen whose whole job is to feel like a person talking to you. It would also cost a decode on
+every tab switch, and white body copy would have to survive wherever the photographer's highlights
+happened to land. Drawn fronds have none of that — and, the part that matters for Ro's note, the
+contrast is a number in the file rather than a property of someone else's exposure.
+
+The leaflets are **generated**, not hand-drawn, so the shape is tuned by changing a count or an
+angle rather than by editing a 200-number path nobody will dare touch again. The first attempt read
+as a spider's web: sparse leaflets, a shallow 52° sweep and straight lines either side of a spine.
+A frond is long, narrow and *dense* — so the count went up, the reach came down to 0.21 of the
+stem, the sweep went to 64–82°, and each leaflet droops on a quadratic rather than running straight.
+Straight leaflets are the single thing that makes drawn foliage look drawn.
+
+It is `position: fixed`, so it does not scroll away and leave the bottom two-thirds as flat as
+before, and masked toward the left so it never reaches the column the body copy sits in.
+
+### The spark animates everywhere (2026-09-22)
+
+Ro: *"anywhere there is an Irie AI symbol it should be animated."* It lived in `BottomNav.css`
+scoped to `.irie-badge`, so the mark twinkled in the tab bar and sat dead in the concierge header,
+the ideas label, and the Ask Irie rows on Explore and Trips. One mark behaving two ways is worse
+than a still one, because the live version teaches you to expect it.
+
+The keyframes and the five `.spark--N` rules now live in `global.css`, keyed on the classes
+`Icon`'s `sparkle` case emits, so any sparkle anywhere animates without its caller opting in.
+
+`Welcome.css` lost its local `wl-twinkle`: it scaled the three `<svg>` elements while the global
+rule pulsed the paths inside them on a different cycle, and two animations on one mark reads as a
+flicker rather than a twinkle.
+
+Also fixed: the concierge's context chips said **"1 vouchers"**.
+
+### The empty day, and the descent (2026-09-22, night)
+
+**Trips' empty state was a dialog box.** A calendar glyph, a line of grey copy, and one "Ask Irie
+AI" button on a screen's worth of blank ivory. Ro: *"very uninspiring and does not even look
+encouraging enough to book something."* The diagnosis is that it **described the absence and then
+asked the guest to go somewhere else and solve it**.
+
+An empty plan is the best sales position in the app — the guest has opened the tab for their day,
+which means they want one. So it now answers instead of asking: a photographic header, then the
+three highest-rated experiences on the island, priced, with duration and pickup, one tap from
+booking. Irie stays as the *second* option rather than the only one.
+
+Ranked by rating, not distance: with nothing booked there is no itinerary for a stop to be near, so
+the only useful sort is "what is the best thing here".
+
+**A header bug this uncovered.** `.trips__head-photo` is a plain `<img>` in normal flow with no
+height, so the header was as tall as whatever aspect ratio the photograph happened to have at full
+width — a landscape shot gave a 210px banner, the portrait coffee-picker shot gave **615px**, most
+of a phone screen of dark green before any content. It had been invisible for as long as the photo
+that landed there happened to be landscape. Now `height: 232px` with `object-fit: cover`, and the
+photo's opacity came up from 0.5 (at half strength under the old scrim it was a texture, not a
+place).
+
+**The concierge gradient now actually descends.** Ro asked whether it should run darker all the way
+down. It should, and two separate things were stopping it:
+
+1. The ramp was `#0a2f27 → #072821 → #061f1a` — about four values of travel across a whole screen
+   of scroll — and a fourth layer, a `rgba(12,74,63,0.7)` bloom parked at `50% 104%`, was actively
+   *lifting* the foot.
+2. More subtly: `.irie::before` is `position: fixed`, and its teal bloom sat at `18% 72%`. Fixed
+   means that teal light is in the lower third of the **viewport**, permanently — so however far
+   the ramp behind it descended, the bottom of every screenful was lifted back up. This was the
+   real cause, and fixing only the ramp did not visibly change anything.
+
+Both blooms now live in the upper half where Irie is, the foot bloom is gone, and the ramp ends at
+`#020a08`. The greeting sits in the warmest part of the room, the ivory idea cards at the bottom
+gain real separation, and the tab bar lands on the darkest ground rather than on a green glow.
+
+The `background-attachment` is per-layer and deliberate: `fixed, fixed, scroll`. The blooms mark
+where Irie *is* and should not travel; the ramp is the one layer that has to span the document
+rather than repeat once per viewport.
+
+### Still to do, in priority order (2026-09-22)
+
+From a sweep of every screen against the reference board:
+
+1. **Nearby's list cards** are plain white rows with a grey "View" button — the only screen whose
+   chips are still grey pills while Explore's are jewel tiles. Inconsistent with itself.
+2. **Search** has the same grey-chip problem, and shows distance prominently (78.0 km) on a list
+   sorted by rating, which reads as a bug even though both are correct.
+3. **Profile's hero** has a large dead zone between the crest and the name, and prints the guest's
+   name twice — "Guest", then "Guest · VIP Jamaica" directly beneath it.
+4. **Explore** still lacks the board's Special Offers row and Hidden Gems triple-image row, and the
+   open question of **four mood tiles versus twelve taxonomy filters** has not been decided.
+5. **Checkout / Confirmation / Ticket** have had no design pass at all this session.
+
 ### Geofencing — wired (2026-09-22)
 
 `apps/tourist-web/src/data/geofence.ts` is pure: `evaluateFences(origin, fences, previous)` returns
@@ -1037,6 +1167,53 @@ moat rests on it. Do this before the next demo.
 
 Demonstrating it live still needs either a dev-only position override or `watchPosition` with a
 simulated coordinate feed. Ro has not been asked which he wants.
+
+---
+
+### "Open Now" removed — the badge was fabricated (2026-09-22)
+
+Both tourist-web cards carried `<Badge tone="brand">Open Now</Badge>` as a literal. Nothing backed
+it. Grepping `openNow` / `opensAt` / `openingHours` / `isOpen` across `packages/demo/src/dataset.ts`
+and `apps/tourist-web/src/data/` returns nothing — there is no opening-hours field on
+`DemoExperience`, `DemoVendor` or anywhere else, so the app had no way to know whether a vendor was
+open, and the badge was true only by coincidence.
+
+That matters more than a stray string because of where it sat. On the Explore feature card it was
+the first thing in `feature__flags`, directly above the title and one block above the from-price and
+the rating; on the detail hero it sat in the same row as the availability badge. Every other figure
+around it is derived from real data. A viewer has no way to tell which of the four claims is
+computed and which is typed in, so the typed-in one inherits the credibility of the other three.
+That is exactly the failure mode §8 already guards against for ratings ("a live card shows no rating
+rather than a fabricated one") — this was the same defect, unnoticed.
+
+**Fixed by deriving from availability, not by adding opening hours.** `firstBookableDay` and
+`slotsFor` in `apps/tourist-web/src/data/availability.ts` already drove a truthful "Available today"
+/ "Next today 4:30 PM" on the detail screen, so the honest signal existed and was simply not used on
+the card. Added `availabilityLabel(experience)` to that module: it returns `"Available today"` or
+`"Available Sat"`, and **null** when nothing is bookable in the next fourteen days, so the caller
+drops the badge rather than asserting anything about a listing that is not running.
+
+- `Explore.tsx` `FeatureCard` — `Open Now` → `{availability ? <Badge tone="brand">{availability}</Badge> : null}`.
+- `ExperienceDetail.tsx` hero — `Open Now` deleted outright. The badge beside it already said
+  "Available today / Sat" truthfully; deriving a second badge from the same call would have said the
+  same thing twice. The surviving badge was promoted `plain` → `brand` so the hero keeps its accent.
+
+The option not taken was adding real `openingHours` to `DemoExperience` plus a timezone computation
+off `DemoIsland.timezone`. It is strictly more work, needs a hand-authored value per experience, and
+would create a second timing system alongside the availability one that already exists. If opening
+hours are ever wanted as a genuine product feature — a vendor setting them in the portal, a guest
+filtering on them — that is a real milestone, not a badge fix, and it should be built then rather
+than faked now.
+
+**Still hardcoded, deliberately left:** `<Badge tone="plain">Cruise-Friendly</Badge>` sits in the
+same `feature__flags` row on every feature card and has exactly the same problem — no field backs
+it, and there is no cruise-relevance flag anywhere in the dataset. It was out of the scope asked
+for, so it was not touched, but it is the same defect and should go the same way: either a real
+field on `DemoExperience`, or delete it. Do not leave it there on the assumption it was reviewed.
+
+Gates: `npx pnpm@9 vitest run` → 289 passed (17 files), unchanged. `npx pnpm@9 --filter
+@cvip/tourist-web exec tsc --noEmit` → clean. No test was added for `availabilityLabel`; it is a
+pure function over `firstBookableDay` and worth covering next to the hysteresis tests above.
 
 ---
 
@@ -1251,6 +1428,9 @@ Still open: OD-01 (legal entity/MoR), OD-03 (tiers and commission), OD-04 (priva
   in a different browser from the phone. The signature is really checked and the terminal-state
   machine really runs; only the "have I seen this before" lookup is local. A real deployment never
   takes that path. See the comment on `redeemScannedToken`.
+- **"Cruise-Friendly" on the Explore feature card is fabricated.** No field backs it. Its sibling
+  "Open Now" was removed on 2026-09-22 for the same reason (see §5); this one was out of scope and
+  survives. Either give `DemoExperience` a real flag or delete the badge.
 - **Ratings are demo-only.** Real ratings aggregate over the `reviews` table; nothing computes that
   yet, so a live card shows no rating rather than a fabricated one.
 - **No map renders.** OD-05 is open.

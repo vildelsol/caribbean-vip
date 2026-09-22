@@ -1,7 +1,14 @@
 import { useNavigate } from 'react-router-dom';
-import { destinationBySlug, experienceById, heroUrl, islandById, type DemoExperience } from '../data/catalogue';
+import {
+  destinationBySlug,
+  experienceById,
+  experiencesFor,
+  heroUrl,
+  islandById,
+  type DemoExperience,
+} from '../data/catalogue';
 import { useStore } from '../state/store';
-import { Badge, Card, EmptyState, Photo, SectionHeader, formatUsd } from '../components/kit';
+import { Badge, Card, Photo, SectionHeader, formatUsd } from '../components/kit';
 import { Icon } from '../components/Icon';
 import { QR } from '../components/QR';
 import './Trips.css';
@@ -109,19 +116,105 @@ export function Trips() {
   if (!island || !destination) return null;
 
   if (bookings.length === 0 && planned.length === 0) {
+    /*
+     * The empty day.
+     *
+     * This was a calendar glyph, a line of grey copy and a lone "Ask Irie AI"
+     * button on a screen's worth of blank ivory — Ro's note was that it is "not
+     * encouraging enough to book something", and he is right about why: it was
+     * a *dialog box*. It described the absence and then asked the guest to go
+     * somewhere else and solve it.
+     *
+     * An empty plan is the best sales position in the app. The guest has opened
+     * the tab for their day, which means they want one. So this screen now
+     * answers the question instead of asking it: the three highest-rated things
+     * within reach, priced, with the walk, ready to open. Irie stays, but as
+     * the second option rather than the only one.
+     *
+     * Ranked by rating rather than distance, because with nothing booked there
+     * is no itinerary for a stop to be near — the only useful sort is "what is
+     * the best thing here".
+     */
+    const starters = experiencesFor(state.islandId)
+      .slice()
+      .sort((a, b) => b.ratingAverage - a.ratingAverage)
+      .slice(0, 3);
+
     return (
-      <main className="screen">
-        <header className="trips__head trips__head--bare">
-          <p className="t-overline trips__brand">Caribbean VIP · {island.in_app_brand}</p>
-          <h1 className="t-display-md c-on-dark">Your {destination.name} Day</h1>
+      <main className="screen trips">
+        <header className={`trips__head ${starters[0] ? '' : 'trips__head--bare'}`}>
+          {/* The header borrows the top-rated listing's own photograph. If the
+              island somehow has no inventory the header falls back to the bare
+              green variant rather than to a broken image — a cast to keep the
+              markup uniform would have shipped a 404 on the one screen where
+              the app is supposed to look most sure of itself. */}
+          {starters[0] ? (
+            <>
+              <img
+                src={heroUrl(starters[0])}
+                alt=""
+                className="trips__head-photo"
+              />
+              <span className="trips__scrim" />
+            </>
+          ) : null}
+          <div className="trips__head-body">
+            <p className="t-overline trips__brand">Caribbean VIP · {island.in_app_brand}</p>
+            <h1 className="t-display-md c-on-dark">Your {destination.name} Day</h1>
+            <p className="t-caption trips__weather">
+              Nothing booked yet — here is where most people start.
+            </p>
+          </div>
         </header>
-        <EmptyState
-          icon="calendar"
-          title="Nothing planned yet"
-          body="Book an experience, or ask Irie AI to build an afternoon around where you are."
-          action="Ask Irie AI"
-          onAction={() => navigate('/irie')}
-        />
+
+        <section className="pad trips__starters">
+          <SectionHeader title={`Best of ${destination.name}`} note="Top rated" />
+          {starters.map((e) => (
+            <Card
+              key={e.id}
+              className="starter"
+              onClick={() => navigate(`/experience/${e.id}`)}
+            >
+              <div className="row starter__row">
+                <Photo
+                  src={heroUrl(e)}
+                  mediaKey={e.media[0]}
+                  alt=""
+                  ratio="1 / 1"
+                  radius="var(--r-md)"
+                  className="starter__photo"
+                />
+                <div className="grow">
+                  <h3 className="t-card-title starter__title">{e.title}</h3>
+                  <p className="t-micro c-locator starter__meta">
+                    {e.durationMinutes >= 60
+                      ? `${Math.round(e.durationMinutes / 60)} hr`
+                      : `${e.durationMinutes} min`}
+                    {e.pickupInfo ? ' · hotel pickup' : ''}
+                  </p>
+                  <div className="starter__foot">
+                    <span className="t-amount-sm c-brand">{formatUsd(e.fromAmountMinor)}</span>
+                    <span className="starter__rating t-micro-strong">
+                      <Icon name="star" size={12} color="var(--gold)" />
+                      {e.ratingAverage.toFixed(1)}
+                    </span>
+                  </div>
+                </div>
+                <Icon name="chevron-right" size={18} color="var(--ink-faint)" strokeWidth={2.2} />
+              </div>
+            </Card>
+          ))}
+        </section>
+
+        <div className="pad">
+          <button type="button" className="trips__ask" onClick={() => navigate('/irie')}>
+            <Icon name="sparkle" size={18} color="var(--gold-light)" />
+            <span className="grow t-caption-strong">
+              Or let Irie AI build the whole day for you
+            </span>
+            <Icon name="chevron-right" size={16} color="var(--gold-light)" strokeWidth={2.2} />
+          </button>
+        </div>
       </main>
     );
   }

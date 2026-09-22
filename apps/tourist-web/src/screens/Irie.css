@@ -19,12 +19,34 @@
  */
 .irie {
   position: relative;
+  /*
+   * The descent.
+   *
+   * Ro asked whether this should run darker all the way down. It should, and it
+   * was not: the three stops were #0a2f27 → #072821 → #061f1a, which is about
+   * four values of travel across a whole screen of scroll, and a fourth layer —
+   * a `rgba(12,74,63,0.7)` bloom parked at `50% 104%` — was actively *lifting*
+   * the foot. The screen ended lighter than it started in the one place the
+   * copy needs the most contrast behind it.
+   *
+   * The bloom at the foot is gone and the ramp now ends near black. Three
+   * things come out of it: the greeting sits in the warmest, highest part of
+   * the room; the ivory cards in the ideas rail, which are at the bottom, gain
+   * real separation instead of floating on the same value they are made of;
+   * and the tab bar lands on the darkest ground on the screen rather than on a
+   * green glow.
+   *
+   * The two remaining blooms stay `fixed` — they mark where Irie *is*, behind
+   * the greeting, so they should not travel. The linear ramp is deliberately
+   * `scroll`, because it is the one layer that has to span the document rather
+   * than repeat per viewport. Attachment is per-layer and in the same order.
+   */
   background:
-    radial-gradient(ellipse 120% 52% at 78% 4%, rgba(185, 141, 47, 0.3) 0%, rgba(185, 141, 47, 0) 62%),
-    radial-gradient(ellipse 96% 44% at 8% 58%, rgba(30, 127, 134, 0.26) 0%, rgba(30, 127, 134, 0) 66%),
-    radial-gradient(ellipse 130% 60% at 50% 104%, rgba(12, 74, 63, 0.7) 0%, rgba(12, 74, 63, 0) 70%),
-    linear-gradient(178deg, #0a2f27 0%, #072821 46%, #061f1a 100%);
-  background-attachment: fixed, fixed, fixed, fixed;
+    radial-gradient(ellipse 120% 52% at 78% 4%, rgba(185, 141, 47, 0.32) 0%, rgba(185, 141, 47, 0) 62%),
+    radial-gradient(ellipse 96% 44% at 8% 34%, rgba(30, 127, 134, 0.26) 0%, rgba(30, 127, 134, 0) 66%),
+    linear-gradient(178deg, #0e3d33 0%, #09302a 22%, #051a16 58%, #030d0b 86%, #020a08 100%);
+  background-attachment: fixed, fixed, scroll;
+  background-repeat: no-repeat;
 }
 
 /* The drifting bloom, as its own layer so the gradients above can stay fixed
@@ -35,9 +57,18 @@
   inset: -20% -30%;
   z-index: 0;
   pointer-events: none;
+  /*
+   * Both blooms live in the upper half.
+   *
+   * The teal one used to sit at `18% 72%`. Because this layer is `fixed`, that
+   * put a permanent teal light in the lower third of the *viewport* — so no
+   * matter how far the ramp behind it descended, the bottom of every screenful
+   * was being lifted back up. It was the real reason the screen never got
+   * darker as you scrolled, and the ramp was only half the story.
+   */
   background:
-    radial-gradient(ellipse 34% 26% at 74% 16%, rgba(227, 194, 113, 0.16) 0%, rgba(227, 194, 113, 0) 70%),
-    radial-gradient(ellipse 30% 24% at 18% 72%, rgba(30, 127, 134, 0.18) 0%, rgba(30, 127, 134, 0) 70%);
+    radial-gradient(ellipse 34% 26% at 74% 14%, rgba(227, 194, 113, 0.17) 0%, rgba(227, 194, 113, 0) 70%),
+    radial-gradient(ellipse 30% 22% at 16% 40%, rgba(30, 127, 134, 0.15) 0%, rgba(30, 127, 134, 0) 72%);
   animation: irie-drift 24s ease-in-out infinite alternate;
 }
 
