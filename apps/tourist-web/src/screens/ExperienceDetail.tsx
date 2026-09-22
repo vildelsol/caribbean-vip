@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import {
   creditFor,
@@ -14,7 +14,10 @@ import {
   destinationBySlug,
 } from '../data/catalogue';
 import { distanceMetres } from '@cvip/types';
-import { firstBookableDay, slotsFor } from '../data/availability';
+import { firstBookableDay, isoDate, slotsFor } from '../data/availability';
+import { shapeById } from '../data/itinerary';
+import { describeDayFit, soonestDayFitting } from '../data/dayFit';
+import { DEFAULT_PARTY } from '../data/catalogue';
 import { useStore } from '../state/store';
 import { Icon } from '../components/Icon';
 import {
@@ -44,6 +47,43 @@ export function ExperienceDetail() {
 
   const experience = id ? experienceById(id) : undefined;
 
+  /*
+   * The day, built around this listing, so the page can answer "would this fit my day?" instead of
+   * asking it. Same builder Irie uses, same bookings, same rules — see `dayFit.ts` for why none of
+   * the judgement lives here.
+   *
+   * Above the early return, with every other hook: `experience` is undefined for an id that does
+   * not resolve, and a hook below that guard changes the hook count between renders. React throws
+   * "rendered more hooks than during the previous render" and the screen goes blank. This is the
+   * second time that mistake has been made in this codebase — see the handover's 2026-09-22 entry
+   * on `App()`. Hooks first, guards after.
+   */
+  const destination = destinationBySlug(state.destinationSlug);
+  const shape = shapeById('full-day');
+  const fit = useMemo(() => {
+    if (!shape || !destination || !experience) return null;
+    const todayISO = isoDate(new Date());
+    const built = soonestDayFitting(
+      {
+        shape,
+        islandId: state.islandId,
+        destination,
+        party: DEFAULT_PARTY,
+        bookings: state.bookings.filter((b) => b.status === 'confirmed' && b.islandId === state.islandId),
+        plannedExperienceIds: state.plannedExperienceIds,
+        anchorExperienceId: experience.id,
+      },
+      todayISO,
+    );
+    return describeDayFit(built, experience.id, todayISO);
+  }, [shape, destination, state.islandId, state.bookings, state.plannedExperienceIds, experience]);
+
+  /*
+   * The gallery's frame index, also above the guard for the same reason.
+   */
+  const [shown, setShown] = useState(0);
+  const railRef = useRef<HTMLDivElement>(null);
+
   if (!experience) {
     return (
       <main className="screen">
@@ -59,7 +99,6 @@ export function ExperienceDetail() {
   }
 
   const vendor = vendorFor(experience);
-  const destination = destinationBySlug(state.destinationSlug);
   const metres =
     vendor && destination
       ? distanceMetres(simulatedPosition(destination), {
@@ -87,8 +126,6 @@ export function ExperienceDetail() {
    * author under the wrong picture. The credit follows the scroll.
    */
   const frames = experience.media.length > 0 ? experience.media : [undefined];
-  const [shown, setShown] = useState(0);
-  const railRef = useRef<HTMLDivElement>(null);
   const credit = creditFor(frames[shown]);
 
   const onGalleryScroll = () => {
@@ -282,24 +319,38 @@ export function ExperienceDetail() {
           </section>
         ) : null}
 
-        {/* Popularity, then one guest in their own words. Numbers persuade; a voice reassures. */}
+        {/*
+          Social proof, and every number in it is one the dataset actually holds.
+          This block used to lead with "Booked 19 times this week" — `ratingCount / 38` — over
+          "99% would recommend", which was `ratingAverage * 18 + 17`. Both were invented, sat
+          beside a real price and a real distance, and so read as fact. The rating and its count
+          are the real figures (documented stand-ins for an aggregate over `reviews`), and the
+          seats are the same number checkout enforces, so scarcity here can never oversell a
+          departure that is actually empty.
+        */}
         <section className="detail__proof">
-          <div className="row detail__proof-head">
+          <div className="detail__proof-head">
+            <p className="detail__proof-score t-display-sm">{experience.ratingAverage.toFixed(1)}</p>
             <div className="grow">
-              <p className="t-body-strong">
-                Booked {weeklyBookings(experience.ratingCount)} times this week
+              <StarRow />
+              <p className="t-caption-strong detail__proof-claim">
+                {ratingClaim(experience.ratingAverage)}
               </p>
-              <p className="t-caption c-locator detail__proof-sub">
-                {audienceTag(experience.category)} · {recommendPct(experience.ratingAverage)}% would
-                recommend
+              <p className="t-micro c-faint">
+                from {experience.ratingCount.toLocaleString()} guest ratings
               </p>
             </div>
-            <span className="detail__proof-faces" aria-hidden="true">
-              <span className="detail__face" />
-              <span className="detail__face" />
-              <span className="detail__face" />
-            </span>
           </div>
+
+          {/* The same threshold the sticky bar uses for "Nearly full". Two different urgencies
+              for one number, six feet apart on the same screen, is worse than neither. */}
+          {soonest && soonest.capacityRemaining <= 6 ? (
+            <p className="t-caption-strong detail__proof-scarce">
+              <Icon name="user" size={15} color="var(--coral-text)" />
+              Only {soonest.capacityRemaining} {soonest.capacityRemaining === 1 ? 'place' : 'places'} left on the
+              next departure
+            </p>
+          ) : null}
 
           {experience.review ? (
             <div className="detail__review">
@@ -315,7 +366,7 @@ export function ExperienceDetail() {
         </section>
 
         <section className="detail__block">
-          <h2 className="t-section">Ask Irie AI</h2>
+          <h2 className="t-section">Irie AI has already checked</h2>
           {/*
             The listing travels with the question.
             This was a bare link to the Irie tab, which left the guest to re-ask what they were
@@ -325,17 +376,18 @@ export function ExperienceDetail() {
           */}
           <button
             type="button"
-            className="detail__irie"
+            className={`detail__irie detail__irie--${fit ? fit.tone : 'fits'}`}
             onClick={() => navigate('/irie', { state: { askIrieAbout: experience.id } })}
           >
             <span className="detail__irie-mark">
               <Icon name="sparkle" size={19} color="var(--gold-light)" />
             </span>
             <span className="grow detail__irie-text">
-              <span className="t-caption-strong">Would this fit my day?</span>
+              <span className="t-caption-strong">{fit ? fit.headline : 'Would this fit my day?'}</span>
               <span className="t-micro c-locator">
-                Build a day around {experience.title}, with travel and a total
+                {fit ? fit.detail : `Build a day around ${experience.title}, with travel and a total`}
               </span>
+              <span className="t-micro detail__irie-more">See the whole day</span>
             </span>
             <Icon name="chevron-right" size={16} color="var(--green-900)" strokeWidth={2.2} />
           </button>
@@ -369,30 +421,18 @@ export function ExperienceDetail() {
   );
 }
 
-function weeklyBookings(ratingCount: number): number {
-  return Math.max(8, Math.round(ratingCount / 38));
+/**
+ * What a rating of this strength actually claims.
+ *
+ * A band, not a sentence per listing: the dataset holds an average and a count, and anything more
+ * specific than the band that average sits in would be a number this app does not have.
+ */
+function ratingClaim(avg: number): string {
+  if (avg >= 4.8) return 'Among the highest rated on the island';
+  if (avg >= 4.5) return 'Consistently loved by guests';
+  return 'Well reviewed by guests';
 }
 
-function audienceTag(category: string): string {
-  const map: Record<string, string> = {
-    family: 'Popular with families',
-    day_trips: 'Popular with families',
-    beaches: 'Popular with couples',
-    wellness: 'Popular with couples',
-    adventure: 'Popular with adventurers',
-    water_sports: 'Popular with adventurers',
-    waterfalls: 'Popular with adventurers',
-    food: 'Popular with foodies',
-    culture: 'Popular with culture lovers',
-    nightlife: 'Popular with groups',
-    shopping: 'Popular with shoppers',
-  };
-  return map[category] ?? 'Popular with travellers';
-}
-
-function recommendPct(avg: number): number {
-  return Math.min(99, Math.round(avg * 18 + 17));
-}
 
 function durationLabel(minutes: number): string {
   if (minutes < 60) return `${minutes} min`;

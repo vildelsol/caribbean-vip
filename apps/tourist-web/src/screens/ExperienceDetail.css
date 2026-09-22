@@ -207,44 +207,54 @@
 
 /* --- Social proof ----------------------------------------------------------- */
 
+/*
+ * Proof.
+ *
+ * The rating leads at display size because it is the only number on this screen that is an
+ * aggregate of other people's experience — the price and the distance are facts about the listing,
+ * this one is a verdict on it. It was previously set as two lines of body copy under an invented
+ * "booked N times this week" headline, which gave the strongest honest number the weakest position
+ * on the block.
+ */
 .detail__proof {
   margin-top: 22px;
-  padding: 15px 16px;
+  padding: 16px;
   background: var(--ivory-raised);
   border-radius: var(--r-lg);
   box-shadow: var(--e-card);
 }
 
 .detail__proof-head {
-  gap: 12px;
-  align-items: flex-start;
-}
-
-.detail__proof-sub {
-  margin-top: 5px;
-}
-
-.detail__proof-faces {
   display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.detail__proof-score {
   flex: none;
-  padding-left: 9px;
+  color: var(--green-900);
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
 }
 
-.detail__face {
-  width: 28px;
-  height: 28px;
-  border-radius: 50%;
-  background: var(--aqua);
-  border: 2px solid var(--ivory-raised);
-  margin-left: -9px;
+.detail__proof-claim {
+  margin-top: 5px;
+  color: var(--ink);
 }
 
-.detail__face:nth-child(2) {
-  background: var(--sand);
-}
-
-.detail__face:nth-child(3) {
-  background: var(--aqua-soft);
+/*
+ * Scarcity, and it is real: `capacityRemaining` is the same figure `calculateBookingTotal`
+ * rejects an oversized party against. Coral because it is the app's one urgent colour, and a
+ * hairline rule rather than a filled panel — a tinted block here would compete with the price.
+ */
+.detail__proof-scarce {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  margin-top: 13px;
+  padding-top: 12px;
+  border-top: 1px solid var(--border);
+  color: var(--coral-text);
 }
 
 .detail__review {
@@ -340,6 +350,13 @@
 
 /* --- Ask Irie ------------------------------------------------------------------ */
 
+/*
+ * The fit answer.
+ *
+ * This was a dashed-border affordance reading "Would this fit my day?" — a question the app could
+ * already answer, asked of the guest. It is now the answer, so it is drawn as a statement: a solid
+ * tinted card, and a left edge in the tone of the verdict. The dashes went with the question.
+ */
 .detail__irie {
   display: flex;
   align-items: center;
@@ -348,8 +365,24 @@
   padding: 14px;
   border-radius: var(--r-lg);
   background: var(--ivory-raised);
-  border: 1.5px dashed var(--border-cool);
+  border: 1px solid var(--border-cool);
+  border-left: 4px solid var(--teal);
   text-align: left;
+  box-shadow: var(--e-card);
+}
+
+/* Green when the day holds it, coral when it does not. The mark stays gold-on-green either way —
+   it is Irie's, and it does not change colour with the news it carries. */
+.detail__irie--fits {
+  border-left-color: var(--green-900);
+}
+
+.detail__irie--later-day {
+  border-left-color: var(--teal);
+}
+
+.detail__irie--no-room {
+  border-left-color: var(--coral);
 }
 
 .detail__irie:active {
@@ -372,6 +405,15 @@
   flex-direction: column;
   gap: 4px;
   min-width: 0;
+}
+
+/* The onward affordance, kept quiet: the sentence above it is the point, and this is only the way
+   to see the working. */
+.detail__irie-more {
+  margin-top: 3px;
+  color: var(--green-900);
+  text-decoration: underline;
+  text-underline-offset: 2px;
 }
 
 /* --- Sticky action bar ------------------------------------------------------------ */
