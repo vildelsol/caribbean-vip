@@ -3,6 +3,7 @@ import './globals.css';
 import './vendor.css';
 import { VendorSessionProvider } from '../lib/session';
 import { AuthGate } from '../components/AuthGate';
+import { VendorNav } from '../components/VendorNav';
 
 export const metadata: Metadata = {
   title: 'Caribbean VIP — Vendor Portal',
@@ -26,7 +27,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       {/* Colours come from `globals.css`, which imports the shared token mirror. */}
       <body>
         <VendorSessionProvider>
-          <AuthGate>{children}</AuthGate>
+          <AuthGate>
+            <VendorNav />
+            {children}
+          </AuthGate>
         </VendorSessionProvider>
       </body>
     </html>

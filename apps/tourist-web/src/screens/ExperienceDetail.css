@@ -157,6 +157,109 @@
   flex: none;
 }
 
+/* --- Sub-options -------------------------------------------------------------- */
+
+/*
+ * What a multi-activity venue actually includes, as separate things rather than buried in prose.
+ * Four across on a 390 frame, wrapping to two rows on the narrowest phones.
+ */
+.detail__options {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+  margin-top: 16px;
+}
+
+@media (max-width: 359px) {
+  .detail__options {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+.detail__option {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 7px;
+  padding: 11px 6px;
+  background: var(--ivory-raised);
+  border-radius: var(--r-md);
+  text-align: center;
+}
+
+.detail__option-mark {
+  width: 28px;
+  height: 28px;
+  border-radius: var(--r-sm);
+  background: var(--aqua);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+}
+
+.detail__option-label {
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1.25;
+  color: var(--ink);
+}
+
+/* --- Social proof ----------------------------------------------------------- */
+
+.detail__proof {
+  margin-top: 22px;
+  padding: 15px 16px;
+  background: var(--ivory-raised);
+  border-radius: var(--r-lg);
+  box-shadow: var(--e-card);
+}
+
+.detail__proof-head {
+  gap: 12px;
+  align-items: flex-start;
+}
+
+.detail__proof-sub {
+  margin-top: 5px;
+}
+
+.detail__proof-faces {
+  display: flex;
+  flex: none;
+  padding-left: 9px;
+}
+
+.detail__face {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: var(--aqua);
+  border: 2px solid var(--ivory-raised);
+  margin-left: -9px;
+}
+
+.detail__face:nth-child(2) {
+  background: var(--sand);
+}
+
+.detail__face:nth-child(3) {
+  background: var(--aqua-soft);
+}
+
+.detail__review {
+  margin-top: 14px;
+  padding-top: 14px;
+  border-top: 1px solid var(--border);
+}
+
+.detail__review-quote {
+  margin: 9px 0 8px;
+  color: var(--ink);
+  font-style: italic;
+  line-height: 1.5;
+}
+
 /* --- Facts ------------------------------------------------------------------ */
 
 .detail__facts {

@@ -4,7 +4,7 @@ import { formatLongDate, pickupTime } from '../data/availability';
 import { useStore } from '../state/store';
 import { QR } from '../components/QR';
 import { Icon } from '../components/Icon';
-import { Badge, Card, DemoNote, EmptyState, Photo, PrimaryButton, SecondaryButton, formatUsd } from '../components/kit';
+import { Badge, Card, EmptyState, Photo, PrimaryButton, SecondaryButton, formatUsd } from '../components/kit';
 import './Confirmation.css';
 
 /**
@@ -139,7 +139,6 @@ export function Confirmation() {
         </section>
       ) : null}
 
-      <DemoNote>Demo booking · no payment processed</DemoNote>
     </main>
   );
 }

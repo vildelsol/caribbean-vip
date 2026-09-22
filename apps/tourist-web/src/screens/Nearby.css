@@ -178,10 +178,12 @@
   top: 78%;
 }
 
-/* --- Head ------------------------------------------------------------------- */
+/* --- Search bar (above the map) -------------------------------------------- */
 
-.nearby-head {
-  margin-top: -28px;
+.nearby-search-bar {
+  padding-top: 12px;
+  padding-bottom: 8px;
+  background: var(--ivory);
   position: relative;
   z-index: 5;
 }
@@ -197,21 +199,119 @@
   box-shadow: 0 8px 22px rgba(7, 40, 33, 0.12);
 }
 
-.nearby-filters {
+/* --- Map overlay: filter chips -------------------------------------------- */
+
+.map-filters {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  right: 80px; /* leave room for the toggle */
   display: flex;
-  gap: 8px;
-  margin-top: 10px;
+  gap: 7px;
   overflow-x: auto;
   scrollbar-width: none;
-  padding-bottom: 2px;
+  z-index: 6;
+  -webkit-overflow-scrolling: touch;
 }
 
-.nearby-filters::-webkit-scrollbar {
+.map-filters::-webkit-scrollbar {
   display: none;
 }
 
-.nearby-filters > * {
+.map-chip {
   flex: none;
+  display: inline-flex;
+  align-items: center;
+  min-height: 32px;
+  padding: 0 11px;
+  border-radius: var(--r-pill);
+  font-size: 12.5px;
+  font-weight: 700;
+  white-space: nowrap;
+  background: rgba(251, 246, 236, 0.92);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  color: var(--green-900);
+  box-shadow: 0 2px 8px rgba(7, 40, 33, 0.18);
+  transition: background 0.12s ease, color 0.12s ease;
+}
+
+.map-chip--on {
+  background: var(--green-900);
+  color: var(--on-dark);
+}
+
+.map-chip:active {
+  transform: scale(0.96);
+}
+
+/* --- Map / List toggle ----------------------------------------------------- */
+
+.map-view-toggle {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  display: flex;
+  border-radius: var(--r-pill);
+  background: rgba(251, 246, 236, 0.92);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  box-shadow: 0 2px 8px rgba(7, 40, 33, 0.18);
+  overflow: hidden;
+  z-index: 6;
+}
+
+.map-toggle {
+  padding: 7px 12px;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--ink-muted);
+  transition: background 0.12s ease, color 0.12s ease;
+}
+
+.map-toggle--on {
+  background: var(--green-900);
+  color: var(--on-dark);
+  border-radius: var(--r-pill);
+}
+
+/* --- List view header (when map is hidden) --------------------------------- */
+
+.nearby-list-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 0;
+  background: var(--ivory);
+  border-bottom: 1px solid var(--border-cool);
+}
+
+.nearby-filters-bar {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  scrollbar-width: none;
+  padding-bottom: 2px;
+  flex: 1;
+}
+
+.nearby-filters-bar::-webkit-scrollbar {
+  display: none;
+}
+
+.nearby-filters-bar > * {
+  flex: none;
+}
+
+.list-view-toggle {
+  flex: none;
+  display: flex;
+  border-radius: var(--r-pill);
+  background: var(--ivory-raised);
+  border: 1px solid var(--border-cool);
+  overflow: hidden;
+  margin-left: 8px;
+  padding: 0;
 }
 
 /* --- Notice ------------------------------------------------------------------ */

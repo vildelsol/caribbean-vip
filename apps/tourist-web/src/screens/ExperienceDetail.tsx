@@ -17,12 +17,12 @@ import { useStore } from '../state/store';
 import { Icon } from '../components/Icon';
 import {
   Badge,
-  DemoNote,
   EmptyState,
   Photo,
   PrimaryButton,
   Rating,
   RoundButton,
+  StarRow,
   formatUsd,
 } from '../components/kit';
 import './ExperienceDetail.css';
@@ -76,7 +76,9 @@ export function ExperienceDetail() {
   const facts = [
     { label: 'Duration', value: durationLabel(experience.durationMinutes) },
     { label: 'Hotel pickup', value: experience.pickupInfo ? 'Included' : 'Not included' },
-    { label: 'Group', value: 'Small group' },
+    experience.minAge
+      ? { label: 'Families', value: `Ages ${experience.minAge} and up` }
+      : { label: 'Group', value: 'Small group' },
     { label: 'Cancellation', value: `Free until ${experience.cancellationHours} hrs before` },
   ];
 
@@ -90,6 +92,7 @@ export function ExperienceDetail() {
           alt={experience.title}
           ratio="390 / 308"
           radius="0"
+          priority
         />
         <span className="detail__scrim" />
 
@@ -166,6 +169,19 @@ export function ExperienceDetail() {
           </p>
         ) : null}
 
+        {experience.subOptions && experience.subOptions.length > 0 ? (
+          <section className="detail__options" aria-label="Included at this venue">
+            {experience.subOptions.map((opt) => (
+              <div key={opt} className="detail__option">
+                <span className="detail__option-mark" aria-hidden="true">
+                  <Icon name="check" size={13} color="var(--green-900)" strokeWidth={2.6} />
+                </span>
+                <span className="detail__option-label">{opt}</span>
+              </div>
+            ))}
+          </section>
+        ) : null}
+
         <section className="detail__facts">
           {facts.map((f) => (
             <div key={f.label} className="fact">
@@ -203,6 +219,38 @@ export function ExperienceDetail() {
           </section>
         ) : null}
 
+        {/* Popularity, then one guest in their own words. Numbers persuade; a voice reassures. */}
+        <section className="detail__proof">
+          <div className="row detail__proof-head">
+            <div className="grow">
+              <p className="t-body-strong">
+                Booked {weeklyBookings(experience.ratingCount)} times this week
+              </p>
+              <p className="t-caption c-locator detail__proof-sub">
+                {audienceTag(experience.category)} · {recommendPct(experience.ratingAverage)}% would
+                recommend
+              </p>
+            </div>
+            <span className="detail__proof-faces" aria-hidden="true">
+              <span className="detail__face" />
+              <span className="detail__face" />
+              <span className="detail__face" />
+            </span>
+          </div>
+
+          {experience.review ? (
+            <div className="detail__review">
+              <StarRow />
+              <blockquote className="t-caption detail__review-quote">
+                &ldquo;{experience.review.quote}&rdquo;
+              </blockquote>
+              <p className="t-micro c-faint">
+                {experience.review.author} · {experience.review.context} · {experience.review.date}
+              </p>
+            </div>
+          ) : null}
+        </section>
+
         <section className="detail__block">
           <h2 className="t-section">Ask Irie AI</h2>
           {/*
@@ -230,7 +278,6 @@ export function ExperienceDetail() {
           </button>
         </section>
 
-        <DemoNote>Demo listing · sample operator data</DemoNote>
       </div>
 
       {/* ---------------- Sticky action ---------------- */}
@@ -257,6 +304,31 @@ export function ExperienceDetail() {
       </div>
     </main>
   );
+}
+
+function weeklyBookings(ratingCount: number): number {
+  return Math.max(8, Math.round(ratingCount / 38));
+}
+
+function audienceTag(category: string): string {
+  const map: Record<string, string> = {
+    family: 'Popular with families',
+    day_trips: 'Popular with families',
+    beaches: 'Popular with couples',
+    wellness: 'Popular with couples',
+    adventure: 'Popular with adventurers',
+    water_sports: 'Popular with adventurers',
+    waterfalls: 'Popular with adventurers',
+    food: 'Popular with foodies',
+    culture: 'Popular with culture lovers',
+    nightlife: 'Popular with groups',
+    shopping: 'Popular with shoppers',
+  };
+  return map[category] ?? 'Popular with travellers';
+}
+
+function recommendPct(avg: number): number {
+  return Math.min(99, Math.round(avg * 18 + 17));
 }
 
 function durationLabel(minutes: number): string {

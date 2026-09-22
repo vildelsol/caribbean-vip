@@ -102,12 +102,19 @@ describe('visibility mirrors the RLS policy', () => {
     }
   });
 
-  it('labels every visible listing as demo content (operating rule 9)', () => {
-    for (const exp of demoBackend.visibleExperiences()) {
-      const vendor = demoBackend.vendor(exp.vendorId);
-      expect(vendor?.tradingName.startsWith('[Demo]')).toBe(true);
-    }
-  });
+  /*
+   * REMOVED 2026-09-22 — "labels every visible listing as demo content (operating rule 9)".
+   *
+   * This asserted that every vendor's `tradingName` began with "[Demo]". The owner instructed that
+   * all demo labelling be removed from both apps, which revoked the rule this guarded rather than
+   * breaking it, so the test was removed rather than fixed. See docs/HANDOVER.md §5, "Demo
+   * labelling removed".
+   *
+   * Left here as a marker because HANDOVER §6 lists the guards in this file as ones not to delete,
+   * and a guard that vanishes without a trace is indistinguishable from one that was never written.
+   * If labelling is ever reinstated, this is the test to restore — and note that
+   * `supabase/seed/seed.sql` still carries the prefix, so the two would need re-aligning.
+   */
 
   it('covers every experience category across the visible catalogue', () => {
     const categories = new Set(demoBackend.visibleExperiences().map((e) => e.category));

@@ -4,59 +4,130 @@ import { useState, type ReactNode } from 'react';
 import { supabase, isSupabaseConfigured } from '../lib/supabase';
 import { useVendorSession } from '../lib/session';
 
-/**
- * Sign-in gate for the vendor portal.
- *
- * The portal has no public surface, so unlike the tourist app this really is a gate. It still
- * degrades honestly: with no backend configured it says so rather than showing a login form that
- * cannot work.
- *
- * A signed-in user with no vendor membership sees an explanatory state, not an empty dashboard —
- * that is the normal condition between registering and being approved (V-01, V-02).
- */
+type AuthView = 'signin' | 'signup' | 'verify-signin' | 'verify-signup';
+
 export function AuthGate({ children }: { children: ReactNode }) {
   const { loading, session, memberships } = useVendorSession();
+  const [view, setView] = useState<AuthView>('signin');
   const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const [code, setCode] = useState('');
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
 
-  // Demo mode. With no backend there is no account to sign into, and refusing to render anything
-  // made the portal undemonstrable — which is a problem, because the vendor half of Journey A (a
-  // guest's QR being scanned) is the single most important thing to be able to show.
-  //
-  // Nothing is unlocked by this: there is no vendor data to protect when there is no backend, and
-  // `redeem.ts` routes to the in-memory demo backend rather than to anyone's real vouchers. Once
-  // credentials exist, `isSupabaseConfigured` is true and the real gate below applies as before.
   if (!isSupabaseConfigured) {
     return (
-      <div className="shell">
-        {/* A hairline strip rather than a slab. The tourist app made the same change on 2026-08-03:
-            the first thing anyone sees should be the product, and the notice still says the whole
-            truth at 11px. */}
-        <div className="demo-strip">
-          Demo mode · sample data · no real vendor account · nothing is charged
-        </div>
-        {children}
-      </div>
+      <div className="shell">{children}</div>
     );
   }
 
   if (loading) return <Panel title="Loading…">{null}</Panel>;
 
   if (!session) {
-    const submit = async (e: React.FormEvent) => {
+    const sendOtp = async (e: React.FormEvent, forSignup: boolean) => {
       e.preventDefault();
       setBusy(true);
       setMessage(null);
-      const { error } = await supabase.auth.signInWithPassword({ email, password });
+      const { error } = await supabase.auth.signInWithOtp({
+        email,
+        options: { shouldCreateUser: forSignup },
+      });
+      setBusy(false);
+      if (error) {
+        setMessage(error.message);
+      } else {
+        setView(forSignup ? 'verify-signup' : 'verify-signin');
+      }
+    };
+
+    const verifyOtp = async (e: React.FormEvent) => {
+      e.preventDefault();
+      setBusy(true);
+      setMessage(null);
+      const { error } = await supabase.auth.verifyOtp({ email, token: code, type: 'email' });
       setBusy(false);
       if (error) setMessage(error.message);
     };
 
+    if (view === 'verify-signin' || view === 'verify-signup') {
+      return (
+        <Panel title="Check your email">
+          <p className="card__note">
+            We sent a 6-digit code to <strong>{email}</strong>. Enter it below to{' '}
+            {view === 'verify-signup' ? 'create your account' : 'sign in'}.
+          </p>
+          <form onSubmit={verifyOtp} style={{ display: 'grid', gap: 'var(--s-md)' }}>
+            <label className="field">
+              <span className="field__label">Verification code</span>
+              <input
+                type="text"
+                inputMode="numeric"
+                className="input input--code"
+                value={code}
+                onChange={(e) => setCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                placeholder="000000"
+                maxLength={6}
+                required
+                autoComplete="one-time-code"
+                autoFocus
+              />
+            </label>
+            <button type="submit" disabled={busy || code.length !== 6} className="btn btn--primary btn--full">
+              {busy ? 'Verifying…' : 'Confirm'}
+            </button>
+            {message ? <p className="auth-error">{message}</p> : null}
+            <button
+              type="button"
+              className="btn btn--text"
+              onClick={() => { setView('signin'); setCode(''); setMessage(null); }}
+            >
+              ← Back
+            </button>
+          </form>
+        </Panel>
+      );
+    }
+
+    if (view === 'signup') {
+      return (
+        <Panel title="Create your account">
+          <p className="card__note">
+            Enter your work email and we&rsquo;ll send a one-time code — no password needed.
+          </p>
+          <form onSubmit={(e) => sendOtp(e, true)} style={{ display: 'grid', gap: 'var(--s-md)' }}>
+            <label className="field">
+              <span className="field__label">Work email</span>
+              <input
+                type="email"
+                className="input"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="you@yourbusiness.com"
+                required
+                autoComplete="email"
+                autoFocus
+              />
+            </label>
+            <button type="submit" disabled={busy} className="btn btn--primary btn--full">
+              {busy ? 'Sending code…' : 'Send code →'}
+            </button>
+            {message ? <p className="auth-error">{message}</p> : null}
+          </form>
+          <div className="auth-switch">
+            Already have an account?{' '}
+            <button type="button" className="auth-link" onClick={() => { setView('signin'); setMessage(null); }}>
+              Sign in
+            </button>
+          </div>
+        </Panel>
+      );
+    }
+
     return (
-      <Panel title="Vendor sign in">
-        <form onSubmit={submit} style={{ display: 'grid', gap: 'var(--s-md)' }}>
+      <Panel title="Welcome back">
+        <p className="card__note">
+          Enter your email and we&rsquo;ll send a sign-in code — no password required.
+        </p>
+        <form onSubmit={(e) => sendOtp(e, false)} style={{ display: 'grid', gap: 'var(--s-md)' }}>
           <label className="field">
             <span className="field__label">Email</span>
             <input
@@ -64,38 +135,37 @@ export function AuthGate({ children }: { children: ReactNode }) {
               className="input"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
+              placeholder="you@yourbusiness.com"
               required
               autoComplete="email"
+              autoFocus
             />
           </label>
-          <label className="field">
-            <span className="field__label">Password</span>
-            <input
-              type="password"
-              className="input"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-              autoComplete="current-password"
-            />
-          </label>
-          <button type="submit" disabled={busy} className="btn btn--primary">
-            {busy ? 'Signing in…' : 'Sign in'}
+          <button type="submit" disabled={busy} className="btn btn--primary btn--full">
+            {busy ? 'Sending code…' : 'Send code →'}
           </button>
-          {message ? <p className="transport__title">{message}</p> : null}
+          {message ? <p className="auth-error">{message}</p> : null}
         </form>
+        <div className="auth-switch">
+          New vendor?{' '}
+          <button type="button" className="auth-link" onClick={() => { setView('signup'); setMessage(null); }}>
+            Create an account
+          </button>
+        </div>
       </Panel>
     );
   }
 
   if (memberships.length === 0) {
     return (
-      <Panel title="No vendor organization yet">
+      <Panel title="Pending approval">
         <p className="card__note">
-          This account is signed in but is not a member of any vendor organization. Create one to
-          start onboarding, or ask an owner to invite you.
+          Your account is signed in but not yet linked to a vendor organization. Complete
+          onboarding or ask an owner to invite you.
         </p>
-        <p className="card__note">Onboarding and staff invitations arrive in M4.</p>
+        <a href="/onboarding" className="btn btn--primary" style={{ textDecoration: 'none', display: 'flex', justifyContent: 'center' }}>
+          Complete onboarding →
+        </a>
       </Panel>
     );
   }

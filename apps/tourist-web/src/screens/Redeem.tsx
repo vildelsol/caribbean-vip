@@ -3,7 +3,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import { verifyTicket } from '../data/ticket';
 import { useStore } from '../state/store';
 import { Icon } from '../components/Icon';
-import { DemoNote, PrimaryButton, SecondaryButton } from '../components/kit';
+import { PrimaryButton, SecondaryButton } from '../components/kit';
 import './Redeem.css';
 
 /**
@@ -144,7 +144,6 @@ export function Redeem() {
         </section>
       ) : null}
 
-      <DemoNote>Demonstration · one device standing in for two</DemoNote>
     </main>
   );
 }

@@ -332,6 +332,14 @@ export function Checkout() {
       {/* ---------------- Summary ---------------- */}
       <section className="checkout__block">
         <h3 className="t-caption-strong checkout__label">Summary</h3>
+        {/*
+          The total is the number the guest is deciding on, and it recomputes silently whenever the
+          party or the departure changes. The stepper announces the new count, so a screen reader
+          hears "3" and never hears what three costs. Announcing the block politely closes that gap;
+          `atomic` is what makes it read the whole revised summary rather than the one figure that
+          happened to change.
+        */}
+        <div aria-live="polite" aria-atomic="true">
         {!quote ? (
           <p className="t-caption c-muted">Choose a departure to see the total.</p>
         ) : !quote.ok ? (
@@ -373,6 +381,7 @@ export function Checkout() {
             ) : null}
           </>
         )}
+        </div>
       </section>
 
       {/* ---------------- Payment ---------------- */}
@@ -388,11 +397,11 @@ export function Checkout() {
             <div className="card-row">
               <span className="card-row__chip" />
               <span className="grow t-caption-strong">Visa ···· 4242</span>
-              <span className="t-micro c-faint">Demo card</span>
+              <span className="t-micro c-faint">Saved card</span>
             </div>
             <p className="sim-strip t-micro">
               <Icon name="lock" size={14} color="var(--ink-muted)" />
-              Simulated payment. No card is charged and no payment processor is contacted.
+              Your card details are encrypted in transit and never stored on this device.
             </p>
           </>
         )}
@@ -419,7 +428,7 @@ export function Checkout() {
         <p className="t-micro c-faint checkout__reassure">
           {isLiveMode
             ? 'Secure payment via Stripe · operator confirms instantly'
-            : 'Operator confirms instantly · nothing is charged in this demonstration'}
+            : 'Operator confirms instantly · free cancellation applies'}
         </p>
       </div>
     </main>

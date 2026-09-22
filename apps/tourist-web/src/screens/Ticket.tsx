@@ -4,7 +4,7 @@ import { formatLongDate } from '../data/availability';
 import { useStore, type VoucherState } from '../state/store';
 import { QR } from '../components/QR';
 import { Icon } from '../components/Icon';
-import { DemoNote, EmptyState, formatUsd } from '../components/kit';
+import { EmptyState, formatUsd } from '../components/kit';
 import './Ticket.css';
 
 /**
@@ -153,7 +153,6 @@ export function Ticket() {
         </div>
       </article>
 
-      <DemoNote>Demo ticket · signature is real, secret is not</DemoNote>
     </main>
   );
 }

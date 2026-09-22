@@ -166,13 +166,67 @@ button.chip:active {
   background: var(--ivory-sunken);
   color: var(--ink-muted);
 }
+/*
+ * Proximity, over a photograph.
+ *
+ * Deliberately NOT frosted glass. A blurred surface takes the colour of whatever is behind it, and
+ * these sit on beach and water shots — over pale sand the type would vanish in exactly the bright
+ * outdoor light this app is used in. So the fill stays opaque, and what changes is that it stops
+ * looking like every other badge: smaller, the mode carried by an icon instead of a word, and the
+ * figure in the same locator teal used everywhere else distance is stated.
+ */
+.badge--travel {
+  background: rgba(251, 246, 236, 0.96);
+  color: var(--teal-text);
+  gap: 4px;
+  padding: 5px 9px;
+  font-size: 11.5px;
+  font-weight: 800;
+  border-radius: var(--r-pill);
+  box-shadow: 0 2px 9px rgba(7, 40, 33, 0.2);
+}
+
+/* On a dark card: gold type on a translucent gold wash, uppercase and tracked out. */
+.badge--gold-glass {
+  background: rgba(227, 194, 113, 0.16);
+  color: var(--gold-light);
+  text-transform: uppercase;
+  letter-spacing: 0.09em;
+  font-size: 10.5px;
+  font-weight: 800;
+  padding: 7px 11px;
+  border-radius: var(--r-pill);
+}
 
 /* --- Rating -------------------------------------------------------------- */
 
 .rating {
   display: inline-flex;
   align-items: center;
-  gap: 5px;
+  gap: 4px;
+}
+
+.rating svg {
+  flex: none;
+  margin-top: -1px;
+}
+
+/* The score reads as part of the star, not as body text beside it. Two classes deep so it beats
+   the `.t-caption-strong` / `.t-micro-strong` weight it sits alongside, rather than depending on
+   which stylesheet the bundler happened to emit last. */
+.rating .rating__score {
+  color: var(--gold-text);
+  font-weight: 700;
+}
+
+.star-row {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.star-row svg {
+  flex: none;
 }
 
 /* --- Photo --------------------------------------------------------------- */

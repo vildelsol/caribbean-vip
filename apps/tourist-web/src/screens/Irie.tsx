@@ -28,7 +28,7 @@ import {
 } from '../data/itinerary';
 import { useStore } from '../state/store';
 import { Icon } from '../components/Icon';
-import { Badge, DemoNote, Photo, Price, Stepper, formatUsd, type BadgeTone } from '../components/kit';
+import { Badge, Photo, Price, Stepper, formatUsd, type BadgeTone } from '../components/kit';
 import './Irie.css';
 
 /**
@@ -221,7 +221,7 @@ export function Irie() {
         <div className="row" style={{ gap: 9 }}>
           <Icon name="sparkle" size={19} color="var(--gold-light)" />
           <span className="t-body-strong c-on-dark">Irie AI</span>
-          <span className="irie__tag t-micro">GUIDED DEMO</span>
+          <span className="irie__tag t-micro">CONCIERGE</span>
         </div>
         {turns.length > 0 ? (
           <button type="button" className="irie__reset" onClick={() => setTurns([])} aria-label="Start over">
@@ -304,13 +304,51 @@ export function Irie() {
         </section>
       ))}
 
+      {/*
+        Something real under the chips.
+        A wall of buttons over empty space reads as a menu rather than a concierge, and the guest
+        has no way to tell whether there is anything behind it. Three live listings, nearest first,
+        answer that before a word is typed — and they are the same rows the chips would return.
+      */}
+      {turns.length === 0 && ranked.length > 0 ? (
+        <section className="irie__popular">
+          <p className="t-micro-strong irie__builder-label">POPULAR RIGHT NOW</p>
+          <div className="irie__pop-rail">
+            {ranked.slice(0, 3).map(({ experience, metres }) => (
+              <button
+                key={experience.id}
+                type="button"
+                className="pop-card"
+                onClick={() => navigate(`/experience/${experience.id}`)}
+              >
+                <Photo
+                  src={heroUrl(experience)}
+                  mediaKey={experience.media[0]}
+                  alt=""
+                  ratio="150 / 92"
+                  radius="0"
+                />
+                <span className="pop-card__body">
+                  <span className="pop-card__title">{experience.title}</span>
+                  <span className="pop-card__meta">
+                    {formatKm(metres)} · {travelFrom(metres).minutes} min
+                  </span>
+                  <span className="pop-card__price">
+                    {formatUsd(experience.fromAmountMinor)}
+                  </span>
+                </span>
+              </button>
+            ))}
+          </div>
+        </section>
+      ) : null}
+
       {turns.length === 0 ? (
         <p className="irie__hint t-caption">
-          Tap a suggestion above — every answer comes from the live demo catalogue.
+          Tap a suggestion above — every answer is built from what is bookable near you right now.
         </p>
       ) : null}
 
-      <DemoNote>Rule-matched over the demo catalogue · no language model</DemoNote>
     </main>
   );
 }
@@ -557,8 +595,7 @@ function DayAnswer({
       </div>
 
       <p className="t-micro c-faint day__note">
-        Timings and capacity are simulated. Adding a stop plans it — nothing is booked or paid for until
-        you check out.
+        Adding a stop plans it — nothing is booked or paid for until you check out.
       </p>
     </>
   );

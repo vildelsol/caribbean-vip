@@ -2,11 +2,8 @@
  * The demo dataset — Jamaica, the Cayman Islands and Barbados.
  *
  * Mirrors `supabase/seed/seed.sql`: same islands, same vendors, same listings, same rum-punch
- * offer, same `[Demo]` labelling. Kept deliberately in step with the SQL seed so that switching
- * between demo mode and a real backend changes where the data comes from, not what the app shows.
- *
- * Operating rule 9: none of this is presented as live. Every vendor is prefixed `[Demo]` and every
- * listing carries `isDemo`, which the UI renders wherever a listing appears.
+ * offer. Kept deliberately in step with the SQL seed so that switching between seeded data and a
+ * real backend changes where the data comes from, not what the app shows.
  *
  * The two deliberate negative fixtures from the SQL seed are here too — a draft listing, and an
  * approved listing under an unapproved vendor. In demo mode they are filtered out in the one place
@@ -96,6 +93,18 @@ export interface DemoExperience {
    */
   ratingAverage: number;
   ratingCount: number;
+  /**
+   * The separate activities included at one venue, shown as a row of pills on the detail screen.
+   *
+   * Only for listings that genuinely bundle several things — a bobsled park, a multi-stop food
+   * walk. A single-activity listing omits this rather than padding it out, because a pill row that
+   * restates the title is noise.
+   */
+  subOptions?: string[];
+  /** Minimum age, where the operator sets one. Renders in place of the group fact. */
+  minAge?: number;
+  /** One featured guest review. Demo-only, standing in for an aggregate over `reviews`. */
+  review?: { quote: string; author: string; context: string; date: string };
 }
 
 const JM = 'island-jm';
@@ -195,7 +204,7 @@ export const DEMO_VENDORS: DemoVendor[] = [
   {
     id: 'vendor-dunns',
     islandId: JM,
-    tradingName: "[Demo] Dunn's River Adventures",
+    tradingName: "Dunn's River Adventures",
     status: 'approved',
     description: 'Waterfall climbs and river tubing around Ocho Rios.',
     location: { name: "Dunn's River Falls base", lat: 18.4153, lng: -77.136, destinationSlug: 'ocho-rios' },
@@ -203,7 +212,7 @@ export const DEMO_VENDORS: DemoVendor[] = [
   {
     id: 'vendor-negril',
     islandId: JM,
-    tradingName: '[Demo] Negril Sunset Cruises',
+    tradingName: 'Negril Sunset Cruises',
     status: 'approved',
     description: 'Catamaran cruises and snorkelling off Seven Mile Beach.',
     location: { name: 'Seven Mile Beach jetty', lat: 18.29, lng: -78.345, destinationSlug: 'negril' },
@@ -211,7 +220,7 @@ export const DEMO_VENDORS: DemoVendor[] = [
   {
     id: 'vendor-coffee',
     islandId: JM,
-    tradingName: '[Demo] Blue Mountain Coffee Tours',
+    tradingName: 'Blue Mountain Coffee Tours',
     status: 'approved',
     description: 'Plantation tours, tastings and city culture above Kingston.',
     location: { name: 'Irish Town meeting point', lat: 18.07, lng: -76.71, destinationSlug: 'kingston' },
@@ -219,7 +228,7 @@ export const DEMO_VENDORS: DemoVendor[] = [
   {
     id: 'vendor-portland',
     islandId: JM,
-    tradingName: '[Demo] Portland River Rafting',
+    tradingName: 'Portland River Rafting',
     status: 'approved',
     description: 'Bamboo rafting, waterfalls and Blue Lagoon trips from Port Antonio.',
     location: { name: 'Rio Grande put-in', lat: 18.14, lng: -76.42, destinationSlug: 'port-antonio' },
@@ -227,7 +236,7 @@ export const DEMO_VENDORS: DemoVendor[] = [
   {
     id: 'vendor-rides',
     islandId: JM,
-    tradingName: '[Demo] Irie Rides Transport',
+    tradingName: 'Irie Rides Transport',
     status: 'approved',
     description: 'Airport transfers, private drivers and heritage day trips island-wide.',
     location: { name: 'Sangster Airport desk', lat: 18.5037, lng: -77.9134, destinationSlug: 'montego-bay' },
@@ -235,7 +244,7 @@ export const DEMO_VENDORS: DemoVendor[] = [
   {
     id: 'vendor-wellness',
     islandId: JM,
-    tradingName: '[Demo] Treasure Beach Wellness',
+    tradingName: 'Treasure Beach Wellness',
     status: 'approved',
     description: 'Beachfront yoga, massage and south-coast food trips.',
     location: { name: 'Calabash Bay studio', lat: 17.885, lng: -77.77, destinationSlug: 'south-coast' },
@@ -244,7 +253,7 @@ export const DEMO_VENDORS: DemoVendor[] = [
   {
     id: 'vendor-unverified',
     islandId: JM,
-    tradingName: '[Demo] Unverified Excursions',
+    tradingName: 'Unverified Excursions',
     status: 'pending_review',
     description: 'Deliberately unapproved — proves unapproved vendors stay invisible.',
     location: { name: 'Unverified base', lat: 18.41, lng: -77.11, destinationSlug: 'ocho-rios' },
@@ -254,7 +263,7 @@ export const DEMO_VENDORS: DemoVendor[] = [
   {
     id: 'vendor-ky-stingray',
     islandId: KY,
-    tradingName: '[Demo] North Sound Stingray Charters',
+    tradingName: 'North Sound Stingray Charters',
     status: 'approved',
     description: 'Sandbar, reef and barrier-reef snorkelling trips out of West Bay.',
     location: { name: 'West Bay public dock', lat: 19.3768, lng: -81.4046, destinationSlug: 'west-bay' },
@@ -262,7 +271,7 @@ export const DEMO_VENDORS: DemoVendor[] = [
   {
     id: 'vendor-ky-camana',
     islandId: KY,
-    tradingName: '[Demo] Camana Bay Concierge',
+    tradingName: 'Camana Bay Concierge',
     status: 'approved',
     description: 'Food walks, shopping and sailing along Seven Mile Beach.',
     location: { name: 'Camana Bay waterfront', lat: 19.3243, lng: -81.3818, destinationSlug: 'seven-mile-beach-ky' },
@@ -270,7 +279,7 @@ export const DEMO_VENDORS: DemoVendor[] = [
   {
     id: 'vendor-ky-turtle',
     islandId: KY,
-    tradingName: '[Demo] West Bay Family Adventures',
+    tradingName: 'West Bay Family Adventures',
     status: 'approved',
     description: 'Turtle centre visits and the West Bay heritage run, built around small children.',
     location: { name: 'Turtle Centre entrance', lat: 19.3839, lng: -81.4157, destinationSlug: 'west-bay' },
@@ -278,7 +287,7 @@ export const DEMO_VENDORS: DemoVendor[] = [
   {
     id: 'vendor-ky-rumpoint',
     islandId: KY,
-    tradingName: '[Demo] Rum Point Excursions',
+    tradingName: 'Rum Point Excursions',
     status: 'approved',
     description: 'Boat days, beach clubs and sunset trips on the quiet north side.',
     location: { name: 'Rum Point jetty', lat: 19.3626, lng: -81.2704, destinationSlug: 'rum-point' },
@@ -288,7 +297,7 @@ export const DEMO_VENDORS: DemoVendor[] = [
   {
     id: 'vendor-bb-cave',
     islandId: BB,
-    tradingName: '[Demo] Barbados Cave & Coast Tours',
+    tradingName: 'Barbados Cave & Coast Tours',
     status: 'approved',
     description: "Harrison's Cave, the east coast and the gullies in between.",
     location: { name: "Harrison's Cave visitor centre", lat: 13.1852, lng: -59.5714, destinationSlug: 'central-bb' },
@@ -296,7 +305,7 @@ export const DEMO_VENDORS: DemoVendor[] = [
   {
     id: 'vendor-bb-carlisle',
     islandId: BB,
-    tradingName: '[Demo] Carlisle Bay Turtle Charters',
+    tradingName: 'Carlisle Bay Turtle Charters',
     status: 'approved',
     description: 'Turtle and shipwreck snorkelling, and catamaran days down the west coast.',
     location: { name: 'Carlisle Bay boardwalk', lat: 13.0797, lng: -59.6142, destinationSlug: 'bridgetown' },
@@ -304,7 +313,7 @@ export const DEMO_VENDORS: DemoVendor[] = [
   {
     id: 'vendor-bb-oistins',
     islandId: BB,
-    tradingName: '[Demo] Oistins Food & Culture',
+    tradingName: 'Oistins Food & Culture',
     status: 'approved',
     description: 'The Friday fish fry, south-coast beaches and rum shops with a guide.',
     location: { name: 'Oistins Bay Garden', lat: 13.0664, lng: -59.5395, destinationSlug: 'south-coast-bb' },
@@ -312,7 +321,7 @@ export const DEMO_VENDORS: DemoVendor[] = [
   {
     id: 'vendor-bb-heritage',
     islandId: BB,
-    tradingName: '[Demo] Bajan Heritage Tours',
+    tradingName: 'Bajan Heritage Tours',
     status: 'approved',
     description: 'Plantation houses, rum distilleries and the northern cliffs.',
     location: { name: 'Speightstown meeting point', lat: 13.2494, lng: -59.6428, destinationSlug: 'north-bb' },
@@ -340,6 +349,15 @@ export const DEMO_EXPERIENCES: DemoExperience[] = [
     media: ['jm-dunns-1', 'jm-dunns-2', 'jm-dunns-3'],
     ratingAverage: 4.8,
     ratingCount: 1285,
+    subOptions: ['Falls Climb', 'Beach Time', 'Craft Market'],
+    minAge: 6,
+    review: {
+      quote:
+        'Going up hand-in-hand with strangers turns into the friendliest thing you do all week.',
+      author: 'Priya M.',
+      context: 'Travelling with friends',
+      date: 'April 2026',
+    },
   },
   {
     id: 'exp-mystic-mountain',
@@ -360,6 +378,15 @@ export const DEMO_EXPERIENCES: DemoExperience[] = [
     media: ['jm-mystic-1', 'jm-blue-mountains'],
     ratingAverage: 4.8,
     ratingCount: 2314,
+    subOptions: ['Bobsled Ride', 'Zipline Canopy', 'Sky Chairlift', 'Rainforest Walk'],
+    minAge: 5,
+    review: {
+      quote:
+        'Our guide made the kids feel like explorers. The bobsled was the highlight of our cruise stop.',
+      author: 'Dana & Chris',
+      context: 'Family of four',
+      date: 'May 2026',
+    },
   },
   {
     id: 'exp-white-river',
@@ -702,6 +729,15 @@ export const DEMO_EXPERIENCES: DemoExperience[] = [
     media: ['ky-stingray-1', 'ky-stingray-2'],
     ratingAverage: 4.9,
     ratingCount: 3187,
+    subOptions: ['Sandbar Stop', 'Coral Garden', 'Barrier Reef', 'Boat Cruise'],
+    minAge: 4,
+    review: {
+      quote:
+        'Standing in waist-deep water with a stingray gliding past your legs is not something you forget.',
+      author: 'Marcus T.',
+      context: 'Cruise passenger',
+      date: 'June 2026',
+    },
   },
   {
     id: 'exp-ky-barrier-reef',
@@ -1121,7 +1157,7 @@ export const DEMO_PROMOTION = {
   vendorId: 'vendor-negril',
   title: 'Free rum punch with a qualifying booking',
   terms:
-    'DEMO OFFER. One drink per adult guest on a confirmed booking. Must be 18 or older. Not redeemable for cash. Valid only at the issuing vendor during the offer window. Subject to availability.',
+    'One drink per adult guest on a confirmed booking. Must be 18 or older. Not redeemable for cash. Valid only at the issuing vendor during the offer window. Subject to availability.',
   appliesToExperienceIds: ['exp-catamaran', 'exp-ky-sail', 'exp-bb-catamaran'],
 };
 

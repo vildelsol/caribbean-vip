@@ -96,3 +96,58 @@
 .bottom-nav__item--centre:active .irie-badge {
   transform: scale(0.96);
 }
+
+/*
+ * The concierge is awake.
+ *
+ * The three stars twinkle on offset cycles rather than together, because a synchronised pulse reads
+ * as a notification badge demanding attention, while staggered ones read as something quietly alive
+ * and available — which is the whole claim. Kept slow and shallow: this sits on every screen, and
+ * anything faster or deeper becomes the thing you cannot stop looking at.
+ *
+ * `prefers-reduced-motion` is honoured globally in global.css, which collapses these to a stop.
+ */
+@keyframes irie-twinkle {
+  0%,
+  100% {
+    transform: scale(1);
+    opacity: var(--spark-base, 1);
+  }
+  50% {
+    transform: scale(1.18);
+    opacity: 1;
+  }
+}
+
+.irie-badge .spark {
+  animation: irie-twinkle 1.8s ease-in-out infinite;
+}
+
+.irie-badge .spark--1 {
+  --spark-base: 0.92;
+  animation-delay: 0s;
+}
+
+.irie-badge .spark--2 {
+  --spark-base: 0.5;
+  animation-duration: 1.4s;
+  animation-delay: 0.35s;
+}
+
+.irie-badge .spark--3 {
+  --spark-base: 0.38;
+  animation-duration: 1.55s;
+  animation-delay: 0.75s;
+}
+
+.irie-badge .spark--4 {
+  --spark-base: 0.32;
+  animation-duration: 1.3s;
+  animation-delay: 0.55s;
+}
+
+.irie-badge .spark--5 {
+  --spark-base: 0.28;
+  animation-duration: 1.65s;
+  animation-delay: 1s;
+}

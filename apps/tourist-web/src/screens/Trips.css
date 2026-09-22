@@ -130,13 +130,23 @@
   z-index: 2;
 }
 
+/*
+ * Three dot states, because the design reads the day by rhythm rather than as a list: a booked
+ * activity, a meal, and something Irie has put up but nobody has paid for. Colour is not the only
+ * carrier — each card also states its status in words — so this stays legible without it.
+ */
 .timeline__dot--confirmed {
   background: var(--green-900);
+}
+
+.timeline__dot--dining {
+  background: var(--gold);
 }
 
 .timeline__dot--suggested {
   background: var(--ivory);
   border-color: var(--border-cool);
+  box-shadow: inset 0 0 0 2px var(--border-strong);
 }
 
 .timeline__card {
@@ -165,16 +175,128 @@
   margin-top: 7px;
 }
 
-/* --- Total --------------------------------------------------------------------- */
+/* --- Transport connector ----------------------------------------------------- */
 
-.trips__total {
+.timeline__connector {
   display: flex;
   align-items: center;
+  gap: 6px;
+  padding: 6px 0 6px 2px;
+  margin-left: 2px;
+}
+
+.timeline__connector svg {
+  flex: none;
+  opacity: 0.5;
+}
+
+.timeline__connector-text {
+  color: var(--ink-faint);
+  letter-spacing: 0.03em;
+}
+
+/* --- Summary: route, total, wallet ---------------------------------------------- */
+
+.trips__summary {
+  display: grid;
+  grid-template-columns: 132px 1fr;
+  gap: 10px;
+  margin-top: 18px;
+}
+
+@media (max-width: 359px) {
+  .trips__summary {
+    grid-template-columns: 1fr;
+  }
+}
+
+.trips__route {
+  position: relative;
+  border-radius: var(--r-lg);
+  background: var(--map-water);
+  overflow: hidden;
+  min-height: 108px;
+}
+
+.trips__route-road {
+  position: absolute;
+  left: -10%;
+  right: -10%;
+  top: 52%;
+  height: 8px;
+  background: var(--map-road);
+  transform: rotate(-9deg);
+}
+
+.trips__route-stop {
+  position: absolute;
+  width: 11px;
+  height: 11px;
+  border-radius: 50%;
+  background: var(--green-900);
+}
+
+.trips__route-stop--0 {
+  left: 20%;
+  top: 44%;
+}
+.trips__route-stop--1 {
+  left: 48%;
+  top: 62%;
+  background: var(--gold);
+}
+.trips__route-stop--2 {
+  left: 72%;
+  top: 38%;
+}
+
+.trips__route-label {
+  position: absolute;
+  left: 8px;
+  bottom: 8px;
+  padding: 5px 9px;
+  border-radius: var(--r-pill);
+  background: rgba(251, 246, 236, 0.95);
+  color: var(--ink);
+}
+
+.trips__summary-rows {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.trips__summary-row {
   gap: 12px;
+  padding: 14px 15px;
+  background: var(--ivory-raised);
+  border-radius: var(--r-lg);
+  flex: 1;
+}
+
+/* --- Ask Irie ------------------------------------------------------------------- */
+
+.trips__ask {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  width: 100%;
   margin-top: 12px;
-  padding-top: 16px;
-  padding-bottom: 4px;
-  border-top: 1px solid var(--border);
-  margin-inline: var(--s-md);
-  padding-inline: 0;
+  padding: 16px;
+  border-radius: var(--r-lg);
+  background: var(--green-900);
+  color: var(--on-dark);
+  text-align: left;
+}
+
+.trips__ask svg {
+  flex: none;
+}
+
+.trips__ask:active {
+  transform: scale(0.99);
+}
+
+.next-up__leave {
+  margin-top: 5px;
 }

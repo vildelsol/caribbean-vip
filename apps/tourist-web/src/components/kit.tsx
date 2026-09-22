@@ -8,7 +8,7 @@ import './kit.css';
  *
  * Everything the nine screens share lives here rather than being re-typed per screen — the card
  * surface, both button weights, chips, badges, the rating row, the photo frame with its credit, the
- * money formatters, the skeletons and the demo labels. Six screens each growing their own card
+ * money formatters and the skeletons. Six screens each growing their own card
  * style is the exact failure the design's own notes call out.
  */
 
@@ -141,21 +141,40 @@ export function Chip({
   );
 }
 
-export type BadgeTone = 'brand' | 'aqua' | 'sand' | 'coral' | 'plain' | 'muted';
+export type BadgeTone =
+  | 'brand'
+  | 'aqua'
+  | 'sand'
+  | 'coral'
+  | 'plain'
+  | 'muted'
+  | 'gold-glass'
+  | 'travel';
 
 export function Badge({ children, tone = 'plain' }: { children: ReactNode; tone?: BadgeTone }) {
   return <span className={`badge badge--${tone}`}>{children}</span>;
 }
 
-/** "★ 4.8 · 1,240 reviews". The star is decorative; the number carries the meaning. */
+/** "★ 4.8 · 1,240 reviews". Star and score both gold — the score is the thing being rated. */
 export function Rating({ average, count, compact = false }: { average: number; count?: number; compact?: boolean }) {
   return (
     <span className="rating" aria-label={`Rated ${average} out of 5${count ? ` from ${count} reviews` : ''}`}>
       <Icon name="star" size={compact ? 12 : 13} color="var(--gold)" />
-      <span className={compact ? 't-micro-strong' : 't-caption-strong'}>{average.toFixed(1)}</span>
+      <span className={`rating__score ${compact ? 't-micro-strong' : 't-caption-strong'}`}>{average.toFixed(1)}</span>
       {count !== undefined && !compact ? (
         <span className="t-caption c-muted">· {count.toLocaleString('en-US')} reviews</span>
       ) : null}
+    </span>
+  );
+}
+
+/** Five filled stars above a guest quote. Review blocks, not the inline score row. */
+export function StarRow({ count = 5 }: { count?: number }) {
+  return (
+    <span className="star-row" aria-label={`${count} out of 5 stars`}>
+      {Array.from({ length: count }, (_, i) => (
+        <Icon key={i} name="star" size={14} color="var(--gold)" />
+      ))}
     </span>
   );
 }
@@ -182,6 +201,7 @@ export function Photo({
   ratio = '16 / 10',
   radius = 'var(--r-lg)',
   credit = false,
+  priority = false,
   className = '',
   children,
   style,
@@ -192,6 +212,13 @@ export function Photo({
   ratio?: string;
   radius?: string;
   credit?: boolean;
+  /**
+   * Set on the one image that is already on screen when a route paints — the island hero on
+   * Explore, the listing hero on the detail screen. That image is the Largest Contentful Paint,
+   * and `loading="lazy"` on it does the opposite of what it is for: the browser defers the
+   * fetch until layout has settled, so the measurement it feeds is the one it delays.
+   */
+  priority?: boolean;
   className?: string;
   children?: ReactNode;
   style?: CSSProperties;
@@ -202,8 +229,9 @@ export function Photo({
       <img
         src={src}
         alt={alt}
-        loading="lazy"
-        decoding="async"
+        loading={priority ? 'eager' : 'lazy'}
+        fetchPriority={priority ? 'high' : undefined}
+        decoding={priority ? 'sync' : 'async'}
         /**
          * A file that 404s hides itself and leaves the frame's warm tint behind, rather than
          * rendering the browser's broken-image glyph. The frame keeps its ratio either way, so the
@@ -274,17 +302,6 @@ export function SectionHeader({
       ) : null}
     </div>
   );
-}
-
-/**
- * The demo disclosure.
- *
- * Operating rule 9: seeded content is labelled wherever it appears. A card in a screenshot is
- * exactly where that gets forgotten, and this is an investor demonstration whose screenshots will
- * travel — so every screen that shows inventory, a price or a booking carries one of these.
- */
-export function DemoNote({ children }: { children: ReactNode }) {
-  return <p className="demo-note t-micro">{children}</p>;
 }
 
 export function Skeleton({ height, width = '100%', radius = 'var(--r-md)' }: { height: number; width?: string; radius?: string }) {

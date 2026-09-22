@@ -14,7 +14,7 @@ import {
 import { useStore } from '../state/store';
 import { useGuestPosition } from '../state/useGuestPosition';
 import { LocationBar } from '../components/LocationBar';
-import { Badge, Card, Chip, DemoNote, Photo, Price, SectionHeader } from '../components/kit';
+import { Badge, Card, Chip, Photo, Price, SectionHeader } from '../components/kit';
 import { Icon } from '../components/Icon';
 import './Nearby.css';
 
@@ -45,6 +45,7 @@ export function Nearby() {
   const navigate = useNavigate();
   const [filter, setFilter] = useState<string>('All');
   const [selected, setSelected] = useState<string | null>(null);
+  const [mapView, setMapView] = useState(true);
 
   const offerPending = !state.offerShownForIslands.includes(state.islandId);
 
@@ -83,36 +84,8 @@ export function Nearby() {
 
   return (
     <main className="screen">
-      <div className="nearby-map" role="img" aria-label={`Stylised map of ${destination.name} showing ${results.length} experiences`}>
-        <span className="nearby-map__water" />
-        <span className="nearby-map__land" />
-        <span className="nearby-map__green" />
-        <span className="nearby-map__road nearby-map__road--a" />
-        <span className="nearby-map__road nearby-map__road--b" />
-
-        {/* Proximity rings, centred on the guest. */}
-        <span className="ring ring--3" />
-        <span className="ring ring--2" />
-        <span className="ring ring--1" />
-        <span className="you" />
-        <span className="you__label t-micro-strong">You are here</span>
-        <span className="ring__scale t-micro">1 KM</span>
-
-        {results.slice(0, 4).map(({ experience, metres }, i) => (
-          <button
-            key={experience.id}
-            type="button"
-            className={`map-pin map-pin--${i} ${chosen?.experience.id === experience.id ? 'is-on' : ''}`}
-            onClick={() => setSelected(experience.id)}
-            aria-label={`${experience.title}, ${formatKm(metres)} away`}
-          >
-            <span className="t-micro-strong">{`US$${Math.round(experience.fromAmountMinor / 100)}`}</span>
-            <span className="map-pin__name">{experience.title.split(' ').slice(0, 2).join(' ')}</span>
-          </button>
-        ))}
-      </div>
-
-      <div className="nearby-head pad">
+      {/* Search bar always visible */}
+      <div className="nearby-search-bar pad">
         <div className="nearby-search">
           <Icon name="search" size={17} color="var(--green-900)" strokeWidth={2} />
           <span className="grow t-caption-strong">
@@ -120,22 +93,78 @@ export function Nearby() {
           </span>
           <span className="t-micro-strong c-locator">{results.length} FOUND</span>
         </div>
-        <div className="nearby-filters">
-          {FILTERS.map((f) => (
-            <Chip key={f} selected={filter === f} onClick={() => setFilter(f)}>
-              {f}
-            </Chip>
-          ))}
-        </div>
       </div>
+
+      {mapView ? (
+        /* ---- Map view ---- */
+        <div className="nearby-map" role="img" aria-label={`Stylised map of ${destination.name} showing ${results.length} experiences`}>
+          <span className="nearby-map__water" />
+          <span className="nearby-map__land" />
+          <span className="nearby-map__green" />
+          <span className="nearby-map__road nearby-map__road--a" />
+          <span className="nearby-map__road nearby-map__road--b" />
+
+          <span className="ring ring--3" />
+          <span className="ring ring--2" />
+          <span className="ring ring--1" />
+          <span className="you" />
+          <span className="you__label t-micro-strong">You are here</span>
+          <span className="ring__scale t-micro">1 KM</span>
+
+          {results.slice(0, 4).map(({ experience, metres }, i) => (
+            <button
+              key={experience.id}
+              type="button"
+              className={`map-pin map-pin--${i} ${chosen?.experience.id === experience.id ? 'is-on' : ''}`}
+              onClick={() => setSelected(experience.id)}
+              aria-label={`${experience.title}, ${formatKm(metres)} away`}
+            >
+              <span className="t-micro-strong">{`US$${Math.round(experience.fromAmountMinor / 100)}`}</span>
+              <span className="map-pin__name">{experience.title.split(' ').slice(0, 2).join(' ')}</span>
+            </button>
+          ))}
+
+          {/* Filter chips overlaid on the map */}
+          <div className="map-filters" role="group" aria-label="Filter experiences">
+            {FILTERS.map((f) => (
+              <button
+                key={f}
+                type="button"
+                className={`map-chip ${filter === f ? 'map-chip--on' : ''}`}
+                onClick={() => setFilter(f)}
+                aria-pressed={filter === f}
+              >
+                {f === 'All' ? `All ${results.length}` : f}
+              </button>
+            ))}
+          </div>
+
+          {/* Map / List toggle */}
+          <div className="map-view-toggle">
+            <button type="button" className="map-toggle map-toggle--on" aria-pressed={true}>Map</button>
+            <button type="button" className="map-toggle" onClick={() => setMapView(false)}>List</button>
+          </div>
+        </div>
+      ) : (
+        /* ---- List view header (reuses map area height) ---- */
+        <div className="nearby-list-header">
+          <div className="nearby-filters-bar pad">
+            {FILTERS.map((f) => (
+              <Chip key={f} selected={filter === f} onClick={() => setFilter(f)}>
+                {f === 'All' ? `All ${results.length}` : f}
+              </Chip>
+            ))}
+          </div>
+          {/* Map / List toggle for list view */}
+          <div className="list-view-toggle pad">
+            <button type="button" className="map-toggle" onClick={() => setMapView(true)}>Map</button>
+            <button type="button" className="map-toggle map-toggle--on" aria-pressed={true}>List</button>
+          </div>
+        </div>
+      )}
 
       <LocationBar guest={guest} destinationName={destination.name} />
 
-      <p className="nearby-notice t-micro">
-        <Icon name="pin" size={13} color="var(--teal-text)" />
-        Stylised map — it shows relative position and distance, not geography. Live mapping is not
-        part of this demonstration. The distances themselves are real.
-      </p>
 
       <section className="pad nearby-list">
         <SectionHeader title="Closest to you" />
@@ -167,7 +196,7 @@ export function Nearby() {
                         ? "YOU'RE HERE"
                         : `${travel.minutes} MIN ${travel.mode.toUpperCase()} · ${formatKm(metres).toUpperCase()}`}
                     </p>
-                    <h3 className="t-caption-strong near-row__title">{experience.title}</h3>
+                    <h3 className="t-card-title near-row__title">{experience.title}</h3>
                     <div className="near-row__tags">
                       <Badge tone="aqua">
                         {isAtVenue(metres)
@@ -191,7 +220,6 @@ export function Nearby() {
         )}
       </section>
 
-      <DemoNote>Demo inventory · simulated position</DemoNote>
     </main>
   );
 }

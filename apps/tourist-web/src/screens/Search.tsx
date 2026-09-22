@@ -23,7 +23,7 @@ import {
 } from '../data/catalogue';
 import { searchCandidates } from '../data/search';
 import { useStore } from '../state/store';
-import { Badge, Card, Chip, DemoNote, EmptyState, Photo, Price, Rating } from '../components/kit';
+import { Badge, Card, Chip, EmptyState, Photo, Price, Rating } from '../components/kit';
 import { Icon } from '../components/Icon';
 import './Search.css';
 
@@ -291,7 +291,6 @@ export function Search() {
         </section>
       )}
 
-      <DemoNote>Demo inventory · sample pricing</DemoNote>
     </main>
   );
 }

@@ -2,7 +2,7 @@ import { useNavigate } from 'react-router-dom';
 import { PROMOTION, destinationBySlug, experienceById, heroUrl, vendorFor } from '../data/catalogue';
 import { useStore } from '../state/store';
 import { Icon } from '../components/Icon';
-import { DemoNote, GoldButton, Photo, PrimaryButton, TextButton } from '../components/kit';
+import { GoldButton, Photo, PrimaryButton, TextButton } from '../components/kit';
 import './Offer.css';
 
 /**
@@ -122,7 +122,6 @@ export function Offer() {
         </div>
       </article>
 
-      <DemoNote>Simulated geofence · a real trigger arrives in M6</DemoNote>
     </main>
   );
 }

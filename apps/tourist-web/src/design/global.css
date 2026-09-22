@@ -26,6 +26,30 @@ body,
   height: 100%;
 }
 
+/*
+ * The app is light-only on purpose (PRD §16: outdoor sun readability is the constraint, and the
+ * ivory ground is what satisfies it). Declaring that means form controls, scrollbars and the
+ * browser's own UI render against the right ground instead of guessing from the system theme.
+ */
+html {
+  color-scheme: light;
+}
+
+/*
+ * Every control is a tap target on a phone. Without this, mobile Safari and Chrome hold each tap
+ * for ~300ms waiting to see whether it is the first half of a double-tap-to-zoom, which reads as
+ * the whole interface lagging. Pinch zoom is untouched.
+ */
+button,
+a,
+[role='button'],
+input,
+select,
+summary,
+label {
+  touch-action: manipulation;
+}
+
 body {
   margin: 0;
   background: var(--green-980);
@@ -188,13 +212,23 @@ button.badge::after {
    Type scale — mirrors `typography` in @cvip/ui
    --------------------------------------------------------------------------- */
 
+/*
+ * The serif carries the brand, so it stays — but at 600 it sat lighter than the source design and
+ * read as thin against the photography. 700 plus a tighter track is what closes that gap without
+ * reaching for a different typeface.
+ *
+ * `text-wrap: balance` matters more here than it would on a desktop layout: at 390pt a two-line
+ * destination title routinely broke with one orphaned word on line two. Balancing evens the
+ * measure without anyone hand-tuning a line break per title.
+ */
 .t-display,
 .t-display-md,
 .t-display-sm,
 .t-section {
   font-family: var(--font-display);
-  font-weight: 600;
-  letter-spacing: -0.005em;
+  text-wrap: balance;
+  font-weight: 700;
+  letter-spacing: -0.012em;
   margin: 0;
 }
 
@@ -213,6 +247,7 @@ button.badge::after {
 .t-section {
   font-size: 21px;
   line-height: 1.19;
+  font-weight: 700;
 }
 
 .t-title {
@@ -267,6 +302,20 @@ button.badge::after {
   font-weight: 700;
   margin: 0;
 }
+/*
+ * A title on a list or rail card. Sans, not serif — the design reserves the serif for screen and
+ * section headings, and sets the cards themselves in heavy Manrope so a scanning eye lands on the
+ * name of the thing before anything else on the card.
+ */
+.t-card-title {
+  font-size: 15px;
+  line-height: 1.28;
+  font-weight: 700;
+  letter-spacing: -0.012em;
+  color: var(--ink);
+  margin: 0;
+}
+
 .t-overline {
   font-size: 12px;
   line-height: 1.25;

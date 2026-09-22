@@ -37,7 +37,22 @@ export type IconName =
   | 'bookmark'
   | 'refresh'
   | 'minus'
-  | 'plus';
+  | 'plus'
+  // Explore's twelve categories. Drawn here rather than pulled from an icon package so the row
+  // matches the weight of every other glyph in the app; they replaced emoji, which rendered as a
+  // different set on every platform and broke apart entirely for the family group.
+  | 'compass'
+  | 'mountain'
+  | 'beach'
+  | 'snorkel'
+  | 'waterfall'
+  | 'food'
+  | 'drum'
+  | 'lotus'
+  | 'moon'
+  | 'bus'
+  | 'family'
+  | 'bag';
 
 const STROKE: Partial<Record<IconName, string>> = {
   home: 'M4 10.5 12 4l8 6.5V20a1 1 0 0 1-1 1h-4v-6H9v6H5a1 1 0 0 1-1-1z',
@@ -55,7 +70,10 @@ const STROKE: Partial<Record<IconName, string>> = {
   check: 'M5 12.6 9.6 17.2 19 7.8',
   bell: 'M18 15.5V10a6 6 0 1 0-12 0v5.5L4.5 18h15zM10 20.5h4',
   clock: 'M12 7.5V12l3 2',
-  car: 'M5 17.5h14M7.5 17.5V12l2-4h5l2 4v5.5',
+  // Wide and low. The first version was 5 units tall through a narrow cabin with a steep roof,
+  // which at badge size read as a bell rather than a car — a car is recognised by its proportions
+  // long before its detail, so the silhouette matters more than the stroke count.
+  car: 'M4 16.4h16M6.4 16.4v-3l1.8-3.4h7.6l1.8 3.4v3',
   // A walking figure. The first attempt was three crossing strokes, which at 13px read as "≠".
   walk: 'M10 21l1.3-5.6L9 13l1-4.6 3.3 1.9 2.4 1.5M12.9 15.4L15.2 21',
   lock: 'M8 10.5V8a4 4 0 0 1 8 0v2.5',
@@ -66,6 +84,21 @@ const STROKE: Partial<Record<IconName, string>> = {
   pin: 'M12 21s7-6.2 7-11a7 7 0 1 0-14 0c0 4.8 7 11 7 11z',
   'shield-check': 'M12 3l7 3v5.5c0 4.4-3 8-7 9.5-4-1.5-7-5.1-7-9.5V6zM9 12l2.2 2.2L15.5 10',
   ticket: 'M3.5 12.5h17M12 8.5v12',
+
+  // --- Categories -----------------------------------------------------------------
+  // Each is a silhouette first. At 13px in a chip the outline is all that survives, so these are
+  // drawn to be told apart by shape alone, the way the car glyph above had to be.
+  compass: 'M15.4 8.6l-2.4 6.8-6.8 2.4 2.4-6.8z',
+  mountain: 'M3 19h18L14.4 7.6l-3.3 5.6-2-2.7z',
+  // Three falls over a ledge, landing in water. The ledge is what stops it reading as a barcode.
+  waterfall: 'M3.5 5h17M7.5 6.5v7M12 6.5v7M16.5 6.5v7M3.5 17.6c2-1.5 3.5-1.5 5.5 0s3.5 1.5 5.5 0 3.5-1.5 5.5 0',
+  food: 'M7.6 3.5v4.6a2.3 2.3 0 0 0 4.6 0V3.5M9.9 3.5v4.6M9.9 10.4v10.1M16.6 20.5V3.5c2.1 1.7 2.8 4.5 2.8 6.7s-1.1 3.3-2.8 3.5',
+  lotus: 'M12 20.6c0-5.1 3.1-9.7 8.1-11.2-.6 6.1-3.6 10.2-8.1 11.2zM12 20.6c0-5.1-3.1-9.7-8.1-11.2.6 6.1 3.6 10.2 8.1 11.2z',
+  moon: 'M20.2 14.6A8.6 8.6 0 0 1 9.4 3.8a8.6 8.6 0 1 0 10.8 10.8z',
+  bag: 'M5.6 8.4h12.8l-1 12.1H6.6zM9 8.4V6.3a3 3 0 0 1 6 0v2.1',
+  // A snorkelling mask, tube on the right. Tried goggles first; two lenses at chip size merged
+  // into one blur, and the tube is what makes the shape unambiguous anyway.
+  snorkel: 'M4.8 8.6h13.4v3.6a4.2 4.2 0 0 1-4.2 4.2h-1.3L12 14.2l-.7 2.2H10a4.2 4.2 0 0 1-4.2-4.2zM18.2 8.6V5.4',
 };
 
 export interface IconProps {
@@ -92,11 +125,47 @@ export function Icon({ name, size = 20, color = 'currentColor', strokeWidth = 1.
 
   // The handful that need a fill or extra geometry rather than a single stroked path.
   switch (name) {
+    /*
+     * Three stars, each on its own class so a caller can twinkle them independently.
+     *
+     * The transform-origin on each is set here rather than in CSS because an SVG child's default
+     * origin is the viewBox corner, not the shape — scaling without it slides the star across the
+     * icon instead of pulsing it in place.
+     */
     case 'sparkle':
       return (
         <svg {...common} fill={color}>
-          <path d="M12 3l1.8 4.9L18.7 9.7l-4.9 1.8L12 16.4l-1.8-4.9L5.3 9.7l4.9-1.8z" />
-          <path d="M18.6 15.2l.9 2.4 2.4.9-2.4.9-.9 2.4-.9-2.4-2.4-.9 2.4-.9z" opacity="0.85" />
+          <path
+            className="spark spark--1"
+            style={{ transformOrigin: '12px 9.7px' }}
+            d="M12 3l1.8 4.9L18.7 9.7l-4.9 1.8L12 16.4l-1.8-4.9L5.3 9.7l4.9-1.8z"
+          />
+          <path
+            className="spark spark--2"
+            style={{ transformOrigin: '18.6px 18.5px' }}
+            d="M18.6 15.2l.9 2.4 2.4.9-2.4.9-.9 2.4-.9-2.4-2.4-.9 2.4-.9z"
+            opacity="0.85"
+          />
+          <path
+            className="spark spark--3"
+            style={{ transformOrigin: '5.6px 17.4px' }}
+            d="M5.6 14.9l.7 1.8 1.8.7-1.8.7-.7 1.8-.7-1.8-1.8-.7 1.8-.7z"
+            opacity="0.7"
+          />
+          {/* The outer two are deliberately the smallest: at chip size the whole mark is 13px, and
+              five equal stars there would read as a smudge rather than as a constellation. */}
+          <path
+            className="spark spark--4"
+            style={{ transformOrigin: '20px 4.8px' }}
+            d="M20 2.6l.6 1.6 1.6.6-1.6.6-.6 1.6-.6-1.6-1.6-.6 1.6-.6z"
+            opacity="0.6"
+          />
+          <path
+            className="spark spark--5"
+            style={{ transformOrigin: '3.5px 7.5px' }}
+            d="M3.5 5.6l.5 1.4 1.4.5-1.4.5-.5 1.4-.5-1.4-1.4-.5 1.4-.5z"
+            opacity="0.5"
+          />
         </svg>
       );
     case 'heart-filled':
@@ -150,8 +219,8 @@ export function Icon({ name, size = 20, color = 'currentColor', strokeWidth = 1.
       return (
         <svg {...common} fill="none" stroke={color} strokeWidth={strokeWidth} strokeLinecap="round">
           <path d={STROKE.car} />
-          <circle cx="8.5" cy="19.5" r="1.4" />
-          <circle cx="15.5" cy="19.5" r="1.4" />
+          <circle cx="8.2" cy="18.3" r="1.5" />
+          <circle cx="15.8" cy="18.3" r="1.5" />
         </svg>
       );
     case 'lock':
@@ -173,6 +242,49 @@ export function Icon({ name, size = 20, color = 'currentColor', strokeWidth = 1.
         <svg {...common} fill="none" stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="round">
           <circle cx="12.6" cy="4.2" r="1.9" />
           <path d={STROKE.walk} />
+        </svg>
+      );
+    /* A steel pan. The Caribbean instrument reads as culture here in a way a paint palette does
+       not, and it survives being drawn at 13px because it is a circle with two dents in it. */
+    /* The needle alone reads as a leaf. The bezel is what makes it a compass, which is the whole
+       reason it stands for "All" rather than for a category. */
+    case 'compass':
+      return (
+        <svg {...common} fill="none" stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="round">
+          <circle cx="12" cy="12" r="8.6" />
+          <path d={STROKE.compass} />
+        </svg>
+      );
+    case 'drum':
+      return (
+        <svg {...common} fill="none" stroke={color} strokeWidth={strokeWidth} strokeLinecap="round">
+          <circle cx="12" cy="12" r="8.6" />
+          <circle cx="9.2" cy="10" r="2" />
+          <circle cx="15" cy="13.6" r="2.4" />
+        </svg>
+      );
+    case 'beach':
+      return (
+        <svg {...common} fill="none" stroke={color} strokeWidth={strokeWidth} strokeLinecap="round">
+          <circle cx="12" cy="7.4" r="3.6" />
+          <path d="M3.2 16.4c1.8-1.5 3.2-1.5 5 0s3.2 1.5 5 0 3.2-1.5 5 0M3.2 20.3c1.8-1.5 3.2-1.5 5 0s3.2 1.5 5 0 3.2-1.5 5 0" />
+        </svg>
+      );
+    case 'bus':
+      return (
+        <svg {...common} fill="none" stroke={color} strokeWidth={strokeWidth} strokeLinecap="round">
+          <rect x="4.4" y="4.6" width="15.2" height="12" rx="2.2" />
+          <path d="M4.4 11h15.2M8.6 4.6v6.4M15.4 4.6v6.4M7 16.6v1.8M17 16.6v1.8" />
+        </svg>
+      );
+    /* An adult and a child, not three equal heads: the size difference is what carries "family"
+       at this scale. */
+    case 'family':
+      return (
+        <svg {...common} fill="none" stroke={color} strokeWidth={strokeWidth} strokeLinecap="round">
+          <circle cx="8" cy="6.9" r="2.8" />
+          <circle cx="16.6" cy="10.4" r="2.2" />
+          <path d="M3.6 20.4c.9-3.5 2.6-5.2 4.4-5.2s3.5 1.7 4.4 5.2M12.9 20.4c.7-2.6 2-3.9 3.7-3.9s3 1.3 3.7 3.9" />
         </svg>
       );
     default: {
