@@ -256,6 +256,12 @@ export function Irie() {
       {/* Drawn, not photographed — see PalmFronds for why. It is the first child
           so everything else stacks above it without a z-index on each one. */}
       <PalmFronds className="irie__fronds" />
+      {/* The second, cooler cluster low on the left — the screen's foliage used
+          to stop at the header and leave the rest of a long scroll empty. */}
+      <PalmFronds className="irie__fronds irie__fronds--low" variant="understory" />
+      {/* This one scrolls with the document rather than being pinned to the
+          viewport, so something actually arrives as you read down. */}
+      <PalmFronds className="irie__fronds irie__fronds--mid" variant="understory" />
 
       <header className="irie__head">
         {/* The mark reads left to right as a name, then its spark, then its

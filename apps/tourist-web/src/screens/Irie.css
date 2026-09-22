@@ -54,7 +54,12 @@
 .irie::before {
   content: '';
   position: fixed;
-  inset: -20% -30%;
+  /* Held to the frame's own width — see --app-gutter. Left and right used to be
+     -30%, which on a desktop threw both blooms out into the page margin. */
+  top: -20%;
+  bottom: -20%;
+  left: var(--app-gutter);
+  right: var(--app-gutter);
   z-index: 0;
   pointer-events: none;
   /*
@@ -83,8 +88,8 @@
   content: '';
   position: fixed;
   top: 0;
-  left: 0;
-  right: 0;
+  left: var(--app-gutter);
+  right: var(--app-gutter);
   height: 1px;
   z-index: 2;
   pointer-events: none;
@@ -736,8 +741,9 @@
 .irie__fronds {
   position: fixed;
   top: 0;
-  right: 0;
-  width: min(88%, 420px);
+  /* Anchored to the frame's right edge, not the window's. */
+  right: var(--app-gutter);
+  width: min(88vw, 378px);
   height: 430px;
   z-index: 0;
   pointer-events: none;
@@ -746,6 +752,48 @@
      flat fill; the foliage happens around it. */
   mask-image: linear-gradient(255deg, #000 0%, rgba(0, 0, 0, 0.72) 42%, transparent 82%);
   -webkit-mask-image: linear-gradient(255deg, #000 0%, rgba(0, 0, 0, 0.72) 42%, transparent 82%);
+}
+
+/*
+ * The understory, bottom-left.
+ *
+ * Fixed like the canopy, and mirrored: it is masked from the opposite corner so
+ * the two clusters fade toward each other and leave the middle of the column —
+ * where the copy and the prompt rows are — clear of both.
+ */
+.irie__fronds--low {
+  top: auto;
+  bottom: 0;
+  right: auto;
+  left: var(--app-gutter);
+  width: min(76vw, 320px);
+  height: 360px;
+  mask-image: linear-gradient(35deg, #000 0%, rgba(0, 0, 0, 0.6) 46%, transparent 84%);
+  -webkit-mask-image: linear-gradient(35deg, #000 0%, rgba(0, 0, 0, 0.6) 46%, transparent 84%);
+}
+
+/*
+ * Mid-page, and the only cluster that is not fixed.
+ *
+ * Two pinned clusters make a vignette: the same two shapes sit in the same two
+ * corners no matter how far you have read. This one is absolute, so it enters
+ * from below as the page scrolls and leaves above it — which is the part that
+ * makes the screen feel like it has length rather than a decorated frame. It is
+ * mirrored and the faintest of the three; it passes behind body copy, and
+ * anything stronger would be read as a stain on the ink.
+ */
+.irie__fronds--mid {
+  position: absolute;
+  top: 46%;
+  bottom: auto;
+  left: auto;
+  right: 0;
+  width: min(72%, 300px);
+  height: 340px;
+  opacity: 0.58;
+  transform: scaleX(-1);
+  mask-image: linear-gradient(200deg, #000 0%, rgba(0, 0, 0, 0.55) 48%, transparent 86%);
+  -webkit-mask-image: linear-gradient(200deg, #000 0%, rgba(0, 0, 0, 0.55) 48%, transparent 86%);
 }
 
 /*
@@ -759,6 +807,20 @@
   .irie__fronds {
     transform-origin: 96% 4%;
     animation: irie-breeze 14s ease-in-out infinite alternate;
+  }
+
+  /* Rooted in its own corner, and out of phase with the canopy — two clusters
+     swaying in step read as one image being scaled. */
+  .irie__fronds--low {
+    transform-origin: 4% 96%;
+    animation: irie-breeze 19s ease-in-out infinite alternate;
+    animation-delay: -6s;
+  }
+
+  /* No breeze on the mirrored one: the keyframes set `transform`, which would
+     overwrite the scaleX(-1) that mirrors it and flip it mid-animation. */
+  .irie__fronds--mid {
+    animation: none;
   }
 }
 

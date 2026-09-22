@@ -106,6 +106,17 @@
   /* The phone frame the design is drawn at. Wider viewports letterbox around it rather than
      stretching the layout, because every screen in the source design is composed for 390pt. */
   --app-width: 430px;
+  /*
+   * The letterbox on either side of the frame on a wide viewport.
+   *
+   * `position: fixed` resolves against the viewport, not against `.app`, so a
+   * fixed decorative layer inside a screen paints across the whole browser
+   * window — on a desktop that put the concierge's palm fronds out in the page
+   * margin, where they read as part of the site rather than part of the phone.
+   * Anchoring a fixed layer with this gutter puts its edges back on the frame's
+   * edges while it keeps the viewport-fixed behaviour it is there for.
+   */
+  --app-gutter: max(0px, calc((100vw - var(--app-width)) / 2));
   --nav-height: 66px;
   /* Bottom navigation plus the iOS home indicator. Every scrolling screen reserves this much
      padding so its last element is never trapped under the bar. */
