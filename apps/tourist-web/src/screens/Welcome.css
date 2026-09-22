@@ -3,7 +3,7 @@
   min-height: 100dvh;
   display: flex;
   flex-direction: column;
-  background: var(--green-900);
+  background: var(--green-950);
   overflow: hidden;
 }
 
@@ -19,19 +19,58 @@
   width: 100%;
   height: 100%;
   object-fit: cover;
-  object-position: center 30%;
+  object-position: center 20%;
 }
 
+/* Three-stop scrim: clear sky at top → dense dark at foot so form text is always legible */
 .welcome__hero-scrim {
   position: absolute;
   inset: 0;
   background: linear-gradient(
-    to bottom,
-    rgba(7, 40, 33, 0.35) 0%,
-    rgba(7, 40, 33, 0.55) 45%,
-    rgba(7, 40, 33, 0.92) 72%,
+    180deg,
+    rgba(7, 40, 33, 0.18) 0%,
+    rgba(7, 40, 33, 0.3) 30%,
+    rgba(7, 40, 33, 0.72) 60%,
+    rgba(7, 40, 33, 0.97) 82%,
     rgba(7, 40, 33, 1) 100%
   );
+}
+
+/* ---------- floating brand badge ---------- */
+
+.welcome__brand {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  justify-content: center;
+  padding-top: max(56px, env(safe-area-inset-top, 0px) + 36px);
+}
+
+/* The VIP crest: gold ring, serif VIP lettering, faint gold outer glow */
+.welcome__crest {
+  width: 88px;
+  height: 88px;
+  border-radius: 50%;
+  border: 2px solid rgba(212, 175, 106, 0.65);
+  background: rgba(12, 74, 63, 0.55);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow:
+    0 0 0 1px rgba(212, 175, 106, 0.18),
+    0 0 28px rgba(212, 175, 106, 0.22),
+    0 12px 40px rgba(7, 40, 33, 0.5);
+}
+
+.welcome__crest-vip {
+  font-family: var(--font-display);
+  font-size: 28px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  color: rgba(212, 175, 106, 0.95);
+  line-height: 1;
 }
 
 /* ---------- body ---------- */
@@ -40,10 +79,10 @@
   position: relative;
   z-index: 1;
   margin-top: auto;
-  padding: 0 var(--pad) calc(var(--pad) + env(safe-area-inset-bottom));
+  padding: 0 var(--pad) calc(var(--pad) + env(safe-area-inset-bottom, 0px));
   display: flex;
   flex-direction: column;
-  gap: 28px;
+  gap: 24px;
 }
 
 /* ---------- header ---------- */
@@ -51,43 +90,34 @@
 .welcome__header {
   display: flex;
   flex-direction: column;
-  align-items: flex-start;
-  gap: 6px;
-  padding-top: 48px;
-}
-
-.welcome__crest {
-  display: inline-flex;
   align-items: center;
-  justify-content: center;
-  width: 44px;
-  height: 44px;
-  border-radius: 50%;
-  border: 1.5px solid rgba(251, 246, 236, 0.4);
-  margin-bottom: 6px;
+  text-align: center;
+  gap: 8px;
+  padding-top: 32px;
 }
 
-.welcome__crest .crest__vip {
-  font-family: var(--font-display);
-  font-size: 13px;
-  font-weight: 700;
-  letter-spacing: 0.08em;
-  color: var(--ivory);
+.welcome__eyebrow {
+  font-size: 10.5px;
+  font-weight: 800;
+  letter-spacing: 0.2em;
+  color: rgba(212, 175, 106, 0.85);
+  text-transform: uppercase;
 }
 
 .welcome__title {
   font-family: var(--font-display);
-  font-size: 32px;
+  font-size: 42px;
   font-weight: 700;
-  line-height: 1.1;
+  line-height: 1.08;
   color: var(--ivory);
   letter-spacing: -0.01em;
 }
 
 .welcome__sub {
-  font-size: 14px;
-  line-height: 1.4;
-  color: rgba(251, 246, 236, 0.7);
+  font-size: 13.5px;
+  line-height: 1.45;
+  color: rgba(251, 246, 236, 0.62);
+  max-width: 260px;
 }
 
 /* ---------- form ---------- */
@@ -95,7 +125,7 @@
 .welcome__form {
   display: flex;
   flex-direction: column;
-  gap: 20px;
+  gap: 18px;
 }
 
 .welcome__field {
@@ -105,34 +135,34 @@
 }
 
 .welcome__label {
-  font-size: 12px;
-  font-weight: 600;
-  letter-spacing: 0.06em;
+  font-size: 11.5px;
+  font-weight: 700;
+  letter-spacing: 0.07em;
   text-transform: uppercase;
-  color: rgba(251, 246, 236, 0.6);
+  color: rgba(251, 246, 236, 0.55);
 }
 
 .welcome__input {
-  height: 48px;
-  padding: 0 14px;
+  height: 50px;
+  padding: 0 16px;
   border-radius: var(--r-md);
-  border: 1.5px solid rgba(251, 246, 236, 0.2);
-  background: rgba(251, 246, 236, 0.08);
+  border: 1.5px solid rgba(251, 246, 236, 0.18);
+  background: rgba(251, 246, 236, 0.07);
   color: var(--ivory);
   font-size: 16px;
   font-family: var(--font-ui);
   outline: none;
-  transition: border-color 0.15s;
+  transition: border-color 0.15s, background 0.15s;
   -webkit-appearance: none;
 }
 
 .welcome__input::placeholder {
-  color: rgba(251, 246, 236, 0.35);
+  color: rgba(251, 246, 236, 0.3);
 }
 
 .welcome__input:focus {
-  border-color: rgba(251, 246, 236, 0.5);
-  background: rgba(251, 246, 236, 0.12);
+  border-color: rgba(212, 175, 106, 0.5);
+  background: rgba(251, 246, 236, 0.1);
 }
 
 /* ---------- island grid ---------- */
@@ -148,7 +178,7 @@
 
 .welcome__islands > .welcome__label {
   display: block;
-  margin-bottom: 2px;
+  margin-bottom: 4px;
 }
 
 .welcome__island-grid {
@@ -163,47 +193,65 @@
   flex-direction: column;
   align-items: flex-start;
   gap: 2px;
-  padding: 12px 14px;
+  padding: 13px 14px 13px 14px;
   border-radius: var(--r-md);
-  border: 1.5px solid rgba(251, 246, 236, 0.15);
-  background: rgba(251, 246, 236, 0.06);
+  border: 1.5px solid rgba(251, 246, 236, 0.12);
+  background: rgba(251, 246, 236, 0.05);
   cursor: pointer;
   text-align: left;
   touch-action: manipulation;
   transition: background 0.12s, border-color 0.12s;
+  overflow: hidden;
 }
 
 .welcome__island-btn.is-on {
-  border-color: rgba(251, 246, 236, 0.45);
-  background: rgba(251, 246, 236, 0.14);
+  border-color: rgba(212, 175, 106, 0.55);
+  background: rgba(212, 175, 106, 0.1);
 }
 
-.welcome__island-name {
-  font-size: 13px;
-  font-weight: 600;
-  color: var(--ivory);
-  line-height: 1.2;
-}
-
-.welcome__island-dest {
-  font-size: 11px;
-  color: rgba(251, 246, 236, 0.5);
+.welcome__island-btn:active {
+  transform: scale(0.98);
 }
 
 .welcome__island-check {
   position: absolute;
   top: 10px;
   right: 10px;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: rgba(212, 175, 106, 0.9);
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
-/* ---------- CTA ---------- */
+.welcome__island-name {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--ivory);
+  line-height: 1.2;
+}
+
+.welcome__island-dest {
+  font-size: 11px;
+  color: rgba(251, 246, 236, 0.45);
+}
+
+/* ---------- CTAs ---------- */
+
+.welcome__ctas {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding-top: 4px;
+}
 
 .welcome__cta {
+  width: 100%;
   height: 52px;
-  border-radius: var(--r-full);
+  border-radius: var(--r-pill);
   border: none;
-  background: var(--ivory);
-  color: var(--green-900);
   font-size: 15px;
   font-weight: 700;
   font-family: var(--font-ui);
@@ -213,11 +261,32 @@
   transition: opacity 0.15s, transform 0.1s;
 }
 
-.welcome__cta:disabled {
-  opacity: 0.4;
+.welcome__cta:active {
+  transform: scale(0.98);
+}
+
+.welcome__cta--primary {
+  background: var(--ivory);
+  color: var(--green-900);
+}
+
+.welcome__cta--primary:disabled {
+  opacity: 0.38;
   cursor: default;
 }
 
-.welcome__cta:not(:disabled):active {
+.welcome__cta--primary:not(:disabled):active {
   transform: scale(0.98);
+}
+
+/* Ghost CTA: outline treatment, sits below the primary */
+.welcome__cta--ghost {
+  background: transparent;
+  color: rgba(251, 246, 236, 0.72);
+  border: 1.5px solid rgba(251, 246, 236, 0.22);
+  height: 46px;
+}
+
+.welcome__cta--ghost:active {
+  background: rgba(251, 246, 236, 0.06);
 }

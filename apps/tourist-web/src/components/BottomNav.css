@@ -151,3 +151,34 @@
   animation-duration: 1.65s;
   animation-delay: 1s;
 }
+
+/* --- Irie is always awake — pulsing gold aura --------------------------------
+ *
+ * The badge already twinkles its inner sparks; this outer ring adds a slower
+ * "presence" cue: a soft gold halo that breathes in and out, visible at a
+ * glance so the guest knows Irie is available without reading the label.
+ * Kept very subtle — it lives on every screen, so it must not compete.
+ */
+@keyframes irie-aura {
+  0%, 100% {
+    box-shadow:
+      0 8px 18px rgba(12, 74, 63, 0.34),
+      0 0 0 0 rgba(212, 175, 106, 0);
+  }
+  55% {
+    box-shadow:
+      0 8px 18px rgba(12, 74, 63, 0.34),
+      0 0 0 7px rgba(212, 175, 106, 0.18);
+  }
+}
+
+/* Override the static box-shadow to use the animated version.
+   Scales up slightly while on to combine both animations cleanly. */
+.irie-badge {
+  animation: irie-aura 3.2s ease-in-out infinite;
+}
+
+.irie-badge--on {
+  animation: irie-aura 3.2s ease-in-out infinite;
+  transform: scale(1.04);
+}

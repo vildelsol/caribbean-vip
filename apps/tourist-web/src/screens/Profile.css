@@ -1,12 +1,119 @@
-.profile__head {
+/* --- Premium hero section ----------------------------------------------- */
+
+.profile__hero {
+  background: linear-gradient(160deg, var(--green-950) 0%, var(--green-900) 100%);
+  padding: max(52px, env(safe-area-inset-top, 0px) + 28px) var(--s-md) 0;
   display: flex;
+  flex-direction: column;
   align-items: center;
-  gap: 16px;
-  padding: 28px var(--s-md) 0;
 }
 
-/* The crest. Drawn in type rather than shipped as an image, so it stays crisp at any size and
-   costs nothing in the bundle. The mark never changes; only the word underneath does. */
+.profile__hero-inner {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding-bottom: 28px;
+}
+
+/* Large VIP crest badge — drawn in type */
+.profile__hero-crest {
+  width: 96px;
+  height: 96px;
+  border-radius: 50%;
+  background: rgba(7, 40, 33, 0.55);
+  border: 2px solid rgba(212, 175, 106, 0.6);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 10px;
+  box-shadow:
+    0 0 0 1px rgba(212, 175, 106, 0.15),
+    0 0 24px rgba(212, 175, 106, 0.2),
+    0 16px 48px rgba(7, 40, 33, 0.6);
+}
+
+.profile__crest-vip {
+  font-family: var(--font-display);
+  font-size: 34px;
+  font-weight: 700;
+  line-height: 1;
+  color: rgba(212, 175, 106, 0.95);
+  letter-spacing: 0.04em;
+}
+
+.profile__crest-island {
+  margin-top: 3px;
+  font-size: 7.5px;
+  font-weight: 800;
+  letter-spacing: 0.2em;
+  color: rgba(212, 175, 106, 0.65);
+  max-width: 80px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.profile__hero-name {
+  font-family: var(--font-display);
+  font-size: 34px;
+  font-weight: 700;
+  line-height: 1.1;
+  letter-spacing: -0.01em;
+  color: var(--ivory);
+  text-align: center;
+}
+
+.profile__hero-sub {
+  font-size: 13px;
+  color: rgba(251, 246, 236, 0.55);
+  text-align: center;
+}
+
+/* Frosted glass stats row at the bottom of the hero */
+.profile__stats-glass {
+  display: flex;
+  align-items: center;
+  width: calc(100% + var(--s-md) * 2);
+  margin: 0 calc(-1 * var(--s-md));
+  background: rgba(251, 246, 236, 0.07);
+  border-top: 1px solid rgba(251, 246, 236, 0.1);
+  padding: 18px var(--s-md);
+}
+
+.profile__stat-pill {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+}
+
+.profile__stat-value {
+  font-family: var(--font-display);
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--ivory);
+  line-height: 1;
+}
+
+.profile__stat-label {
+  font-size: 10.5px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: rgba(251, 246, 236, 0.45);
+}
+
+.profile__stat-divider {
+  width: 1px;
+  height: 32px;
+  background: rgba(251, 246, 236, 0.12);
+  flex: none;
+}
+
+/* Keep old .crest class for any references still in the codebase */
 .crest {
   width: 76px;
   height: 76px;
@@ -40,26 +147,6 @@
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-}
-
-/* --- Stats ---------------------------------------------------------------- */
-
-.profile__stats {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 10px;
-  padding-top: 22px;
-}
-
-.stat {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 4px;
-  background: var(--ivory-raised);
-  border-radius: var(--r-md);
-  padding: 14px 8px;
-  text-align: center;
 }
 
 /* --- Blocks --------------------------------------------------------------- */

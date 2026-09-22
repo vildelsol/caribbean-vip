@@ -26,31 +26,35 @@ export function Profile() {
 
   return (
     <main className="screen profile">
-      <header className="profile__head">
-        <span className="crest" aria-hidden>
-          <span className="crest__vip">VIP</span>
-          <span className="crest__island">{island?.name.toUpperCase() ?? 'CARIBBEAN'}</span>
-        </span>
-        <div>
-          <h1 className="t-display-md">{state.guestName || 'Guest'}</h1>
-          <p className="t-caption c-muted">Guest · {island?.in_app_brand}</p>
+      {/* Premium dark hero — full-bleed, centered VIP crest + name */}
+      <div className="profile__hero">
+        <div className="profile__hero-inner">
+          <span className="profile__hero-crest" aria-hidden>
+            <span className="profile__crest-vip">VIP</span>
+            <span className="profile__crest-island">{island?.name.toUpperCase() ?? 'CARIBBEAN'}</span>
+          </span>
+          <h1 className="profile__hero-name">{state.guestName || 'Guest'}</h1>
+          <p className="profile__hero-sub">Guest · {island?.in_app_brand}</p>
         </div>
-      </header>
 
-      <section className="pad profile__stats">
-        <div className="stat">
-          <span className="t-amount-sm c-brand">{confirmed.length}</span>
-          <span className="t-micro c-muted">Bookings</span>
+        {/* Stats glass row inside the hero */}
+        <div className="profile__stats-glass">
+          <div className="profile__stat-pill">
+            <span className="profile__stat-value">{confirmed.length}</span>
+            <span className="profile__stat-label">Bookings</span>
+          </div>
+          <span className="profile__stat-divider" aria-hidden />
+          <div className="profile__stat-pill">
+            <span className="profile__stat-value">{formatUsd(spentMinor)}</span>
+            <span className="profile__stat-label">Spent</span>
+          </div>
+          <span className="profile__stat-divider" aria-hidden />
+          <div className="profile__stat-pill">
+            <span className="profile__stat-value">{state.vouchers.length}</span>
+            <span className="profile__stat-label">Vouchers</span>
+          </div>
         </div>
-        <div className="stat">
-          <span className="t-amount-sm c-brand">{formatUsd(spentMinor)}</span>
-          <span className="t-micro c-muted">Total</span>
-        </div>
-        <div className="stat">
-          <span className="t-amount-sm c-brand">{state.vouchers.length}</span>
-          <span className="t-micro c-muted">Vouchers</span>
-        </div>
-      </section>
+      </div>
 
       {/* --- Island switching --- */}
       <section className="pad profile__block">

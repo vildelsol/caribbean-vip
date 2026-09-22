@@ -5,13 +5,10 @@ import { Icon } from '../components/Icon';
 import './Welcome.css';
 
 /**
- * First-launch onboarding — collects the guest's name and starting island so the rest of the app
- * can feel personal from the first screen.
+ * First-launch onboarding — name + island selection.
  *
- * Deliberately lightweight: two fields, no email, no password. The premise of the product is that
- * a guest arriving in the Caribbean should be inside the experience in seconds, not filling in a
- * registration form at the gate. The name is used on the Profile screen and in Irie's greeting;
- * the island selection does what the island switcher on Explore does — it just happens first.
+ * Deliberately frictionless: two fields, no email, no password. A guest arriving
+ * in the Caribbean should be inside the experience in seconds, not at a form.
  */
 export function Welcome() {
   const { dispatch } = useStore();
@@ -42,24 +39,29 @@ export function Welcome() {
         <div className="welcome__hero-scrim" />
       </div>
 
+      {/* Badge floated in the upper third of the hero */}
+      <div className="welcome__brand" aria-hidden="true">
+        <div className="welcome__crest">
+          <span className="welcome__crest-vip">VIP</span>
+        </div>
+      </div>
+
       <div className="welcome__body">
         <header className="welcome__header">
-          <span className="welcome__crest" aria-hidden="true">
-            <span className="crest__vip">VIP</span>
-          </span>
-          <h1 className="welcome__title">Caribbean VIP</h1>
-          <p className="welcome__sub">Your local guide to the best of the islands</p>
+          <p className="welcome__eyebrow">CARIBBEAN VIP</p>
+          <h1 className="welcome__title">Your Island.<br />Your Way.</h1>
+          <p className="welcome__sub">The premium guide to the Caribbean's best kept secrets</p>
         </header>
 
         <form className="welcome__form" onSubmit={submit} noValidate>
           <label className="welcome__field">
-            <span className="welcome__label">Your name</span>
+            <span className="welcome__label">What should we call you?</span>
             <input
               type="text"
               className="welcome__input"
               value={name}
               onChange={(e) => setName(e.target.value)}
-              placeholder="e.g. Marcus"
+              placeholder="Your first name"
               autoComplete="given-name"
               autoFocus
               required
@@ -80,14 +82,14 @@ export function Welcome() {
                     onClick={() => setIslandId(island.id)}
                     aria-pressed={on}
                   >
+                    {on && (
+                      <span className="welcome__island-check" aria-hidden="true">
+                        <Icon name="check" size={12} strokeWidth={2.6} color="var(--green-900)" />
+                      </span>
+                    )}
                     <span className="welcome__island-name">{island.in_app_brand}</span>
                     {first ? (
                       <span className="welcome__island-dest">{first.name}</span>
-                    ) : null}
-                    {on ? (
-                      <span className="welcome__island-check" aria-hidden="true">
-                        <Icon name="check" size={14} strokeWidth={2.4} color="var(--green-900)" />
-                      </span>
                     ) : null}
                   </button>
                 );
@@ -95,14 +97,26 @@ export function Welcome() {
             </div>
           </fieldset>
 
-          <button
-            type="submit"
-            className="welcome__cta"
-            disabled={!canContinue}
-            aria-disabled={!canContinue}
-          >
-            Start exploring
-          </button>
+          <div className="welcome__ctas">
+            <button
+              type="submit"
+              className="welcome__cta welcome__cta--primary"
+              disabled={!canContinue}
+              aria-disabled={!canContinue}
+            >
+              Start Exploring
+            </button>
+            <button
+              type="button"
+              className="welcome__cta welcome__cta--ghost"
+              onClick={() => {
+                dispatch({ type: 'selectIsland', islandId });
+                dispatch({ type: 'setOnboarded', name: 'Guest' });
+              }}
+            >
+              Continue as Guest
+            </button>
+          </div>
         </form>
       </div>
     </main>

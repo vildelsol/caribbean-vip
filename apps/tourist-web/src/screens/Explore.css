@@ -174,57 +174,64 @@
   display: inline-flex;
   flex-direction: column;
   align-items: center;
-  gap: 5px;
-  padding: 10px 13px;
+  gap: 6px;
+  padding: 10px 12px 12px;
   border-radius: var(--r-lg);
   background: var(--ivory-raised);
-  /*
-   * The chip used to be ivory-raised on ivory with a transparent border and a 7% shadow, which
-   * measures 1.06:1 against the ground — the card was, in practice, invisible, and the row read as
-   * twelve labels floating on the page. The edge is now drawn rather than implied.
-   *
-   * `--border-strong` only reaches 1.30:1, short of the 3:1 a UI boundary wants, so the shadow
-   * does the rest of the work: tighter and roughly twice as deep, which lifts the tile without
-   * lightening the ground or introducing a colour the palette does not have.
-   */
   border: 1.5px solid var(--border-strong);
   box-shadow: 0 1px 2px rgba(7, 40, 33, 0.05), 0 3px 10px rgba(7, 40, 33, 0.09);
   transition: border-color 0.14s ease, background 0.14s ease, transform 0.12s ease;
   flex: none;
+  min-width: 64px;
 }
 
 .ex-cat--on {
-  background: var(--aqua-soft);
-  border-color: var(--green-900);
+  background: var(--ivory-raised);
+  border-color: var(--cat-color, var(--green-900));
+  box-shadow: 0 0 0 1px var(--cat-color, var(--green-900)), 0 3px 10px rgba(7, 40, 33, 0.09);
 }
 
 .ex-cat:active {
   transform: scale(0.96);
 }
 
+/* Colored circle behind each category icon — gives the chips the visual pop
+   of the reference: each category reads in its own colour at a glance. */
+.ex-cat__icon-wrap {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--cat-color, var(--green-900)) 13%, transparent);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.14s ease;
+}
+
+.ex-cat--on .ex-cat__icon-wrap {
+  background: color-mix(in srgb, var(--cat-color, var(--green-900)) 22%, transparent);
+}
+
 .ex-cat__icon {
   display: flex;
   align-items: center;
   justify-content: center;
-  height: 22px;
-  /* The glyph takes the label's colour, so the whole chip lights as one thing on selection
-     rather than the word changing under a picture that stays put. */
-  color: var(--ink-muted);
+  color: var(--cat-color, var(--ink-muted));
 }
 
 .ex-cat--on .ex-cat__icon {
-  color: var(--green-900);
+  color: var(--cat-color, var(--green-900));
 }
 
 .ex-cat__label {
-  font-size: 11.5px;
+  font-size: 11px;
   font-weight: 700;
   color: var(--ink-muted);
   white-space: nowrap;
 }
 
 .ex-cat--on .ex-cat__label {
-  color: var(--green-900);
+  color: var(--cat-color, var(--green-900));
 }
 
 /* --- Sections -------------------------------------------------------------- */
@@ -239,12 +246,11 @@
   position: relative;
 }
 
+/* Badges moved to the card body so they no longer cover the hero photograph. */
 .feature__flags {
-  position: absolute;
-  top: 12px;
-  left: 12px;
   display: flex;
   gap: 6px;
+  margin-bottom: 10px;
 }
 
 .feature__save {

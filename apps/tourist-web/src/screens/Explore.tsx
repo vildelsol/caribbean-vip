@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState, type CSSProperties } from 'react';
 import {
   ISLANDS,
   PROMOTION,
@@ -66,6 +66,21 @@ const CATEGORIES = [
   { id: 'family',        label: 'Family',       icon: 'family' },
   { id: 'shopping',      label: 'Shopping',     icon: 'bag' },
 ] as const satisfies readonly { id: string; label: string; icon: IconName }[];
+
+const CAT_COLORS: Record<string, string> = {
+  all:         'var(--green-900)',
+  adventure:   '#16803C',
+  beaches:     '#0EA5E9',
+  water_sports:'#0284C7',
+  waterfalls:  '#06B6D4',
+  food:        '#EA580C',
+  culture:     '#DC2626',
+  wellness:    '#65A30D',
+  nightlife:   '#7C3AED',
+  day_trips:   '#D97706',
+  family:      '#DB2777',
+  shopping:    '#BE185D',
+};
 
 /** The design labels a card by what kind of thing it is, not by its raw category id. */
 function categoryLabel(category: string): string {
@@ -280,6 +295,7 @@ export function Explore() {
         <div className="ex-cats" role="group" aria-label="Filter by category">
           {CATEGORIES.map((c) => {
             const on = category === c.id;
+            const color = CAT_COLORS[c.id] ?? 'var(--green-900)';
             return (
               <button
                 key={c.id}
@@ -287,9 +303,12 @@ export function Explore() {
                 className={`ex-cat ${on ? 'ex-cat--on' : ''}`}
                 onClick={() => setCategory(c.id)}
                 aria-pressed={on}
+                style={{ '--cat-color': color } as CSSProperties}
               >
-                <span className="ex-cat__icon">
-                  <Icon name={c.icon} size={22} strokeWidth={1.8} />
+                <span className="ex-cat__icon-wrap">
+                  <span className="ex-cat__icon">
+                    <Icon name={c.icon} size={20} strokeWidth={1.8} />
+                  </span>
                 </span>
                 <span className="ex-cat__label">{c.label}</span>
               </button>
@@ -423,10 +442,6 @@ function FeatureCard({ experience }: { experience: DemoExperience }) {
           radius="0"
           credit
         />
-        <div className="feature__flags">
-          <Badge tone="brand">Open Now</Badge>
-          <Badge tone="plain">Cruise-Friendly</Badge>
-        </div>
         <span className="feature__save">
           <RoundButton
             icon="heart"
@@ -437,6 +452,10 @@ function FeatureCard({ experience }: { experience: DemoExperience }) {
         </span>
       </div>
       <div className="feature__body">
+        <div className="feature__flags">
+          <Badge tone="brand">Open Now</Badge>
+          <Badge tone="plain">Cruise-Friendly</Badge>
+        </div>
         <h3 className="t-display-sm">{experience.title}</h3>
         <p className="t-micro c-locator feature__meta">
           {experience.category.replace(/_/g, ' ')} · {vendor?.location.name ?? ''}
