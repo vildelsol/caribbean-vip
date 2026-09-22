@@ -2,7 +2,10 @@
 
 .profile__hero {
   background: linear-gradient(160deg, var(--green-950) 0%, var(--green-900) 100%);
-  padding: max(52px, env(safe-area-inset-top, 0px) + 28px) var(--s-md) 0;
+  /* Was `max(52px, …+28px)`. With a 96px crest, a 34px name and a subtitle
+     beneath it, that opened a band of empty green above the mark that was
+     taller than the mark itself — the screen began with a pause. */
+  padding: max(30px, env(safe-area-inset-top, 0px) + 18px) var(--s-md) 0;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -12,8 +15,8 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 6px;
-  padding-bottom: 28px;
+  gap: 5px;
+  padding-bottom: 22px;
 }
 
 /* Large VIP crest badge — drawn in type */
@@ -27,7 +30,7 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  margin-bottom: 10px;
+  margin-bottom: 14px;
   box-shadow:
     0 0 0 1px rgba(212, 175, 106, 0.15),
     0 0 24px rgba(212, 175, 106, 0.2),
@@ -66,8 +69,11 @@
 }
 
 .profile__hero-sub {
-  font-size: 13px;
-  color: rgba(251, 246, 236, 0.55);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: rgba(227, 194, 113, 0.82);
   text-align: center;
 }
 

@@ -1,5 +1,12 @@
 import { useNavigate } from 'react-router-dom';
-import { ISLANDS, destinationsFor, experienceById, heroUrl, islandById } from '../data/catalogue';
+import {
+  ISLANDS,
+  destinationBySlug,
+  destinationsFor,
+  experienceById,
+  heroUrl,
+  islandById,
+} from '../data/catalogue';
 import { useStore } from '../state/store';
 import { Badge, Card, EmptyState, Photo, SecondaryButton, formatUsd } from '../components/kit';
 import { Icon } from '../components/Icon';
@@ -17,6 +24,7 @@ export function Profile() {
   const navigate = useNavigate();
 
   const island = islandById(state.islandId);
+  const destination = destinationBySlug(state.destinationSlug);
   const saved = state.savedExperienceIds
     .map((id) => experienceById(id))
     .filter((e): e is NonNullable<typeof e> => Boolean(e));
@@ -34,7 +42,16 @@ export function Profile() {
             <span className="profile__crest-island">{island?.name.toUpperCase() ?? 'CARIBBEAN'}</span>
           </span>
           <h1 className="profile__hero-name">{state.guestName || 'Guest'}</h1>
-          <p className="profile__hero-sub">Guest · {island?.in_app_brand}</p>
+          {/*
+            * The subtitle used to read "Guest · VIP Jamaica" directly beneath a
+            * heading that already said "Guest" — the app told an unnamed visitor
+            * their own non-name twice in two lines. It states where they are
+            * instead, which is the one thing this header can usefully add.
+            */}
+          <p className="profile__hero-sub">
+            {island?.in_app_brand}
+            {destination ? ` · ${destination.name}` : ''}
+          </p>
         </div>
 
         {/* Stats glass row inside the hero */}

@@ -11,6 +11,7 @@ import {
   isAtVenue,
   formatKm,
 } from '../data/catalogue';
+import { availabilityLabel } from '../data/availability';
 import { useStore } from '../state/store';
 import { useGuestPosition } from '../state/useGuestPosition';
 import { LocationBar } from '../components/LocationBar';
@@ -32,6 +33,22 @@ import './Nearby.css';
  */
 
 const FILTERS = ['All', 'Adventure', 'Food', 'Beach', 'Culture'] as const;
+
+/**
+ * One hue per filter, taken from `CAT_COLORS` in Explore.
+ *
+ * Nearby's five filters are coarser than Explore's twelve categories — its
+ * "Adventure" covers adventure, waterfalls and water sports — so each takes the
+ * colour of the category it leads with, which is the one a guest pictures when
+ * they read the word.
+ */
+const FILTER_COLORS: Record<string, string | undefined> = {
+  All: undefined,
+  Adventure: '#17683D',
+  Food: '#B04E1C',
+  Beach: '#0E7490',
+  Culture: '#9E2F27',
+};
 
 const CATEGORY_FOR: Record<string, string[]> = {
   Adventure: ['adventure', 'waterfalls', 'water_sports'],
@@ -149,8 +166,22 @@ export function Nearby() {
         /* ---- List view header (reuses map area height) ---- */
         <div className="nearby-list-header">
           <div className="nearby-filters-bar pad">
+            {/*
+              * The same colour language as Explore's category tiles.
+              *
+              * These were the app's plain grey chips while the home screen's
+              * categories had become jewel tiles — two sibling screens filtering
+              * the same catalogue by the same words, in two unrelated visual
+              * systems. The dot is the cheapest way to carry the hue without
+              * turning a filter bar into a second row of tiles.
+              */}
             {FILTERS.map((f) => (
-              <Chip key={f} selected={filter === f} onClick={() => setFilter(f)}>
+              <Chip
+                key={f}
+                selected={filter === f}
+                onClick={() => setFilter(f)}
+                dotColor={FILTER_COLORS[f]}
+              >
                 {f === 'All' ? `All ${results.length}` : f}
               </Chip>
             ))}
@@ -205,11 +236,44 @@ export function Nearby() {
                             ? 'Walking distance'
                             : 'Pickup available'}
                       </Badge>
-                      <Badge tone="sand">Starts in 90 min</Badge>
+                      {/*
+                        * This said "Starts in 90 min" on every row, on every
+                        * listing, always — the same fabrication that "Open Now"
+                        * was on Explore, sitting next to a real distance and a
+                        * real price so it read as fact. `availabilityLabel` is
+                        * derived from the actual slot data and returns null when
+                        * nothing is bookable, in which case no badge appears
+                        * rather than a reassuring guess.
+                        */}
+                      {availabilityLabel(experience) ? (
+                        <Badge tone="sand">{availabilityLabel(experience)}</Badge>
+                      ) : null}
                     </div>
                     <div className="row near-row__foot">
                       <Price minor={experience.fromAmountMinor} />
-                      <span className="badge badge--brand near-row__cta">View</span>
+                      {/*
+                        * The rating was missing entirely. Every other surface in
+                        * the app that lists an experience carries it, and on a
+                        * screen sorted by *distance* it is the only thing
+                        * telling you whether the nearest is also worth the walk.
+                        */}
+                      <span className="near-row__rating t-micro-strong">
+                        <Icon name="star" size={12} color="var(--gold)" />
+                        {experience.ratingAverage.toFixed(1)}
+                      </span>
+                      {/*
+                        * A "View" badge used to sit here. The whole card is the
+                        * target, so it was a button-shaped thing that was not a
+                        * button, competing with the real one — and it pushed the
+                        * price and the rating into half the width they needed.
+                        */}
+                      <Icon
+                        name="chevron-right"
+                        size={17}
+                        color="var(--ink-faint)"
+                        strokeWidth={2.2}
+                        className="near-row__go"
+                      />
                     </div>
                   </div>
                 </div>

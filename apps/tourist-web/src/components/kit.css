@@ -397,3 +397,20 @@ button.chip:active {
   text-align: center;
   font-variant-numeric: tabular-nums;
 }
+
+/*
+ * The category dot on a filter chip.
+ *
+ * Ringed rather than flat: a bare 8px disc of `food` orange on the ivory chip
+ * reads as a notification, while a disc with a hairline of its own colour
+ * around it reads as a swatch. The ring is also what keeps the paler hues
+ * visible when the chip is selected and the ground goes dark.
+ */
+.chip__dot {
+  width: 8px;
+  height: 8px;
+  flex: none;
+  border-radius: 50%;
+  margin-right: 7px;
+  box-shadow: 0 0 0 2.5px color-mix(in srgb, currentColor 18%, transparent);
+}

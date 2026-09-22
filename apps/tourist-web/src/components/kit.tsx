@@ -126,17 +126,34 @@ export function Chip({
   selected = false,
   onClick,
   tone = 'plain',
+  dotColor,
 }: {
   children: ReactNode;
   selected?: boolean;
   onClick?: () => void;
   tone?: 'plain' | 'aqua' | 'sand' | 'sunken';
+  /**
+   * A category hue, shown as a dot before the label.
+   *
+   * Optional, and decorative: the label carries the meaning, so the dot is
+   * `aria-hidden`. It exists so a filter bar can speak the same colour language
+   * as Explore's category tiles without becoming a second row of tiles.
+   */
+  dotColor?: string;
 }) {
   const cls = `chip chip--${tone} ${selected ? 'chip--on' : ''}`;
-  if (!onClick) return <span className={cls}>{children}</span>;
+  const body = (
+    <>
+      {dotColor ? (
+        <span className="chip__dot" style={{ background: dotColor }} aria-hidden="true" />
+      ) : null}
+      {children}
+    </>
+  );
+  if (!onClick) return <span className={cls}>{body}</span>;
   return (
     <button type="button" className={cls} onClick={onClick} aria-pressed={selected}>
-      {children}
+      {body}
     </button>
   );
 }

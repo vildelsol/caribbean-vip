@@ -53,14 +53,21 @@ import './Search.css';
  * this, submit-on-enter comes back with it.
  */
 
-/** The broad cut, matching the chip row the design draws. Sort lives inside Filters, not here. */
-const QUICK_FILTERS: { label: string; categories: ExperienceCategory[] }[] = [
+/**
+ * The broad cut, matching the chip row the design draws. Sort lives inside Filters, not here.
+ *
+ * Each carries the hue of the category it leads with, from `CAT_COLORS` in Explore. Search and
+ * Nearby filter the same catalogue by the same five words as the home screen's tiles; they were
+ * doing it in the app's plain grey chips while the tiles had become jewel-toned, so three sibling
+ * screens spoke three visual languages about one taxonomy.
+ */
+const QUICK_FILTERS: { label: string; categories: ExperienceCategory[]; color?: string }[] = [
   { label: 'All', categories: [] },
-  { label: 'Adventure', categories: ['adventure', 'waterfalls', 'water_sports'] },
-  { label: 'Food', categories: ['food'] },
-  { label: 'Beach', categories: ['beaches'] },
-  { label: 'Culture', categories: ['culture', 'day_trips'] },
-  { label: 'Family', categories: ['family'] },
+  { label: 'Adventure', categories: ['adventure', 'waterfalls', 'water_sports'], color: '#17683D' },
+  { label: 'Food', categories: ['food'], color: '#B04E1C' },
+  { label: 'Beach', categories: ['beaches'], color: '#0E7490' },
+  { label: 'Culture', categories: ['culture', 'day_trips'], color: '#9E2F27' },
+  { label: 'Family', categories: ['family'], color: '#A62F5E' },
 ];
 
 const PRICE_BANDS: { label: string; min?: number; max?: number }[] = [
@@ -197,6 +204,7 @@ export function Search() {
               key={f.label}
               selected={selected}
               onClick={() => setFilters({ ...filters, categories: f.categories })}
+              dotColor={f.color}
             >
               {f.label}
             </Chip>
@@ -212,8 +220,17 @@ export function Search() {
         // The design names the place in the count, which is what makes the number mean something:
         // "14 results" is trivia, "14 results in Ocho Rios" is an answer.
         <p className="pad t-caption c-muted search__count" aria-live="polite">
+          {/*
+            * The sort is always named, including "recommended".
+            *
+            * It used to be omitted for the default, which left the list with no
+            * stated order while every row led with a large distance — so a
+            * recommended list looked like a nearest-first list that had got the
+            * order wrong. Both facts were correct; the absent label was what
+            * made them contradict each other.
+            */}
           {results.length} {results.length === 1 ? 'result' : 'results'} in {destination.name}
-          {filters.sort !== 'recommended' ? ` · ${SORT_LABELS[filters.sort].toLowerCase()}` : ''}
+          {` · ${SORT_LABELS[filters.sort].toLowerCase()}`}
         </p>
       ) : null}
 

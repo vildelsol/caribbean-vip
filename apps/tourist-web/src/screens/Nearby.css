@@ -364,13 +364,29 @@
   margin-top: 7px;
 }
 
+/*
+ * Price, rating, then the chevron.
+ *
+ * This was `space-between` with a "View" badge on the right — a button-shaped
+ * element that was not a button, inside a card that already was one. It also
+ * took enough width that the price had nowhere to sit beside anything else.
+ * Price and rating now group at the left where they are read together, and the
+ * chevron is pushed out on its own.
+ */
 .near-row__foot {
   margin-top: 10px;
-  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
 }
 
-.near-row__cta {
-  padding: 10px 14px;
-  border-radius: var(--r-sm);
-  font-size: 12px;
+.near-row__rating {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  color: var(--gold-text);
+}
+
+.near-row__go {
+  margin-left: auto;
+  flex: none;
 }
