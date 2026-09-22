@@ -109,8 +109,9 @@ export function ExperienceDetail() {
         </div>
 
         <div className="detail__hero-flags">
-          <Badge tone="brand">Open Now</Badge>
-          {day ? <Badge tone="plain">Available {day.iso === todayISO() ? 'today' : day.weekday}</Badge> : null}
+          {/* No "Open Now" here: the dataset has no opening hours, and the badge beside it already
+              states the availability the app can actually stand behind. */}
+          {day ? <Badge tone="brand">Available {day.iso === todayISO() ? 'today' : day.weekday}</Badge> : null}
           {qualifiesForRumPunch(experience) ? <Badge tone="sand">Offer attached</Badge> : null}
         </div>
 

@@ -169,3 +169,21 @@ export function cancellationDeadline(experience: DemoExperience, dateISO: string
     hour12: true,
   });
 }
+
+/**
+ * What a card can honestly say about when this experience next runs.
+ *
+ * The cards used to carry a hardcoded "Open Now" badge. Nothing backed it: there is no
+ * `openingHours`, `opensAt` or `isOpen` anywhere in the dataset, so the badge was a claim about the
+ * vendor that the app had no way to know. It sat beside the from-price, the rating and the next
+ * departure — all of which are real — so it read as another fact.
+ *
+ * Availability is the one timing fact this app does hold, so that is what the badge states.
+ * Returns null when nothing is bookable in the next two weeks, so the caller omits the badge rather
+ * than asserting something about a listing that is not running.
+ */
+export function availabilityLabel(experience: DemoExperience): string | null {
+  const day = firstBookableDay(experience);
+  if (!day) return null;
+  return day.iso === isoDate(startOfToday()) ? 'Available today' : `Available ${day.weekday}`;
+}
