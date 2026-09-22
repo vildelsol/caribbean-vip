@@ -1,6 +1,6 @@
 # Handover — Caribbean VIP
 
-**Written:** 2026-08-02 · **Updated:** 2026-09-22 (a long design session against Ro's reference board — **start at §5 "Session close" for the state and the open list**; onboarding rebuilt, a script face added for one word, the whole app taken through a colour and imagery pass, and four real defects fixed in passing) · **Branch:** `main`, pushed to `origin` at `72e50a4` · **Gates:** green — 289 tests, tourist-web typechecks clean, and **HEAD verified building from a clean `git archive` checkout** (see §5 "Session close" for why that check now matters)
+**Written:** 2026-08-02 · **Updated:** 2026-09-22 (two sessions that day — **start at §5 "Session close" for the state and the open list**; the second one widened the row photography and found that the concierge screen's backdrop was painting outside the phone frame) · **Branch:** `main`, pushed to `origin` at `89f0c5a` · **Gates:** green — 289 tests, tourist-web typechecks clean, and **HEAD verified building from a clean `git archive` checkout** (see §5 for why that check now matters)
 
 Read this first, then [`PRD.md`](PRD.md) (product source of truth),
 [`architecture.md`](architecture.md) (the numbered decisions), and
@@ -151,9 +151,67 @@ applies** and has been superseded. The mockups now drive layout and visual langu
 
 ## 5. Pick up here
 
-### Session close — 2026-09-22 (read this first)
+### Session close — 2026-09-22, second session (read this first)
 
-**Where it is.** `main`, pushed to `origin` at `72e50a4`. Working tree clean. 289 tests pass,
+**Where it is.** `main`, pushed to `origin` at `89f0c5a`. Working tree clean. 289 tests, typecheck
+clean, and HEAD verified building from a clean `git archive` checkout. **Not deployed** — see the
+open list.
+
+Two commits, and the second one is the one to read:
+
+**`3ea27e5` — the row photograph grows sideways, not downwards.** The previous session bled the
+Nearby photograph to three edges, which made it *taller* and left it a 118px strip of a 343px card;
+Ro's note was that it had gained height without gaining width. Nearby went to 130px, and Search
+(92px) and Trips (74px) finally got the same treatment at 118px and 104px, bleeding to three edges.
+
+The thing worth carrying: **width taken from the text column comes back as row height.** The 12px
+Nearby's column gave up pushed its two badges onto a second line and added 22px to *every* row —
+paying for the picture out of the list's length, which is the trade the whole change exists to
+avoid. The badges lost 3px of side padding and 1px of gap; measured at 184px in a 187px column.
+If you touch either width again, measure the tag row before and after.
+
+**`89f0c5a` — Irie's backdrop escaped the phone frame.** Three layers on the concierge screen were
+`position: fixed` — the fronds, the drifting blooms, the gold hairline. **Fixed resolves against the
+viewport, and `.app` is only `position: relative`, which does not contain it.** On any viewport
+wider than `--app-width` all three painted across the whole browser window, so the frame sat on top
+of its own decoration and the foliage read as part of the website rather than part of the app.
+
+There is now an `--app-gutter` token — `max(0px, (100vw - var(--app-width)) / 2)` — and every fixed
+decorative layer anchors its edges with it. **This is a class of defect, not an incident:** it is
+invisible at phone width, which is the only width this app is ever looked at in, and it only
+appears when someone opens the demo on a laptop — which is exactly what happens in a pitch. The
+other two fixed elements in the app, the bottom nav and the detail action bar, were already capped
+to `--app-width`; Irie was the only leak. **Anything `position: fixed` from here on is capped to
+the frame or it is a bug.**
+
+The same commit answered Ro's question about the foliage. Two changes:
+
+- **The fronds were three stops of the same emerald**, which is why they read as one flat shape.
+  They run sea-green at the root to the interface's own ocean teal at the tip — land toward water,
+  in colours the app already owns. **Deliberately not the icon palette**: coral, pink and sky each
+  mark a kind of request in the prompt rows, and putting them in the wallpaper would quietly make
+  the icons decorative. Same rule as last session — colour in the glyph, restraint in the container.
+- **The foliage stopped at the header.** Three clusters now: `canopy` top-right, `understory`
+  bottom-left (teal into aqua, about a third of the opacity, masked toward the opposite corner so
+  the two fade *toward* each other and leave the reading column clear), and `mid` — the faintest,
+  mirrored, and **the only one that is `absolute` rather than `fixed`**, so it arrives from below as
+  you scroll. That last one is what gives the page length; two pinned clusters are a vignette, the
+  same two shapes in the same two corners however far you have read. No breeze animation on the
+  mirrored one: the keyframes set `transform` and would overwrite its `scaleX(-1)` mid-cycle.
+
+**Open, added to the list below:**
+
+0. **Nothing since `72e50a4` is deployed.** The Vercel CLI is installed but **logged out** on this
+   machine, and there is no `.vercel` link directory, so a deploy could not be run from here. Either
+   `vercel login` and `vercel --prod` from `apps/tourist-web`, or connect the GitHub repository to
+   the Vercel project so `main` deploys on push — the second is the better answer for a demo, since
+   it removes the step that is currently being forgotten. `vercel.json` is already correct and needs
+   no environment variables.
+
+### Session close — 2026-09-22, first session
+
+**Where it is** *(superseded — HEAD is `89f0c5a`; see the entry above)*. `main` at `72e50a4`.
+Working tree clean. 289 tests pass,
 tourist-web typechecks clean, and HEAD builds from a clean checkout. Everything described in the
 dated entries below this one is committed and deployed.
 
