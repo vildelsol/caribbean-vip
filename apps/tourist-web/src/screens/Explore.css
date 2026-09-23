@@ -150,137 +150,81 @@
   text-align: left;
 }
 
-/* --- Categories ----------------------------------------------------------- */
+/* --- Mood tiles ------------------------------------------------------------ */
 
-.ex-cats-wrap {
-  overflow-x: auto;
-  -webkit-overflow-scrolling: touch;
-  scrollbar-width: none;
-  padding: 14px var(--s-md) 4px;
-  margin-top: 2px;
+.ex-moods {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  margin-top: 14px;
 }
 
-.ex-cats-wrap::-webkit-scrollbar {
-  display: none;
-}
-
-.ex-cats {
+.ex-mood {
   display: flex;
-  gap: 8px;
-  width: max-content;
-}
-
-.ex-cat {
-  position: relative;
-  display: inline-flex;
-  flex-direction: column;
   align-items: center;
-  gap: 7px;
-  padding: 11px 12px 12px;
-  border-radius: var(--r-lg);
-  /* A filled tile, not a white card with a tinted dot.
-     This is the row the reference board leads with, and the fill is the single
-     largest injection of colour in the app: twelve jewel tones carrying white
-     type, read at a glance from a metre away in sun. The gradient is a two-stop
-     darkening of the same hue — flat fills at this size read as plastic. */
-  background: linear-gradient(
-    168deg,
-    color-mix(in srgb, var(--cat-color, var(--green-900)) 92%, white) 0%,
-    var(--cat-color, var(--green-900)) 52%,
-    color-mix(in srgb, var(--cat-color, var(--green-900)) 84%, black) 100%
-  );
+  gap: 12px;
+  padding: 14px 13px;
+  border-radius: 14px;
   border: none;
+  background: linear-gradient(
+    145deg,
+    color-mix(in srgb, var(--mood-color, var(--green-900)) 88%, white) 0%,
+    var(--mood-color, var(--green-900)) 55%,
+    color-mix(in srgb, var(--mood-color, var(--green-900)) 80%, black) 100%
+  );
   box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.16),
-    0 2px 5px rgba(7, 40, 33, 0.12),
-    0 6px 16px color-mix(in srgb, var(--cat-color, var(--green-900)) 24%, transparent);
-  transition: transform 0.12s ease, box-shadow 0.16s ease, filter 0.16s ease;
-  flex: none;
-  min-width: 68px;
+    inset 0 1px 0 rgba(255, 255, 255, 0.14),
+    0 2px 6px rgba(7, 40, 33, 0.14),
+    0 6px 18px color-mix(in srgb, var(--mood-color, var(--green-900)) 22%, transparent);
+  transition: transform 0.12s ease, box-shadow 0.16s ease;
+  cursor: pointer;
+  text-align: left;
 }
 
-/*
- * Selection, on a row where every tile already carries a colour.
- *
- * A colour change cannot signal selection here — the tiles are already twelve
- * different colours. So selection is stated in the one colour the row does not
- * use: a gold ring, plus a lift.
- *
- * Dimming the unselected tiles was tried and reverted. "All" is selected on
- * load, so it dulled eleven of the twelve tiles on the first paint of the home
- * screen — it made the row permanently grey in exactly the state most users
- * see it in. The colour is the point; the ring does the work.
- */
-.ex-cat--on {
+.ex-mood--on {
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.22),
     0 0 0 2px var(--gold-light),
-    0 4px 8px rgba(7, 40, 33, 0.16),
-    0 10px 22px color-mix(in srgb, var(--cat-color, var(--green-900)) 34%, transparent);
+    0 4px 10px rgba(7, 40, 33, 0.18),
+    0 10px 24px color-mix(in srgb, var(--mood-color, var(--green-900)) 32%, transparent);
   transform: translateY(-1px);
 }
 
-.ex-cat:active {
-  transform: scale(0.96);
+.ex-mood:active {
+  transform: scale(0.97);
 }
 
-/*
- * A darkened disc, and a gold glyph.
- *
- * The glyph was white on a translucent *white* disc, which is the one
- * combination that cannot pop: it lightens the tile under the mark and then
- * draws the mark in the same value as the lightening. Ro asked for a
- * contrasting colour on the iconography and he is right that it was flat.
- *
- * The disc now darkens the tile instead, and the glyph is brand gold. Two
- * things come out of that. The gold reads as lit rather than printed, because
- * the ground it sits on is darker than the tile around it. And the icons become
- * the one constant across a row of twelve different hues — twelve coloured
- * tiles with twelve white icons is a palette; twelve coloured tiles with one
- * gold mark is a set.
- *
- * Gold on the darkened disc measures **4.16:1 at worst** (beaches) across all
- * twelve — checked per tile, not assumed, because the disc is the only reason
- * the warm tiles clear at all: gold on raw `food` is 3.09.
- */
-.ex-cat__icon-wrap {
-  width: 38px;
-  height: 38px;
+.ex-mood__disc {
+  flex: none;
+  width: 42px;
+  height: 42px;
   border-radius: 50%;
-  background: rgba(7, 40, 33, 0.26);
-  box-shadow: inset 0 0 0 1px rgba(227, 194, 113, 0.28);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: background 0.14s ease, box-shadow 0.14s ease;
-}
-
-.ex-cat--on .ex-cat__icon-wrap {
-  background: rgba(7, 40, 33, 0.34);
-  box-shadow: inset 0 0 0 1px rgba(227, 194, 113, 0.55);
-}
-
-.ex-cat__icon {
+  background: rgba(7, 40, 33, 0.28);
+  box-shadow: inset 0 0 0 1px rgba(227, 194, 113, 0.32);
   display: flex;
   align-items: center;
   justify-content: center;
   color: var(--gold-light);
+  transition: background 0.14s ease, box-shadow 0.14s ease;
 }
 
-.ex-cat--on .ex-cat__icon {
+.ex-mood--on .ex-mood__disc {
+  background: rgba(7, 40, 33, 0.36);
+  box-shadow: inset 0 0 0 1px rgba(227, 194, 113, 0.58);
   color: #f1dcac;
 }
 
-.ex-cat__label {
-  font-size: 11px;
+.ex-mood__label {
+  flex: 1;
+  min-width: 0;
+  font-size: 13px;
   font-weight: 700;
-  letter-spacing: 0.01em;
+  line-height: 1.25;
   color: rgba(255, 255, 255, 0.96);
-  white-space: nowrap;
   text-shadow: 0 1px 2px rgba(7, 40, 33, 0.28);
 }
 
-.ex-cat--on .ex-cat__label {
+.ex-mood--on .ex-mood__label {
   color: #ffffff;
 }
 

@@ -44,57 +44,18 @@ import './Explore.css';
  */
 
 /**
- * The category row.
+ * Four mood tiles replace the twelve taxonomy chips.
  *
- * These were emoji until the design pass. Emoji are a different typeface on every platform, so the
- * row that reads as one set on an iPhone read as twelve unrelated pictures on Android, at a weight
- * nothing else in the app uses — and the family group is a ZWJ sequence that splits into three
- * separate people wherever that sequence is unsupported. They are now the app's own glyphs, so the
- * row inherits `--ink-muted` and the brand green like every other control.
+ * Each mood covers a logical group of categories so filtering still works.
+ * "Taste" is labelled dynamically from the island's brand name ("Taste Jamaica",
+ * "Taste Cayman", "Taste Barbados"). Tapping the active mood deselects → all.
  */
-const CATEGORIES = [
-  { id: 'all',           label: 'All',          icon: 'compass' },
-  { id: 'adventure',     label: 'Adventure',    icon: 'mountain' },
-  { id: 'beaches',       label: 'Beaches',      icon: 'beach' },
-  { id: 'water_sports',  label: 'Water Sports', icon: 'snorkel' },
-  { id: 'waterfalls',    label: 'Waterfalls',   icon: 'waterfall' },
-  { id: 'food',          label: 'Food',         icon: 'food' },
-  { id: 'culture',       label: 'Culture',      icon: 'drum' },
-  { id: 'wellness',      label: 'Wellness',     icon: 'lotus' },
-  { id: 'nightlife',     label: 'Nightlife',    icon: 'moon' },
-  { id: 'day_trips',     label: 'Day Trips',    icon: 'bus' },
-  { id: 'family',        label: 'Family',       icon: 'family' },
-  { id: 'shopping',      label: 'Shopping',     icon: 'bag' },
-] as const satisfies readonly { id: string; label: string; icon: IconName }[];
-
-/**
- * The category palette.
- *
- * These were bright utility colours — Tailwind's sky-500, orange-600, red-600 —
- * chosen when the chips were white cards and the colour appeared only as a 13%
- * tint behind the icon. The chips are now filled tiles, and at full strength
- * those hues read as a generic app-store icon grid rather than as a premium
- * travel brand. They are now jewel tones: the same twelve hues, taken down in
- * lightness and up in depth, so a row of them sits beside the brand green and
- * the gold instead of shouting over them.
- *
- * Every value carries white type at 5.3:1 or better — checked, not eyeballed,
- * because the label and icon sit directly on the fill.
- */
-const CAT_COLORS: Record<string, string> = {
-  all:         '#0C4A3F',
-  adventure:   '#17683D',
-  beaches:     '#0E7490',
-  water_sports:'#125E7C',
-  waterfalls:  '#0F766E',
-  food:        '#B04E1C',
-  culture:     '#9E2F27',
-  wellness:    '#466F1E',
-  nightlife:   '#573593',
-  day_trips:   '#92600E',
-  family:      '#A62F5E',
-  shopping:    '#8A2751',
-};
+const MOODS: readonly { id: string; icon: IconName; color: string; categories: readonly string[] }[] = [
+  { id: 'adventure', icon: 'mountain', color: '#17683D', categories: ['adventure', 'water_sports', 'waterfalls', 'day_trips'] },
+  { id: 'relax',     icon: 'beach',    color: '#0E7490', categories: ['beaches', 'wellness'] },
+  { id: 'taste',     icon: 'food',     color: '#B04E1C', categories: ['food', 'nightlife'] },
+  { id: 'explore',   icon: 'compass',  color: '#573593', categories: ['culture', 'family', 'shopping'] },
+];
 
 /** The design labels a card by what kind of thing it is, not by its raw category id. */
 function categoryLabel(category: string): string {
@@ -125,7 +86,7 @@ export function Explore() {
   const { state, dispatch } = useStore();
   const navigate = useNavigate();
   const [islandOpen, setIslandOpen] = useState(false);
-  const [category, setCategory] = useState<string>('all');
+  const [mood, setMood] = useState<string | null>(null);
 
   const island = islandById(state.islandId);
   const destination = destinationBySlug(state.destinationSlug);
@@ -134,11 +95,13 @@ export function Explore() {
   const experiences = useMemo(() => experiencesFor(state.islandId), [state.islandId]);
 
   const ranked = useMemo(() => {
-    if (category === 'all') return experiences;
-    const hits = experiences.filter((e) => e.category === category);
-    const rest = experiences.filter((e) => e.category !== category);
+    const activeMood = MOODS.find((m) => m.id === mood);
+    if (!activeMood) return experiences;
+    const cats = activeMood.categories;
+    const hits = experiences.filter((e) => cats.includes(e.category));
+    const rest = experiences.filter((e) => !cats.includes(e.category));
     return [...hits, ...rest];
-  }, [experiences, category]);
+  }, [experiences, mood]);
 
   const guestPosition = useGuestPosition();
   const resolvedCoords = guestPosition.position.coordinates;
@@ -276,6 +239,7 @@ export function Explore() {
                   className={`island-menu__row ${on ? 'is-on' : ''}`}
                   onClick={() => {
                     dispatch({ type: 'selectIsland', islandId: i.id });
+                    setMood(null);
                     setIslandOpen(false);
                   }}
                 >
@@ -328,31 +292,34 @@ export function Explore() {
         </button>
       </div>
 
-      {/* ---------------- Categories ---------------- */}
-      <div className="ex-cats-wrap">
-        <div className="ex-cats" role="group" aria-label="Filter by category">
-          {CATEGORIES.map((c) => {
-            const on = category === c.id;
-            const color = CAT_COLORS[c.id] ?? 'var(--green-900)';
-            return (
-              <button
-                key={c.id}
-                type="button"
-                className={`ex-cat ${on ? 'ex-cat--on' : ''}`}
-                onClick={() => setCategory(c.id)}
-                aria-pressed={on}
-                style={{ '--cat-color': color } as CSSProperties}
-              >
-                <span className="ex-cat__icon-wrap">
-                  <span className="ex-cat__icon">
-                    <Icon name={c.icon} size={20} strokeWidth={1.8} />
-                  </span>
-                </span>
-                <span className="ex-cat__label">{c.label}</span>
-              </button>
-            );
-          })}
-        </div>
+      {/* ---------------- Mood tiles ---------------- */}
+      <div className="ex-moods pad" role="group" aria-label="Filter by mood">
+        {MOODS.map((m) => {
+          const on = mood === m.id;
+          const label =
+            m.id === 'taste'
+              ? `Taste ${island?.in_app_brand.replace('VIP ', '') ?? 'the Island'}`
+              : m.id === 'adventure'
+              ? 'Adventure'
+              : m.id === 'relax'
+              ? 'Relax & Unwind'
+              : 'Explore Like a Local';
+          return (
+            <button
+              key={m.id}
+              type="button"
+              className={`ex-mood ${on ? 'ex-mood--on' : ''}`}
+              onClick={() => setMood(on ? null : m.id)}
+              aria-pressed={on}
+              style={{ '--mood-color': m.color } as CSSProperties}
+            >
+              <span className="ex-mood__disc">
+                <Icon name={m.icon} size={22} strokeWidth={1.8} />
+              </span>
+              <span className="ex-mood__label">{label}</span>
+            </button>
+          );
+        })}
       </div>
 
       {/* ---------------- Experience of the day ---------------- */}
