@@ -165,6 +165,35 @@ export interface Clash {
   withTitle: string;
   /** How much more time the day would need for this to work. */
   shortfallMinutes: number;
+  /**
+   * The change that would make this booking fit, or `null` when nothing available does.
+   *
+   * Naming the problem is the smaller half of the job. A concierge that says two bookings collide
+   * and stops there has handed the guest a puzzle; the useful answer is the departure that clears
+   * it. This is computed against the same availability the rest of the app books from, so it can
+   * only ever name a departure that genuinely exists and genuinely has room.
+   *
+   * `null` is a real answer and the screen must say so plainly rather than hiding the clash — two
+   * things booked on opposite sides of the island at the same hour cannot be reconciled by moving
+   * either one, and pretending otherwise would be worse than the collision.
+   */
+  resolution: ClashResolution | null;
+}
+
+/**
+ * A departure that would resolve a clash.
+ *
+ * Only ever a *proposal*. The booking is the guest's and is already paid for, so nothing here is
+ * applied until they choose it.
+ */
+export interface ClashResolution {
+  /** `later-slot` — another departure the same day. `another-day` — the soonest day that works. */
+  kind: 'later-slot' | 'another-day';
+  dateISO: string;
+  /** "14:00", the slot key — what the moved booking would carry. */
+  time: string;
+  startMinutes: number;
+  capacityRemaining: number;
 }
 
 export interface Itinerary {
@@ -205,6 +234,15 @@ export interface FixedBooking {
   dateISO: string;
   time: string;
   totalMinor: number;
+  /**
+   * Seats this booking holds, when the caller knows them.
+   *
+   * Only used to size a replacement departure when this booking clashes: the guest can book for
+   * four in the morning and then ask Irie about a day for two, and proposing a move to a departure
+   * with two seats left would be a promise the checkout could not keep. Optional because the rest
+   * of the builder does not need it, and falls back to the party the day is being priced for.
+   */
+  seats?: number;
 }
 
 export interface BuildInput {
@@ -298,6 +336,14 @@ export function buildItinerary(input: BuildInput): Itinerary {
 
   const stops: ItineraryStop[] = [];
   const usedCategories = new Set<ExperienceCategory>();
+  /**
+   * Seats each confirmed booking actually holds.
+   *
+   * A proposed replacement departure has to have room for *that* booking's party, which is not
+   * necessarily the party the day is being priced for — the guest can book for four in the morning
+   * and ask Irie about a day for two.
+   */
+  const heldSeats = new Map<string, number>();
 
   // --- 1. Confirmed bookings are fixed points -------------------------------
   // They are placed first and never moved, because the guest has paid for them and a plan that
@@ -322,6 +368,7 @@ export function buildItinerary(input: BuildInput): Itinerary {
       clash: null,
     });
     usedCategories.add(experience.category);
+    if (booking.seats !== undefined) heldSeats.set(experience.id, booking.seats);
   }
   stops.sort((a, b) => a.startMinutes - b.startMinutes);
 
@@ -406,6 +453,15 @@ export function buildItinerary(input: BuildInput): Itinerary {
         kind: available < 0 ? 'overlap' : 'travel',
         withTitle: from.title,
         shortfallMinutes: needed - available,
+        // Resolved against every other stop, not just the one it collided with: a departure that
+        // steps clear of the morning only to land on the afternoon is not a fix, and offering it
+        // would cost the guest a rebooking to arrive at the same problem.
+        resolution: resolveClash(
+          current,
+          stops.filter((s) => s !== current),
+          dateISO,
+          heldSeats.get(to.id) ?? seats,
+        ),
       };
     }
   }
@@ -491,6 +547,57 @@ function fit(
       arriveFrom: null,
       clash: null,
     };
+  }
+  return null;
+}
+
+/**
+ * The cheapest change that would make a clashing booking fit, or `null` if nothing does.
+ *
+ * Same day first, and within that the earliest departure that works, because a change that keeps
+ * the day intact costs the guest least — moving to a different day is a bigger ask than moving by
+ * two hours, and is only worth offering once the smaller fix has been ruled out.
+ *
+ * The shape's window is deliberately *not* enforced. Confirmed bookings are placed on the day
+ * regardless of it — a morning booking still shows on an afternoon plan — so filtering proposals by
+ * it would refuse the obvious fix for exactly the bookings most likely to need one.
+ */
+function resolveClash(
+  stop: ItineraryStop,
+  others: ItineraryStop[],
+  dateISO: string,
+  seats: number,
+  lookaheadDays = 3,
+): ClashResolution | null {
+  const { experience } = stop;
+  for (const slot of slotsFor(experience, dateISO)) {
+    if (slot.capacityRemaining < seats) continue;
+    const start = minutesOfTime(slot.time);
+    if (start === stop.startMinutes) continue;
+    if (others.some((o) => overlaps(o, experience, start, start + experience.durationMinutes))) continue;
+    return {
+      kind: 'later-slot',
+      dateISO,
+      time: slot.time,
+      startMinutes: start,
+      capacityRemaining: slot.capacityRemaining,
+    };
+  }
+
+  // Another day needs no clash check: every stop on this day is, by definition, not on that one.
+  for (let offset = 1; offset <= lookaheadDays; offset++) {
+    const [y, m, d] = dateISO.split('-').map(Number);
+    const next = isoDate(new Date(y ?? 2026, (m ?? 1) - 1, (d ?? 1) + offset));
+    for (const slot of slotsFor(experience, next)) {
+      if (slot.capacityRemaining < seats) continue;
+      return {
+        kind: 'another-day',
+        dateISO: next,
+        time: slot.time,
+        startMinutes: minutesOfTime(slot.time),
+        capacityRemaining: slot.capacityRemaining,
+      };
+    }
   }
   return null;
 }

@@ -22,6 +22,7 @@ import {
   formatClock,
   formatSpan,
   shapeById,
+  type ClashResolution,
   type Itinerary,
   type ItineraryShape,
   type ItineraryStop,
@@ -556,13 +557,39 @@ function DayAnswer({
         islandId: state.islandId,
         destination,
         party: turn.party,
-        bookings: state.bookings.filter((b) => b.status === 'confirmed' && b.islandId === state.islandId),
+        bookings: state.bookings
+          .filter((b) => b.status === 'confirmed' && b.islandId === state.islandId)
+          .map((b) => ({ ...b, seats: seatsIn(b.party) })),
         plannedExperienceIds: state.plannedExperienceIds,
         anchorExperienceId: turn.anchorExperienceId,
       },
       todayISO(),
     );
   }, [shape, destination, state.islandId, state.bookings, state.plannedExperienceIds, turn.party, turn.anchorExperienceId]);
+
+  /**
+   * Applies a proposed departure to the booking behind a clashing stop.
+   *
+   * The day rebuilds from live state on every render, so the timeline, the total and the clash
+   * count all follow from this one dispatch — there is no second copy of the answer to keep in
+   * step with it.
+   */
+  const moveBooking = (stop: ItineraryStop, resolution: ClashResolution) => {
+    const booking = state.bookings.find(
+      (b) =>
+        b.status === 'confirmed' &&
+        b.experienceId === stop.experience.id &&
+        b.dateISO === day?.dateISO &&
+        b.time === stop.time,
+    );
+    if (!booking) return;
+    dispatch({
+      type: 'rescheduleBooking',
+      bookingId: booking.id,
+      dateISO: resolution.dateISO,
+      time: resolution.time,
+    });
+  };
 
   if (!day || !shape) return null;
 
@@ -621,7 +648,9 @@ function DayAnswer({
       <ol className="day__timeline">
         {day.stops.map((stop) => (
           <li key={stop.experience.id} className="day__item">
-            {stop.arriveFrom || stop.clash ? <Leg stop={stop} /> : null}
+            {stop.arriveFrom || stop.clash ? (
+              <Leg stop={stop} onMove={(r) => moveBooking(stop, r)} />
+            ) : null}
             {/* The dot is positioned against the card, not the list item — a leg above it would
                 otherwise push it up the rail and leave it labelling the transfer instead of the stop. */}
             <div className="day__row">
@@ -709,15 +738,40 @@ function DayAnswer({
  * A clash replaces the leg rather than sitting beside it: "127 min drive" above a stop the guest
  * cannot reach in time is not extra detail, it is the misleading half of the same sentence.
  */
-function Leg({ stop }: { stop: ItineraryStop }) {
+function Leg({ stop, onMove }: { stop: ItineraryStop; onMove: (r: ClashResolution) => void }) {
   if (stop.clash) {
+    const { resolution } = stop.clash;
     return (
-      <span className="day__leg day__leg--clash t-micro">
-        <Icon name="clock" size={12} color="var(--coral-text)" strokeWidth={2} />
-        {stop.clash.kind === 'overlap'
-          ? `Runs over ${stop.clash.withTitle} — ${durationLabel(stop.clash.shortfallMinutes)} short`
-          : `Not enough time from ${stop.clash.withTitle} — ${durationLabel(stop.clash.shortfallMinutes)} short`}
-      </span>
+      <div className="day__clash">
+        <span className="day__leg day__leg--clash t-micro">
+          <Icon name="clock" size={12} color="var(--coral-text)" strokeWidth={2} />
+          {stop.clash.kind === 'overlap'
+            ? `Runs over ${stop.clash.withTitle} — ${durationLabel(stop.clash.shortfallMinutes)} short`
+            : `Not enough time from ${stop.clash.withTitle} — ${durationLabel(stop.clash.shortfallMinutes)} short`}
+        </span>
+        {/*
+          The fix, not just the fault. Naming a collision and stopping there hands the guest a
+          puzzle; the departure that clears it is the thing they actually wanted. When nothing
+          does, that is said plainly — two bookings an island apart at the same hour cannot be
+          reconciled by moving either one, and a button that pretended otherwise would be worse
+          than the collision.
+        */}
+        {resolution ? (
+          <button type="button" className="day__fix" onClick={() => onMove(resolution)}>
+            <Icon name="sparkle" size={13} color="var(--gold-light)" />
+            <span className="day__fix-text">
+              {resolution.kind === 'later-slot'
+                ? `The ${formatClock(resolution.startMinutes)} departure clears this`
+                : `${whenLabel(resolution.dateISO)} at ${formatClock(resolution.startMinutes)} clears this`}
+            </span>
+            <span className="day__fix-go t-micro-strong">Move</span>
+          </button>
+        ) : (
+          <span className="day__fix day__fix--none t-micro">
+            Nothing else available has room — this one would have to be cancelled.
+          </span>
+        )}
+      </div>
     );
   }
   const arrival = stop.arriveFrom!;

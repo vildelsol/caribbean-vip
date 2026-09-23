@@ -557,6 +557,68 @@
   font-weight: 700;
 }
 
+/* The fault and its fix are one block, so the eye never finds the problem
+   without the answer directly under it. */
+.day__clash {
+  padding-bottom: 8px;
+}
+
+.day__clash .day__leg--clash {
+  padding-bottom: 6px;
+}
+
+/*
+ * Deliberately not a coral button.
+ *
+ * The line above it is the alarm; this is the way out, and painting them the
+ * same colour makes the resolution read as more of the problem. It borrows the
+ * concierge's own gold instead — the one mark on the screen that means Irie did
+ * something for you.
+ */
+.day__fix {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  text-align: left;
+  padding: 9px 11px;
+  border-radius: var(--r-sm);
+  background: rgba(227, 194, 113, 0.1);
+  border: 1px solid rgba(227, 194, 113, 0.38);
+  transition: background 0.12s ease, border-color 0.12s ease;
+}
+
+.day__fix:active {
+  transform: scale(0.99);
+  background: rgba(227, 194, 113, 0.18);
+}
+
+.day__fix-text {
+  flex: 1;
+  min-width: 0;
+  font-size: 12.5px;
+  font-weight: 600;
+  line-height: 1.3;
+  color: var(--ink);
+}
+
+.day__fix-go {
+  flex: none;
+  padding: 4px 10px;
+  border-radius: var(--r-pill);
+  background: var(--green-900);
+  color: var(--on-dark);
+}
+
+/* No fix to offer — stated, not styled as an action. */
+.day__fix--none {
+  display: block;
+  background: none;
+  border: 1px dashed var(--border-cool);
+  color: var(--ink-muted);
+  font-weight: 500;
+}
+
 .day__dot--clash {
   background: var(--coral);
   box-shadow: none;

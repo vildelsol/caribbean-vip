@@ -148,7 +148,17 @@ describe('describeDayFit', () => {
     const clashing: Itinerary = {
       ...day,
       stops: day.stops.map((s, i) =>
-        i === 0 ? { ...s, clash: { kind: 'overlap', withTitle: 'Another booking', shortfallMinutes: 45 } } : s,
+        i === 0
+          ? {
+              ...s,
+              clash: {
+                kind: 'overlap',
+                withTitle: 'Another booking',
+                shortfallMinutes: 45,
+                resolution: null,
+              },
+            }
+          : s,
       ),
     };
     const fit = describeDayFit(clashing, 'not-in-this-day', futureDay());

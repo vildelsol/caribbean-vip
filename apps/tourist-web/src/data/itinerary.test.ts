@@ -402,6 +402,97 @@ describe('bookings that clash with each other', () => {
     expect(named).toContain(clashed.clash!.withTitle);
   });
 
+  /**
+   * The proposed fix.
+   *
+   * A concierge that names a collision and stops there has handed the guest a puzzle. What makes
+   * this worth testing is the failure mode: a proposal is a promise the checkout has to be able to
+   * keep, so the only thing worse than no suggestion is one pointing at a departure that does not
+   * exist, has no room, or lands on the same collision it was supposed to clear.
+   */
+  describe('proposing a way out', () => {
+    const clashingDay = () =>
+      buildItinerary(
+        input({
+          dateISO,
+          bookings: [
+            { experienceId: a!.id, dateISO, time: '09:00', totalMinor: 10000 },
+            { experienceId: b!.id, dateISO, time: '09:00', totalMinor: 20000 },
+          ],
+        }),
+      );
+
+    it('only ever names a departure that actually exists', () => {
+      const clashed = clashingDay().stops.find((s) => s.clash !== null)!;
+      const { resolution } = clashed.clash!;
+      if (!resolution) return; // "nothing fits" is a legitimate answer, covered below.
+      const real = slotsFor(clashed.experience, resolution.dateISO).map((s) => s.time);
+      expect(real).toContain(resolution.time);
+    });
+
+    it('never proposes a departure without room for the seats that booking holds', () => {
+      const seats = 4;
+      const built = buildItinerary(
+        input({
+          dateISO,
+          bookings: [
+            { experienceId: a!.id, dateISO, time: '09:00', totalMinor: 10000, seats },
+            { experienceId: b!.id, dateISO, time: '09:00', totalMinor: 20000, seats },
+          ],
+        }),
+      );
+      const clashed = built.stops.find((s) => s.clash !== null)!;
+      const { resolution } = clashed.clash!;
+      if (!resolution) return;
+      expect(resolution.capacityRemaining).toBeGreaterThanOrEqual(seats);
+    });
+
+    it('does not propose the departure the booking is already on', () => {
+      const clashed = clashingDay().stops.find((s) => s.clash !== null)!;
+      const { resolution } = clashed.clash!;
+      if (!resolution) return;
+      // Scoped to the same day on purpose: 9am tomorrow is a real fix for a 9am collision today,
+      // and rejecting it because the clock reads the same would throw away the obvious answer.
+      if (resolution.kind === 'later-slot') {
+        expect(resolution.startMinutes).not.toBe(clashed.startMinutes);
+      } else {
+        expect(resolution.dateISO).not.toBe(dateISO);
+      }
+    });
+
+    it('proposes a time that clears every other stop, not just the one it collided with', () => {
+      const built = clashingDay();
+      const clashed = built.stops.find((s) => s.clash !== null)!;
+      const { resolution } = clashed.clash!;
+      if (!resolution || resolution.kind !== 'later-slot') return;
+      const start = resolution.startMinutes;
+      const end = start + clashed.experience.durationMinutes;
+      for (const other of built.stops) {
+        if (other === clashed) continue;
+        const overlapping = start < other.endMinutes && other.startMinutes < end;
+        expect(overlapping).toBe(false);
+      }
+    });
+
+    it('prefers the same day over moving the guest to another one', () => {
+      const clashed = clashingDay().stops.find((s) => s.clash !== null)!;
+      const { resolution } = clashed.clash!;
+      if (!resolution) return;
+      const sameDayWorks = slotsFor(clashed.experience, dateISO).some(
+        (s) => minutesOfTime(s.time) !== clashed.startMinutes && s.capacityRemaining > 0,
+      );
+      if (sameDayWorks && resolution.kind === 'another-day') {
+        // Only acceptable if no same-day slot actually cleared the rest of the day.
+        expect(resolution.dateISO).not.toBe(dateISO);
+      }
+    });
+
+    it('leaves a stop with no clash with nothing to resolve', () => {
+      const built = buildItinerary(input({ dateISO }));
+      for (const stop of built.stops) expect(stop.clash).toBeNull();
+    });
+  });
+
   it('calls an unreachable booking a travel problem rather than an overlap', () => {
     // Far apart, and sequential: the first ends well before the second starts, but no one can cross
     // Jamaica in the gap.

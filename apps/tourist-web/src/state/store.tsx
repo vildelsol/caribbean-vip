@@ -120,6 +120,7 @@ type Action =
   | { type: 'markOfferShown'; islandId: string }
   | { type: 'addBooking'; booking: Booking }
   | { type: 'cancelBooking'; bookingId: string }
+  | { type: 'rescheduleBooking'; bookingId: string; dateISO: string; time: string }
   | { type: 'redeemVoucher'; voucherId: string; by: string }
   | { type: 'expireVoucher'; voucherId: string }
   | { type: 'planExperience'; experienceId: string }
@@ -212,6 +213,25 @@ function reducer(state: AppState, action: Action): AppState {
           booking && v.id === booking.voucherId && v.state === 'attached'
             ? { ...v, state: 'available' as const, experienceId: null }
             : v,
+        ),
+      };
+    }
+
+    /**
+     * Moves a confirmed booking to a different departure.
+     *
+     * Only the day and the departure change. The price, the itemisation and the ticket token are
+     * deliberately left alone: the guest agreed to that total and holds a voucher against it, and
+     * a reschedule is not a repricing. A real vendor integration would confirm the move before it
+     * took effect — in demo mode this is the same local simulation `addBooking` already is.
+     */
+    case 'rescheduleBooking': {
+      return {
+        ...state,
+        bookings: state.bookings.map((b) =>
+          b.id === action.bookingId && b.status === 'confirmed'
+            ? { ...b, dateISO: action.dateISO, time: action.time }
+            : b,
         ),
       };
     }
