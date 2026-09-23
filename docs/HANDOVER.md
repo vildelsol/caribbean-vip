@@ -1,6 +1,6 @@
 # Handover — Caribbean VIP
 
-**Written:** 2026-08-02 · **Updated:** 2026-09-23 — **start at §5 "Session close" for the current state and pick-up list** · **Branch:** `main`, pushed to `origin` at `f64abf4` · **Gates:** green — 300 tests, tourist-web typechecks clean
+**Written:** 2026-08-02 · **Updated:** 2026-09-23 (second session) — **start at §5 "Session close" for the current state and pick-up list** · **Branch:** `main`, pushed to `origin` at `50d33cd` · **Gates:** green — 306 tests, tourist-web typechecks clean
 
 Read this first, then [`PRD.md`](PRD.md) (product source of truth),
 [`architecture.md`](architecture.md) (the numbered decisions), and
@@ -89,8 +89,8 @@ refresh mid-presentation cannot lose a booking. Profile → *Reset the demonstra
 | M4 — Vendor portal | **complete in demo mode** — `apps/vendor-web`: onboarding, listings, availability, earnings, billing, scan |
 | M5 — Admin console | **complete in demo mode** — `apps/admin-web`: vendor/listing review, audit log |
 | **M6 — Geofenced offers** | **geofence wired (2026-09-22)** — real GPS triggers offer when guest is within 250 m of promoted vendor; demo timer fallback retained for simulated/no-consent positions |
-| M7 — Irie AI | **complete in demo mode** — `Irie.tsx` itinerary builder, 680 lines |
-| M8 — Hardening | **in progress** — 289 tests, a11y pass, LCP/tap-delay/live-region fixes |
+| M7 — Irie AI | **complete in demo mode** — `Irie.tsx` itinerary builder; **clash resolution added 2026-09-23** (proposes the departure that clears a collision, and can apply it) |
+| M8 — Hardening | **in progress** — 306 tests, a11y pass, LCP/tap-delay/live-region fixes, **Android/iOS scroll parity (2026-09-23)** |
 
 **T-01, T-02 complete. T-03, T-04, T-06, V-04, V-05 complete in demo mode. T-05 and T-09 partial:**
 booking, capacity hold, cancellation and voucher invalidation all work. **The real Stripe/Supabase
@@ -100,7 +100,7 @@ path is now wired but has not yet been tested end-to-end** — see §5 pick-up p
 the name it collects is used on Profile; the journey can be walked from sign-up to redemption. See
 §5 "Guest sign-up exists now".
 
-Gates: **290 unit tests (17 files), typecheck and lint clean across 9 workspaces.**
+Gates: **306 unit tests (18 files), typecheck and lint clean across 9 workspaces.**
 
 ---
 
@@ -151,7 +151,106 @@ applies** and has been superseded. The mockups now drive layout and visual langu
 
 ## 5. Pick up here
 
-### Session close — 2026-09-23 (read this first)
+### Session close — 2026-09-23, second session (read this first)
+
+**Where it is.** `main`, pushed to `origin` at `50d33cd`. Working tree clean. **306 tests** (18 files), typecheck clean.
+
+Five commits. The third and fourth are the ones that matter; the rest are visual.
+
+---
+
+**`1f9e516` — twelve taxonomy chips became four mood tiles. Open item #2 is now closed.**
+
+This had been raised twice across two sessions without a decision (it was open item #2 in both). Ro decided: four moods, in a 2×2 grid, replacing the horizontal 12-chip scroll rail on Explore.
+
+*Adventure* / *Relax & Unwind* / *Taste [Island]* / *Explore Like a Local*. Each maps to several categories, so nothing became unreachable — `adventure` covers `adventure, water_sports, waterfalls, day_trips`; `explore` covers `culture, family, shopping`; and so on. **There is no "All" tile**: mood state is `string | null`, and tapping the active tile deselects back to null, which shows everything. Switching island also resets it to null.
+
+Two details worth keeping: the label uses `island.in_app_brand.replace('VIP ', '')` rather than `island.name`, because `name` gives "Taste Cayman Islands" where the brand gives "Taste Cayman". And the grid is `repeat(2, minmax(0, 1fr))` — `1fr` alone would let a long label push a tile past the container, which is the same trap recorded in `5694559` last session.
+
+---
+
+**`62a8bea` — Irie's answers were posting below the fold.**
+
+Ro's report: selecting an option "and nothing would happen on the screen". Three changes, and the third is the real one:
+
+- `CONCIERGE` pushed to the header's right edge (`margin-left: auto` on the tag, `flex: 1` on the brand).
+- The sparkle went 15px → 24px with a gold drop-shadow and a 2.6s breathe, so the header reads as awake rather than as a static title.
+- **Turns now prepend rather than append**, and the screen smooth-scrolls to the newest one (`scroll-margin-top: 16px` on `.irie__turn` so it does not land flush against the edge). Each subsequent answer used to stack *below* the one before it, off-screen, with no scroll.
+
+---
+
+**`eb1d3fe` — the Android report was never a dead button, and the map toggle overlapped its own filters.**
+
+**Read this one before touching global CSS.** Ro reported the Irie screen behaving differently on Android than iPhone — taps on an option appearing to do nothing.
+
+Every control in the app is a plain React `onClick`; there are no mouse-only or touch-only handlers anywhere (checked). **The tap always fired.** The failure was the scroll, and the cause was one line:
+
+```css
+body { overflow-x: hidden }   /* the bug */
+body { overflow-x: clip }     /* the fix */
+```
+
+`overflow-x: hidden` **forces the other axis to compute to `auto`**, so the body became a scroll box of its own while `document.scrollingElement` stayed `html`. Confirmed live under an Android UA: `bodyOverflow: "auto/hidden"`. WebKit papers over the split by propagating the body's scroll to the viewport; Chrome on Android does not resolve it the same way, so scrolling to a newly posted answer moved a box the guest was not looking at. `clip` suppresses the same horizontal overflow **without** creating a scroll container. After: `visible/clip`, `bodyIsScrollBox: false`, and a tap moves `documentElement` 0→499 while `body.scrollTop` stays 0.
+
+Three more Android-only seams with no iOS counterpart, all fixed in the same commit:
+
+- Horizontal rails took **any** drag that started on them, whatever its direction, so the page felt frozen under a thumb that landed on a card row → `touch-action: pan-x pinch-zoom` (pinch-zoom kept deliberately; bare `pan-x` would kill accessibility zoom).
+- Overscrolling a rail's end escaped to the browser **back gesture** → `overscroll-behavior-x: contain`.
+- **Pull-to-refresh reloaded the app** and discarded the session's plan and bookings → `overscroll-behavior-y: contain` on `body`.
+
+> **Consequence worth knowing:** pull-to-refresh is now disabled app-wide. That is correct for an app shell, but if a screen ever wants a real refresh gesture it has to be re-enabled there deliberately.
+
+Six horizontal scrollers predate `.rail` and roll their own `overflow-x: auto`. They are fixed as **one grouped rule in `global.css`** with the reason stated once, rather than the same two properties pasted into six screen stylesheets. Anything new should use `.rail` and inherit it.
+
+**The map toggle, same commit.** Nearby laid the filter chips over the map absolutely, reserving `right: 80px` for a toggle that is roughly twice that wide — so the rail ran underneath it and sliced a label mid-word ("Cult…"). The list view already did it correctly, as flex siblings. **Reserving the correct width would only move the failure to the next longer word, a translated label, or a larger font-scale setting**, so the two controls are now flex siblings in one `.nearby-header` shared by **both** views. The overlap is no longer expressible, the two views stop diverging, and the map got back the strip it was occluding. `.map-filters`, `.map-chip*`, `.map-view-toggle`, `.list-view-toggle` and `.nearby-list-header` are all gone.
+
+---
+
+**`6a03ee5` — Irie proposes the departure that clears a clash, instead of just naming the clash.**
+
+Ro's framing, and it is the right one: *"the whole idea for Irie AI is to solve problems — for an issue such as overlap, a solution needs to be suggested."* Naming a collision and stopping there hands the guest a puzzle.
+
+`Clash` now carries `resolution: ClashResolution | null`, computed in the same pass against the same availability the rest of the app books from — so it **can only ever name a departure that exists and has room**.
+
+**The plan changed once the code was read, and the reason matters.** The pitch was "full resolution for unbooked stops, request-a-change for confirmed ones". That is impossible: the builder fits suggestions against everything already placed, so **only confirmed bookings can ever carry a clash** (`itinerary.ts` says so in a comment, and there is a test). The whole feature is therefore confirmed bookings, which is why a `rescheduleBooking` store action exists — the same class of local simulation `cancelBooking` already was. Without it the button would have been decorative.
+
+Rules the resolver follows, each for a stated reason:
+
+- **Same day before another day** — moving by two hours is a smaller ask than moving the guest's plans to tomorrow.
+- **Checked against every other stop, not just the one it collided with** — a slot that steps clear of the morning onto the afternoon is not a fix, and offering it would cost a rebooking to arrive at the same problem.
+- **Sized to the seats that booking actually holds**, not the party the day is being priced for. A guest can book for four in the morning and ask Irie about a day for two. `FixedBooking` gained an optional `seats?: number` for this rather than the builder reaching through the projection.
+- **The shape's window is deliberately not enforced.** Confirmed bookings are placed regardless of it, so filtering proposals by it would refuse the obvious fix for exactly the bookings most likely to need one.
+- **`null` is a real answer** and the screen says so plainly ("Nothing else available has room — this one would have to be cancelled"). Two bookings an island apart at the same hour cannot be reconciled by moving either one.
+
+**Applying one moves only `dateISO` and `time`.** Price, itemisation and ticket token are untouched: the guest agreed to that total and **a reschedule is not a repricing.** Verified — total stayed `9480` across the move.
+
+Six tests in `itinerary.test.ts`. **One of them caught a wrong invariant while being written:** "never propose the time it is already booked at" is false across days — 9am *tomorrow* is a perfectly good fix for a 9am collision *today*. The rule is now same-day only.
+
+**Reproduced Ro's exact screenshot to verify**: two confirmed 9:00 AM bookings, Mystic Mountain and Blue Mountain Coffee, 5 hr 37 min short. It correctly falls through to "Tomorrow at 9:00 AM clears this" — no same-day slot can close a 5 hr 37 min gap to something 55.9 km away. Clicking **Move** cleared the clash and flipped the headline to "a day that flows".
+
+> **To reproduce a clash locally** there must be two confirmed bookings that collide; the demo starts with none. Seed them into `localStorage` under `cvip.tourist.v1` and then **hard-reload** — `load()` runs once at mount, so writing storage while the page is open does nothing until a reload.
+
+---
+
+**`50d33cd` — the understory was paled back down.**
+
+`62a8bea` had made the bottom-left frond cluster larger *and* stronger at Ro's request; he then called it correctly — it was competing with the labels on the prompt tiles in front of it. **Scale and strength are separate decisions.** The size stays (that was the point); the tint dropped back to roughly where it started. If a future pass wants the foliage more present, change the geometry, not the opacity.
+
+---
+
+**The open list, carried forward:**
+
+0. **The live demo is `https://caribbean-vip-tourist-web.vercel.app`.** Every push to `main` auto-deploys. Check with `gh api repos/vildelsol/caribbean-vip/deployments --jq '.[0].sha'`. Never put a `...-li58ewgtb-...` deployment URL in front of anyone.
+1. **Confirmation and Ticket have never been seen rendered.** Both need a completed checkout; checkout cannot complete locally when `.env` configures Supabase. Unset `VITE_SUPABASE_*` to engage demo mode and reach them.
+2. **The first live Stripe payment** has still never been executed. Card `4242 4242 4242 4242` on the Vercel URL. **Until it runs, M3 is not complete.**
+3. **The 250m/400m geofence hysteresis still has no unit tests.** The function is pure and cheap to cover. Carried across four sessions now.
+4. **"Cruise-Friendly" on the feature card is fabricated.** No field backs it. Either add `cruiseFriendly: boolean` to `DemoExperience` or delete the badge. Same defect class as the three functions removed in `78d0af7`.
+5. **Nearby's sort.** Says "Closest to you" but every row reads "8 MIN DRIVE · 3.6 KM" — distance is not discriminating. Price and rating are the axes that would change the order.
+6. **MiroFish — agreed as the next piece of work, not started.** Ro wants to simulate **guest personas reacting to the product**. `666ghj/MiroFish` (74.4k stars) is a Python multi-agent swarm/social-prediction engine. **Two things to settle before installing anything:** it is a *population simulator, not a UI testing tool* — it cannot drive the React app, so it needs a written scenario as input rather than a running build; and the main repo depends on paid Zep, where the `nikmcfly/MiroFish-Offline` fork swaps that for local Neo4j + Ollama at no API cost. Decide the input artefact and the fork before standing up a Neo4j stack.
+
+---
+
+### Session close — 2026-09-23, first session
 
 **Where it is.** `main`, pushed to `origin` at `f64abf4`. Working tree clean. 300 tests, typecheck clean.
 
@@ -210,7 +309,7 @@ If you add a new type class, do not put `margin: 0` on it. The element reset han
 
 0. **The live demo is `https://caribbean-vip-tourist-web.vercel.app`.** Every push to `main` auto-deploys. Check with `gh api repos/vildelsol/caribbean-vip/deployments --jq '.[0].sha'`. Never put a `...-li58ewgtb-...` deployment URL in front of anyone.
 1. **Confirmation and Ticket have never been seen rendered.** Both need a completed checkout; checkout cannot complete locally when `.env` configures Supabase. Unset `VITE_SUPABASE_*` to engage demo mode and reach them.
-2. **Four mood tiles versus twelve taxonomy filters on Explore.** Raised twice; Ro has not decided. The board's version is more premium and fewer choices.
+2. ~~**Four mood tiles versus twelve taxonomy filters on Explore.**~~ **Closed 2026-09-23 (second session), `1f9e516`** — Ro chose the four moods. See the newer session block above.
 3. **Nearby's sort.** Says "Closest to you" but every row reads "8 MIN DRIVE · 3.6 KM" — distance is not discriminating.
 4. **The 250m/400m geofence hysteresis still has no unit tests.** The function is pure and cheap to cover.
 5. **"Cruise-Friendly" on the feature card is fabricated.** Same defect as "Open Now" (removed `5694559`'s session). No field backs it. Either add `cruiseFriendly: boolean` to `DemoExperience` or delete the badge.
