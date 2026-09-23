@@ -201,7 +201,6 @@ export function Irie() {
     navigate(location.pathname, { replace: true, state: null });
     if (!experience) return;
     setTurns((t) => [
-      ...t,
       {
         id: `${Date.now()}`,
         kind: 'day',
@@ -210,8 +209,17 @@ export function Irie() {
         party: DEFAULT_PARTY,
         anchorExperienceId: experience.id,
       },
+      ...t,
     ]);
   }, [askAbout, navigate, location.pathname]);
+
+  /** Newest turn is prepended, so the screen has to follow it up rather than down. */
+  const latestTurnRef = useRef<HTMLElement>(null);
+  const latestTurnId = turns[0]?.id;
+  useEffect(() => {
+    if (!latestTurnId) return;
+    latestTurnRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }, [latestTurnId]);
 
   const ask = (intent: Intent) => {
     let pool = ranked;
@@ -231,15 +239,15 @@ export function Irie() {
       reason: intent.reason(experience, metres),
     }));
     setTurns((t) => [
-      ...t,
       { id: `${Date.now()}`, kind: 'picks', question: intent.chip, reply: intent.reply, picks },
+      ...t,
     ]);
   };
 
   const askForDay = (shape: ItineraryShape) => {
     setTurns((t) => [
-      ...t,
       { id: `${Date.now()}`, kind: 'day', question: shape.chip, shapeId: shape.id, party: DEFAULT_PARTY },
+      ...t,
     ]);
   };
 
@@ -270,7 +278,11 @@ export function Irie() {
             the name its caption. */}
         <div className="irie__brand">
           <span className="irie__name">Irie AI</span>
-          <Icon name="sparkle" size={15} color="var(--gold-light)" />
+          {/* Larger and breathing — the one thing on the header that says the
+              concierge is awake rather than a static title. */}
+          <span className="irie__spark" aria-hidden="true">
+            <Icon name="sparkle" size={24} color="var(--gold-light)" />
+          </span>
           <span className="irie__tag t-micro">CONCIERGE</span>
         </div>
         {turns.length > 0 ? (
@@ -352,8 +364,8 @@ export function Irie() {
         ))}
       </div>
 
-      {turns.map((turn) => (
-        <section key={turn.id} className="irie__turn">
+      {turns.map((turn, i) => (
+        <section key={turn.id} className="irie__turn" ref={i === 0 ? latestTurnRef : undefined}>
           <p className="irie__question">{turn.question}</p>
           <div className="irie__answer">
             {turn.kind === 'picks' ? (

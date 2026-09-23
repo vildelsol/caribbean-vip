@@ -59,8 +59,9 @@ const CANOPY: Frond[] = [
  * depth and starts reading as a frame around the content.
  */
 const UNDERSTORY: Frond[] = [
-  { x: 42, y: 318, angle: -58, length: 214, bow: -0.24, leaflets: 36, opacity: 0.62 },
-  { x: -8, y: 300, angle: -22, length: 188, bow: -0.3, leaflets: 32, opacity: 0.4 },
+  { x: 42, y: 318, angle: -58, length: 286, bow: -0.24, leaflets: 44, opacity: 0.92 },
+  { x: -8, y: 300, angle: -22, length: 248, bow: -0.3, leaflets: 40, opacity: 0.66 },
+  { x: 74, y: 332, angle: -92, length: 218, bow: -0.2, leaflets: 36, opacity: 0.48 },
 ];
 
 /*
@@ -84,9 +85,9 @@ const TINTS = {
     { offset: '100%', color: '#1e7f86', opacity: 0.12 },
   ],
   understory: [
-    { offset: '0%', color: '#1e7f86', opacity: 0.3 },
-    { offset: '52%', color: '#3f9d95', opacity: 0.2 },
-    { offset: '100%', color: '#9fd3cb', opacity: 0.05 },
+    { offset: '0%', color: '#2f9a86', opacity: 0.62 },
+    { offset: '52%', color: '#3f9d95', opacity: 0.42 },
+    { offset: '100%', color: '#9fd3cb', opacity: 0.12 },
   ],
 } as const;
 
