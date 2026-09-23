@@ -112,6 +112,49 @@ export function Nearby() {
         </div>
       </div>
 
+      {/*
+        One header for both views.
+        The filters used to be absolutely positioned over the map with `right: 80px`
+        reserved for the toggle, which is narrower than the toggle actually is — so the
+        chip rail scrolled underneath it and sliced a label mid-word with nothing to say
+        it had. The list view meanwhile laid the same two controls out as flex siblings
+        and had no such problem. They are peers — a mode switch and a query refinement —
+        so they share one row here and the collision cannot be reintroduced by a width,
+        a longer word or a larger font.
+      */}
+      <div className="nearby-header">
+        <div className="nearby-filters-bar" role="group" aria-label="Filter experiences">
+          {FILTERS.map((f) => (
+            <Chip
+              key={f}
+              selected={filter === f}
+              onClick={() => setFilter(f)}
+              dotColor={FILTER_COLORS[f]}
+            >
+              {f === 'All' ? `All ${results.length}` : f}
+            </Chip>
+          ))}
+        </div>
+        <div className="nearby-view-toggle" role="group" aria-label="Map or list view">
+          <button
+            type="button"
+            className={`map-toggle ${mapView ? 'map-toggle--on' : ''}`}
+            onClick={() => setMapView(true)}
+            aria-pressed={mapView}
+          >
+            Map
+          </button>
+          <button
+            type="button"
+            className={`map-toggle ${mapView ? '' : 'map-toggle--on'}`}
+            onClick={() => setMapView(false)}
+            aria-pressed={!mapView}
+          >
+            List
+          </button>
+        </div>
+      </div>
+
       {mapView ? (
         /* ---- Map view ---- */
         <div className="nearby-map" role="img" aria-label={`Stylised map of ${destination.name} showing ${results.length} experiences`}>
@@ -141,58 +184,8 @@ export function Nearby() {
             </button>
           ))}
 
-          {/* Filter chips overlaid on the map */}
-          <div className="map-filters" role="group" aria-label="Filter experiences">
-            {FILTERS.map((f) => (
-              <button
-                key={f}
-                type="button"
-                className={`map-chip ${filter === f ? 'map-chip--on' : ''}`}
-                onClick={() => setFilter(f)}
-                aria-pressed={filter === f}
-              >
-                {f === 'All' ? `All ${results.length}` : f}
-              </button>
-            ))}
-          </div>
-
-          {/* Map / List toggle */}
-          <div className="map-view-toggle">
-            <button type="button" className="map-toggle map-toggle--on" aria-pressed={true}>Map</button>
-            <button type="button" className="map-toggle" onClick={() => setMapView(false)}>List</button>
-          </div>
         </div>
-      ) : (
-        /* ---- List view header (reuses map area height) ---- */
-        <div className="nearby-list-header">
-          <div className="nearby-filters-bar pad">
-            {/*
-              * The same colour language as Explore's category tiles.
-              *
-              * These were the app's plain grey chips while the home screen's
-              * categories had become jewel tiles — two sibling screens filtering
-              * the same catalogue by the same words, in two unrelated visual
-              * systems. The dot is the cheapest way to carry the hue without
-              * turning a filter bar into a second row of tiles.
-              */}
-            {FILTERS.map((f) => (
-              <Chip
-                key={f}
-                selected={filter === f}
-                onClick={() => setFilter(f)}
-                dotColor={FILTER_COLORS[f]}
-              >
-                {f === 'All' ? `All ${results.length}` : f}
-              </Chip>
-            ))}
-          </div>
-          {/* Map / List toggle for list view */}
-          <div className="list-view-toggle pad">
-            <button type="button" className="map-toggle" onClick={() => setMapView(true)}>Map</button>
-            <button type="button" className="map-toggle map-toggle--on" aria-pressed={true}>List</button>
-          </div>
-        </div>
-      )}
+      ) : null}
 
       <LocationBar guest={guest} destinationName={destination.name} />
 

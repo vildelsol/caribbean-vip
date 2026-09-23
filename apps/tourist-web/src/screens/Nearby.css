@@ -199,89 +199,23 @@
   box-shadow: 0 8px 22px rgba(7, 40, 33, 0.12);
 }
 
-/* --- Map overlay: filter chips -------------------------------------------- */
+/* --- Header: filters + view toggle ----------------------------------------- */
 
-.map-filters {
-  position: absolute;
-  top: 12px;
-  left: 12px;
-  right: 80px; /* leave room for the toggle */
-  display: flex;
-  gap: 7px;
-  overflow-x: auto;
-  scrollbar-width: none;
-  z-index: 6;
-  -webkit-overflow-scrolling: touch;
-}
-
-.map-filters::-webkit-scrollbar {
-  display: none;
-}
-
-.map-chip {
-  flex: none;
-  display: inline-flex;
-  align-items: center;
-  min-height: 32px;
-  padding: 0 11px;
-  border-radius: var(--r-pill);
-  font-size: 12.5px;
-  font-weight: 700;
-  white-space: nowrap;
-  background: rgba(251, 246, 236, 0.92);
-  backdrop-filter: blur(6px);
-  -webkit-backdrop-filter: blur(6px);
-  color: var(--green-900);
-  box-shadow: 0 2px 8px rgba(7, 40, 33, 0.18);
-  transition: background 0.12s ease, color 0.12s ease;
-}
-
-.map-chip--on {
-  background: var(--green-900);
-  color: var(--on-dark);
-}
-
-.map-chip:active {
-  transform: scale(0.96);
-}
-
-/* --- Map / List toggle ----------------------------------------------------- */
-
-.map-view-toggle {
-  position: absolute;
-  top: 12px;
-  right: 12px;
-  display: flex;
-  border-radius: var(--r-pill);
-  background: rgba(251, 246, 236, 0.92);
-  backdrop-filter: blur(6px);
-  -webkit-backdrop-filter: blur(6px);
-  box-shadow: 0 2px 8px rgba(7, 40, 33, 0.18);
-  overflow: hidden;
-  z-index: 6;
-}
-
-.map-toggle {
-  padding: 7px 12px;
-  font-size: 12px;
-  font-weight: 700;
-  color: var(--ink-muted);
-  transition: background 0.12s ease, color 0.12s ease;
-}
-
-.map-toggle--on {
-  background: var(--green-900);
-  color: var(--on-dark);
-  border-radius: var(--r-pill);
-}
-
-/* --- List view header (when map is hidden) --------------------------------- */
-
-.nearby-list-header {
+/*
+ * One row, above the map rather than floating on it.
+ *
+ * The filters were absolutely positioned over the map reserving `right: 80px`
+ * for a toggle that is roughly twice that wide, so the chip rail ran underneath
+ * it and a label was sliced mid-word. Reserving the correct width would only
+ * have moved the failure to the next longer word or the next font-scale setting;
+ * laying the two controls out as flex siblings removes the overlap as a
+ * possibility. The map keeps its full area, and both views share this header.
+ */
+.nearby-header {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  padding: 8px 0;
+  gap: 8px;
+  padding: 8px var(--s-md);
   background: var(--ivory);
   border-bottom: 1px solid var(--border-cool);
 }
@@ -289,12 +223,11 @@
 /*
  * The scroll edge is faded, not cut.
  *
- * This is a 239px window onto about 500px of chips, so the last visible chip is
+ * This is a narrow window onto about 500px of chips, so the last visible chip is
  * always sliced part-way through. With a hard edge that slice reads as a
  * rendering fault — something clipped by mistake — rather than as "there is
  * more if you push". The fade is the whole difference, and it costs one
- * property. The dots the chips gained made the overflow more likely, which is
- * what surfaced it.
+ * property.
  */
 .nearby-filters-bar {
   display: flex;
@@ -303,6 +236,7 @@
   scrollbar-width: none;
   padding-bottom: 2px;
   flex: 1;
+  min-width: 0;
   mask-image: linear-gradient(90deg, #000 0%, #000 86%, transparent 100%);
   -webkit-mask-image: linear-gradient(90deg, #000 0%, #000 86%, transparent 100%);
 }
@@ -315,15 +249,30 @@
   flex: none;
 }
 
-.list-view-toggle {
+/* Never shrinks, never scrolls, never overlapped — the mode switch stays put
+   while the chips beside it take whatever width is left. */
+.nearby-view-toggle {
   flex: none;
   display: flex;
   border-radius: var(--r-pill);
   background: var(--ivory-raised);
   border: 1px solid var(--border-cool);
   overflow: hidden;
-  margin-left: 8px;
-  padding: 0;
+}
+
+.map-toggle {
+  padding: 7px 12px;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--ink-muted);
+  white-space: nowrap;
+  transition: background 0.12s ease, color 0.12s ease;
+}
+
+.map-toggle--on {
+  background: var(--green-900);
+  color: var(--on-dark);
+  border-radius: var(--r-pill);
 }
 
 /* --- Notice ------------------------------------------------------------------ */

@@ -93,7 +93,28 @@ body {
      container. A flex item defaults to `min-width: auto`, so it refuses to shrink below its own
      min-content width — which meant the 430px frame stayed 430px inside a 402px viewport and hung
      off both edges, clipping the left of every heading. Auto margins have no such floor. */
-  overflow-x: hidden;
+  /*
+   * `clip`, not `hidden`, and the difference is the whole reason Android and iOS
+   * behaved differently.
+   *
+   * `overflow-x: hidden` forces the *other* axis to compute to `auto`, so the body
+   * became a scroll box of its own while `document.scrollingElement` stayed `html`.
+   * WebKit papers over that by propagating the body's scroll to the viewport; Chrome
+   * on Android does not resolve it the same way, so `scrollIntoView` on a descendant
+   * moved a box the guest was not looking at — a tap on an Irie row ran, appended its
+   * answer, and the screen sat still. That reads as a dead button.
+   *
+   * `clip` suppresses the same horizontal overflow without making a scroll container,
+   * so the document is the only scroller on both platforms.
+   */
+  overflow-x: clip;
+  /*
+   * Android's pull-to-refresh has no iOS counterpart: an over-scroll at the top of
+   * any screen reloads the page, which on a demo-mode session throws away the
+   * guest's plan and bookings. `contain` keeps the rubber-band and drops the
+   * reload, so an over-scroll does the same nothing it does on iOS.
+   */
+  overscroll-behavior-y: contain;
 }
 
 /* A flex or grid child defaults to min-width:auto, which refuses to shrink below its content —
@@ -422,10 +443,42 @@ button.badge::after {
   -webkit-overflow-scrolling: touch;
   scrollbar-width: none;
   padding-inline: var(--s-md);
+  /*
+   * Both of these are Android-only defects that iOS does not have.
+   *
+   * Without `pan-x`, Chrome hands a drag that starts on a rail to the rail
+   * whatever its direction, so a guest trying to scroll the page with a finger
+   * that happens to land on a card row finds the page stuck. WebKit already
+   * routes by direction.
+   *
+   * `contain` stops a horizontal overscroll at either end of the rail from
+   * escaping to the browser's back gesture — on Android, swiping past the last
+   * card navigated out of the app.
+   */
+  touch-action: pan-x pinch-zoom;
+  overscroll-behavior-x: contain;
 }
 
 .rail::-webkit-scrollbar {
   display: none;
+}
+
+/*
+ * Every other horizontal scroller in the app, given the same two Android fixes.
+ *
+ * These predate `.rail` and each rolled its own `overflow-x: auto`. The fix is a
+ * platform correction rather than a style, so it is grouped here with the reason
+ * stated once instead of pasted into six screen stylesheets that would each have
+ * to be found again the next time Chrome and WebKit disagree. Anything new should
+ * use `.rail` and inherit it.
+ */
+.irie__pop-rail,
+.search__chips,
+.day-strip,
+.nearby-filters-bar,
+.detail__gallery {
+  touch-action: pan-x pinch-zoom;
+  overscroll-behavior-x: contain;
 }
 
 .rail > * {

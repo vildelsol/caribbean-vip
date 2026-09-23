@@ -364,7 +364,10 @@
 
 /* --- Turns ----------------------------------------------------------------- */
 
+/* Where a newly-posted answer comes to rest. Without it the smooth scroll lands
+   the question flush against the top edge, which reads as clipped. */
 .irie__turn {
+  scroll-margin-top: 16px;
   padding: 20px var(--s-md) 0;
 }
 
