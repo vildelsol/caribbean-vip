@@ -1,0 +1,71 @@
+/* --- Photography credits ------------------------------------------------------ */
+
+.credits {
+  background: var(--ivory);
+}
+
+.credits__head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px var(--s-md) 0;
+}
+
+.credits__back {
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  background: var(--ivory-raised);
+  border: 1px solid var(--border-cool);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+}
+
+.credits__title {
+  margin: 0;
+}
+
+.credits__intro {
+  padding: 12px var(--s-md) 0;
+}
+
+.credits__list {
+  list-style: none;
+  padding: 18px var(--s-md) 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+/* One card per file. A flat list of 57 rows at this length is unreadable; the card gives each
+   entry its own edges so the eye can find the author it is looking for. */
+.credits__row {
+  padding: 12px 14px;
+  border-radius: var(--r-md);
+  background: var(--ivory-raised);
+  border: 1px solid var(--border);
+}
+
+.credits__subject {
+  margin-top: 3px;
+}
+
+.credits__meta {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  margin-top: 8px;
+}
+
+.credits__link {
+  color: var(--teal-text);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.credits__dot {
+  color: var(--ink-faint);
+}

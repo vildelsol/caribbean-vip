@@ -12,6 +12,7 @@ import { Profile } from './screens/Profile';
 import { ExperienceDetail } from './screens/ExperienceDetail';
 import { Checkout } from './screens/Checkout';
 import { Confirmation } from './screens/Confirmation';
+import { Credits } from './screens/Credits';
 import { Ticket } from './screens/Ticket';
 import { Offer } from './screens/Offer';
 import { Redeem } from './screens/Redeem';
@@ -53,6 +54,8 @@ export function App() {
         <Route path="/experience/:id" element={<ExperienceDetail />} />
         <Route path="/checkout/:id" element={<Checkout />} />
         <Route path="/confirmation/:bookingId" element={<Confirmation />} />
+        {/* Where the photography's attribution lives now that it is off the images. See Credits. */}
+        <Route path="/credits" element={<Credits />} />
         <Route path="/ticket/:bookingId" element={<Ticket />} />
         <Route path="/offer" element={<Offer />} />
         <Route path="/staff/redeem" element={<Redeem />} />

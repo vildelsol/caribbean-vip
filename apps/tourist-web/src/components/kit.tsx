@@ -1,6 +1,5 @@
 import type { CSSProperties, ReactNode } from 'react';
 import { Icon, type IconName } from './Icon';
-import { creditFor } from '../data/catalogue';
 import './kit.css';
 
 /**
@@ -201,12 +200,20 @@ export function StarRow({ count = 5 }: { count?: number }) {
 // ---------------------------------------------------------------------------
 
 /**
- * A photograph in a fixed ratio frame, with its attribution.
+ * A photograph in a fixed ratio frame.
  *
- * Most of this photography is CC BY or CC BY-SA, which require credit *wherever the work appears*.
- * `credit` renders it over the image; the subject line is included because several listings are
- * illustrated with a representative photograph of the right island rather than of that exact
- * operator, and saying so is what keeps the demonstration honest.
+ * ## Where the attribution went
+ *
+ * 51 of the 57 photographs are CC BY or CC BY-SA, and both require the author to be named. They do
+ * **not** require it to be written across the picture: the wording is "in any reasonable manner",
+ * and a credits screen is the ordinary reading of that — it is how Wikipedia's own apps do it.
+ *
+ * So the caption came off the image, and `/credits` now lists every photograph with its subject,
+ * author, licence and source page, reachable from Profile. Attribution is discharged there.
+ *
+ * `credit` is kept as a prop and does nothing, so that nothing silently starts painting a caption
+ * over a hero again. Deleting the images' licences is not an option: without attribution the app
+ * has no right to use them at all.
  *
  * `loading="lazy"` plus an explicit aspect ratio means the layout never jumps as images arrive —
  * the frame is the right size before the file is.
@@ -240,7 +247,8 @@ export function Photo({
   children?: ReactNode;
   style?: CSSProperties;
 }) {
-  const c = credit ? creditFor(mediaKey) : undefined;
+  void credit;
+  void mediaKey;
   return (
     <div className={`photo ${className}`} style={{ aspectRatio: ratio, borderRadius: radius, ...style }}>
       <img
@@ -260,11 +268,6 @@ export function Photo({
         }}
       />
       {children}
-      {c ? (
-        <span className="photo__credit" title={`${c.subject} — ${c.author}, ${c.licence}`}>
-          {c.author} · {c.licence}
-        </span>
-      ) : null}
     </div>
   );
 }

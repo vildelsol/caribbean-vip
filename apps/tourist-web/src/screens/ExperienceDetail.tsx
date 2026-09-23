@@ -1,7 +1,6 @@
 import { useMemo, useRef, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import {
-  creditFor,
   experienceById,
   formatKm,
   heroUrl,
@@ -120,13 +119,13 @@ export function ExperienceDetail() {
    * was never seen by anyone. A scroll-snap row costs no new assets and no
    * library.
    *
-   * `shown` tracks which frame is in view, and it exists for a licence reason
-   * before a design one: each photograph carries its own attribution, so a
-   * credit line pinned to `media[0]` while frame two is on screen is the wrong
-   * author under the wrong picture. The credit follows the scroll.
+   * `shown` tracks which frame is in view, for the dots. It used to carry a
+   * licence job as well — each photograph has its own author, so the credit
+   * painted over the hero had to follow the scroll or it named the wrong one.
+   * The credits moved to `/credits` and off the images entirely, so this is a
+   * design concern again and nothing more.
    */
   const frames = experience.media.length > 0 ? experience.media : [undefined];
-  const credit = creditFor(frames[shown]);
 
   const onGalleryScroll = () => {
     const el = railRef.current;
@@ -214,11 +213,6 @@ export function ExperienceDetail() {
           {qualifiesForRumPunch(experience) ? <Badge tone="sand">Offer attached</Badge> : null}
         </div>
 
-        {credit ? (
-          <span className="detail__credit" title={credit.subject}>
-            {credit.author} · {credit.licence}
-          </span>
-        ) : null}
       </header>
 
       {/* ---------------- Sheet ---------------- */}

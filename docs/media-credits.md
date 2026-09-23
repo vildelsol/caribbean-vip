@@ -71,3 +71,20 @@ require attribution wherever the work appears.
 | `ky-sunset-1` | Sunset in the Cayman Islands | John Lester | [CC BY 2.0](https://creativecommons.org/licenses/by/2.0) | [Commons](https://commons.wikimedia.org/wiki/File:My_vacation_(5400080290).jpg) |
 | `ky-turtle-1` | The snorkel lagoon at the Cayman Turtle Centre, West Bay | Lhb1239 | [CC BY-SA 3.0](https://creativecommons.org/licenses/by-sa/3.0) | [Commons](https://commons.wikimedia.org/wiki/File:Snorkel_Lagoon_at_Cayman_Turtle_Farm.jpg) |
 | `ky-turtle-2` | A crocodile at the Cayman Turtle Centre, West Bay | Lhb1239 | [CC BY-SA 3.0](https://creativecommons.org/licenses/by-sa/3.0) | [Commons](https://commons.wikimedia.org/wiki/File:Crocodile_at_Cayman_Turtle_Farm.jpg) |
+
+## Where attribution is discharged (2026-09-22)
+
+**Not on the images any more.** The credit used to be painted across the bottom of every
+photograph. Ro's call was that it does not belong there — a stranger's name over the hero of a
+listing being sold — and the licences do not ask for it there: CC BY and CC BY-SA say "in any
+reasonable manner", and a credits screen is the ordinary reading of that. It is what Wikipedia's
+own apps do.
+
+So attribution now lives in **`/credits`**, reachable from Profile → Photography. It lists every
+file with subject, author, licence and source page, generated from `DEMO_MEDIA_CREDITS`, so a new
+photograph is credited the moment it is added to the manifest and nobody has to remember.
+
+**That screen is the only place the attribution exists.** Without it the app has no licence to use
+51 of its 57 photographs. Do not delete it to tidy the navigation, and do not let a future pass put
+the caption back on the hero — `Photo`'s `credit` prop is deliberately kept and inert so that
+nothing starts painting one again by accident.

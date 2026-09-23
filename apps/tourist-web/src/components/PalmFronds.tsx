@@ -6,10 +6,10 @@
  * the reference board's foliage "adds more life", and he is right.
  *
  * The obvious answer is a photograph, and it is the wrong one here. Every
- * photograph in this app is CC BY or CC BY-SA and carries a visible credit
- * wherever it appears (see `media-credits.md` and `.photo__credit`), so a
- * decorative backdrop would have to wear an attribution pill — on the one
- * screen whose whole job is to feel like a person talking to you. It would also
+ * photograph in this app is CC BY or CC BY-SA and has to be attributed (see
+ * `media-credits.md` and the `/credits` screen), so a decorative backdrop would
+ * drag a stranger's photograph, and the obligation that comes with it, into the
+ * one screen whose whole job is to feel like a person talking to you. It would also
  * cost a decode on every tab switch, and white body copy would have to survive
  * whatever the photographer's highlights happened to land on.
  *

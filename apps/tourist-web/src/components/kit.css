@@ -244,25 +244,6 @@ button.chip:active {
   object-fit: cover;
 }
 
-/* Attribution ships with the image. Small, but legible — it is a licence condition, not a nicety. */
-.photo__credit {
-  position: absolute;
-  right: 6px;
-  bottom: 6px;
-  max-width: calc(100% - 12px);
-  padding: 3px 6px;
-  border-radius: 5px;
-  background: rgba(7, 40, 33, 0.62);
-  color: rgba(255, 253, 247, 0.95);
-  font-size: 9.5px;
-  line-height: 1.3;
-  font-weight: 600;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  pointer-events: none;
-}
-
 /* --- Card ---------------------------------------------------------------- */
 
 .card {

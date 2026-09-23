@@ -204,6 +204,14 @@ export function Profile() {
       </section>
 
       <section className="pad profile__block">
+        <h2 className="t-section">Photography</h2>
+        <p className="t-caption c-muted profile__hint">
+          Every photograph in the app, with the photographer and the licence it is used under.
+        </p>
+        <SecondaryButton onClick={() => navigate('/credits')}>Photo credits</SecondaryButton>
+      </section>
+
+      <section className="pad profile__block">
         <h2 className="t-section">Start over</h2>
         <SecondaryButton onClick={reset}>Reset this device</SecondaryButton>
         <p className="t-micro c-faint profile__reset-note">
