@@ -1,6 +1,6 @@
 # Handover — Caribbean VIP
 
-**Written:** 2026-08-02 · **Updated:** 2026-09-22 (two sessions that day — **start at §5 "Session close" for the state and the open list**; the second one widened the row photography and found that the concierge screen's backdrop was painting outside the phone frame) · **Branch:** `main`, pushed to `origin` at `89f0c5a` · **Gates:** green — 289 tests, tourist-web typechecks clean, and **HEAD verified building from a clean `git archive` checkout** (see §5 for why that check now matters)
+**Written:** 2026-08-02 · **Updated:** 2026-09-23 — **start at §5 "Session close" for the current state and pick-up list** · **Branch:** `main`, pushed to `origin` at `f64abf4` · **Gates:** green — 300 tests, tourist-web typechecks clean
 
 Read this first, then [`PRD.md`](PRD.md) (product source of truth),
 [`architecture.md`](architecture.md) (the numbered decisions), and
@@ -151,7 +151,74 @@ applies** and has been superseded. The mockups now drive layout and visual langu
 
 ## 5. Pick up here
 
-### Session close — 2026-09-22, second session (read this first)
+### Session close — 2026-09-23 (read this first)
+
+**Where it is.** `main`, pushed to `origin` at `f64abf4`. Working tree clean. 300 tests, typecheck clean.
+
+Four commits. Read them in order; each one feeds into the next.
+
+---
+
+**`5694559` — the day total was falling off the right edge of Trips.**
+
+The grid had two columns: `132px` for the label and `1fr` for the rest. `1fr` resolves to `minmax(auto, 1fr)`, and `auto` cannot shrink below content. The total needed 298px, had 217px, and `overflow-x: clip` ate the rest silently. Fixed to `minmax(0, 1fr)` — a single responsive column. Map `min-height` came down from 108 to 88px in the same pass.
+
+Worth knowing: `1fr` alone is *not* "take the remaining space and no more". It will grow past its container if the content is wider. The zero in `minmax(0, 1fr)` is what keeps it honest.
+
+---
+
+**`78d0af7` — the detail page answers "would this fit my day?", and stops inventing the social proof.**
+
+Three fabricated functions were removed:
+
+- `weeklyBookings()` — returned `ratingCount / 38`. Presented as a booking count beside the real price.
+- `audienceTag()` — a category lookup that said "Popular with foodies". Not derived from any booking data.
+- `recommendPct()` — returned `ratingAverage * 18 + 17`. A formula dressed as a percentage.
+
+All three read as facts to a guest who has no way to know they are arithmetic. The same failure mode §8 already records for ratings. Replaced with actual `ratingAverage`, `ratingCount`, and a scarcity line driven by `capacityRemaining <= 6` — the same figure checkout enforces, so it cannot be higher than what the booking step would allow.
+
+**The "would this fit my day?" question is now answered before it is asked.** New `data/dayFit.ts` provides `soonestDayFitting` and `describeDayFit`, which build the itinerary around the anchor experience and return `{ tone, headline, detail }`. The section heading changed to "Irie AI has already checked". Button styles reflect the tone: green for fits, teal for later-day, coral for no-room. 11 tests in `dayFit.test.ts` covering: weekday parsing, tone correctness, no overclaim from suggested (unconfirmed) stops, no-room for unlisted anchors, clash detection, and the regression where a day with an existing booking blocked the anchor from fitting.
+
+**Critical fix in the same commit: hooks below the early return.** `useMemo` was placed after the `if (!experience) return null` guard. React: "Rendered more hooks than during the previous render." The screen went blank the moment `experience` resolved. All hooks moved above the guard. This is the same bug recorded in the previous session's `App.tsx` entry. **The rule is absolute: no hook after any conditional return, ever.**
+
+---
+
+**`8d07bd7` — the confirmation says it loudly, and a cascade fix unblocked fifty margins.**
+
+The confirmation screen had a plain "BOOKING CONFIRMED" overline and a listing title in normal weight — nothing that read as a moment. It is now a gold disc seal (checkmark inside), "Confirmed!" at 44px in Cormorant Garamond, and the listing name at card-title weight beneath it.
+
+**The cascade fix is the more important change.** Every `.t-*` type class (`t-title`, `t-body`, `t-caption`, etc.) carried `margin: 0`. These classes have specificity 0,1,0, and so do the screen's own class selectors. `global.css` loads *after* screen stylesheets in Vite's module graph, so every screen's margin rules — set at the same specificity — were silently overwritten by the `.t-*` reset. Around fifty margin rules across eleven screens had been doing nothing. Fixed by moving the element reset to bare selectors (`h1, h2, h3, p, figure, ul, ol…`) at specificity 0,0,1. The screen rules win at 0,1,0 and the base reset holds at 0,0,1 without the conflict. All margins reappeared in every screen without a single screen-level change.
+
+If you add a new type class, do not put `margin: 0` on it. The element reset handles that. The element reset must not be moved back to a class selector.
+
+---
+
+**`f64abf4` — photo credits off the images, onto a screen that properly carries them.**
+
+51 of 57 photographs are CC BY or CC BY-SA. Removing attribution entirely would make the app infringing; the licence requirement is "in any reasonable manner", not "on the image". A dedicated credits screen is the standard reading of that — the approach Wikipedia's own apps use.
+
+- `Photo` component's `credit` and `mediaKey` props are kept but made inert (`void credit; void mediaKey`). The caption span is gone. The props stay so nothing accidentally reintroduces a caption over a hero.
+- `/credits` lists all 60 files sorted by author, generated from `DEMO_MEDIA_CREDITS`. Each entry: bold author, muted subject, licence link and source page.
+- Entry point: Profile → Photography → "Photo credits" button.
+- `docs/media-credits.md` records that the screen is the *only* place attribution now lives and is not optional under the licences.
+
+**One consequence.** The detail gallery's `shown` index previously existed for a licence reason — the credit had to track the scroll so it named the right photographer for the frame on screen. It is now a design concern only. The scroll-snap dots are still there; they remain useful for discoverability but they no longer carry a legal obligation.
+
+---
+
+**The open list, carried forward:**
+
+0. **The live demo is `https://caribbean-vip-tourist-web.vercel.app`.** Every push to `main` auto-deploys. Check with `gh api repos/vildelsol/caribbean-vip/deployments --jq '.[0].sha'`. Never put a `...-li58ewgtb-...` deployment URL in front of anyone.
+1. **Confirmation and Ticket have never been seen rendered.** Both need a completed checkout; checkout cannot complete locally when `.env` configures Supabase. Unset `VITE_SUPABASE_*` to engage demo mode and reach them.
+2. **Four mood tiles versus twelve taxonomy filters on Explore.** Raised twice; Ro has not decided. The board's version is more premium and fewer choices.
+3. **Nearby's sort.** Says "Closest to you" but every row reads "8 MIN DRIVE · 3.6 KM" — distance is not discriminating.
+4. **The 250m/400m geofence hysteresis still has no unit tests.** The function is pure and cheap to cover.
+5. **"Cruise-Friendly" on the feature card is fabricated.** Same defect as "Open Now" (removed `5694559`'s session). No field backs it. Either add `cruiseFriendly: boolean` to `DemoExperience` or delete the badge.
+6. **The first live Stripe payment** has still never been executed. Card `4242 4242 4242 4242` on the Vercel URL. Until it runs, M3 is not complete.
+
+---
+
+### Session close — 2026-09-22, second session
 
 **Where it is.** `main`, pushed to `origin` at `89f0c5a`. Working tree clean. 289 tests, typecheck
 clean, and HEAD verified building from a clean `git archive` checkout. **Not deployed** — see the
@@ -1652,7 +1719,9 @@ Still open: OD-01 (legal entity/MoR), OD-03 (tiers and commission), OD-04 (priva
 - **No map renders.** OD-05 is open.
 - **Photography is placeholder.** Freely licensed and correctly attributed, but it is not the actual
   vendors. Commissioned or licensed photography is still needed before anything ships publicly. See
-  [`media-credits.md`](media-credits.md) and `scripts/seed-media/README.md`.
+  [`media-credits.md`](media-credits.md) and `scripts/seed-media/README.md`. *(Attribution moved
+  to `/credits` on 2026-09-23 — it is no longer on individual images; the `Photo` component's `credit`
+  prop is kept inert to prevent reintroduction.)*
 - **White River Tubing shows a bamboo raft** (the activity most associated with the White River,
   not a tube). Accepted by Ro — the photograph reads as the right place. No fix needed; see §5.
 - **Geolocation is real but the position is still simulated whenever the device is not on the
