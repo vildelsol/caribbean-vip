@@ -1,6 +1,6 @@
 # Handover — Caribbean VIP
 
-**Written:** 2026-08-02 · **Updated:** 2026-09-23 (fourth session) — **start at §5 "Session close" for the current state and pick-up list** · **Branch:** `main` at `1a8b750`, working tree clean, **pushed** · **Gates:** green — 361 tests, tourist-web typechecks clean, eslint clean
+**Written:** 2026-08-02 · **Updated:** 2026-09-24 (fifth session) — **start at §5 "Session close" for the current state and pick-up list** · **Branch:** `main` at `2fc1903`, working tree clean, **pushed** · **Gates:** green — 361 tests, tourist-web typechecks clean, eslint clean
 
 Read this first, then [`PRD.md`](PRD.md) (product source of truth),
 [`architecture.md`](architecture.md) (the numbered decisions), and
@@ -150,6 +150,55 @@ applies** and has been superseded. The mockups now drive layout and visual langu
 ---
 
 ## 5. Pick up here
+
+### Session close — 2026-09-24, fifth session (read this first)
+
+> ### ✅ PUSHED — `main` at `2fc1903`, working tree clean
+>
+> Gates: **361 tests**, typecheck clean, eslint clean. Vercel auto-deploys on push.
+
+This session was polish on the result card layout from the mood-filter work, plus the night-strip photograph.
+
+---
+
+#### Result cards: the wasted line was mine
+
+`.ex-result__title` carried `min-height: calc(13px * 1.25 * 2)` to reserve two lines of label height — so that short-titled cards and long-titled cards in the same row would have their content in the same place. **Redundant.** CSS grid already stretches every item in a row to the tallest; the `min-height` reserved a second line *on top of* that equalisation, charging a blank line under every short title.
+
+Removed. Distance and price now share one `flex` row (`.ex-result__foot`) instead of two separate lines, and padding tightened from 9/10/11 to 8/10/9. Card height 215 → 189. Photo ratio bumped from 163/122 to 163/132 to take the space back.
+
+**One catch caught and fixed:** `flex-wrap: wrap` is needed on the foot row. Without it a long distance string ("135.1 km · 4 hr 49 min") clips the price to "US$74." — a price truncated mid-value on the card people compare prices on is worse than the raggedness `min-height` was solving, so the row wraps rather than clips.
+
+On the rejected alternative: semi-transparent pills over the photograph. Explore.css still records an earlier frosted-pill attempt that covered the boat on the catamaran card. At two-up the photo is already small; pills would re-cover the subject at the same time the text was moved off it.
+
+---
+
+#### Night strip photography
+
+`jm-night-1` — a band at a Hip Strip venue, Montego Bay. ReneMalmstrom, CC BY-SA 3.0.
+
+**Straight about it: it is the weakest image in the app, and it is the best that exists.** `Category:Nightlife in Jamaica` and `Category:Bars in Jamaica` on Commons are both empty. A Kingston street-dance photo was rejected for personality-rights reasons — identifiable private individuals on a marketing card, independent of the licence.
+
+**The fix is `licensed/`, not Commons.** `scripts/seed-media/licensed.json` already exists for operator-supplied photography and refuses any entry missing `rightsHolder` and `permission`. One good photograph of an Ocho Rios bar at night, with its permission written down, closes this properly.
+
+---
+
+#### Open list, carried forward
+
+Unchanged from the fourth session. Current state:
+
+0. **Live demo:** `https://caribbean-vip-tourist-web.vercel.app`. Every push to `main` auto-deploys.
+1. **Night strip photo needs replacing** — `jm-night-1` is a 350×542 scan from Montego Bay, not Ocho Rios. Fix via `scripts/seed-media/licensed.json` with operator's own photograph and documented permission.
+2. **First live Stripe payment never executed.** Card `4242 4242 4242 4242` on the Vercel URL. Claude cannot enter card numbers. M3 incomplete until run.
+3. **Geofence hysteresis unit tests.** 250m/400m thresholds, pure function, ~30 min. Carried seven sessions.
+4. **Background geofencing needs a native shell (M6).** Capacitor or thin RN wrapper; decision logic is port-isolated and ready.
+5. **"Cruise-Friendly" badge is fabricated.** No field backs it. Add `cruiseFriendly: boolean` or delete.
+6. **Social proof: 5 of 42 listings have reviews.** Write the rest or hide the section until reviews are real.
+7. **Ticket can print "Guest"** as name when guest skips onboarding. Worth ~20 min to hide the name row when there is none.
+8. **Single-stop "Book now" from Irie / basket.** `/checkout/:id` charges one experience; a multi-stop basket is a real feature decision.
+9. **MiroFish — agreed, not started.** Needs input scenario and fork decision before standing up Neo4j.
+
+---
 
 ### Session close — 2026-09-23, fourth session (read this first)
 
