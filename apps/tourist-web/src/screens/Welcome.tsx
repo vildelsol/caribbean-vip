@@ -36,8 +36,15 @@ const HERO_FRAMES = [
 ] as const;
 
 /** What the brand promises, in three words each. Marketing, at splash scale. */
+/*
+ * Three proofs of the headline, not three adjectives.
+ *
+ * "Curated experiences" was the weakest of the three — it is what every listing site says about
+ * its catalogue, and it proves nothing about the claim above it. The other two are real: vendor
+ * approval is enforced in `isPubliclyVisibleDemo`, and the voucher is a genuine artefact.
+ */
 const PROOF: { icon: IconName; label: string }[] = [
-  { icon: 'sparkle', label: 'Curated\nexperiences' },
+  { icon: 'sparkle', label: 'Plans\nyour day' },
   { icon: 'shield-check', label: 'Verified\noperators' },
   { icon: 'ticket', label: 'VIP\nbenefits' },
 ];
@@ -102,9 +109,34 @@ export function Welcome() {
               <span className="wl-crest__sub">CARIBBEAN</span>
             </div>
 
+            {/*
+              * The splash leads with what the product *does*.
+              *
+              * It used to open "Exclusive experiences. Authentic connections." — two abstractions
+              * that every OTA also claims, and neither of which describes anything this app does
+              * that Viator does not. The thing nobody else does was five taps away, on the
+              * concierge screen: it plans a day against real departures, real distances and what
+              * the guest has already booked, and it will tell them when something does not fit.
+              *
+              * So the mechanism is the headline now, and "Your Island. Your Way." is kept as the
+              * brand overline above it — the line is good, it is simply not an argument.
+              *
+              * **One line under the headline, not a paragraph.** The first attempt explained the
+              * mechanism in full — real departures, real drive times, what you have already booked
+              * — which is true, and is three lines of body copy on a screen that has about two
+              * seconds to make one point. A splash is a poster. The headline makes the claim, this
+              * line names the promise in five words, and the proof row below substantiates it in
+              * three words a column. Anything longer belongs on the concierge screen, where the
+              * guest has actually asked.
+              */}
             <div className="wl__pitch">
-              <h1 className="wl__tagline">Your Island. Your Way.</h1>
-              <p className="wl__sub">Exclusive experiences. Authentic connections.</p>
+              <p className="wl__brandline">Your Island. Your Way.</p>
+              <h1 className="wl__tagline">
+                A Caribbean day that
+                <br />
+                actually works.
+              </h1>
+              <p className="wl__sub">Every stop fits. Nothing overlaps.</p>
               <p className="wl__islands-line">Jamaica &middot; Cayman &middot; Barbados</p>
             </div>
           </div>
