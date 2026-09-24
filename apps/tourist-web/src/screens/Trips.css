@@ -1,7 +1,38 @@
+/*
+ * The header grows with its own text.
+ *
+ * The photograph was in normal flow and the body was absolutely positioned against the bottom, so
+ * the header's height was the *photograph's* and the body's height counted for nothing. A subtitle
+ * that wrapped to a second line therefore overflowed the header and disappeared under the "Next up"
+ * card, which overlaps it by 30px — and it did so silently, because nothing was clipped, it was
+ * simply covered. Adding "· 2 on other days" to that line is what surfaced it.
+ *
+ * The photograph is now the layer and the body is the content: the header is a flex box with a
+ * minimum height, so it is the same size as before for one line of text and taller for two. This
+ * is the same rule as `minmax(0, 1fr)` in the day grid — a container that cannot grow with its
+ * content will eventually be given content it cannot hold.
+ */
 .trips__head {
   position: relative;
   background: var(--green-900);
   isolation: isolate;
+}
+
+/*
+ * `--next-up-overlap` is the one number that says how far the "Next up" card rides up into the
+ * header. The header reserves it as padding and the card consumes it as a negative margin, so the
+ * two cannot disagree — previously only the card knew, and the header's last line of text sat
+ * under it.
+ */
+.trips {
+  --next-up-overlap: 30px;
+}
+
+.trips__head:not(.trips__head--bare) {
+  display: flex;
+  align-items: flex-end;
+  min-height: 232px;
+  padding: 28px var(--s-md) calc(22px + var(--next-up-overlap));
 }
 
 .trips__head--bare {
@@ -22,8 +53,10 @@
  * whatever photograph lands in it, which is what a header is.
  */
 .trips__head-photo {
+  position: absolute;
+  inset: 0;
   width: 100%;
-  height: 232px;
+  height: 100%;
   object-fit: cover;
   border-radius: 0;
   /* Raised from 0.5 — the scrim below already carries the type, and at half
@@ -34,20 +67,29 @@
 .trips__scrim {
   position: absolute;
   inset: 0;
+  /*
+   * The dark end is pulled up to where the type now starts.
+   *
+   * The gradient reached 0.9 only at the very bottom, which was right when the header body was
+   * pinned to `bottom: 22px`. The body now sits above the reserved overlap and grows upward with
+   * its own text, so the band that has to carry white type begins around 60% — and a second line
+   * pushes it higher still. Ending the ramp at 62% covers the type wherever it lands instead of
+   * only where it used to.
+   */
   background: linear-gradient(
     180deg,
-    rgba(7, 40, 33, 0.3) 0%,
-    rgba(7, 40, 33, 0.52) 48%,
-    rgba(7, 40, 33, 0.9) 100%
+    rgba(7, 40, 33, 0.28) 0%,
+    rgba(7, 40, 33, 0.55) 40%,
+    rgba(7, 40, 33, 0.88) 62%,
+    rgba(7, 40, 33, 0.92) 100%
   );
   pointer-events: none;
 }
 
 .trips__head-body {
-  position: absolute;
-  left: var(--s-md);
-  right: var(--s-md);
-  bottom: 22px;
+  position: relative;
+  z-index: 1;
+  width: 100%;
 }
 
 .trips__brand {
@@ -80,7 +122,7 @@
 /* --- Next up ---------------------------------------------------------------- */
 
 .next-up {
-  margin: -30px var(--s-md) 0;
+  margin: calc(-1 * var(--next-up-overlap, 30px)) var(--s-md) 0;
   width: auto;
   position: relative;
   z-index: 5;

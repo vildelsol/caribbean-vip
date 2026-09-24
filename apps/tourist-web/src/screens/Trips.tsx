@@ -8,6 +8,7 @@ import {
   type DemoExperience,
 } from '../data/catalogue';
 import { useStore } from '../state/store';
+import { describeDay, isoOf, tripDay } from '../data/day';
 import { Badge, Card, Photo, SectionHeader, formatUsd } from '../components/kit';
 import { Icon } from '../components/Icon';
 import { QR } from '../components/QR';
@@ -89,9 +90,20 @@ export function Trips() {
   const island = islandById(state.islandId);
   const destination = destinationBySlug(state.destinationSlug);
 
-  const bookings = state.bookings
-    .filter((b) => b.status === 'confirmed' && b.islandId === state.islandId)
-    .sort((a, b) => `${a.dateISO}${a.time}`.localeCompare(`${b.dateISO}${b.time}`));
+  /*
+   * One day, not every booking.
+   *
+   * This screen is written as a day — one timeline, one total, a countdown and a "leave by". It
+   * used to list every confirmed booking on the island under a header printing `new Date()`, so a
+   * Thursday booking sat below a Wednesday date with a "leave by" time that implied today. The day
+   * being shown is now derived, in `data/day.ts`, and every figure below is scoped to it.
+   */
+  const today = isoOf(new Date());
+  const day = tripDay(
+    state.bookings.filter((b) => b.status === 'confirmed' && b.islandId === state.islandId),
+    today,
+  );
+  const bookings = day.bookings;
 
   const planned = state.plannedExperienceIds
     .map((id) => experienceById(id))
@@ -111,7 +123,12 @@ export function Trips() {
    */
   const plannedFromMinor = planned.reduce((sum, e) => sum + e.fromAmountMinor, 0);
   const next = bookings[0];
-  const countdown = next ? startsIn(next.time) : null;
+  /*
+   * A countdown only means something today. "STARTS IN 2h 15m" against tomorrow's departure is off
+   * by a day, and `startsIn` builds its comparison from the current date — so it is asked the
+   * question only when the answer can be right.
+   */
+  const countdown = next && day.isToday ? startsIn(next.time) : null;
 
   if (!island || !destination) return null;
 
@@ -220,7 +237,7 @@ export function Trips() {
   }
 
   return (
-    <main className="screen">
+    <main className="screen trips">
       <header className="trips__head">
         <Photo
           src={`${import.meta.env.BASE_URL}demo/${island.hero_media_path ?? 'jm-hero'}.jpg`}
@@ -236,12 +253,11 @@ export function Trips() {
             <div className="grow">
               <h1 className="t-display-md c-on-dark">Your {destination.name} Day</h1>
               <p className="t-caption trips__weather">
-                {new Date().toLocaleDateString('en-GB', {
-                  weekday: 'long',
-                  day: 'numeric',
-                  month: 'long',
-                })}{' '}
-                · {bookings.length} confirmed · {planned.length} suggested
+                {describeDay(day.iso, today)} · {bookings.length} confirmed ·{' '}
+                {planned.length} suggested
+                {day.otherDays.length > 0
+                  ? ` · ${day.otherDays.length} on other days`
+                  : ''}
               </p>
             </div>
             {next ? (
@@ -267,8 +283,12 @@ export function Trips() {
               <h2 className="t-caption-strong next-up__title">
                 {experienceById(next.experienceId)?.title ?? 'Your booking'} · {next.time}
               </h2>
-              <p className="t-micro c-urgent next-up__leave">
+              {/* The day is named whenever it is not today. "Leave by 12:55 PM" in urgent coral
+                  is a call to action for the next hour; against tomorrow's departure it is the app
+                  telling the guest to leave for something that has not come round yet. */}
+              <p className={`t-micro next-up__leave ${day.isToday ? 'c-urgent' : 'c-faint'}`}>
                 Leave by {leaveBy(next.time)}
+                {day.isToday ? '' : ` ${describeDay(day.iso, today).toLowerCase()}`}
                 {experienceById(next.experienceId)?.pickupInfo ? ' · pickup at hotel lobby' : ''}
               </p>
               <p className="t-micro c-faint">Reference {next.reference}</p>
