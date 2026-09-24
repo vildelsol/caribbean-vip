@@ -711,6 +711,14 @@ function DayAnswer({
         </p>
       ) : null}
 
+      {/*
+        * Once every stop is planned, the button names the job that is still outstanding.
+        *
+        * It read "See it on Trips" — which names a *destination*, and a destination is satisfied
+        * by looking at it. The day is not finished until it is paid for, so a guest could plan a
+        * whole day, tap through, look at it, and have done nothing. Naming the action and its size
+        * means a guest who reads nothing else on this screen still knows something is waiting.
+        */}
       <div className="day__actions">
         {unplanned.length > 0 ? (
           <button
@@ -724,7 +732,7 @@ function DayAnswer({
           </button>
         ) : (
           <button type="button" className="btn btn--secondary btn--full" onClick={onSeeTrips}>
-            See it on Trips
+            Review &amp; book · {day.stops.length} stop{day.stops.length === 1 ? '' : 's'}
           </button>
         )}
       </div>

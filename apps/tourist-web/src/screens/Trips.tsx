@@ -259,9 +259,23 @@ export function Trips() {
           <div className="row trips__head-row">
             <div className="grow">
               <h1 className="t-display-md c-on-dark">Your {destination.name} Day</h1>
+              {/*
+                * Planned-but-unpaid leads, and it is called what the rest of the app calls it.
+                *
+                * The line read "1 confirmed · 0 suggested". Two faults. "Suggested" is the word
+                * for something Irie is *offering*, not for something the guest has already chosen
+                * and not yet paid for — so the one state that needs an action was named as though
+                * it needed none. And it sat second, behind a count that is already settled.
+                *
+                * It now says "planned, not booked", which is the same word the count on the Trips
+                * tab is counting: a guest who followed that badge here arrives at a line that
+                * agrees with it. A badge and a header disagreeing about what "2" means is worse
+                * than neither.
+                */}
               <p className="t-caption trips__weather">
-                {describeDay(day.iso, today)} · {bookings.length} confirmed ·{' '}
-                {planned.length} suggested
+                {describeDay(day.iso, today)}
+                {planned.length > 0 ? ` · ${planned.length} planned, not booked` : ''}
+                {` · ${bookings.length} confirmed`}
                 {day.otherDays.length > 0
                   ? ` · ${day.otherDays.length} on other days`
                   : ''}
@@ -407,7 +421,9 @@ export function Trips() {
             <p className="t-micro trips__total-count">
               {bookings.length} booked
               {planned.length > 0
-                ? ` · ${planned.length} suggested, from ${formatUsd(plannedFromMinor)}`
+                // "planned", matching the header above and the count on the Trips tab. This is the
+                // same number said three times on one journey; it has to be the same word.
+                ? ` · ${planned.length} planned, from ${formatUsd(plannedFromMinor)}`
                 : ''}
             </p>
           </div>
