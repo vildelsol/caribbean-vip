@@ -58,21 +58,23 @@ const CATEGORY_FOR: Record<string, string[]> = {
 };
 
 export function Nearby() {
-  const { state, dispatch } = useStore();
+  const { state } = useStore();
   const navigate = useNavigate();
   const [filter, setFilter] = useState<string>('All');
   const [selected, setSelected] = useState<string | null>(null);
   const [mapView, setMapView] = useState(true);
 
-  const offerPending = !state.offerShownForIslands.includes(state.islandId);
-
+  /*
+   * A tap on a listing opens that listing.
+   *
+   * This used to intercept the first tap on *any* card and navigate to the geofenced offer
+   * instead — a way of guaranteeing the offer appeared in a demonstration. It guaranteed something
+   * else too: a guest who asked for White River Tubing was handed a rum-punch voucher for a jetty
+   * in another parish, and the control they pressed did not do what it said. The offer has its own
+   * trigger in `Explore`, which is proximity, and that is the only thing that should raise it.
+   */
   const navigateToExperience = (experienceId: string) => {
-    if (offerPending) {
-      dispatch({ type: 'markOfferShown', islandId: state.islandId });
-      navigate('/offer');
-    } else {
-      navigate(`/experience/${experienceId}`);
-    }
+    navigate(`/experience/${experienceId}`);
   };
 
   const island = islandById(state.islandId);

@@ -1,15 +1,15 @@
 import { useEffect, useMemo, useRef, useState, type CSSProperties } from 'react';
 import {
   ISLANDS,
-  PROMOTION,
   byDistanceFrom,
   destinationBySlug,
   destinationsFor,
-  experienceById,
   experiencesFor,
   heroUrl,
   islandById,
   mediaUrl,
+  promotedExperienceNear,
+  promotedExperiencesOn,
   simulatedPosition,
   vendorFor,
   travelFrom,
@@ -82,6 +82,15 @@ function greeting(): string {
   return 'Good evening from';
 }
 
+/**
+ * How long the simulated geofence waits before it fires.
+ *
+ * Six seconds put the offer on screen before the guest had scrolled Explore once, so a gift from
+ * nearby arrived reading like a pop-up ad — the one framing the screen is designed to avoid. The
+ * offer is worth more after the catalogue has made its first impression.
+ */
+const OFFER_DELAY_MS = 14000;
+
 export function Explore() {
   const { state, dispatch } = useStore();
   const navigate = useNavigate();
@@ -120,19 +129,21 @@ export function Explore() {
    * never advertise something the fence would not trigger.
    */
   const offerExperience = useMemo(
-    () =>
-      PROMOTION.appliesToExperienceIds
-        .map((id) => experienceById(id))
-        .find((e) => e && e.islandId === state.islandId),
-    [state.islandId],
+    () => promotedExperienceNear(state.islandId, state.destinationSlug),
+    [state.islandId, state.destinationSlug],
   );
   const offerVendor = offerExperience ? vendorFor(offerExperience) : undefined;
 
-  // Fences: one per vendor that the on-island promotion applies to.
+  /*
+   * Fences: one per vendor the on-island promotion applies to.
+   *
+   * Deliberately *island-wide* rather than narrowed to the guest's destination, unlike the row and
+   * the fallback below. This path only runs on a real device fix, where the 250 m radius is doing
+   * the work itself — and a guest who has driven from Ocho Rios to the Negril jetty should be met
+   * by the offer when they arrive, whatever destination they last picked in the app.
+   */
   const offerFences = useMemo(() => {
-    return PROMOTION.appliesToExperienceIds
-      .map((id) => experienceById(id))
-      .filter((e): e is NonNullable<typeof e> => !!e && e.islandId === state.islandId)
+    return promotedExperiencesOn(state.islandId)
       .map((e) => vendorFor(e))
       .filter((v): v is NonNullable<typeof v> => !!v)
       .map((v) => ({ id: v.id, coordinates: { lat: v.location.lat, lng: v.location.lng } }));
@@ -140,6 +151,9 @@ export function Explore() {
 
   // Hysteresis state — a ref so evaluateFences can read previous state without triggering renders.
   const fenceStateRef = useRef<FenceState>({ insideId: null });
+
+  /** Once per place, not once per island — see `offerShownForIslands` in the store. */
+  const offerKey = `${state.islandId}:${state.destinationSlug}`;
 
   /**
    * Real geofence — fires when the guest walks within 250 m of a promoted vendor.
@@ -149,17 +163,17 @@ export function Explore() {
    */
   useEffect(() => {
     if (guestPosition.position.kind !== 'real') return;
-    if (state.offerShownForIslands.includes(state.islandId)) return;
+    if (state.offerShownForIslands.includes(offerKey)) return;
     if (offerFences.length === 0) return;
 
     const result = evaluateFences(guestPosition.position.coordinates, offerFences, fenceStateRef.current);
     fenceStateRef.current = result.state;
 
     if (result.entered) {
-      dispatch({ type: 'markOfferShown', islandId: state.islandId });
+      dispatch({ type: 'markOfferShown', key: offerKey });
       navigate('/offer');
     }
-  }, [guestPosition.position, offerFences, state.islandId, state.offerShownForIslands, dispatch, navigate]);
+  }, [guestPosition.position, offerFences, offerKey, state.offerShownForIslands, dispatch, navigate]);
 
   /**
    * Demo fallback — when no real fix is available, fires on a timer so the offer still appears
@@ -168,13 +182,23 @@ export function Explore() {
    */
   useEffect(() => {
     if (guestPosition.position.kind === 'real') return;
-    if (state.offerShownForIslands.includes(state.islandId)) return;
+    if (state.offerShownForIslands.includes(offerKey)) return;
+    // Nothing near the guest issues this offer — so nothing fires. The timer used to ignore
+    // geography entirely, which is how a Negril voucher arrived for a guest in Ocho Rios.
+    if (!offerExperience) return;
     const t = setTimeout(() => {
-      dispatch({ type: 'markOfferShown', islandId: state.islandId });
+      dispatch({ type: 'markOfferShown', key: offerKey });
       navigate('/offer');
-    }, 6000);
+    }, OFFER_DELAY_MS);
     return () => clearTimeout(t);
-  }, [guestPosition.position.kind, state.islandId, state.offerShownForIslands, dispatch, navigate]);
+  }, [
+    guestPosition.position.kind,
+    offerExperience,
+    offerKey,
+    state.offerShownForIslands,
+    dispatch,
+    navigate,
+  ]);
 
   const hero = ranked[0];
   const nearYou = nearby.slice(1, 4);

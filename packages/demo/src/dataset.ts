@@ -32,6 +32,18 @@ export interface DemoIsland {
   code: string;
   name: string;
   in_app_brand: string;
+  /**
+   * How the island says hello, in its own words.
+   *
+   * Irie greeted every guest with "Wah Gwaan!", which is Jamaican — correct on one island and
+   * borrowed on the other two. The whole point of opening in Patois is that it reads as *built
+   * here* rather than built for here, and a Bajan greeted in Jamaican gets the opposite signal:
+   * one island's voice applied to a region, which is exactly what the off-island competitors do.
+   *
+   * It belongs on the island record, beside `in_app_brand`, so a fourth market brings its own
+   * greeting with it rather than inheriting Jamaica's.
+   */
+  greeting: string;
   currency: 'USD' | 'JMD' | 'KYD' | 'BBD';
   timezone: string;
   hero_media_path: string | null;
@@ -117,6 +129,7 @@ export const DEMO_ISLANDS: DemoIsland[] = [
     code: 'JM',
     name: 'Jamaica',
     in_app_brand: 'VIP Jamaica',
+    greeting: 'Wah Gwaan!',
     currency: 'JMD',
     timezone: 'America/Jamaica',
     hero_media_path: 'jm-hero',
@@ -127,6 +140,7 @@ export const DEMO_ISLANDS: DemoIsland[] = [
     code: 'KY',
     name: 'Cayman Islands',
     in_app_brand: 'VIP Cayman',
+    greeting: 'Wah goin on!',
     currency: 'KYD',
     timezone: 'America/Cayman',
     hero_media_path: 'ky-hero',
@@ -137,6 +151,7 @@ export const DEMO_ISLANDS: DemoIsland[] = [
     code: 'BB',
     name: 'Barbados',
     in_app_brand: 'VIP Barbados',
+    greeting: 'Wuh gine on!',
     currency: 'BBD',
     timezone: 'America/Barbados',
     hero_media_path: 'bb-hero',
@@ -150,6 +165,7 @@ export const DEMO_ISLANDS: DemoIsland[] = [
     code: 'AG',
     name: 'Antigua & Barbuda',
     in_app_brand: 'VIP Antigua',
+    greeting: 'Wah gwan!',
     currency: 'USD',
     timezone: 'America/Antigua',
     hero_media_path: null,
@@ -1152,13 +1168,36 @@ export function demoOptionsFor(experience: DemoExperience): DemoOption[] {
   ];
 }
 
+/**
+ * The geofenced offer.
+ *
+ * **One qualifying listing in each island's default destination**, which is a requirement and not a
+ * coincidence. The offer fires when the guest is near the vendor that issues it, so a promotion
+ * with nothing in the town the app opens in is a feature nobody will ever see — which is exactly
+ * what Jamaica was: the only qualifying listing was the Negril jetty, 130 km from Ocho Rios, where
+ * every guest starts. The app used to paper over that by announcing it anyway.
+ *
+ * `exp-dunns-falls` carries it in Ocho Rios. A complimentary rum punch at the beach bar below the
+ * falls is the kind of thing the operator would actually run, and Dunn's River is the listing an
+ * Ocho Rios guest is most likely to be standing near.
+ *
+ * `vendorId` names the original issuing vendor only. It has been inconsistent with
+ * `appliesToExperienceIds` since Cayman and Barbados were added — three different vendors run this
+ * promotion — and nothing reads it. Left in place because it mirrors the column in the SQL seed;
+ * the day promotions become per-vendor records, this is the field that splits.
+ */
 export const DEMO_PROMOTION = {
   id: 'promo-rum-punch',
   vendorId: 'vendor-negril',
   title: 'Free rum punch with a qualifying booking',
   terms:
     'One drink per adult guest on a confirmed booking. Must be 18 or older. Not redeemable for cash. Valid only at the issuing vendor during the offer window. Subject to availability.',
-  appliesToExperienceIds: ['exp-catamaran', 'exp-ky-sail', 'exp-bb-catamaran'],
+  appliesToExperienceIds: [
+    'exp-dunns-falls', // Ocho Rios — Jamaica's default destination
+    'exp-catamaran', // Negril
+    'exp-ky-sail', // Camana Bay, 4.3 km from George Town — Cayman's default
+    'exp-bb-catamaran', // Carlisle Bay — Barbados' default
+  ],
 };
 
 export const DEMO_PRICING_CONFIG = {

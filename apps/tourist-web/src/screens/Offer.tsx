@@ -1,5 +1,13 @@
 import { useNavigate } from 'react-router-dom';
-import { PROMOTION, destinationBySlug, experienceById, heroUrl, vendorFor } from '../data/catalogue';
+import {
+  PROMOTION,
+  destinationBySlug,
+  heroUrl,
+  promotedExperienceNear,
+  simulatedPosition,
+  travelToExperience,
+  vendorFor,
+} from '../data/catalogue';
 import { useStore } from '../state/store';
 import { Icon } from '../components/Icon';
 import { GoldButton, Photo, PrimaryButton } from '../components/kit';
@@ -27,11 +35,32 @@ export function Offer() {
   const { state, dispatch } = useStore();
 
   const destination = destinationBySlug(state.destinationSlug);
-  // The promotion names the listings it applies to; show the one on this island.
-  const experience = PROMOTION.appliesToExperienceIds.map((id) => experienceById(id)).find(
-    (e) => e && e.islandId === state.islandId,
-  );
+  /*
+   * The promoted listing *here* — not merely the one somewhere on this island.
+   *
+   * Selecting by island put the Negril jetty on screen under the words "A few minutes from Ocho
+   * Rios", 130 km away. The dataset had the coordinates right the whole time; the screen was
+   * asserting a proximity nobody had checked, on the one screen whose entire claim is proximity.
+   * `promotedExperienceNear` matches the issuing vendor's own destination, and returns nothing
+   * when the guest is not in it — see the note there for why a metre radius cannot do this job
+   * against a simulated town centroid.
+   */
+  const experience = destination
+    ? promotedExperienceNear(state.islandId, state.destinationSlug)
+    : undefined;
   const vendor = experience ? vendorFor(experience) : undefined;
+
+  /*
+   * The walk or the drive, measured rather than asserted.
+   *
+   * Even inside the right town the distance is a real number — the Negril jetty is 2.4 km from the
+   * centre of Negril, which is a short drive and not "a few minutes" on foot. Stating what it is
+   * costs nothing and means the line survives someone checking it.
+   */
+  const trip =
+    experience && destination
+      ? travelToExperience(simulatedPosition(destination), experience)
+      : undefined;
 
   const held = state.vouchers.find(
     (v) => v.promotionId === PROMOTION.id && (v.state === 'available' || v.state === 'attached'),
@@ -40,7 +69,7 @@ export function Offer() {
   const dismiss = () => navigate(-1);
 
   if (!experience) {
-    // Nothing on this island qualifies. Better to leave than to invent an offer.
+    // Nothing *near the guest* qualifies. Better to leave than to invent proximity.
     navigate('/', { replace: true });
     return null;
   }
@@ -89,9 +118,18 @@ export function Offer() {
               words reads as a template rather than as a message. */}
           <h2 className="t-display-md voucher__place">{vendor?.location.name ?? experience.title}</h2>
           <p className="voucher__walk">
-            <Icon name="walk" size={13} color="var(--teal-text)" strokeWidth={2.2} />
+            <Icon
+              name={trip?.travel.mode === 'drive' ? 'car' : 'walk'}
+              size={13}
+              color="var(--teal-text)"
+              strokeWidth={2.2}
+            />
             <span className="t-micro-strong">
-              {destination ? `A few minutes from ${destination.name}` : 'A few minutes away'}
+              {trip && destination
+                ? `${trip.travel.minutes} min ${trip.travel.mode} from ${destination.name}`
+                : destination
+                  ? `In ${destination.name}`
+                  : 'Nearby'}
             </span>
           </p>
         </div>

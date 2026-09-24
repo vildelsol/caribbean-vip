@@ -118,6 +118,26 @@ export interface PartySelection {
 export const DEFAULT_PARTY: PartySelection = { adults: 2, children: 0, photoPackage: false };
 
 /**
+ * Why a quote failed — so the button can name the blocker rather than guess at it.
+ *
+ * Checkout's disabled button read "Choose a departure" whenever a quote failed for any reason,
+ * including when a departure *was* chosen and the party simply did not fit it. A control that
+ * misnames what is wrong sends the guest to change the one thing that was already right.
+ */
+export type QuoteFailure = 'capacity' | 'no-guests' | 'other';
+
+/**
+ * The largest party that fits, capped at the default.
+ *
+ * Checkout auto-selects the first departure with room and used to auto-set the party to two — then
+ * showed a red error when the departure only had one seat. The app made both choices and blamed
+ * the guest for the combination. It now opens on a party the chosen departure can actually take.
+ */
+export function partyFitting(capacityRemaining: number): PartySelection {
+  return { ...DEFAULT_PARTY, adults: Math.max(1, Math.min(DEFAULT_PARTY.adults, capacityRemaining)) };
+}
+
+/**
  * Price a party against a listing, through the shared calculator.
  *
  * `capacityRemaining` is what the chosen slot has left; the calculator rejects a party larger than
@@ -128,12 +148,13 @@ export function priceFor(
   party: PartySelection,
   capacityRemaining: number,
   opts: { rumPunch?: boolean } = {},
-): { ok: true; breakdown: PriceBreakdown } | { ok: false; message: string } {
+): { ok: true; breakdown: PriceBreakdown } | { ok: false; code: QuoteFailure; message: string } {
   const options = demoOptionsFor(experience);
   const adult = options.find((o) => o.kind === 'adult');
   const child = options.find((o) => o.kind === 'child');
   const addon = options.find((o) => o.kind === 'addon');
-  if (!adult || !child || !addon) return { ok: false, message: 'Listing is missing its options.' };
+  if (!adult || !child || !addon)
+    return { ok: false, code: 'other', message: 'Listing is missing its options.' };
 
   const lines = [];
   if (party.adults > 0) {
@@ -163,7 +184,7 @@ export function priceFor(
       occupiesCapacity: false,
     });
   }
-  if (lines.length === 0) return { ok: false, message: 'Choose at least one guest.' };
+  if (lines.length === 0) return { ok: false, code: 'no-guests', message: 'Choose at least one guest.' };
 
   const result = calculateBookingTotal({
     currency: 'USD',
@@ -179,9 +200,15 @@ export function priceFor(
   if (!result.ok) {
     return {
       ok: false,
+      code: result.error.code === 'EXCEEDS_CAPACITY' ? 'capacity' : 'other',
       message:
         result.error.code === 'EXCEEDS_CAPACITY'
-          ? `Only ${result.error.capacityRemaining} places left on this departure.`
+          ? // Plural, and it says what to do about it. "Only 1 places left on this departure" was
+            // a grammar error on the money screen, and naming a constraint without naming the way
+            // out of it is the same failure Irie's clash resolver exists to avoid.
+            `Only ${result.error.capacityRemaining} ${
+              result.error.capacityRemaining === 1 ? 'place' : 'places'
+            } left on this departure — reduce your party, or choose another time.`
           : result.error.message,
     };
   }
@@ -283,4 +310,77 @@ export function isWalkable(metres: number): boolean {
 /** "4.4 km" / "600 m" — metres below a kilometre, because "0.6 km" reads as further than it is. */
 export function formatKm(metres: number): string {
   return metres < 1000 ? `${Math.round(metres / 10) * 10} m` : `${(metres / 1000).toFixed(1)} km`;
+}
+
+// ---------------------------------------------------------------------------
+// The promoted listing
+// ---------------------------------------------------------------------------
+
+/** Every listing the on-island promotion applies to. */
+export function promotedExperiencesOn(islandId: string): DemoExperience[] {
+  return PROMOTION.appliesToExperienceIds
+    .map((id) => experienceById(id))
+    .filter((e): e is DemoExperience => Boolean(e) && e!.islandId === islandId);
+}
+
+/**
+ * How far from the guest's destination an offer may still call itself nearby.
+ *
+ * The simulated position is a town centre, not a phone, so the real 250 m fence in `geofence.ts`
+ * cannot be applied to it — nothing is 250 m from a centroid. This is the radius that says "the
+ * same trip out": Camana Bay is 4.3 km from the centre of George Town and is plainly nearby; the
+ * Negril jetty is 130 km from Ocho Rios and is plainly not. 8 km separates those without needing
+ * a judgement call, and the screen states the measured travel either way, so the number is a
+ * threshold rather than a claim.
+ */
+export const OFFER_NEARBY_METRES = 8000;
+
+/**
+ * The promoted listing the guest is actually near, if any.
+ *
+ * Selecting by island alone was enough to put "A few minutes from Ocho Rios" above the Negril
+ * jetty — 130 km away, on the one screen whose entire claim is proximity. The dataset was never
+ * wrong; the screen was, and it was wrong about the thing the product is sold on.
+ *
+ * Nearby means **the vendor is in the guest's destination, or within `OFFER_NEARBY_METRES` of its
+ * centre**. The second clause matters: a destination boundary is an administrative line, not a
+ * distance, and a slug-only rule would have refused a genuine offer 4 km up the coast while a
+ * distance-only rule against a centroid has no principled radius. Where both could apply, the
+ * nearest wins.
+ *
+ * Returning `undefined` is a real answer. Nothing nearby qualifies is the ordinary case, and it is
+ * why the demo fallback in `Explore` no longer fires everywhere.
+ */
+export function promotedExperienceNear(
+  islandId: string,
+  destinationSlug: string,
+): DemoExperience | undefined {
+  const destination = destinationBySlug(destinationSlug);
+  if (!destination) return undefined;
+  const origin = simulatedPosition(destination);
+
+  return promotedExperiencesOn(islandId)
+    .map((experience) => {
+      const vendor = vendorFor(experience);
+      if (!vendor) return null;
+      const metres = distanceMetres(origin, {
+        lat: vendor.location.lat,
+        lng: vendor.location.lng,
+      });
+      const here = vendor.location.destinationSlug === destinationSlug;
+      return here || metres <= OFFER_NEARBY_METRES ? { experience, metres } : null;
+    })
+    .filter((x): x is { experience: DemoExperience; metres: number } => x !== null)
+    .sort((a, b) => a.metres - b.metres)[0]?.experience;
+}
+
+/** How far the guest is from a listing's operator, and how they would get there. */
+export function travelToExperience(
+  origin: { lat: number; lng: number },
+  experience: DemoExperience,
+): { metres: number; travel: Travel } | undefined {
+  const vendor = vendorFor(experience);
+  if (!vendor) return undefined;
+  const metres = distanceMetres(origin, { lat: vendor.location.lat, lng: vendor.location.lng });
+  return { metres, travel: travelFrom(metres) };
 }

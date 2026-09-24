@@ -80,7 +80,14 @@ export interface AppState {
   bookings: Booking[];
   /** Listings added to the day plan from Irie without a booking — "suggested" timeline entries. */
   plannedExperienceIds: string[];
-  /** The geofenced offer fires once per island per session-of-state, not on every Explore visit. */
+  /**
+   * Where the geofenced offer has already fired — `"<islandId>:<destinationSlug>"`.
+   *
+   * Keyed by *destination*, not by island. The offer is issued by a vendor in a particular town,
+   * so an island-wide "already shown" flag meant a guest who opened in Ocho Rios and then drove to
+   * Negril — where the offer genuinely is — was never shown it, because the island had been used
+   * up somewhere the offer did not belong. Once per place, which is what the promotion is.
+   */
   offerShownForIslands: string[];
   /**
    * Whether the guest has agreed to the app using their location — T-07's first gate.
@@ -117,7 +124,7 @@ type Action =
   | { type: 'selectDestination'; slug: string }
   | { type: 'toggleSaved'; experienceId: string }
   | { type: 'saveVoucher'; promotionId: string }
-  | { type: 'markOfferShown'; islandId: string }
+  | { type: 'markOfferShown'; key: string }
   | { type: 'addBooking'; booking: Booking }
   | { type: 'cancelBooking'; bookingId: string }
   | { type: 'rescheduleBooking'; bookingId: string; dateISO: string; time: string }
@@ -179,9 +186,9 @@ function reducer(state: AppState, action: Action): AppState {
     }
 
     case 'markOfferShown':
-      return state.offerShownForIslands.includes(action.islandId)
+      return state.offerShownForIslands.includes(action.key)
         ? state
-        : { ...state, offerShownForIslands: [...state.offerShownForIslands, action.islandId] };
+        : { ...state, offerShownForIslands: [...state.offerShownForIslands, action.key] };
 
     case 'addBooking': {
       const { booking } = action;
