@@ -1,6 +1,6 @@
 # Handover — Caribbean VIP
 
-**Written:** 2026-08-02 · **Updated:** 2026-09-23 (second session) — **start at §5 "Session close" for the current state and pick-up list** · **Branch:** `main`, pushed to `origin` at `50d33cd` · **Gates:** green — 306 tests, tourist-web typechecks clean
+**Written:** 2026-08-02 · **Updated:** 2026-09-23 (third session) — **start at §5 "Session close" for the current state and pick-up list** · **Branch:** `main` at `7e7987e`, **with a large uncommitted working tree — see the warning at the top of §5** · **Gates:** green — 327 tests, tourist-web typechecks clean
 
 Read this first, then [`PRD.md`](PRD.md) (product source of truth),
 [`architecture.md`](architecture.md) (the numbered decisions), and
@@ -151,7 +151,354 @@ applies** and has been superseded. The mockups now drive layout and visual langu
 
 ## 5. Pick up here
 
-### Session close — 2026-09-23, second session (read this first)
+### Session close — 2026-09-23, third session (read this first)
+
+> ### ⚠ THE WORK IS NOT COMMITTED
+>
+> `main` is at `7e7987e` and in sync with `origin` — that is **last session's** handover commit
+> (docs only; the code it deployed is `50d33cd`). Everything below this line is sitting in the
+> **working tree, uncommitted and unpushed**, across 15 modified files and 4 new ones. **The live
+> Vercel demo has none of it** — it still tells a guest in Ocho Rios that a jetty in Negril is a few
+> minutes away, still shows the wrong date on Trips, and still opens checkout in an error state.
+>
+> **First action next session: review the diff and commit it.** The suggested split is at the end
+> of this entry. Gates are green as it stands — **327 tests** (20 files), tourist-web typechecks
+> clean — so nothing is half-finished; it simply has not been recorded.
+>
+> New files, which `git status` will show as untracked:
+> `apps/tourist-web/src/data/day.ts`, `day.test.ts`, `offer.test.ts`,
+> `supabase/migrations/20260923000001_island_greeting.sql`.
+
+This session started as an assessment — marketer, UI designer, head of product — of the built app,
+walked end to end on the **live Vercel build** at phone width. The findings drove everything after.
+
+---
+
+#### First: two entries on the old open list were wrong, and the error was mine
+
+**Confirmation and Ticket have been rendering all along, on production.** Open item #1 has claimed
+for four sessions that neither had ever been seen. A booking was completed on
+`caribbean-vip-tourist-web.vercel.app` this session — reference `VIPJ-JN2H-39SR`, US$117.60 — and
+both screens rendered correctly. **Demo mode is engaged on Vercel**; the `VITE_SUPABASE_*` vars are
+not set there. The local `.env` *does* set them, which is why checkout cannot complete on
+`localhost` — and that local-only fact is what the open item had generalised into a claim about the
+deployment.
+
+What remains true is the *separate* item: **no real Stripe charge has ever been executed.** That is
+still open and is now the biggest single gap.
+
+The lesson is last session's, repeated: check the artefact, not a proxy for it. "Checkout fails on
+my machine" is not "checkout fails".
+
+---
+
+#### `Offer` — the geofence was naming a place 130 km away
+
+The most damaging defect found, because it lands on one of the two things the founder named as the
+moat.
+
+`Offer.tsx` selected the promoted listing **by island** and then printed
+`` `A few minutes from ${destination.name}` ``. A guest in Ocho Rios was shown the Seven Mile Beach
+jetty — which the dataset correctly places in **Negril**, `18.29, -78.345`, about 130 km away. The
+data was never wrong. The screen was asserting a proximity nobody had computed, on the one screen
+whose entire claim is proximity.
+
+**The rule is now a measured distance.** `promotedExperienceNear(islandId, destinationSlug)` in
+`catalogue.ts` returns the nearest qualifying listing whose vendor is **either in the guest's
+destination or within `OFFER_NEARBY_METRES` (8 km) of its centre**, and `undefined` otherwise.
+
+Both halves of that rule earn their place:
+
+- **A destination slug is an administrative boundary, not a distance.** A slug-only match would
+  have refused Camana Bay to a guest in George Town — 4.3 km up the coast, plainly nearby.
+- **A pure radius has no principled value against a centroid.** The simulated position is a town
+  centre, so the real 250 m fence in `geofence.ts` cannot be applied to it; nothing is 250 m from a
+  centroid. 8 km separates "the same trip out" from "another parish" without a judgement call, and
+  because the screen now states the *measured* travel, the number is a threshold rather than a claim.
+
+The proximity line is now `` `${minutes} min ${walk|drive} from ${destination}` `` with the icon
+following the mode. Verified live on all three islands:
+
+| Island / destination | Fires as | Stated |
+| --- | --- | --- |
+| Jamaica · Ocho Rios | Dunn's River Falls base | 8 min drive |
+| Cayman · George Town | Camana Bay waterfront | 9 min drive |
+| Barbados · Bridgetown | Carlisle Bay boardwalk | 4 min drive |
+
+**Two consequences worth carrying:**
+
+`Explore`'s demo fallback fired on a 6-second timer that **ignored geography entirely** — that is
+how the Negril voucher reached Ocho Rios. It now fires only where a qualifying vendor is near, and
+at **14 seconds** (`OFFER_DELAY_MS`), because at 6 the offer arrived before the guest had scrolled
+Explore once and a gift from nearby that interrupts the first impression reads as a pop-up ad.
+
+`offerShownForIslands` was keyed **per island**, so a guest who opened in Ocho Rios and drove to
+Negril would never see the offer that genuinely belonged to them — the island had been used up
+somewhere it did not apply. Now keyed `"<islandId>:<destinationSlug>"`. Old persisted values simply
+do not match the new keys, which costs an existing guest one extra firing and nothing else.
+
+---
+
+#### `Nearby` was hijacking taps on listings to show the offer
+
+Found while fixing the above, and worse than the thing being fixed.
+
+`navigateToExperience` intercepted the **first tap on any card** and navigated to `/offer` instead
+of the listing. It was a way of guaranteeing the offer appeared in a demonstration. It also
+guaranteed that a guest who asked for White River Tubing received a rum-punch voucher for a jetty in
+another parish, and that **a control did not do what it said**. This is the same class as the
+Android "taps do nothing" report from last session: the tap fired, something else happened.
+
+Removed. The offer has exactly one trigger — proximity, in `Explore`.
+
+---
+
+#### The rum punch now fires on every island, without a demo override
+
+Ro asked for the offer to be reliably visible to investors. The honest fix was better than a forced
+popup, because the reason it was not firing was a real product gap.
+
+**Jamaica had no qualifying listing anywhere near where every guest starts.** The promotion's only
+Jamaican listing was `exp-catamaran` at the Negril jetty; the app opens in Ocho Rios. A promotion
+with nothing in the town the app opens in is a feature nobody will ever see — and the old code
+papered over exactly that by announcing it anyway.
+
+`exp-dunns-falls` now carries it in Ocho Rios. A complimentary rum punch at the beach bar below the
+falls is the kind of thing that operator would actually run, and Dunn's River is the listing an Ocho
+Rios guest is most likely to be standing near.
+
+`offer.test.ts` — six tests. **The first is the one that matters:** every live island must have an
+offer reachable from its default destination, so a promotion an investor will never see cannot ship
+again. It also pins that Ocho Rios is never offered Negril, that Negril still is, and that no named
+vendor is ever beyond the radius.
+
+> `DEMO_PROMOTION.vendorId` still reads `vendor-negril` and has been inconsistent with
+> `appliesToExperienceIds` since Cayman and Barbados were added — three different vendors run this
+> promotion. Nothing reads the field; it is left because it mirrors the SQL column. **The day
+> promotions become per-vendor records, that is the field that splits.**
+
+---
+
+#### `Trips` was not a day view
+
+`Trips.tsx` printed `new Date()` as its header and filtered bookings **by island only**. A Thursday
+booking therefore sat under a Wednesday date, beside a "Leave by 12:55 PM" in urgent coral that
+implied today. On the screen a guest opens on the morning of, that is the app telling them to leave
+for something that is not happening.
+
+New pure module `data/day.ts` with `tripDay()`, `describeDay()`, `isoOf()`, `dateFromISO()` —
+**12 tests**. The day shown is the day of the next booking that has not happened yet, and today when
+nothing is ahead. Days compare as ISO strings in the guest's local calendar. Bookings on other days
+are **counted, never dropped** — the header now reads "Tomorrow · 1 confirmed · 0 suggested · 2 on
+other days".
+
+Two rules that follow from it: the countdown is only computed when the day is today (`startsIn`
+builds its comparison from the current date, so asking it about tomorrow is off by a day), and the
+"leave by" line names the day and drops the urgent colour when it is not today.
+
+`dateFromISO` parses the string by hand rather than `new Date('2026-09-24')`, which is **UTC**
+midnight — the 23rd in the Caribbean. There is a test for that specifically.
+
+**The longer header line exposed a latent layout fault.** The header body was absolutely positioned
+against `bottom: 22px` while the photograph sat in normal flow, so the header's height was the
+*photograph's* and the body's counted for nothing; a second line overflowed **under** the "Next up"
+card, which overlaps by 30px. Nothing was clipped — it was covered, silently. The header is now a
+flex box with `min-height`, the overlap is a single `--next-up-overlap` token that the header
+reserves as padding and the card consumes as negative margin (so the two cannot disagree), and the
+scrim's dark band was extended to 62% to carry type wherever it now lands.
+
+> The token has to live on `.trips`, not `.trips__head` — the card is a **sibling**, not a
+> descendant. The populated branch's `<main>` was missing the `trips` class entirely, so the first
+> attempt silently computed `padding: 0`. An unresolvable `var()` invalidates the **whole**
+> shorthand, which is why the symptom was all four sides collapsing rather than one.
+>
+> Same family as `minmax(0, 1fr)` from two sessions ago: **a container that cannot grow with its
+> content will eventually be handed content it cannot hold.**
+
+---
+
+#### `Checkout` opened in an error state
+
+Arriving from "Check availability" on a departure with one seat left put a red error and a disabled
+button on screen **before the guest had touched anything**. The app auto-selected the departure,
+auto-set the party to two, and then reported the conflict as the guest's.
+
+Three faults, three fixes:
+
+- **The party now opens at a size the chosen departure can take** — `partyFitting()`, applied in a
+  lazy `useState` initialiser so it reads the opening day's first bookable slot once, on mount.
+  After that the party belongs to the guest and is never silently rewritten under them.
+- **"Only 1 places left on this departure."** — a plural agreement error on the money screen. Now
+  singular/plural correct, and it names the way out: *"— reduce your party, or choose another
+  time."* Naming a constraint without naming the escape is the failure Irie's clash resolver was
+  built to avoid; the same standard applies here.
+- **The disabled button read "Choose a departure"** when a departure *was* chosen. A new
+  `QuoteFailure` code (`capacity` / `no-guests` / `other`) lets it say **"Too many guests for this
+  departure"** instead of sending the guest to change the thing that was already right.
+
+---
+
+#### Each island now greets in its own words
+
+Irie opened with a hardcoded **"Wah Gwaan!"** — Jamaican Patois, shown to every guest on every
+island. The whole reason to open in dialect is that it reads as *built here* rather than built for
+here; one island's voice applied to a region is precisely what the off-island competitors do.
+
+`greeting` is now a field on the island record beside `in_app_brand`:
+
+| Jamaica | Cayman | Barbados |
+| --- | --- | --- |
+| Wah Gwaan! | Wah goin on! | Wuh gine on! |
+
+Carried through to the database so the demo dataset still mirrors the seed — new migration
+`20260923000001_island_greeting.sql`, plus `seed.sql` and `IslandRow`.
+
+Three tests in `store.test.ts`. **The load-bearing one is that no two live islands share a
+greeting** — that is what catches someone re-hardcoding Jamaica's, because every screen would still
+render.
+
+---
+
+#### `Welcome` leads with the differentiator instead of generic luxury copy
+
+The splash opened *"Exclusive experiences. Authentic connections."* — two abstractions every OTA
+also claims, describing nothing this app does that Viator does not. The thing nobody else does was
+five taps away on the concierge screen.
+
+The stack is now a poster, with one job per layer:
+
+| Layer | Job | Copy |
+| --- | --- | --- |
+| Overline | Brand | YOUR ISLAND. YOUR WAY. |
+| Headline | **The claim** | A Caribbean day that actually works. |
+| Subline | **The promise** | Every stop fits. Nothing overlaps. |
+| Islands | Reach | JAMAICA · CAYMAN · BARBADOS |
+| Icon row | **The proof** | Plans your day / Verified operators / VIP benefits |
+
+"Your Island. Your Way." is not deleted — it is demoted to the gold overline. It is a good line and
+a poor argument, so it keeps its place without occupying the one slot where the product says what it
+does. The subline is lifted from what Irie actually says when it builds a day, so the splash and the
+product speak the same sentence.
+
+The first proof point changed from **"Curated experiences"** to **"Plans your day"** — the other two
+are backed by code (vendor approval is enforced in `isPubliclyVisibleDemo`; the voucher is a real
+artefact), and "curated" was the one adjective proving nothing.
+
+> **The intermediate draft is the lesson.** It explained the mechanism in full — real departures,
+> real drive times, what you have already booked — which was *true*, and was three lines of body
+> copy on a screen with two seconds to make one point. Ro cut it. A splash is a poster: headline
+> claims, subline promises in five words, icon row substantiates in three words a column. Anything
+> longer belongs on the concierge screen, where the guest has actually asked.
+
+**The text wash has now been wrong in both directions in a single session** — too small for the
+original two-line pitch, then too large for the paragraph, dimming the photograph the screen exists
+to sell. The comment in `Welcome.css` therefore states the **rule** and not the number: the wash
+covers the crest through the islands rule and fades before the proof row. It is invisible on a dark
+hero and obvious on a bright one, so **check both heroes whenever it changes.**
+
+---
+
+#### Suggested commit split
+
+Reviewed and gate-green as one working tree; these are separable and each stands alone:
+
+1. `Offer`/`Explore`/`Nearby` — proximity rule, measured travel, delay, per-destination key, tap
+   hijack removed. (`catalogue.ts`, `Offer.tsx`, `Explore.tsx`, `Nearby.tsx`, `store.tsx`,
+   `offer.test.ts`, `dataset.ts` promotion)
+2. `Trips` — `day.ts` + `day.test.ts`, `Trips.tsx`, `Trips.css`.
+3. `Checkout` — `catalogue.ts` quote codes, `Checkout.tsx`.
+4. Island greetings — `dataset.ts`, migration, `seed.sql`, `database.types.ts`, `Irie.tsx`,
+   `store.test.ts`.
+5. `Welcome` — `Welcome.tsx`, `Welcome.css`.
+
+---
+
+#### The open list, carried forward
+
+0. **The live demo is `https://caribbean-vip-tourist-web.vercel.app`.** Every push to `main`
+   auto-deploys; check with `gh api repos/vildelsol/caribbean-vip/deployments --jq '.[0].sha'`.
+   Never put a `...-li58ewgtb-...` deployment URL in front of anyone.
+1. **The first live Stripe payment has still never been executed.** Card `4242 4242 4242 4242` on
+   the Vercel URL. **Until it runs, M3 is not complete.** Now the biggest single gap — the rest of
+   the checkout path is verified working end to end on production.
+2. **The 250m/400m geofence hysteresis still has no unit tests.** Carried five sessions. It is the
+   exact function you would point at to say "the proximity logic is real" in an investor
+   conversation, it is pure, and it is about thirty minutes.
+3. **Background geofencing needs a native shell (M6).** See §"Is the proximity feature ready for
+   Apple and Android" below — the decision logic is built and port-isolated; the trigger is not
+   reachable from a browser.
+4. **"Cruise-Friendly" on the feature card is fabricated.** No field backs it. Add
+   `cruiseFriendly: boolean` to `DemoExperience` or delete the badge. Same defect class as the three
+   functions removed in `78d0af7`.
+5. **Nearby's sort cannot discriminate, and it is structural.** Distance is measured from the
+   **vendor** (`catalogue.ts`), and 39 experiences share 15 vendors — about five coordinates per
+   island. That is why Dunn's River and Mystic Mountain both read "8 MIN DRIVE · 3.6 KM": same
+   vendor, same point. Either give experiences their own meeting point or stop leading with distance.
+6. **Social proof is 4 experiences out of 39.** Only four listings carry a `review`. In a
+   demonstration, whichever listing gets tapped decides whether the product looks reviewed or empty.
+   Write the rest or remove the section until reviews are real — the fabricated-metrics lesson from
+   `78d0af7` applies to testimony too.
+7. **George Town has no vendors based in it.** Found while wiring the offer: Cayman's *default*
+   destination has zero local inventory, so every Cayman guest lands where nothing is located. The
+   8 km rule covers the rum punch (Camana Bay is 4.3 km), but the data gap is real and is the reason
+   that rule had to exist.
+8. **The destination dropdown hides a destination.** The search field renders over the open list and
+   covers "Montego Bay" entirely — a stacking-order fault. Noticed, not fixed.
+9. **The four mood tiles.** Two of four wrap to a second line, giving the 2×2 a ragged internal
+   rhythm; and the purple on "Explore Like a Local" belongs to no token in the palette — it reads as
+   a stock category grid dropped into a luxury app.
+10. **Price advertised is not price charged.** "From US$98" on every browse surface, US$117.60 at
+    checkout — 15% tax plus 5% service, a 20% reveal at the last step. The summary itemises it
+    honestly, but this is the drip-pricing pattern travel regulators are actively pursuing, and it
+    is the wrong first impression for a brand whose promise is no surprises.
+11. **Time format is inconsistent on the two screens a guest screenshots.** Every browse surface
+    says "1:30 PM"; Confirmation and Ticket say "13:30".
+12. **The ticket can say the guest's name is "Guest".** The name is optional at onboarding, so
+    skipping it renders `GUEST / Guest` beside `GUESTS / 1 adult` — two near-identical labels, one
+    holding a placeholder, on the artefact a vendor scans.
+13. **`eslint` fails on `apps/tourist-web/src/data/dayFit.ts:36`** (`prefer-const`). Pre-existing on
+    `main`, deliberately not mixed into this session's work. One word.
+14. **MiroFish — agreed as the next piece of work, not started.** Unchanged from last session: it is
+    a *population simulator, not a UI testing tool*, so it needs a written scenario rather than a
+    running build; and the main repo depends on paid Zep where `nikmcfly/MiroFish-Offline` swaps in
+    local Neo4j + Ollama. Decide the input artefact and the fork before standing up a Neo4j stack.
+
+---
+
+#### Is the proximity feature ready for Apple and Android?
+
+Asked directly this session. The honest answer is **the rule is built and tested; the trigger needs
+a native wrapper** — and that distinction is worth getting right before it is said in a pitch.
+
+**Working now, in any mobile browser.** `BrowserLocationProvider` is a real implementation of the
+shared `LocationProvider` port (AD-07): it reads permission without prompting, raises the prompt
+only from a press, returns a single foreground fix, and never throws. `useGuestPosition` combines
+consent, fix and plausibility; `resolvePosition` rejects a fix that is not credible for the island
+being browsed — the "presenter's laptop answers with an office in another country" case. The fence
+maths in `geofence.ts` is real, pure, with 250 m entry and 400 m exit hysteresis. With consent on a
+phone, real distances and the real fence work today.
+
+**Not present, and not reachable from a browser:**
+
+- **Background geofencing.** The port has *no watch method, deliberately* — the comment cites PRD
+  §9. iOS needs `CLLocationManager.startMonitoring(for:)`; Android needs `GeofencingClient`. A PWA
+  does not get there either: iOS Safari has no background geolocation and no region monitoring.
+- **Push on fence entry.** Same gap. iOS web push requires a home-screen-installed PWA and still
+  cannot wake on location.
+- **There is no native shell at all.** The Expo app was retired 2026-08-03; `.archive/mobile` is the
+  only trace and nothing under `apps/` targets iOS or Android.
+
+This is PRD **M6**, and it is a wrapper-plus-permissions job — Capacitor or a thin React Native
+shell around this web app, plus `NSLocationAlwaysAndWhenInUseUsageDescription` and
+`ACCESS_BACKGROUND_LOCATION` — **not a rewrite**, precisely because the decision logic already sits
+behind a port and is unit tested. The strong, truthful line for the room: *the proximity logic is
+real and the consent gate is real; the background wake is a platform capability that arrives with
+the native build.* Closing open item #2 above is what lets that sentence be demonstrated rather than
+asserted.
+
+---
+
+### Session close — 2026-09-23, second session
 
 **Where it is.** `main`, pushed to `origin` at `50d33cd`. Working tree clean. **306 tests** (18 files), typecheck clean.
 
