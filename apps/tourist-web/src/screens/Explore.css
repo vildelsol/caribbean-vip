@@ -733,31 +733,64 @@
 .ex-result__body {
   display: flex;
   flex-direction: column;
-  gap: 2px;
-  padding: 9px 10px 11px;
+  gap: 3px;
+  padding: 8px 10px 9px;
 }
 
+/*
+ * No reserved second line.
+ *
+ * This carried `min-height: 2 lines` so a one-line title and a two-line title could not make
+ * neighbouring cards ragged. It was redundant and it cost a blank line under every short title:
+ * the cards are grid items, and **grid already stretches every item in a row to the tallest one**.
+ * The guard was solving a problem the layout had already solved, and charging a line of dead space
+ * on every card to do it.
+ */
 .ex-result__title {
   font-size: 12.5px;
   font-weight: 700;
   line-height: 1.25;
   color: var(--ink);
-  /* Two lines, and a reserved two, so a short name and a long one leave the price on one line. */
   display: -webkit-box;
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
-  min-height: calc(12.5px * 1.25 * 2);
+}
+
+/*
+ * Distance and price share a row.
+ *
+ * They were stacked, which spent a third line on two short values that never compete for width —
+ * "430 m · 7 min" and "US$38.40" sit comfortably side by side at half a phone. Pairing them puts
+ * the two numbers a guest compares between cards on the same baseline, which is easier to scan
+ * down a column than alternating lines.
+ */
+/*
+ * One row when both fit, two when they do not — never a clipped price.
+ *
+ * "135.1 km · 4 hr 49 min" beside "US$74.40" is wider than half a phone, and with the pair locked
+ * to a single row the price was the thing that got cut: "US$74." — a number truncated mid-value on
+ * the card a guest is comparing prices on, which is worse than any layout it was protecting.
+ * Wrapping lets the long case take a second line and keeps the short case, which is most of them,
+ * on one.
+ */
+.ex-result__foot {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 2px 6px;
 }
 
 .ex-result__meta {
   font-size: 11px;
   color: var(--teal-text);
   font-weight: 600;
+  white-space: nowrap;
 }
 
 .ex-result__price {
-  margin-top: 2px;
+  flex: none;
   font-size: 12.5px;
   font-weight: 800;
   color: var(--green-900);

@@ -662,15 +662,17 @@ function ResultCard({ experience, metres }: { experience: DemoExperience; metres
         src={heroUrl(experience)}
         mediaKey={experience.media[0]}
         alt={experience.title}
-        ratio="163 / 122"
+        ratio="163 / 132"
         radius="0"
       />
       <span className="ex-result__body">
         <span className="ex-result__title">{experience.title}</span>
-        <span className="ex-result__meta">
-          {isAtVenue(metres) ? "You're here" : `${formatKm(metres)} · ${formatTravelMinutes(travel.minutes)}`}
+        <span className="ex-result__foot">
+          <span className="ex-result__meta">
+            {isAtVenue(metres) ? "You're here" : `${formatKm(metres)} · ${formatTravelMinutes(travel.minutes)}`}
+          </span>
+          <span className="ex-result__price">{formatUsd(allInFromMinor(experience))}</span>
         </span>
-        <span className="ex-result__price">{formatUsd(allInFromMinor(experience))}</span>
       </span>
     </button>
   );

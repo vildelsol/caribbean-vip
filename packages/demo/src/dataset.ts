@@ -657,7 +657,7 @@ export const DEMO_EXPERIENCES: DemoExperience[] = [
     fromAmountMinor: 3900,
     status: 'approved',
     cancellationHours: 24,
-    media: ['jm-music-1'],
+    media: ['jm-night-1'],
     ratingAverage: 4.6,
     ratingCount: 124,
   },

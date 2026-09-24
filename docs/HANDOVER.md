@@ -419,16 +419,26 @@ Closed this session: the old **#4** (fabricated "Cruise-Friendly" — still open
 0. **The live demo is `https://caribbean-vip-tourist-web.vercel.app`.** Every push to `main`
    auto-deploys; check with `gh api repos/vildelsol/caribbean-vip/deployments --jq '.[0].sha'`.
    Never put a `...-li58ewgtb-...` deployment URL in front of anyone.
-1. **Taste Jamaica has real food photography now; the night strip still borrows.** The two that
-   mattered were sourced from Commons through the existing pipeline and are credited in the app:
-   `jm-jerk-1` (jerk smoking under a corrugated zinc lid on the pit — Grahampurse, CC BY-SA 4.0) and
-   `jm-fish-fry-1` (a seafood platter with fried fish and festival — Xaymacan, CC BY-SA 4.0). Added
-   to `scripts/seed-media/manifest.json` and fetched with `python3 fetch.py`, which refuses anything
+1. **Taste Jamaica has real photography; two listings still borrow, and Commons has no more.**
+   Sourced through the existing pipeline and credited in the app: `jm-jerk-1` (jerk smoking under a
+   corrugated zinc lid on the pit — Grahampurse, CC BY-SA 4.0), `jm-fish-fry-1` (a seafood platter
+   with fried fish and festival — Xaymacan, CC BY-SA 4.0) and `jm-night-1` (a band playing at a Hip
+   Strip venue in Montego Bay — ReneMalmstrom, CC BY-SA 3.0). Added to
+   `scripts/seed-media/manifest.json` and fetched with `python3 fetch.py`, which refuses anything
    not on a free licence — **that script is the only way photography should enter this repo.**
-   Still borrowed: **`exp-ochi-night` carries a Bob Marley mural** rather than a bar at night, and
-   the two beach listings carry representative Jamaican beaches rather than their own. The credit
-   line names what each photograph actually shows, so nothing is passed off — but one bar-at-night
-   photograph would finish the tile.
+
+   **`jm-night-1` is the weakest image in the app and it is the best that exists.**
+   `Category:Nightlife in Jamaica` and `Category:Bars in Jamaica` on Commons are **both empty**, and
+   the only true match found is a **350 × 542** scan — it holds at card size and is visibly soft
+   beside the others. A Kingston street-dance photo was rejected for a second reason worth keeping:
+   it put **identifiable private individuals** on a marketing card, which is a personality-rights
+   problem independent of the licence. The two beach listings likewise carry representative Jamaican
+   beaches. Every credit line names what the photograph actually shows, so nothing is passed off.
+
+   **The fix is `licensed/`, not Commons.** `scripts/seed-media/licensed.json` already exists for
+   operator-supplied photography and refuses an entry that does not record both `rightsHolder` and
+   `permission`. One good photograph of an Ocho Rios bar at night, with its permission written down,
+   closes this properly.
 2. **The first live Stripe payment has still never been executed.** Card `4242 4242 4242 4242` on
    the Vercel URL. **Until it runs, M3 is not complete** — the biggest single gap.
    **Claude cannot do this one**: entering card numbers into a payment form is refused regardless of

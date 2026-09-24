@@ -279,6 +279,13 @@ export const DEMO_MEDIA_CREDITS: Record<string, DemoMediaCredit> = {
     licenceUrl: "https://creativecommons.org/licenses/by/2.0",
     source: "https://commons.wikimedia.org/wiki/File:Jamaican_sunset_-_Flickr_-_VV_Nincic.jpg",
   },
+  "jm-night-1": {
+    subject: "A band playing at a Hip Strip venue in Montego Bay, Jamaica",
+    author: "ReneMalmstrom",
+    licence: "CC BY-SA 3.0",
+    licenceUrl: "https://creativecommons.org/licenses/by-sa/3.0",
+    source: "https://commons.wikimedia.org/wiki/File:Backing_Jah_Lion_at_a_Hip_Strip_venue_in_Montego_Bay,_Jamaica.jpg",
+  },
   "jm-rafting-1": {
     subject: "Bamboo rafting on the Rio Grande, Portland, Jamaica",
     author: "Fritz Rudolf Loewa",
