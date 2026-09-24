@@ -1,6 +1,6 @@
 # Handover — Caribbean VIP
 
-**Written:** 2026-08-02 · **Updated:** 2026-09-23 (fourth session) — **start at §5 "Session close" for the current state and pick-up list** · **Branch:** `main` at `cfcd2c1`, working tree clean, **12 commits ahead of `origin` and not pushed** · **Gates:** green — 347 tests, tourist-web typechecks clean, eslint clean
+**Written:** 2026-08-02 · **Updated:** 2026-09-23 (fourth session) — **start at §5 "Session close" for the current state and pick-up list** · **Branch:** `main` at `b906e92`, working tree clean, **pushed — the live demo is finally current** · **Gates:** green — 347 tests, tourist-web typechecks clean, eslint clean
 
 Read this first, then [`PRD.md`](PRD.md) (product source of truth),
 [`architecture.md`](architecture.md) (the numbered decisions), and
@@ -153,15 +153,13 @@ applies** and has been superseded. The mockups now drive layout and visual langu
 
 ### Session close — 2026-09-23, fourth session (read this first)
 
-> ### ⚠ TWELVE COMMITS ARE UNPUSHED
+> ### ✅ PUSHED — the live demo is current for the first time in three sessions
 >
-> The working tree is clean and every gate is green — **347 tests** (22 files), typecheck clean,
-> **eslint clean for the first time in several sessions**. Nothing is half-finished.
+> `main` at `b906e92`, pushed to `origin`, working tree clean. Vercel deployment confirmed on
+> `b906e92` via `gh api repos/vildelsol/caribbean-vip/deployments --jq '.[0].sha'`.
 >
-> But `main` is **12 commits ahead of `origin`**, so **the live Vercel demo still has none of it** —
-> not last session's work, not this session's. `git push` is the first action, and it auto-deploys.
-> Ro was asked before pushing and had not answered by the close; it is a deliberate hold, not an
-> oversight.
+> Gates: **347 tests** (22 files), typecheck clean, **eslint clean** — the two standing lint errors
+> were cleared, so a green lint is now the baseline and a new one is a real regression.
 
 Last session's work was reviewed and committed in the five-way split it suggested, then this
 session ran on Ro's brief: **this is a demo going in front of investors, with people from Jamaica
@@ -345,6 +343,55 @@ clash check. The multi-stop basket is the larger question behind it.
 
 ---
 
+#### `Explore`'s mood tiles reorder the feed instead of filtering it — found at the close, not fixed
+
+Ro's report: selecting a mood shows **one** option, under "Experience of the Day". Correct, and the
+cause is worse than the symptom.
+
+`ranked` does not filter. It **reorders** — matches first, everything else after. Then each section
+takes a different slice of it, and only some of them survive the reorder:
+
+| Section | Reads | Mood-aware? |
+| --- | --- | --- |
+| Experience of the Day | `ranked[0]` | **Yes** |
+| Near You Now | `byDistanceFrom(ranked)` | **No** — re-sorts by distance, discarding the mood |
+| Hidden Gems | `ranked.slice(4, 7)` | Only when there are enough matches |
+| Tonight Near You | first `food`/`nightlife` | **No** |
+
+So tapping a tile changes one card. Verified live on Ocho Rios: **"Relax & Unwind" put the Seven
+Mile Beach Day Pass in the hero — correct mood, and in Negril, 130 km away** — while "Near You Now"
+carried on showing Adventure, Nature and Family. One card changed, it named the wrong end of the
+island, and two sections openly contradicted the selection.
+
+> The Negril half is the **same defect class as the offer bug fixed earlier this session**: a
+> ranking that reorders on one axis and then states or implies another. Fixing the filter fixes the
+> geography, because a filtered list still gets distance-sorted.
+
+**Ro asked: carousel under "Experience of the Day", or something else? The recommendation is
+something else, and the carousel is the wrong shape.**
+
+A carousel treats this as "too few cards in one row". It is not — it is that a mood selection
+reorders a curated feed while mood-agnostic sections keep running beside it. A carousel leaves all
+three faults standing and adds code.
+
+**Proposed:** mood off → the curated home exactly as it is. Mood on → **the feed collapses to one
+results section**: "14 ways to relax near Ocho Rios", genuinely filtered, distance-sorted, in a
+grid.
+
+Four reasons it is the better shape:
+
+- **"Experience of the Day · Today only" is a curated claim and must not change when a filter is
+  tapped.** Today it does, which makes the claim false. Collapsing removes the contradiction rather
+  than decorating it.
+- A filter result should be **countable and scannable** — a carousel hides inventory behind a
+  swipe, which is the wrong instinct when the pitch is the size of the verified catalogue.
+- It **fixes the geography for free**: filter, then sort by distance.
+- **Reuse over build** — `Search` already has a results grid.
+
+Not started. It is a contained change to `Explore.tsx` and needs Ro's yes on the shape first.
+
+---
+
 #### The open list, carried forward
 
 Closed this session: the old **#4** (fabricated "Cruise-Friendly" — still open, see below), **#5**
@@ -354,7 +401,8 @@ Closed this session: the old **#4** (fabricated "Cruise-Friendly" — still open
 0. **The live demo is `https://caribbean-vip-tourist-web.vercel.app`.** Every push to `main`
    auto-deploys; check with `gh api repos/vildelsol/caribbean-vip/deployments --jq '.[0].sha'`.
    Never put a `...-li58ewgtb-...` deployment URL in front of anyone.
-1. **PUSH THE TWELVE COMMITS.** Until then every fix above exists only on this machine.
+1. **Mood tiles reorder instead of filtering.** See the section above — the shape is proposed and
+   waiting on Ro's yes.
 2. **The first live Stripe payment has still never been executed.** Card `4242 4242 4242 4242` on
    the Vercel URL. **Until it runs, M3 is not complete** — the biggest single gap.
    **Claude cannot do this one**: entering card numbers into a payment form is refused regardless of
