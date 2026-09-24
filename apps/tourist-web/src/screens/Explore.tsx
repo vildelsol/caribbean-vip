@@ -14,7 +14,9 @@ import {
   vendorFor,
   travelFrom,
   isWalkable,
+  isAtVenue,
   formatKm,
+  formatTravelMinutes,
   type DemoExperience,
   allInFromMinor,
 } from '../data/catalogue';
@@ -29,6 +31,7 @@ import {
   Card,
   Photo,
   Price,
+  formatUsd,
   Rating,
   RoundButton,
   SectionHeader,
@@ -209,6 +212,27 @@ export function Explore() {
     navigate,
   ]);
 
+  /*
+   * PROTOTYPE — mood collapses the feed into one filtered result set.
+   *
+   * `ranked` only *reorders*, so a mood changed one card while Near You Now re-sorted by distance
+   * and discarded it. This filters, then sorts by distance, so a mood in Ocho Rios cannot answer
+   * with Negril.
+   */
+  const moodHits = useMemo(() => {
+    const activeMood = MOODS.find((m) => m.id === mood);
+    if (!activeMood || !destination) return [];
+    const origin = resolvedCoords.lat !== 0 ? resolvedCoords : simulatedPosition(destination);
+    const hits = experiences.filter((e) => activeMood.categories.includes(e.category));
+    return byDistanceFrom(origin, hits);
+  }, [experiences, mood, destination, resolvedCoords]);
+
+  const moodLabel =
+    mood === 'adventure' ? 'adventures'
+    : mood === 'relax' ? 'ways to relax'
+    : mood === 'taste' ? 'places to eat'
+    : 'local finds';
+
   const hero = ranked[0];
   const nearYou = nearby.slice(1, 4);
   /*
@@ -355,8 +379,33 @@ export function Explore() {
         })}
       </div>
 
+      {/* ---------------- PROTOTYPE: mood results ---------------- */}
+      {mood ? (
+        <section className="pad ex-section">
+          {/*
+            * "near <destination>" would be a claim the list cannot keep — some of these are an
+            * island away. The count is honest, "nearest first" is checkable, and every card states
+            * its own distance, so the guest sorts it out in one glance instead of trusting a word.
+            */}
+          <SectionHeader
+            title={`${moodHits.length} ${moodLabel} · nearest first`}
+            action="Clear"
+            onAction={() => setMood(null)}
+          />
+          {moodHits.length > 0 ? (
+            <div className="ex-results">
+              {moodHits.map(({ experience, metres }) => (
+                <ResultCard key={experience.id} experience={experience} metres={metres} />
+              ))}
+            </div>
+          ) : (
+            <p className="t-caption c-muted">Nothing in this mood on this island yet.</p>
+          )}
+        </section>
+      ) : null}
+
       {/* ---------------- Experience of the day ---------------- */}
-      {hero ? (
+      {!mood && hero ? (
         <section className="pad ex-section">
           <SectionHeader title="Experience of the Day" note="Today only" />
           <FeatureCard experience={hero} />
@@ -364,7 +413,7 @@ export function Explore() {
       ) : null}
 
       {/* ---------------- Near you ---------------- */}
-      {nearYou.length > 0 ? (
+      {!mood && nearYou.length > 0 ? (
         <section className="ex-section">
           <div className="pad">
             <SectionHeader title="Near You Now" action="See all" />
@@ -390,7 +439,7 @@ export function Explore() {
         * applies to something on this island. On an island with no live
         * promotion there is no row rather than an empty one.
         */}
-      {offerExperience ? (
+      {!mood && offerExperience ? (
         <section className="pad ex-section">
           <SectionHeader title="Special Offers" note="VIP only" />
           <button
@@ -415,7 +464,7 @@ export function Explore() {
       ) : null}
 
       {/* ---------------- Local finds ---------------- */}
-      {gems.length > 0 ? (
+      {!mood && gems.length > 0 ? (
         <section className="pad ex-section">
           <SectionHeader title="Hidden Gems" action="See all" onAction={() => navigate('/search')} />
           <div className="ex-gems">
@@ -427,7 +476,7 @@ export function Explore() {
       ) : null}
 
       {/* ---------------- Tonight ---------------- */}
-      {evening ? (
+      {!mood && evening ? (
         <section className="pad ex-section">
           <SectionHeader title="Tonight Near You" />
           <button type="button" className="tonight" onClick={() => navigate(`/experience/${evening.id}`)}>
@@ -590,6 +639,40 @@ function NearCard({ experience, metres }: { experience: DemoExperience; metres: 
         </div>
       </div>
     </Card>
+  );
+}
+
+/**
+ * A browse result: the photograph, then the words under it.
+ *
+ * `GemCard` sets its title over the image, which is right for the three-across editorial row where
+ * the card is a teaser and the scrim only ramps up under the text. It is wrong here. A guest
+ * filtering by mood is choosing between *places*, so the photograph is the product, and type laid
+ * across the bottom third covers the beach, the boat or the plate they are choosing by.
+ *
+ * Two across rather than three: at a third of a phone's width a photograph is a thumbnail, and a
+ * thumbnail of a beach is indistinguishable from a thumbnail of any other beach.
+ */
+function ResultCard({ experience, metres }: { experience: DemoExperience; metres: number }) {
+  const navigate = useNavigate();
+  const travel = travelFrom(metres);
+  return (
+    <button type="button" className="ex-result" onClick={() => navigate(`/experience/${experience.id}`)}>
+      <Photo
+        src={heroUrl(experience)}
+        mediaKey={experience.media[0]}
+        alt={experience.title}
+        ratio="163 / 122"
+        radius="0"
+      />
+      <span className="ex-result__body">
+        <span className="ex-result__title">{experience.title}</span>
+        <span className="ex-result__meta">
+          {isAtVenue(metres) ? "You're here" : `${formatKm(metres)} · ${formatTravelMinutes(travel.minutes)}`}
+        </span>
+        <span className="ex-result__price">{formatUsd(allInFromMinor(experience))}</span>
+      </span>
+    </button>
   );
 }
 

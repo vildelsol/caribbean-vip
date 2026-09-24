@@ -337,6 +337,20 @@ export function travelFrom(metres: number): Travel {
   return { minutes: Math.max(2, Math.round(metres / 466.7)), mode: 'drive' };
 }
 
+/**
+ * A travel time a person would say out loud.
+ *
+ * `travelFrom` returns minutes, which is right up to about an hour and absurd past it: the far end
+ * of Jamaica came out as "289 min", a number nobody converts in their head while deciding where to
+ * have lunch.
+ */
+export function formatTravelMinutes(minutes: number): string {
+  if (minutes < 90) return `${minutes} min`;
+  const h = Math.floor(minutes / 60);
+  const m = minutes % 60;
+  return m === 0 ? `${h} hr` : `${h} hr ${m} min`;
+}
+
 /** Beyond this a listing is offered with pickup rather than as a walk. */
 export const WALKABLE_METRES = 1200;
 

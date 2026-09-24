@@ -692,3 +692,73 @@
 .ex-offer__note {
   color: rgba(227, 194, 113, 0.82);
 }
+
+/* --- Mood results ---------------------------------------------------------- */
+
+/*
+ * Two across, not three.
+ *
+ * A guest filtering by mood is choosing between places, so the photograph is the product. At a
+ * third of a phone's width a photograph is a thumbnail, and a thumbnail of a beach looks like a
+ * thumbnail of any other beach — which is the whole failure this grid exists to fix.
+ */
+.ex-results {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.ex-result {
+  display: flex;
+  flex-direction: column;
+  text-align: left;
+  border: 1px solid var(--border);
+  border-radius: var(--r-lg);
+  background: var(--ivory-raised);
+  overflow: hidden;
+  padding: 0;
+}
+
+.ex-result:active {
+  transform: scale(0.985);
+}
+
+/*
+ * Nothing is laid over the image.
+ *
+ * The editorial row sets its title on the photograph, behind a scrim that only ramps up under the
+ * text — correct there, where the card is a teaser. Here the guest is picking a place to go, and
+ * type across the bottom third covers the beach, the boat or the plate they are picking by.
+ */
+.ex-result__body {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 9px 10px 11px;
+}
+
+.ex-result__title {
+  font-size: 12.5px;
+  font-weight: 700;
+  line-height: 1.25;
+  color: var(--ink);
+  /* Two lines, and a reserved two, so a short name and a long one leave the price on one line. */
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  min-height: calc(12.5px * 1.25 * 2);
+}
+
+.ex-result__meta {
+  font-size: 11px;
+  color: var(--teal-text);
+  font-weight: 600;
+}
+
+.ex-result__price {
+  margin-top: 2px;
+  font-size: 12.5px;
+  font-weight: 800;
+  color: var(--green-900);
+}
