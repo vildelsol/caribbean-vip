@@ -110,33 +110,25 @@ export function Welcome() {
             </div>
 
             {/*
-              * The splash leads with what the product *does*.
+              * The splash is a crest, three island names and three proofs. Nothing else.
               *
-              * It used to open "Exclusive experiences. Authentic connections." — two abstractions
-              * that every OTA also claims, and neither of which describes anything this app does
-              * that Viator does not. The thing nobody else does was five taps away, on the
-              * concierge screen: it plans a day against real departures, real distances and what
-              * the guest has already booked, and it will tell them when something does not fit.
+              * It carried an overline, a headline and a subline as well — "Your Island. Your Way.",
+              * "A Caribbean day that actually works.", "Every stop fits. Nothing overlaps." Each
+              * was true and each was doing work, and together they were four stacked text blocks
+              * over a photograph, which is a landing page rather than a mark.
               *
-              * So the mechanism is the headline now, and "Your Island. Your Way." is kept as the
-              * brand overline above it — the line is good, it is simply not an argument.
+              * Ro's call, and it is the right register: a premium mark asserts less. The argument
+              * is not lost, it changes voice — the proof row below still says *plans your day*,
+              * *verified operators*, *VIP benefits*, three words a column. Substantiation rather
+              * than claim reads as more confident than either, and the headline's full case is one
+              * tap away on the concierge screen where the guest has actually asked.
               *
-              * **One line under the headline, not a paragraph.** The first attempt explained the
-              * mechanism in full — real departures, real drive times, what you have already booked
-              * — which is true, and is three lines of body copy on a screen that has about two
-              * seconds to make one point. A splash is a poster. The headline makes the claim, this
-              * line names the promise in five words, and the proof row below substantiates it in
-              * three words a column. Anything longer belongs on the concierge screen, where the
-              * guest has actually asked.
+              * The islands are the only type between the crest and the proofs, so they carry the
+              * whole middle of the screen — set larger and wider than they were as a footnote to a
+              * paragraph, with the hairlines kept because they are what makes three names read as
+              * a masthead instead of a list.
               */}
             <div className="wl__pitch">
-              <p className="wl__brandline">Your Island. Your Way.</p>
-              <h1 className="wl__tagline">
-                A Caribbean day that
-                <br />
-                actually works.
-              </h1>
-              <p className="wl__sub">Every stop fits. Nothing overlaps.</p>
               <p className="wl__islands-line">Jamaica &middot; Cayman &middot; Barbados</p>
             </div>
           </div>

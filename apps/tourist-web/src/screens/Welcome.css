@@ -362,90 +362,49 @@
 }
 
 /*
- * Sans, not the display serif.
+ * The markets, set as a masthead rather than as a sentence.
  *
- * The serif is the brand's voice for editorial headings inside the app. Here it
- * sits directly under a serif wordmark, and two serifs stacked at different
- * sizes read as one heading broken in half rather than a mark and a line of
- * copy. The sans separates them.
- */
-/*
- * The brand line, demoted to an overline.
+ * Three island names inside body copy read as the end of a paragraph. Set in gold, letterspaced,
+ * between hairlines, they read as a masthead — which is the claim being made: this is not one
+ * island's app.
  *
- * "Your Island. Your Way." is a good line and a poor argument, so it sits above the headline in
- * the same gold caps the islands line uses — present, and no longer occupying the one slot on the
- * screen where the product gets to say what it does.
- */
-.wl__brandline {
-  margin: 0 0 7px;
-  font-size: 10px;
-  font-weight: 800;
-  letter-spacing: 0.2em;
-  text-transform: uppercase;
-  color: var(--gold-light);
-  text-shadow: 0 1px 3px rgba(7, 40, 33, 0.6);
-  animation: wl-rise 720ms cubic-bezier(0.16, 1, 0.3, 1) 260ms both;
-}
-
-.wl__tagline {
-  margin: 0;
-  font-family: var(--font-ui, var(--font-sans));
-  /* Up from 21px: it is the claim now, not a caption over a photograph — and with one short line
-     beneath it instead of a paragraph, the screen has the room to let it be the claim. */
-  font-size: 27px;
-  font-weight: 600;
-  line-height: 1.25;
-  letter-spacing: 0.005em;
-  color: #ffffff;
-  text-shadow: 0 1px 3px rgba(7, 40, 33, 0.55), 0 2px 16px rgba(7, 40, 33, 0.45);
-  animation: wl-rise 720ms cubic-bezier(0.16, 1, 0.3, 1) 260ms both;
-}
-
-/*
- * One line, and it must stay one line.
- *
- * "Every stop fits. Nothing overlaps." is the promise in five words — the shortest true statement
- * of what the planner does. `text-wrap: balance` and the width below keep it from breaking in the
- * middle of either half, because the two sentences are a pair and a break between "stop" and
- * "fits" reads as a paragraph that ran out of room.
- */
-.wl__sub {
-  margin: 9px 0 0;
-  font-size: 13.5px;
-  line-height: 1.5;
-  letter-spacing: 0.015em;
-  color: rgba(255, 255, 255, 0.94);
-  text-wrap: balance;
-  max-width: 340px;
-  text-shadow: 0 1px 3px rgba(7, 40, 33, 0.55), 0 2px 14px rgba(7, 40, 33, 0.45);
-  animation: wl-rise 720ms cubic-bezier(0.16, 1, 0.3, 1) 380ms both;
-}
-
-/*
- * The markets, set as a rule rather than as a sentence.
- *
- * Three island names inside the body copy read as the end of a paragraph. Set
- * in gold, letterspaced, between hairlines, they read as a masthead — which is
- * the claim being made: this is not one island's app.
+ * They are now the only type between the crest and the proof row, so they are sized to carry that
+ * space: 13px on 0.3em tracking rather than the 9.5px footnote they were under a headline. The
+ * tracking is what does the work at this size — a wide, quiet line reads as composed, where the
+ * same words set larger and tighter would just read as a new headline replacing the old one.
  */
 .wl__islands-line {
-  margin: 4px 0 0;
+  margin: 0;
   display: flex;
   align-items: center;
   gap: 12px;
-  font-size: 9.5px;
-  font-weight: 800;
-  letter-spacing: 0.22em;
+  /*
+   * One line, always — and the width it has to fit in is the phone's, not a number.
+   *
+   * At a fixed 13px the line wrapped on a 375px screen, which put "BARBADOS" on a row of its own
+   * and left the two hairlines stranded either side of the row above: a masthead rule with nothing
+   * under half of it. `nowrap` alone would have overflowed instead. Sized against the viewport it
+   * stays a single line from a small phone up to the max, and the tracking is what keeps it
+   * reading as composed rather than as a shrunken headline.
+   */
+  white-space: nowrap;
+  font-size: clamp(8.5px, 2.7vw, 12px);
+  font-weight: 700;
+  letter-spacing: 0.3em;
   text-transform: uppercase;
   color: var(--gold-light);
   text-shadow: 0 1px 8px rgba(7, 40, 33, 0.7);
-  animation: wl-rise 720ms cubic-bezier(0.16, 1, 0.3, 1) 440ms both;
+  /* The tracking adds a trailing space after the last letter that centring then counts, so the
+     line sits fractionally left of centre without this. */
+  padding-left: 0.3em;
+  animation: wl-rise 720ms cubic-bezier(0.16, 1, 0.3, 1) 300ms both;
 }
 
 .wl__islands-line::before,
 .wl__islands-line::after {
   content: '';
-  width: 22px;
+  flex: none;
+  width: clamp(16px, 6vw, 30px);
   height: 1px;
   background: linear-gradient(90deg, rgba(227, 194, 113, 0) 0%, rgba(227, 194, 113, 0.8) 100%);
 }
