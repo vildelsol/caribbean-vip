@@ -14,6 +14,7 @@ import {
   seatsIn,
   type DemoExperience,
   type PartySelection,
+  allInFromMinor,
 } from '../data/catalogue';
 import { isoDate } from '../data/availability';
 import {
@@ -103,7 +104,7 @@ const INTENTS: Intent[] = [
     reply: 'Here is what I can find under US$50 per person nearby.',
     categories: [],
     maxMinor: 5000,
-    reason: (e) => `US$${Math.round(e.fromAmountMinor / 100)} per adult — the best value close by.`,
+    reason: (e) => `US$${Math.round(allInFromMinor(e) / 100)} per adult — the best value close by.`,
   },
   {
     chip: 'Quiet beach nearby',
@@ -231,7 +232,7 @@ export function Irie() {
       if (hits.length > 0) pool = hits;
     }
     if (intent.maxMinor !== undefined) {
-      const affordable = pool.filter((r) => r.experience.fromAmountMinor <= intent.maxMinor!);
+      const affordable = pool.filter((r) => allInFromMinor(r.experience) <= intent.maxMinor!);
       if (affordable.length > 0) pool = affordable;
     }
     const picks = pool.slice(0, 2).map(({ experience, metres }) => ({
@@ -435,7 +436,7 @@ export function Irie() {
                       the number that decides a tap on a rail like this one. */}
                   <span className="pop-card__foot">
                     <span className="pop-card__price">
-                      {formatUsd(experience.fromAmountMinor)}
+                      {formatUsd(allInFromMinor(experience))}
                     </span>
                     <span className="pop-card__rating">
                       <Icon name="star" size={11} color="var(--gold-light)" />
@@ -501,7 +502,7 @@ function PicksAnswer({
                   {experience.title}
                 </button>
                 <p className="t-micro c-locator irie-pick__meta">
-                  {`US$${Math.round(experience.fromAmountMinor / 100)}`} · {formatKm(metres)} ·{' '}
+                  {`US$${Math.round(allInFromMinor(experience) / 100)}`} · {formatKm(metres)} ·{' '}
                   {travelFrom(metres).minutes} min {travelFrom(metres).mode}
                 </p>
                 {/* The stated reason is the point: an answer a guest can check beats one they
@@ -516,7 +517,7 @@ function PicksAnswer({
                     {isPlanned ? 'Remove from day' : 'Add to Trip'}
                   </button>
                   <Badge tone="aqua">
-                    <Price minor={experience.fromAmountMinor} />
+                    <Price minor={allInFromMinor(experience)} />
                   </Badge>
                 </div>
               </div>

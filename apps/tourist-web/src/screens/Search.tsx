@@ -20,6 +20,7 @@ import {
   isAtVenue,
   simulatedPosition,
   travelFrom,
+  allInFromMinor,
 } from '../data/catalogue';
 import { searchCandidates } from '../data/search';
 import { useStore } from '../state/store';
@@ -296,7 +297,7 @@ export function Search() {
                         <Rating average={experience.ratingAverage} compact />
                       </div>
                       <div className="row result-row__foot">
-                        <Price minor={experience.fromAmountMinor} />
+                        <Price minor={allInFromMinor(experience)} />
                         <span className="badge badge--brand result-row__cta">View</span>
                       </div>
                     </div>

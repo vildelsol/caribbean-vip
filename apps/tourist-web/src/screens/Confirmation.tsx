@@ -1,5 +1,5 @@
 import { useNavigate, useParams } from 'react-router-dom';
-import { byDistanceFrom, destinationBySlug, experienceById, experiencesFor, heroUrl, simulatedPosition } from '../data/catalogue';
+import { allInFromMinor, byDistanceFrom, destinationBySlug, experienceById, experiencesFor, heroUrl, simulatedPosition } from '../data/catalogue';
 import { formatLongDate, pickupTime, formatClock } from '../data/availability';
 import { useStore } from '../state/store';
 import { QR } from '../components/QR';
@@ -131,7 +131,7 @@ export function Confirmation() {
                 <h3 className="t-caption-strong next-idea__title">{next.experience.title}</h3>
                 <div className="row next-idea__foot">
                   <span className="t-caption-strong c-brand">
-                    from {formatUsd(next.experience.fromAmountMinor)}
+                    from {formatUsd(allInFromMinor(next.experience))}
                   </span>
                   <Badge tone="aqua">Add</Badge>
                 </div>

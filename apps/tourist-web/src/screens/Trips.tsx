@@ -6,6 +6,7 @@ import {
   heroUrl,
   islandById,
   type DemoExperience,
+  allInFromMinor,
 } from '../data/catalogue';
 import { useStore } from '../state/store';
 import { describeDay, isoOf, tripDay } from '../data/day';
@@ -23,9 +24,15 @@ function transitMinutes(from: DemoExperience | undefined, to: DemoExperience | u
 /**
  * How you get from one stop to the next, and what it costs you.
  *
- * The design writes this as a sentence rather than a duration alone, because "18 min drive" and
- * "18 min drive · taxi from US$14" are different pieces of news: the second one has a cost in it
- * that the day total does not cover, and a guest planning an afternoon needs to see it.
+ * The design writes this as a sentence rather than a duration alone, because a leg the day total
+ * does not cover is different news from one it does, and a guest planning an afternoon needs to
+ * see which is which.
+ *
+ * It used to print `taxi from US$${8 + mins}` — a fare invented here, from no data, on the screen
+ * a guest budgets from. US$8 plus a dollar a minute is not a Caribbean taxi tariff; it was a
+ * formula that produced plausible-looking money. Same defect class as the three functions removed
+ * in 78d0af7, and worse for being a number someone might act on. The leg is now named as not
+ * included, which is the part that is actually true and the part the guest needs.
  */
 function transitNote(from: DemoExperience | undefined, to: DemoExperience | undefined) {
   const mins = transitMinutes(from, to);
@@ -35,7 +42,7 @@ function transitNote(from: DemoExperience | undefined, to: DemoExperience | unde
   if (to?.pickupInfo) {
     return { icon: 'car' as const, text: `${mins} min drive · included pickup` };
   }
-  return { icon: 'car' as const, text: `${mins} min drive · taxi from US$${8 + mins}` };
+  return { icon: 'car' as const, text: `${mins} min drive · taxi not included` };
 }
 
 /** Food stops get their own colour on the timeline — the design reads the day by rhythm, not list. */
@@ -121,7 +128,7 @@ export function Trips() {
    * showing a suggested stop priced at US$65 above a total reading US$0 is a
    * screen that looks broken even though both numbers are correct.
    */
-  const plannedFromMinor = planned.reduce((sum, e) => sum + e.fromAmountMinor, 0);
+  const plannedFromMinor = planned.reduce((sum, e) => sum + allInFromMinor(e), 0);
   const next = bookings[0];
   /*
    * A countdown only means something today. "STARTS IN 2h 15m" against tomorrow's departure is off
@@ -210,7 +217,7 @@ export function Trips() {
                     {e.pickupInfo ? ' · hotel pickup' : ''}
                   </p>
                   <div className="starter__foot">
-                    <span className="t-amount-sm c-brand">{formatUsd(e.fromAmountMinor)}</span>
+                    <span className="t-amount-sm c-brand">{formatUsd(allInFromMinor(e))}</span>
                     <span className="starter__rating t-micro-strong">
                       <Icon name="star" size={12} color="var(--gold)" />
                       {e.ratingAverage.toFixed(1)}
@@ -364,7 +371,7 @@ export function Trips() {
                     <p className="t-micro-strong c-faint">SUGGESTED BY IRIE</p>
                     <h3 className="t-card-title timeline__title">{e.title}</h3>
                     <div className="timeline__tags">
-                      <Badge tone="muted">Not booked · from {formatUsd(e.fromAmountMinor)}</Badge>
+                      <Badge tone="muted">Not booked · from {formatUsd(allInFromMinor(e))}</Badge>
                     </div>
                   </div>
                 </div>

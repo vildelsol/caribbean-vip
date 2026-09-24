@@ -10,6 +10,7 @@ import {
   isWalkable,
   isAtVenue,
   formatKm,
+  allInFromMinor,
 } from '../data/catalogue';
 import { availabilityLabel } from '../data/availability';
 import { useStore } from '../state/store';
@@ -181,7 +182,7 @@ export function Nearby() {
               onClick={() => setSelected(experience.id)}
               aria-label={`${experience.title}, ${formatKm(metres)} away`}
             >
-              <span className="t-micro-strong">{`US$${Math.round(experience.fromAmountMinor / 100)}`}</span>
+              <span className="t-micro-strong">{`US$${Math.round(allInFromMinor(experience) / 100)}`}</span>
               <span className="map-pin__name">{experience.title.split(' ').slice(0, 2).join(' ')}</span>
             </button>
           ))}
@@ -245,7 +246,7 @@ export function Nearby() {
                       ) : null}
                     </div>
                     <div className="row near-row__foot">
-                      <Price minor={experience.fromAmountMinor} />
+                      <Price minor={allInFromMinor(experience)} />
                       {/*
                         * The rating was missing entirely. Every other surface in
                         * the app that lists an experience carries it, and on a

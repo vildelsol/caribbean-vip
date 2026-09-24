@@ -16,6 +16,7 @@ import {
   isWalkable,
   formatKm,
   type DemoExperience,
+  allInFromMinor,
 } from '../data/catalogue';
 import { evaluateFences, type FenceState } from '../data/geofence';
 import { useGuestPosition } from '../state/useGuestPosition';
@@ -475,7 +476,7 @@ export function Explore() {
           <span className="ex-map__you" />
           {nearby.slice(0, 2).map(({ experience }, i) => (
             <span key={experience.id} className={`ex-map__pin ex-map__pin--${i}`}>
-              {`US$${Math.round(experience.fromAmountMinor / 100)}`}
+              {`US$${Math.round(allInFromMinor(experience) / 100)}`}
             </span>
           ))}
           <span className="ex-map__count t-caption-strong">
@@ -541,7 +542,7 @@ function FeatureCard({ experience }: { experience: DemoExperience }) {
             <Rating average={experience.ratingAverage} count={experience.ratingCount} />
             <div className="feature__price">
               <span className="t-micro c-muted">From </span>
-              <Price minor={experience.fromAmountMinor} size="lg" />
+              <Price minor={allInFromMinor(experience)} size="lg" />
             </div>
           </div>
           <button
@@ -584,7 +585,7 @@ function NearCard({ experience, metres }: { experience: DemoExperience; metres: 
           {isWalkable(metres) ? 'Walking distance' : 'Pickup available'}
         </p>
         <div className="row near__foot">
-          <Price minor={experience.fromAmountMinor} />
+          <Price minor={allInFromMinor(experience)} />
           <Rating average={experience.ratingAverage} compact />
         </div>
       </div>
@@ -609,7 +610,7 @@ function GemCard({ experience }: { experience: DemoExperience }) {
       <div className="gem__body">
         <h3 className="gem__title">{experience.title}</h3>
         <p className="gem__price">
-          {`US$${Math.round(experience.fromAmountMinor / 100)}`}
+          {`US$${Math.round(allInFromMinor(experience) / 100)}`}
           {next ? ` · leaves ${next.label}` : ' · check dates'}
         </p>
       </div>

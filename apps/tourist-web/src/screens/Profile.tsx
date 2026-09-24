@@ -6,6 +6,7 @@ import {
   experienceById,
   heroUrl,
   islandById,
+  allInFromMinor,
 } from '../data/catalogue';
 import { useStore } from '../state/store';
 import { Badge, Card, EmptyState, Photo, SecondaryButton, formatUsd } from '../components/kit';
@@ -185,7 +186,7 @@ export function Profile() {
                     />
                     <span className="grow saved-row__text">
                       <span className="t-caption-strong">{e.title}</span>
-                      <span className="t-micro c-locator">from {formatUsd(e.fromAmountMinor)}</span>
+                      <span className="t-micro c-locator">from {formatUsd(allInFromMinor(e))}</span>
                     </span>
                   </button>
                   <button

@@ -11,6 +11,7 @@ import {
   travelFrom,
   vendorFor,
   destinationBySlug,
+  allInFromMinor,
 } from '../data/catalogue';
 import { distanceMetres } from '@cvip/types';
 import { firstBookableDay, isoDate, slotsFor } from '../data/availability';
@@ -239,7 +240,7 @@ export function ExperienceDetail() {
           <div>
             <p className="t-micro c-faint detail__from">FROM</p>
             <p className="t-amount c-brand">
-              {formatUsd(experience.fromAmountMinor)}
+              {formatUsd(allInFromMinor(experience))}
               <span className="t-micro c-muted"> / adult</span>
             </p>
           </div>
@@ -392,7 +393,7 @@ export function ExperienceDetail() {
       {/* ---------------- Sticky action ---------------- */}
       <div className="detail__action">
         <div className="detail__action-price">
-          <p className="t-amount-sm c-brand">{formatUsd(experience.fromAmountMinor)}</p>
+          <p className="t-amount-sm c-brand">{formatUsd(allInFromMinor(experience))}</p>
           {soonest ? (
             soonest.capacityRemaining <= 6 ? (
               <p className="t-micro c-urgent">Nearly full · {soonest.capacityRemaining} left</p>

@@ -138,7 +138,10 @@ export function firstBookableDay(experience: DemoExperience): Day | undefined {
  */
 export function pickupTime(time: string): string {
   const [h, m] = time.split(':').map(Number);
-  const total = (h ?? 0) * 60 + (m ?? 0) - 35;
+  // Wrapping into the previous day rather than going negative. No departure this early exists in
+  // the catalogue, so this has never fired — but the arithmetic is on the money path's screen and
+  // a 00:20 departure would have printed "-1:-15 AM" rather than "11:45 PM".
+  const total = ((h ?? 0) * 60 + (m ?? 0) - 35 + 1440) % 1440;
   return formatClock(`${Math.floor(total / 60)}:${total % 60}`);
 }
 

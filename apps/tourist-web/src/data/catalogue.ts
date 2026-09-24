@@ -260,6 +260,30 @@ export function byDistanceFrom(
     .sort((a, b) => a.metres - b.metres);
 }
 
+/**
+ * What one adult actually pays — the number every browse surface shows.
+ *
+ * The cards used to print `fromAmountMinor`, the vendor's base rate, and checkout then added 15%
+ * tax and a 5% service fee: "From US$98" became US$117.60 at the last step. The checkout summary
+ * itemised it honestly, but a 20% reveal after the guest has chosen is drip pricing, and it is the
+ * wrong first impression for a brand whose promise is that nothing surprises you.
+ *
+ * It is computed by running the **same** `priceFor` the checkout charges from, rather than by
+ * multiplying the base by 1.20 here. A second copy of the tax arithmetic is a second thing to keep
+ * in step, and the failure mode — browse and checkout disagreeing about money — is the one that
+ * costs trust fastest. If the rates change in `platform_settings`, both move together or neither
+ * does.
+ *
+ * `fromAmountMinor` itself is untouched: it is the vendor's rate, it is what the vendor dashboard
+ * and the checkout itemisation must keep showing, and it is what this is derived from.
+ */
+export function allInFromMinor(experience: DemoExperience): number {
+  const quote = priceFor(experience, { adults: 1, children: 0, photoPackage: false }, 1);
+  // An unpriceable listing falls back to the base rate rather than rendering nothing — a card with
+  // no price is worse than a card with an unadorned one.
+  return quote.ok ? quote.breakdown.total.amountMinor : experience.fromAmountMinor;
+}
+
 export interface Travel {
   minutes: number;
   mode: 'walk' | 'drive';
