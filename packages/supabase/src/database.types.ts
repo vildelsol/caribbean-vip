@@ -26,6 +26,8 @@ export type IslandRow = {
   name: string;
   /** PRD §3: localized IN-APP identity ("VIP Jamaica"). The app itself is never renamed. */
   in_app_brand: string;
+  /** Irie's opening line in this market's own words — "Wah Gwaan!", "Wuh gine on!", "Wah goin on!". */
+  greeting: string;
   currency: Currency;
   timezone: string;
   hero_media_path: string | null;

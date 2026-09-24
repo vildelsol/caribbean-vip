@@ -44,14 +44,14 @@ on conflict (key) do nothing;
 -- Kept in step with `packages/demo/src/dataset.ts`, so switching between demo mode and a real
 -- backend changes where the data comes from, not what the app shows.
 
-insert into islands (code, name, in_app_brand, currency, timezone, is_active) values
-  ('JM', 'Jamaica',        'VIP Jamaica',  'JMD', 'America/Jamaica',   true),
-  ('KY', 'Cayman Islands', 'VIP Cayman',   'KYD', 'America/Cayman',    true),
-  ('BB', 'Barbados',       'VIP Barbados', 'BBD', 'America/Barbados',  true),
+insert into islands (code, name, in_app_brand, currency, timezone, is_active, greeting) values
+  ('JM', 'Jamaica',        'VIP Jamaica',  'JMD', 'America/Jamaica',   true,  'Wah Gwaan!'),
+  ('KY', 'Cayman Islands', 'VIP Cayman',   'KYD', 'America/Cayman',    true,  'Wah goin on!'),
+  ('BB', 'Barbados',       'VIP Barbados', 'BBD', 'America/Barbados',  true,  'Wuh gine on!'),
   -- Negative fixture. Cayman and Barbados used to serve this role by being inactive; now that they
   -- are live, an unlaunched market is kept here on purpose so the RLS rule that hides one still has
   -- a subject to be tested against. Without it that test would pass vacuously.
-  ('AG', 'Antigua & Barbuda', 'VIP Antigua', 'USD', 'America/Antigua', false)
+  ('AG', 'Antigua & Barbuda', 'VIP Antigua', 'USD', 'America/Antigua', false, 'Wah gwan!')
 on conflict (code) do nothing;
 
 -- Islands seeded before this change exist with is_active = false; the values list above will not

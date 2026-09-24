@@ -336,6 +336,29 @@ const LICENSED_PREFIX = 'Used with permission —';
 
 const isLicensed = (credit: { licence: string }) => credit.licence.startsWith(LICENSED_PREFIX);
 
+describe('each market speaks in its own voice', () => {
+  it('gives every island a greeting', () => {
+    for (const island of DEMO_ISLANDS) {
+      expect(island.greeting.trim().length, `${island.code} has no greeting`).toBeGreaterThan(0);
+    }
+  });
+
+  it('does not reuse one island\'s greeting on another', () => {
+    // The defect this guards: "Wah Gwaan!" was hardcoded in the concierge screen, so a guest in
+    // Bridgetown or George Town was greeted in Jamaican Patois. A shared greeting would put the
+    // app straight back there without anyone noticing, because every screen would still render.
+    const live = DEMO_ISLANDS.filter((i) => i.is_active).map((i) => i.greeting);
+    expect(new Set(live).size).toBe(live.length);
+  });
+
+  it('greets each live market in its own dialect', () => {
+    const by = (code: string) => DEMO_ISLANDS.find((i) => i.code === code)?.greeting;
+    expect(by('JM')).toBe('Wah Gwaan!');
+    expect(by('KY')).toBe('Wah goin on!');
+    expect(by('BB')).toBe('Wuh gine on!');
+  });
+});
+
 describe('photography is present and attributed', () => {
   it('gives every visible listing at least one photograph', () => {
     for (const e of demoBackend.visibleExperiences()) {

@@ -294,7 +294,10 @@ export function Irie() {
       </header>
 
       <section className="irie__intro">
-        <h1 className="t-display irie__hello">Wah Gwaan!</h1>
+        {/* The island's own greeting — Patois in Jamaica, Bajan in Barbados, Caymanian in Cayman.
+            Hardcoding "Wah Gwaan!" greeted a guest in Bridgetown in someone else's dialect, which
+            undoes the only reason to open in dialect at all. See `greeting` on `DemoIsland`. */}
+        <h1 className="t-display irie__hello">{island.greeting}</h1>
         {/*
           * Two sentences, two sizes.
           *
