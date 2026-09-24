@@ -223,12 +223,26 @@ export const DEMO_MEDIA_CREDITS: Record<string, DemoMediaCredit> = {
     licenceUrl: "https://creativecommons.org/licenses/by-sa/3.0",
     source: "https://commons.wikimedia.org/wiki/File:Dunns_River_Falls_2d_Photo_Don_Ramey_Logan.jpg",
   },
+  "jm-fish-fry-1": {
+    subject: "A Jamaican seafood platter with fried fish and festival",
+    author: "Xaymacan",
+    licence: "CC BY-SA 4.0",
+    licenceUrl: "https://creativecommons.org/licenses/by-sa/4.0",
+    source: "https://commons.wikimedia.org/wiki/File:Jamaican_seafood_and_festival.jpg",
+  },
   "jm-hero": {
     subject: "A river lagoon on Jamaica's north coast",
     author: "Fritz Rudolf Loewa",
     licence: "CC BY-SA 3.0",
     licenceUrl: "https://creativecommons.org/licenses/by-sa/3.0",
     source: "https://commons.wikimedia.org/wiki/File:Beaches_of_Jamaica.JPG",
+  },
+  "jm-jerk-1": {
+    subject: "Jerk chicken smoking under a zinc lid on a pit grill",
+    author: "Grahampurse",
+    licence: "CC BY-SA 4.0",
+    licenceUrl: "https://creativecommons.org/licenses/by-sa/4.0",
+    source: "https://commons.wikimedia.org/wiki/File:Jerk_chicken-1001.jpg",
   },
   "jm-mobay-1": {
     subject: "Montego Bay, Jamaica",

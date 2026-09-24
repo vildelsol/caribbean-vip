@@ -609,7 +609,7 @@ export const DEMO_EXPERIENCES: DemoExperience[] = [
     fromAmountMinor: 2600,
     status: 'approved',
     cancellationHours: 24,
-    media: ['jm-music-2'],
+    media: ['jm-jerk-1'],
     ratingAverage: 4.8,
     ratingCount: 341,
     review: {
@@ -636,7 +636,7 @@ export const DEMO_EXPERIENCES: DemoExperience[] = [
     fromAmountMinor: 3200,
     status: 'approved',
     cancellationHours: 24,
-    media: ['jm-blue-hole-2'],
+    media: ['jm-fish-fry-1'],
     ratingAverage: 4.7,
     ratingCount: 198,
   },

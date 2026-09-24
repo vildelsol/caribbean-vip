@@ -419,13 +419,16 @@ Closed this session: the old **#4** (fabricated "Cruise-Friendly" — still open
 0. **The live demo is `https://caribbean-vip-tourist-web.vercel.app`.** Every push to `main`
    auto-deploys; check with `gh api repos/vildelsol/caribbean-vip/deployments --jq '.[0].sha'`.
    Never put a `...-li58ewgtb-...` deployment URL in front of anyone.
-1. **The demo media pool has no Jamaican food photography.** The eight new Ocho Rios listings reuse
-   what exists, and it mostly lands — the fish fry carries a boat at a river landing, the yoga
-   carries a sunrise figure on sand, the craft market carries an actual craft stall. But **the jerk
-   pit and the night strip carry street-life images rather than their own**, because there is no
-   food or bar photograph in `apps/tourist-web/public/demo` for any island. "Taste Jamaica" is now
-   the tile with the most inventory and the weakest pictures, which is the wrong way round on the
-   screen a guest browses with their eyes. Two photographs would close it.
+1. **Taste Jamaica has real food photography now; the night strip still borrows.** The two that
+   mattered were sourced from Commons through the existing pipeline and are credited in the app:
+   `jm-jerk-1` (jerk smoking under a corrugated zinc lid on the pit — Grahampurse, CC BY-SA 4.0) and
+   `jm-fish-fry-1` (a seafood platter with fried fish and festival — Xaymacan, CC BY-SA 4.0). Added
+   to `scripts/seed-media/manifest.json` and fetched with `python3 fetch.py`, which refuses anything
+   not on a free licence — **that script is the only way photography should enter this repo.**
+   Still borrowed: **`exp-ochi-night` carries a Bob Marley mural** rather than a bar at night, and
+   the two beach listings carry representative Jamaican beaches rather than their own. The credit
+   line names what each photograph actually shows, so nothing is passed off — but one bar-at-night
+   photograph would finish the tile.
 2. **The first live Stripe payment has still never been executed.** Card `4242 4242 4242 4242` on
    the Vercel URL. **Until it runs, M3 is not complete** — the biggest single gap.
    **Claude cannot do this one**: entering card numbers into a payment form is refused regardless of
