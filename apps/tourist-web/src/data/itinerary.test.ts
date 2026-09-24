@@ -17,8 +17,18 @@ import {
   experiencesFor,
   visibleExperiences,
   type DemoDestination,
+  AT_VENUE_METRES,
+  experienceCoords,
 } from './catalogue';
+import { distanceMetres } from '@cvip/types';
 import { isoDate, slotsFor } from './availability';
+
+/** Straight-line metres between where two listings actually start. */
+function metresApart(a: Parameters<typeof experienceCoords>[0], b: Parameters<typeof experienceCoords>[0]) {
+  const pa = experienceCoords(a);
+  const pb = experienceCoords(b);
+  return pa && pb ? distanceMetres(pa, pb) : null;
+}
 import { DEMO_EXPERIENCES } from '@cvip/demo';
 
 /**
@@ -174,15 +184,23 @@ describe('the day could actually be booked', () => {
   });
 
   /**
-   * Location lives on the vendor, so two listings from one operator are genuinely at the same
-   * coordinates. That must read as "no transfer", never as a zero-distance journey.
+   * Two stops at the same place must read as "no transfer", never as a zero-distance journey —
+   * and two stops merely run by the same operator must not.
+   *
+   * This test used to key on `vendorId`, back when location lived only on the vendor and two
+   * listings from one operator really were at one coordinate. Listings carry their own meeting
+   * point now, so that shortcut had White River Tubing and the Dunn's River climb — 5 km apart on
+   * opposite sides of Ocho Rios — planned as a same-site stay with no travel time allowed for. The
+   * rule is the distance, which is what the claim on the screen was always about.
    */
-  it('calls a hop between two of one operator a same-site stay, not a 0 m walk', () => {
+  it('calls a hop between two stops at one place a same-site stay, not a 0 m walk', () => {
     let sawSameSite = false;
     let sawTransfer = false;
+    // Every destination, not just each island's default: the one pair in the catalogue that
+    // genuinely shares a site — the two Rum Point boats — only ever appears in a day built from
+    // Rum Point, so a sweep of default destinations alone never exercises the same-site branch.
     for (const isl of ISLANDS) {
-      const dest = destinationsFor(isl.id)[0];
-      if (!dest) continue;
+      for (const dest of destinationsFor(isl.id)) {
       for (const shape of ITINERARY_SHAPES) {
         for (let offset = 1; offset <= 7; offset++) {
           const built = buildItinerary(
@@ -192,7 +210,8 @@ describe('the day could actually be booked', () => {
             const prev = built.stops[i - 1]!;
             const next = built.stops[i]!;
             const arrival = next.arriveFrom!;
-            if (prev.experience.vendorId === next.experience.vendorId) {
+            const apart = metresApart(prev.experience, next.experience);
+            if (apart !== null && apart <= AT_VENUE_METRES) {
               expect(arrival.kind).toBe('same-site');
               sawSameSite = true;
             } else {
@@ -204,10 +223,54 @@ describe('the day could actually be booked', () => {
           }
         }
       }
+      }
     }
-    // Both branches must actually occur in the demo catalogue, or this test proves nothing.
-    expect(sawSameSite).toBe(true);
+    // The transfer branch has to occur or this sweep proves nothing. The same-site branch is
+    // asserted separately below: only two pairs in the catalogue genuinely share a site, and the
+    // builder never happens to place either pair together, so demanding it here would be
+    // demanding a coincidence rather than a behaviour.
     expect(sawTransfer).toBe(true);
+    void sawSameSite;
+  });
+
+  /**
+   * The same-site branch, forced rather than waited for.
+   *
+   * The two Rum Point boats leave from one jetty — the only genuine same-site pair the planner can
+   * be handed. Planning both puts them in one day deterministically, where a sweep over shapes and
+   * dates never does.
+   */
+  it('allows no travel time between two stops that leave from one jetty', () => {
+    const pair = ['exp-ky-rum-point', 'exp-ky-bio-bay'];
+    const ky = ISLANDS.find((i) => i.id === 'island-ky')!;
+    const rumPoint = destinationsFor(ky.id).find((d) => d.slug === 'rum-point')!;
+
+    let checked = false;
+    for (const shape of ITINERARY_SHAPES) {
+      for (let offset = 1; offset <= 7; offset++) {
+        const built = buildItinerary(
+          input({
+            islandId: ky.id,
+            destination: rumPoint,
+            shape,
+            dateISO: futureDay(offset),
+            plannedExperienceIds: pair,
+          }),
+        );
+        const ids = built.stops.map((st) => st.experience.id);
+        if (!pair.every((id) => ids.includes(id))) continue;
+
+        const second = built.stops[ids.indexOf(pair[1]!)]!;
+        const first = built.stops[ids.indexOf(pair[0]!)]!;
+        const later = second.startMinutes > first.startMinutes ? second : first;
+        expect(later.arriveFrom!.kind).toBe('same-site');
+        // The same-site variant carries no distance and no duration — that is the whole point of
+        // it being a separate variant rather than a transfer of zero metres.
+        expect((later.arriveFrom as { metres?: number }).metres).toBeUndefined();
+        checked = true;
+      }
+    }
+    expect(checked, 'the two Rum Point boats never landed in one day').toBe(true);
   });
 
   it('only counts real transfers towards the route distance', () => {

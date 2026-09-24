@@ -128,3 +128,35 @@
   animation: irie-aura 3.2s ease-in-out infinite;
   transform: scale(1.04);
 }
+
+/*
+ * Planned but not paid for.
+ *
+ * Coral, not gold: gold is the brand's affirmative accent and is already carrying the Irie badge
+ * two tabs away, so a gold dot here would read as decoration. This is the one place in the bar
+ * saying something is unfinished, and it has to be legible as that at a glance.
+ *
+ * The icon span is the positioning context, so the count hangs off the glyph rather than the tap
+ * target — a badge pinned to the 44px target floats away from the icon it belongs to.
+ */
+.bottom-nav__icon {
+  position: relative;
+}
+
+.bottom-nav__count {
+  position: absolute;
+  top: -5px;
+  left: 58%;
+  min-width: 16px;
+  height: 16px;
+  padding: 0 4px;
+  border-radius: var(--r-pill);
+  background: var(--coral);
+  color: var(--on-dark);
+  font-size: 10px;
+  font-weight: 800;
+  line-height: 16px;
+  text-align: center;
+  /* The bar is ivory and the badge is small; the ring is what stops it muddying into the icon. */
+  box-shadow: 0 0 0 2px var(--ivory-raised);
+}

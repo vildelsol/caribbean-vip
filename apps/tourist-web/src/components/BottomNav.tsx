@@ -1,5 +1,6 @@
 import { NavLink, useLocation } from 'react-router-dom';
 import { Icon, type IconName } from './Icon';
+import { useStore } from '../state/store';
 import './BottomNav.css';
 
 /**
@@ -32,6 +33,21 @@ const TABS: Tab[] = [
 
 export function BottomNav() {
   const { pathname } = useLocation();
+  const { state } = useStore();
+
+  /*
+   * Planned-but-unpaid stops, counted on the tab that can finish them.
+   *
+   * Irie plans a day; planning is not paying, and the concierge screen says so. But it said so by
+   * swapping its own button to "See it on Trips" — a state change in place, on a screen the guest
+   * is still reading, which is the weakest signal in the interface. A guest who looked away at
+   * that moment has a planned day, no booking, and nothing anywhere telling them so.
+   *
+   * The count sits on Trips because Trips is where the day is actually completed, and where the
+   * clash resolver runs — a guest who books straight from a suggestion would skip the one check
+   * that stops them holding two things at once.
+   */
+  const unpaid = state.plannedExperienceIds.length;
 
   if (pathname.startsWith('/staff')) return null;
 
@@ -66,8 +82,16 @@ export function BottomNav() {
           >
             <span className={`bottom-nav__icon ${active ? 'is-active' : ''}`}>
               <Icon name={tab.icon} size={21} strokeWidth={1.9} />
+              {tab.to === '/trips' && unpaid > 0 ? (
+                <span className="bottom-nav__count" aria-hidden="true">
+                  {unpaid > 9 ? '9+' : unpaid}
+                </span>
+              ) : null}
             </span>
             <span className={`bottom-nav__label ${active ? 'is-active' : ''}`}>{tab.label}</span>
+            {tab.to === '/trips' && unpaid > 0 ? (
+              <span className="sr-only">{`${unpaid} planned, not yet booked`}</span>
+            ) : null}
           </NavLink>
         );
       })}

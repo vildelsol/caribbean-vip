@@ -6,6 +6,8 @@ import {
   seatsIn,
   simulatedPosition,
   travelFrom,
+  experienceCoords,
+  isAtVenue,
   vendorFor,
   type DemoDestination,
   type DemoExperience,
@@ -302,13 +304,10 @@ export function formatSpan(stops: ItineraryStop[]): string {
 // ---------------------------------------------------------------------------
 
 function metresBetween(a: DemoExperience, b: DemoExperience): number | null {
-  const va = vendorFor(a);
-  const vb = vendorFor(b);
-  if (!va || !vb) return null;
-  return distanceMetres(
-    { lat: va.location.lat, lng: va.location.lng },
-    { lat: vb.location.lat, lng: vb.location.lng },
-  );
+  const pa = experienceCoords(a);
+  const pb = experienceCoords(b);
+  if (!pa || !pb) return null;
+  return distanceMetres(pa, pb);
 }
 
 /**
@@ -434,14 +433,24 @@ export function buildItinerary(input: BuildInput): Itinerary {
     const from = previous.experience;
     const to = current.experience;
 
-    if (from.vendorId === to.vendorId) {
+    /*
+     * Same site means the same *place*, not the same operator.
+     *
+     * This used to test `from.vendorId === to.vendorId`, which was true of every listing an
+     * operator ran — so White River Tubing and the Dunn's River climb, 5 km apart on opposite
+     * sides of Ocho Rios, were planned as "Same site — no transfer" and given no travel time at
+     * all. On the screen whose promise is that the day fits, that is the promise being made from
+     * an assumption rather than a measurement.
+     *
+     * Now that listings carry their own meeting point the question can be asked directly, and
+     * AT_VENUE_METRES is already the app's answer to "close enough to be standing there".
+     */
+    const metres = metresBetween(from, to);
+    if (metres !== null && isAtVenue(metres)) {
       current.arriveFrom = { kind: 'same-site', vendorName: vendorFor(to)?.tradingName ?? 'the same operator' };
-    } else {
-      const metres = metresBetween(from, to);
-      if (metres !== null) {
-        current.arriveFrom = { kind: 'transfer', metres, ...travelFrom(metres) };
-        routeMetres += metres;
-      }
+    } else if (metres !== null) {
+      current.arriveFrom = { kind: 'transfer', metres, ...travelFrom(metres) };
+      routeMetres += metres;
     }
 
     // Two bookings the guest already holds can be impossible together, and saying so is the most

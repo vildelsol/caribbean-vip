@@ -1013,7 +1013,9 @@ export const DEMO_EXPERIENCES: DemoExperience[] = [
   },
   {
     id: 'exp-ky-bio-bay',
-    meetingPoint: { name: 'North Sound bio bay launch', lat: 19.348, lng: -81.262 },
+    // No meetingPoint on purpose: the bio bay boat leaves from the Rum Point jetty, the same
+    // place as its sibling tour, so the operator's own location is the truthful answer. This is
+    // the pair that keeps "same site — no transfer" a reachable state in the planner.
     vendorId: 'vendor-ky-rumpoint',
     islandId: KY,
     destinationSlug: 'rum-point',
