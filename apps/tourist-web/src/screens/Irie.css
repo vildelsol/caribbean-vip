@@ -229,16 +229,68 @@
   max-width: 24ch;
 }
 
-/* A short gold rule between the greeting and the suggestions. It is the pause
-   between "how can I help" and the list of ways — without it the rows read as
-   a continuation of the sentence rather than as an answer to it. */
+/* The rule between the greeting and the suggestions. It is the pause between
+   "how can I help" and the list of ways — without it the rows read as a
+   continuation of the sentence rather than as an answer to it.
+
+   It also carries the only signal that Irie is *live* before the guest has
+   typed anything. A static 52px dash says a section ended; a sweep travelling
+   the width says something is listening. The sparkle in the header breathes
+   for the same reason, and these two are the whole of it — the screen should
+   read as awake, not as busy, so there is no spinner and nothing blinks.
+
+   The track is laid across the column rather than sized to the dash, because
+   the travel is the signal: a sweep with 52px to cross is a flicker. */
 .irie__rule {
+  position: relative;
   display: block;
-  width: 52px;
+  width: 100%;
+  max-width: 240px;
   height: 2px;
   margin-top: 16px;
   border-radius: var(--r-pill);
-  background: linear-gradient(90deg, var(--gold-light) 0%, rgba(227, 194, 113, 0.25) 100%);
+  overflow: hidden;
+  background: linear-gradient(90deg, rgba(227, 194, 113, 0.28) 0%, rgba(227, 194, 113, 0.06) 100%);
+}
+
+/* The travelling highlight. Its own element so the track underneath stays put —
+   animating the background position of a gradient would move the resting state
+   with it, and the rule has to still read as a rule between sweeps. */
+.irie__rule::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(227, 194, 113, 0.35) 30%,
+    var(--gold-light) 50%,
+    rgba(227, 194, 113, 0.35) 70%,
+    transparent 100%
+  );
+  /* Starts fully off the left edge and ends fully off the right, so the sweep
+     enters and leaves rather than appearing and vanishing mid-track. */
+  animation: irie-sweep 2.8s var(--ease-inout, ease-in-out) infinite;
+}
+
+@keyframes irie-sweep {
+  from {
+    transform: translateX(-100%);
+  }
+  to {
+    transform: translateX(100%);
+  }
+}
+
+/* A guest who has asked the system for less motion gets the rule, not the
+   signal. Removing the animation rather than the element keeps the pause the
+   layout was built around. */
+@media (prefers-reduced-motion: reduce) {
+  .irie__rule::after {
+    animation: none;
+    background: linear-gradient(90deg, var(--gold-light) 0%, rgba(227, 194, 113, 0.25) 100%);
+  }
 }
 
 .irie__context {
