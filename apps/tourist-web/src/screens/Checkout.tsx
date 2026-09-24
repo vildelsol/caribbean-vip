@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import {
   DEFAULT_PARTY,
+  partyFitting,
   experienceById,
   heroUrl,
   qualifiesForRumPunch,
@@ -54,7 +55,20 @@ export function Checkout() {
 
   const [dateISO, setDateISO] = useState<string | null>(opening?.iso ?? null);
   const [time, setTime] = useState<string | null>(null);
-  const [party, setParty] = useState<PartySelection>(DEFAULT_PARTY);
+  /*
+   * The party opens at a size the auto-selected departure can actually take.
+   *
+   * Arriving from "Check Availability" on a departure with one seat left used to put a red error
+   * and a disabled button on screen before the guest had touched anything: the screen picked the
+   * departure, picked two adults, and then reported the conflict as the guest's. Computed lazily
+   * so it reads the opening day's first bookable slot exactly once, on mount — after that the
+   * party is the guest's and is never silently rewritten under them.
+   */
+  const [party, setParty] = useState<PartySelection>(() => {
+    if (!experience || !opening) return DEFAULT_PARTY;
+    const first = slotsFor(experience, opening.iso).find((s) => s.capacityRemaining > 0);
+    return first ? partyFitting(first.capacityRemaining) : DEFAULT_PARTY;
+  });
   const [paying, setPaying] = useState(false);
   const [payError, setPayError] = useState<string | null>(null);
 
@@ -423,7 +437,13 @@ export function Checkout() {
             ? isLiveMode ? 'Redirecting…' : 'Confirming…'
             : quote?.ok
               ? `Pay ${formatUsd(quote.breakdown.total.amountMinor)}`
-              : 'Choose a departure'}
+              : /* Name the blocker. A departure *was* chosen in the capacity case, so telling the
+                   guest to choose one sends them to change the thing that was already right. */
+                quote?.code === 'capacity'
+                ? 'Too many guests for this departure'
+                : quote?.code === 'no-guests'
+                  ? 'Add a guest'
+                  : 'Choose a departure'}
         </PrimaryButton>
         <p className="t-micro c-faint checkout__reassure">
           {isLiveMode
