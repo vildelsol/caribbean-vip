@@ -1,6 +1,6 @@
 # Handover — Caribbean VIP
 
-**Written:** 2026-08-02 · **Updated:** 2026-09-23 (fourth session) — **start at §5 "Session close" for the current state and pick-up list** · **Branch:** `main` at `b906e92`, working tree clean, **pushed — the live demo is finally current** · **Gates:** green — 347 tests, tourist-web typechecks clean, eslint clean
+**Written:** 2026-08-02 · **Updated:** 2026-09-23 (fourth session) — **start at §5 "Session close" for the current state and pick-up list** · **Branch:** `main` at `1a8b750`, working tree clean, **pushed** · **Gates:** green — 361 tests, tourist-web typechecks clean, eslint clean
 
 Read this first, then [`PRD.md`](PRD.md) (product source of truth),
 [`architecture.md`](architecture.md) (the numbered decisions), and
@@ -158,7 +158,7 @@ applies** and has been superseded. The mockups now drive layout and visual langu
 > `main` at `b906e92`, pushed to `origin`, working tree clean. Vercel deployment confirmed on
 > `b906e92` via `gh api repos/vildelsol/caribbean-vip/deployments --jq '.[0].sha'`.
 >
-> Gates: **347 tests** (22 files), typecheck clean, **eslint clean** — the two standing lint errors
+> Gates: **361 tests** (23 files), typecheck clean, **eslint clean** — the two standing lint errors
 > were cleared, so a green lint is now the baseline and a new one is a real regression.
 
 Last session's work was reviewed and committed in the five-way split it suggested, then this
@@ -343,52 +343,70 @@ clash check. The multi-stop basket is the larger question behind it.
 
 ---
 
-#### `Explore`'s mood tiles reorder the feed instead of filtering it — found at the close, not fixed
+#### `Explore`'s mood tiles reordered the feed instead of filtering it — fixed, and the real cause was inventory
 
-Ro's report: selecting a mood shows **one** option, under "Experience of the Day". Correct, and the
-cause is worse than the symptom.
+Ro's report: selecting a mood shows **one** option, under "Experience of the Day". Two causes, and
+the presentation one was the smaller of them.
 
-`ranked` does not filter. It **reorders** — matches first, everything else after. Then each section
-takes a different slice of it, and only some of them survive the reorder:
+**`ranked` never filtered. It reordered** — matches first, everything else after — and each section
+then took a different slice, so only some survived it:
 
-| Section | Reads | Mood-aware? |
+| Section | Read | Mood-aware? |
 | --- | --- | --- |
 | Experience of the Day | `ranked[0]` | **Yes** |
-| Near You Now | `byDistanceFrom(ranked)` | **No** — re-sorts by distance, discarding the mood |
-| Hidden Gems | `ranked.slice(4, 7)` | Only when there are enough matches |
+| Near You Now | `byDistanceFrom(ranked)` | **No** — re-sorted by distance, discarding the mood |
+| Hidden Gems | `ranked.slice(4, 7)` | Only when there were enough matches |
 | Tonight Near You | first `food`/`nightlife` | **No** |
 
-So tapping a tile changes one card. Verified live on Ocho Rios: **"Relax & Unwind" put the Seven
-Mile Beach Day Pass in the hero — correct mood, and in Negril, 130 km away** — while "Near You Now"
-carried on showing Adventure, Nature and Family. One card changed, it named the wrong end of the
-island, and two sections openly contradicted the selection.
+Verified live before the fix: **"Relax & Unwind" in Ocho Rios put the Seven Mile Beach Day Pass in
+the hero — right mood, and in Negril, 130 km away** — while Near You Now carried on showing
+Adventure, Nature and Family. Same defect class as the offer bug fixed earlier this session: a
+ranking that reorders on one axis and then implies another.
 
-> The Negril half is the **same defect class as the offer bug fixed earlier this session**: a
-> ranking that reorders on one axis and then states or implies another. Fixing the filter fixes the
-> geography, because a filtered list still gets distance-sorted.
+**The fix is a collapse, not a carousel.** Mood off → the curated home. Mood on → one genuinely
+filtered, distance-sorted result set. A carousel treats this as "too few cards in a row": it leaves
+the contradiction between the tile and the sections beneath it standing, hides inventory behind a
+swipe, and — decisively — it would still have had two slides, because the inventory was not there.
 
-**Ro asked: carousel under "Experience of the Day", or something else? The recommendation is
-something else, and the carousel is the wrong shape.**
+> It also stops **"Experience of the Day · Today only"** changing when a filter is tapped. That is a
+> curated claim, and a claim that moves when you tap a filter is not one.
 
-A carousel treats this as "too few cards in one row". It is not — it is that a mood selection
-reorders a curated feed while mood-agnostic sections keep running beside it. A carousel leaves all
-three faults standing and adds code.
+**The real cause: Ocho Rios could not answer two of the four tiles.** The counts at the time:
 
-**Proposed:** mood off → the curated home exactly as it is. Mood on → **the feed collapses to one
-results section**: "14 ways to relax near Ocho Rios", genuinely filtered, distance-sorted, in a
-grid.
+| Island | Total | Adventure | Relax | Taste | Explore |
+| --- | --- | --- | --- | --- | --- |
+| Jamaica | 18 | 8 (**3** near) | 2 (**0** near) | 3 (**0** near) | 4 (**1** near) |
+| Cayman | 12 | 5 (5) | 2 (2) | 2 (2) | 3 (3) |
+| Barbados | 9 | 5 (4) | 1 (1) | 2 (2) | 1 (1) |
 
-Four reasons it is the better shape:
+*(near = within 25 km of the island's default destination)*
 
-- **"Experience of the Day · Today only" is a curated claim and must not change when a filter is
-  tapped.** Today it does, which makes the claim false. Collapsing removes the contradiction rather
-  than decorating it.
-- A filter result should be **countable and scannable** — a carousel hides inventory behind a
-  swipe, which is the wrong instinct when the pitch is the size of the verified catalogue.
-- It **fixes the geography for free**: filter, then sort by distance.
-- **Reuse over build** — `Search` already has a results grid.
+Jamaica had **two** relax listings island-wide and **none** near the town every Jamaican guest opens
+the app in. **This is the George Town gap in a different costume** — a feature nobody can see
+through is a data gap wearing a UI — and Ro chose to fill it rather than dress it.
 
-Not started. It is a contained change to `Explore.tsx` and needs Ro's yes on the shape first.
+Two Ocho Rios operators, eight listings: **Ochi Shore Company** (bay beach, Mahogany, Turtle River
+sunrise yoga, Reggae Beach at Tower Isle) and **Ochi Table** (jerk pit, Fisherman's Beach fish fry,
+the night strip, the craft market). Taste Jamaica now answers with three places inside **430 m**.
+
+**Text came off the photograph.** `GemCard` sets its title over the image behind a ramped scrim —
+correct for the three-across editorial teaser row, wrong for results. A guest filtering by mood is
+choosing between *places*, so the photograph is the product, and type across the bottom third covers
+the beach, the boat or the plate they are choosing by. `ResultCard` puts the caption under the
+image, **two across rather than three**: at a third of a phone's width a photograph of a beach is
+indistinguishable from a photograph of any other beach.
+
+Two smaller truths that came out of building it:
+
+- The header says **"6 places to eat · nearest first"**, not "near Ocho Rios". Some results are an
+  island away, every card states its own distance, and "nearest first" is checkable where "near"
+  would have been a word doing the work of a number.
+- `formatTravelMinutes` — the far end of Jamaica rendered as **"289 min"**, which nobody converts in
+  their head while deciding where to have lunch. Hours past ninety minutes.
+
+> **14 tests. The load-bearing set asserts all twelve island × mood combinations have something
+> within 25 km of that island's default destination.** A tile cannot ship with nothing to say again,
+> on this island or the next one added.
 
 ---
 
@@ -401,8 +419,13 @@ Closed this session: the old **#4** (fabricated "Cruise-Friendly" — still open
 0. **The live demo is `https://caribbean-vip-tourist-web.vercel.app`.** Every push to `main`
    auto-deploys; check with `gh api repos/vildelsol/caribbean-vip/deployments --jq '.[0].sha'`.
    Never put a `...-li58ewgtb-...` deployment URL in front of anyone.
-1. **Mood tiles reorder instead of filtering.** See the section above — the shape is proposed and
-   waiting on Ro's yes.
+1. **The demo media pool has no Jamaican food photography.** The eight new Ocho Rios listings reuse
+   what exists, and it mostly lands — the fish fry carries a boat at a river landing, the yoga
+   carries a sunrise figure on sand, the craft market carries an actual craft stall. But **the jerk
+   pit and the night strip carry street-life images rather than their own**, because there is no
+   food or bar photograph in `apps/tourist-web/public/demo` for any island. "Taste Jamaica" is now
+   the tile with the most inventory and the weakest pictures, which is the wrong way round on the
+   screen a guest browses with their eyes. Two photographs would close it.
 2. **The first live Stripe payment has still never been executed.** Card `4242 4242 4242 4242` on
    the Vercel URL. **Until it runs, M3 is not complete** — the biggest single gap.
    **Claude cannot do this one**: entering card numbers into a payment form is refused regardless of
