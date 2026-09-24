@@ -117,6 +117,20 @@ export interface DemoExperience {
   minAge?: number;
   /** One featured guest review. Demo-only, standing in for an aggregate over `reviews`. */
   review?: { quote: string; author: string; context: string; date: string };
+  /**
+   * Where this listing actually starts, when that is not the operator's own base.
+   *
+   * Distance used to be measured from the **vendor**, and 39 listings share 15 vendors — about
+   * five coordinates per island. That is why Dunn's River Falls and Mystic Mountain both read
+   * "8 MIN DRIVE · 3.6 KM": same operator, same point, two places 2 km apart. A sort keyed on a
+   * number that cannot tell two listings apart is not a sort, and "nearest first" was the claim
+   * the screen was making.
+   *
+   * Omitted where the operator's base genuinely is the meeting point — a transfer desk at the
+   * airport, a studio you walk into — so the field marks a real difference rather than restating
+   * the vendor on every record.
+   */
+  meetingPoint?: { name: string; lat: number; lng: number };
 }
 
 const JM = 'island-jm';
@@ -300,6 +314,20 @@ export const DEMO_VENDORS: DemoVendor[] = [
     description: 'Turtle centre visits and the West Bay heritage run, built around small children.',
     location: { name: 'Turtle Centre entrance', lat: 19.3839, lng: -81.4157, destinationSlug: 'west-bay' },
   },
+  /*
+   * George Town had no operator based in it — and it is the destination every Cayman guest opens
+   * the app in. A default destination with no local inventory is a guest landing where nothing is,
+   * and it is the reason the offer needed an 8 km radius to find anything at all.
+   */
+  {
+    id: 'vendor-ky-georgetown',
+    islandId: KY,
+    tradingName: 'Cayman Heritage & Harbour Co.',
+    status: 'approved',
+    description:
+      'A George Town family operation running the harbour reefs and the old town on foot. Two boats, four guides, and a shop on the waterfront since 1998.',
+    location: { name: 'George Town waterfront', lat: 19.293, lng: -81.386, destinationSlug: 'george-town' },
+  },
   {
     id: 'vendor-ky-rumpoint',
     islandId: KY,
@@ -377,6 +405,7 @@ export const DEMO_EXPERIENCES: DemoExperience[] = [
   },
   {
     id: 'exp-mystic-mountain',
+    meetingPoint: { name: 'Mystic Mountain base station', lat: 18.4108, lng: -77.1178 },
     vendorId: 'vendor-dunns',
     islandId: JM,
     destinationSlug: 'ocho-rios',
@@ -406,6 +435,7 @@ export const DEMO_EXPERIENCES: DemoExperience[] = [
   },
   {
     id: 'exp-white-river',
+    meetingPoint: { name: 'White River tubing put-in', lat: 18.4265, lng: -77.0836 },
     vendorId: 'vendor-dunns',
     islandId: JM,
     destinationSlug: 'ocho-rios',
@@ -426,6 +456,7 @@ export const DEMO_EXPERIENCES: DemoExperience[] = [
   },
   {
     id: 'exp-blue-hole',
+    meetingPoint: { name: 'Island Gully Falls car park', lat: 18.3707, lng: -77.0483 },
     vendorId: 'vendor-dunns',
     islandId: JM,
     destinationSlug: 'ocho-rios',
@@ -466,6 +497,7 @@ export const DEMO_EXPERIENCES: DemoExperience[] = [
   },
   {
     id: 'exp-beach-pass',
+    meetingPoint: { name: 'Bloody Bay beach entrance', lat: 18.3242, lng: -78.3494 },
     vendorId: 'vendor-negril',
     islandId: JM,
     destinationSlug: 'negril',
@@ -486,6 +518,7 @@ export const DEMO_EXPERIENCES: DemoExperience[] = [
   },
   {
     id: 'exp-west-end',
+    meetingPoint: { name: 'Negril Lighthouse, West End', lat: 18.2686, lng: -78.3742 },
     vendorId: 'vendor-negril',
     islandId: JM,
     destinationSlug: 'negril',
@@ -526,6 +559,7 @@ export const DEMO_EXPERIENCES: DemoExperience[] = [
   },
   {
     id: 'exp-music',
+    meetingPoint: { name: 'Bob Marley Museum, Hope Road', lat: 18.0176, lng: -76.783 },
     vendorId: 'vendor-coffee',
     islandId: JM,
     destinationSlug: 'kingston',
@@ -546,6 +580,7 @@ export const DEMO_EXPERIENCES: DemoExperience[] = [
   },
   {
     id: 'exp-craft',
+    meetingPoint: { name: 'Devon House forecourt', lat: 18.0146, lng: -76.7864 },
     vendorId: 'vendor-coffee',
     islandId: JM,
     destinationSlug: 'kingston',
@@ -586,6 +621,7 @@ export const DEMO_EXPERIENCES: DemoExperience[] = [
   },
   {
     id: 'exp-reach',
+    meetingPoint: { name: 'Reach Falls ticket office', lat: 18.0453, lng: -76.3336 },
     vendorId: 'vendor-portland',
     islandId: JM,
     destinationSlug: 'port-antonio',
@@ -606,6 +642,7 @@ export const DEMO_EXPERIENCES: DemoExperience[] = [
   },
   {
     id: 'exp-blue-lagoon',
+    meetingPoint: { name: 'Blue Lagoon boat landing', lat: 18.1725, lng: -76.4178 },
     vendorId: 'vendor-portland',
     islandId: JM,
     destinationSlug: 'port-antonio',
@@ -646,6 +683,7 @@ export const DEMO_EXPERIENCES: DemoExperience[] = [
   },
   {
     id: 'exp-daytrip',
+    meetingPoint: { name: 'Hip Strip pickup point', lat: 18.488, lng: -77.92 },
     vendorId: 'vendor-rides',
     islandId: JM,
     destinationSlug: 'montego-bay',
@@ -666,6 +704,7 @@ export const DEMO_EXPERIENCES: DemoExperience[] = [
   },
   {
     id: 'exp-rose-hall',
+    meetingPoint: { name: 'Rose Hall Great House gates', lat: 18.5175, lng: -77.8355 },
     vendorId: 'vendor-rides',
     islandId: JM,
     destinationSlug: 'montego-bay',
@@ -706,6 +745,7 @@ export const DEMO_EXPERIENCES: DemoExperience[] = [
   },
   {
     id: 'exp-seafood',
+    meetingPoint: { name: 'Little Ochie, Alligator Pond', lat: 17.877, lng: -77.547 },
     vendorId: 'vendor-wellness',
     islandId: JM,
     destinationSlug: 'south-coast',
@@ -728,6 +768,7 @@ export const DEMO_EXPERIENCES: DemoExperience[] = [
   // ==================================================== Cayman Islands ====
   {
     id: 'exp-ky-stingray',
+    meetingPoint: { name: 'Stingray City sandbar boat', lat: 19.3868, lng: -81.3195 },
     vendorId: 'vendor-ky-stingray',
     islandId: KY,
     destinationSlug: 'west-bay',
@@ -757,6 +798,7 @@ export const DEMO_EXPERIENCES: DemoExperience[] = [
   },
   {
     id: 'exp-ky-barrier-reef',
+    meetingPoint: { name: 'Cemetery Beach reef entry', lat: 19.356, lng: -81.402 },
     vendorId: 'vendor-ky-stingray',
     islandId: KY,
     destinationSlug: 'west-bay',
@@ -777,6 +819,7 @@ export const DEMO_EXPERIENCES: DemoExperience[] = [
   },
   {
     id: 'exp-ky-seven-mile',
+    meetingPoint: { name: 'Seven Mile public beach', lat: 19.335, lng: -81.383 },
     vendorId: 'vendor-ky-camana',
     islandId: KY,
     destinationSlug: 'seven-mile-beach-ky',
@@ -819,7 +862,10 @@ export const DEMO_EXPERIENCES: DemoExperience[] = [
     id: 'exp-ky-camana',
     vendorId: 'vendor-ky-camana',
     islandId: KY,
-    destinationSlug: 'george-town',
+    // Camana Bay is 4.3 km up the coast from George Town. It was filed under George Town to give
+    // Cayman's default destination something to show; George Town now has its own operator, so
+    // this listing can sit where it actually is.
+    destinationSlug: 'seven-mile-beach-ky',
     category: 'food',
     title: 'Camana Bay Food Walk',
     summary: 'Six tastings around the waterfront, with the people who cook them.',
@@ -834,6 +880,75 @@ export const DEMO_EXPERIENCES: DemoExperience[] = [
     media: ['ky-camana-1'],
     ratingAverage: 4.7,
     ratingCount: 291,
+  },
+  {
+    id: 'exp-ky-eden-rock',
+    meetingPoint: { name: 'Eden Rock dive shop', lat: 19.2903, lng: -81.3878 },
+    vendorId: 'vendor-ky-georgetown',
+    islandId: KY,
+    destinationSlug: 'george-town',
+    category: 'water_sports',
+    title: "Eden Rock & Devil's Grotto Snorkel",
+    summary: 'Two swim-through reefs a few minutes from the cruise pier.',
+    description:
+      'Eden Rock and Devil\u2019s Grotto sit in shallow water straight off the George Town shore \u2014 caverns and swim-throughs you reach from the beach, not a boat. Silversides fill the grotto in summer. Guided in small groups, with gear and a safety briefing.',
+    durationMinutes: 120,
+    inclusions: ['Mask, snorkel and fins', 'Guide', 'Flotation vest'],
+    pickupInfo: 'Meet at the Eden Rock dive shop on South Church Street',
+    fromAmountMinor: 6500,
+    status: 'approved',
+    cancellationHours: 24,
+    media: ['ky-seven-mile-1'],
+    ratingAverage: 4.8,
+    ratingCount: 412,
+    review: {
+      quote: 'Off the beach and into a cavern full of silversides in about ten minutes. We walked there from the pier.',
+      author: 'Marcia D.',
+      context: 'Snorkelled in July',
+      date: '2026-07-19',
+    },
+  },
+  {
+    id: 'exp-ky-heritage-walk',
+    meetingPoint: { name: 'Cayman National Museum steps', lat: 19.2944, lng: -81.3847 },
+    vendorId: 'vendor-ky-georgetown',
+    islandId: KY,
+    destinationSlug: 'george-town',
+    category: 'culture',
+    title: 'Old George Town on Foot',
+    summary: 'The harbour, the wrecks and the families who stayed, in two hours.',
+    description:
+      'From the Cayman National Museum along the waterfront to Fort George and back through the old lanes \u2014 the wrecking years, the turtle fleet, and why a sandbar island ended up running the world\u2019s banks. A walk, at walking pace, in the shade where there is any.',
+    durationMinutes: 120,
+    inclusions: ['Guide', 'Museum entry', 'Cold water'],
+    pickupInfo: 'Meet on the museum steps on Harbour Drive',
+    fromAmountMinor: 4200,
+    status: 'approved',
+    cancellationHours: 12,
+    media: ['ky-camana-1'],
+    ratingAverage: 4.7,
+    ratingCount: 168,
+  },
+  {
+    id: 'exp-ky-smith-cove',
+    meetingPoint: { name: 'Smith Barcadere car park', lat: 19.2828, lng: -81.3897 },
+    vendorId: 'vendor-ky-georgetown',
+    islandId: KY,
+    destinationSlug: 'george-town',
+    category: 'beaches',
+    title: 'Smith Cove Swim & Sunset',
+    summary: "The locals' cove south of town, with the sun going down behind it.",
+    description:
+      'Smith Barcadere is a small ironshore cove ten minutes south of George Town where Caymanians actually swim. Late afternoon, with shade, a cooler and somebody who knows which rock to jump off. Stay for the sunset.',
+    durationMinutes: 150,
+    inclusions: ['Beach set-up', 'Cooler with drinks', 'Host'],
+    pickupInfo: 'Meet at the Smith Barcadere car park',
+    fromAmountMinor: 3800,
+    status: 'approved',
+    cancellationHours: 24,
+    media: ['ky-seven-mile-1'],
+    ratingAverage: 4.9,
+    ratingCount: 97,
   },
   {
     id: 'exp-ky-turtle',
@@ -857,6 +972,7 @@ export const DEMO_EXPERIENCES: DemoExperience[] = [
   },
   {
     id: 'exp-ky-hell',
+    meetingPoint: { name: 'Hell post office, West Bay', lat: 19.3739, lng: -81.4111 },
     vendorId: 'vendor-ky-turtle',
     islandId: KY,
     destinationSlug: 'west-bay',
@@ -897,6 +1013,7 @@ export const DEMO_EXPERIENCES: DemoExperience[] = [
   },
   {
     id: 'exp-ky-bio-bay',
+    meetingPoint: { name: 'North Sound bio bay launch', lat: 19.348, lng: -81.262 },
     vendorId: 'vendor-ky-rumpoint',
     islandId: KY,
     destinationSlug: 'rum-point',
@@ -939,6 +1056,7 @@ export const DEMO_EXPERIENCES: DemoExperience[] = [
   },
   {
     id: 'exp-bb-east-coast',
+    meetingPoint: { name: 'Bathsheba Soup Bowl', lat: 13.2136, lng: -59.5253 },
     vendorId: 'vendor-bb-cave',
     islandId: BB,
     destinationSlug: 'east-coast-bb',
@@ -979,6 +1097,7 @@ export const DEMO_EXPERIENCES: DemoExperience[] = [
   },
   {
     id: 'exp-bb-catamaran',
+    meetingPoint: { name: 'Holetown jetty', lat: 13.1875, lng: -59.6389 },
     vendorId: 'vendor-bb-carlisle',
     islandId: BB,
     destinationSlug: 'west-coast-bb',
@@ -1019,6 +1138,7 @@ export const DEMO_EXPERIENCES: DemoExperience[] = [
   },
   {
     id: 'exp-bb-south-beach',
+    meetingPoint: { name: 'Accra Beach, Rockley', lat: 13.0729, lng: -59.5786 },
     vendorId: 'vendor-bb-oistins',
     islandId: BB,
     destinationSlug: 'south-coast-bb',
@@ -1039,6 +1159,7 @@ export const DEMO_EXPERIENCES: DemoExperience[] = [
   },
   {
     id: 'exp-bb-animal-flower',
+    meetingPoint: { name: 'Animal Flower Cave, North Point', lat: 13.3325, lng: -59.6122 },
     vendorId: 'vendor-bb-heritage',
     islandId: BB,
     destinationSlug: 'north-bb',
@@ -1059,6 +1180,7 @@ export const DEMO_EXPERIENCES: DemoExperience[] = [
   },
   {
     id: 'exp-bb-rum',
+    meetingPoint: { name: 'St. Nicholas Abbey, St. Peter', lat: 13.2764, lng: -59.5744 },
     vendorId: 'vendor-bb-heritage',
     islandId: BB,
     destinationSlug: 'north-bb',
@@ -1079,6 +1201,7 @@ export const DEMO_EXPERIENCES: DemoExperience[] = [
   },
   {
     id: 'exp-bb-bridgetown',
+    meetingPoint: { name: 'National Heroes Square', lat: 13.0969, lng: -59.6145 },
     vendorId: 'vendor-bb-heritage',
     islandId: BB,
     destinationSlug: 'bridgetown',
@@ -1195,8 +1318,12 @@ export const DEMO_PROMOTION = {
   appliesToExperienceIds: [
     'exp-dunns-falls', // Ocho Rios — Jamaica's default destination
     'exp-catamaran', // Negril
-    'exp-ky-sail', // Camana Bay, 4.3 km from George Town — Cayman's default
-    'exp-bb-catamaran', // Carlisle Bay — Barbados' default
+    'exp-ky-eden-rock', // George Town waterfront — Cayman's default, and now local to it
+    // Was exp-bb-catamaran, which reads as Carlisle Bay only because it shared the vendor's
+    // coordinates. It leaves from the Holetown jetty, 12 km up the west coast, so once listings
+    // carried their own meeting points it stopped being anywhere near the guest. The turtle swim
+    // genuinely starts on the Carlisle Bay boardwalk.
+    'exp-bb-turtles', // Carlisle Bay boardwalk — Barbados' default
   ],
 };
 

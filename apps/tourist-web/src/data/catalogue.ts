@@ -240,6 +240,36 @@ export function simulatedPosition(destination: DemoDestination) {
   return { lat: destination.centre_lat, lng: destination.centre_lng };
 }
 
+/**
+ * Where a listing starts, for every distance the app measures.
+ *
+ * A listing's own meeting point when it has one, the operator's base otherwise. Everything that
+ * sorts, fences or states a distance goes through here, so a listing cannot be near on one screen
+ * and far on another.
+ */
+export function experienceCoords(
+  experience: DemoExperience,
+): { lat: number; lng: number; name: string; destinationSlug: string } | undefined {
+  // The slug travels with the coordinate on purpose. A listing's own `destinationSlug` describes
+  // where it is *filed*, which is not always where it *starts*: the West Coast catamaran is filed
+  // on the west coast and leaves from Carlisle Bay, 12 km away in Bridgetown. Anything asking
+  // "is this here?" has to mean the point it just measured, or it is back to asserting a
+  // proximity nobody computed.
+  if (experience.meetingPoint) {
+    const { lat, lng, name } = experience.meetingPoint;
+    return { lat, lng, name, destinationSlug: experience.destinationSlug };
+  }
+  const vendor = vendorFor(experience);
+  return vendor
+    ? {
+        lat: vendor.location.lat,
+        lng: vendor.location.lng,
+        name: vendor.location.name,
+        destinationSlug: vendor.location.destinationSlug,
+      }
+    : undefined;
+}
+
 export interface WithDistance {
   experience: DemoExperience;
   metres: number;
@@ -251,10 +281,8 @@ export function byDistanceFrom(
 ): WithDistance[] {
   return experiences
     .map((experience) => {
-      const vendor = vendorFor(experience);
-      const metres = vendor
-        ? distanceMetres(origin, { lat: vendor.location.lat, lng: vendor.location.lng })
-        : Number.MAX_SAFE_INTEGER;
+      const at = experienceCoords(experience);
+      const metres = at ? distanceMetres(origin, at) : Number.MAX_SAFE_INTEGER;
       return { experience, metres };
     })
     .sort((a, b) => a.metres - b.metres);
@@ -385,13 +413,10 @@ export function promotedExperienceNear(
 
   return promotedExperiencesOn(islandId)
     .map((experience) => {
-      const vendor = vendorFor(experience);
-      if (!vendor) return null;
-      const metres = distanceMetres(origin, {
-        lat: vendor.location.lat,
-        lng: vendor.location.lng,
-      });
-      const here = vendor.location.destinationSlug === destinationSlug;
+      const at = experienceCoords(experience);
+      if (!at) return null;
+      const metres = distanceMetres(origin, at);
+      const here = at.destinationSlug === destinationSlug;
       return here || metres <= OFFER_NEARBY_METRES ? { experience, metres } : null;
     })
     .filter((x): x is { experience: DemoExperience; metres: number } => x !== null)
@@ -403,8 +428,8 @@ export function travelToExperience(
   origin: { lat: number; lng: number },
   experience: DemoExperience,
 ): { metres: number; travel: Travel } | undefined {
-  const vendor = vendorFor(experience);
-  if (!vendor) return undefined;
-  const metres = distanceMetres(origin, { lat: vendor.location.lat, lng: vendor.location.lng });
+  const at = experienceCoords(experience);
+  if (!at) return undefined;
+  const metres = distanceMetres(origin, at);
   return { metres, travel: travelFrom(metres) };
 }
