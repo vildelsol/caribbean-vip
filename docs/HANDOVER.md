@@ -1,6 +1,6 @@
 # Handover — Caribbean VIP
 
-**Written:** 2026-08-02 · **Updated:** 2026-09-23 (third session) — **start at §5 "Session close" for the current state and pick-up list** · **Branch:** `main` at `7e7987e`, **with a large uncommitted working tree — see the warning at the top of §5** · **Gates:** green — 327 tests, tourist-web typechecks clean
+**Written:** 2026-08-02 · **Updated:** 2026-09-23 (fourth session) — **start at §5 "Session close" for the current state and pick-up list** · **Branch:** `main` at `cfcd2c1`, working tree clean, **12 commits ahead of `origin` and not pushed** · **Gates:** green — 347 tests, tourist-web typechecks clean, eslint clean
 
 Read this first, then [`PRD.md`](PRD.md) (product source of truth),
 [`architecture.md`](architecture.md) (the numbered decisions), and
@@ -150,6 +150,244 @@ applies** and has been superseded. The mockups now drive layout and visual langu
 ---
 
 ## 5. Pick up here
+
+### Session close — 2026-09-23, fourth session (read this first)
+
+> ### ⚠ TWELVE COMMITS ARE UNPUSHED
+>
+> The working tree is clean and every gate is green — **347 tests** (22 files), typecheck clean,
+> **eslint clean for the first time in several sessions**. Nothing is half-finished.
+>
+> But `main` is **12 commits ahead of `origin`**, so **the live Vercel demo still has none of it** —
+> not last session's work, not this session's. `git push` is the first action, and it auto-deploys.
+> Ro was asked before pushing and had not answered by the close; it is a deliberate hold, not an
+> oversight.
+
+Last session's work was reviewed and committed in the five-way split it suggested, then this
+session ran on Ro's brief: **this is a demo going in front of investors, with people from Jamaica
+and the Cayman Islands on the call.** Two consequences he drew himself, and they shaped everything:
+*the UI has to be right*, and *the data gaps have to be real* — an invented fare or an empty
+destination is exactly what an islander in the room notices first.
+
+---
+
+#### The arithmetic, audited
+
+Asked for directly. The money core came out well and the screens did not.
+
+**`packages/types/pricing.ts` and `money.ts` are sound** — integer minor units throughout, a fixed
+order of operations (subtotal → discount → tax on the discounted base → fee on the same base),
+discounts capped at what is left of the subtotal, and `applyRate` rounding half-up on the absolute
+value so rounding is symmetric and always favours the guest by at most a cent. `distanceMetres` is
+textbook haversine. None of it needed changing, and that is worth knowing before anyone goes
+looking.
+
+**Two real defects, both on screens a guest acts on:**
+
+- **A taxi fare was being invented.** `Trips` printed `` `taxi from US$${8 + mins}` `` — US$8 plus a
+  dollar a minute is not a tariff, it was a formula producing plausible-looking money on the screen
+  a guest budgets from. Same class as the three functions removed in `78d0af7`, and worse for being
+  a number someone might act on. The leg now says the fare is not included, which is the true part.
+- **`pickupTime` underflowed below 00:35.** A 00:20 departure minus the 35-minute lead rendered
+  `-1:-15 AM`. It wraps into the previous day now. No such departure exists in the catalogue — but
+  it is on the money path, and a latent defect on the money path is worth the four characters.
+
+---
+
+#### Price advertised is now price charged
+
+Ro's call, on the recommended option: **all-in everywhere.**
+
+"From US$98" became US$117.60 at checkout — 15% tax plus 5% service, a 20% reveal at the last step.
+The checkout summary itemised it honestly, which is why it survived four sessions; it is still drip
+pricing, and it is the wrong first impression for a brand whose promise is that nothing surprises
+you.
+
+`allInFromMinor()` computes it **by running the same `priceFor()` the checkout charges from**, not
+by multiplying the base by 1.20 in a second place. A second copy of the tax arithmetic is a second
+thing to keep in step, and browse and checkout disagreeing about money is the failure that costs
+trust fastest. `fromAmountMinor` is untouched — it is the vendor's rate, and the checkout
+itemisation and the vendor dashboard both still need it.
+
+Applied to every browse surface **and to Irie's budget filter**: if the prices shown are all-in,
+"under US$100" has to mean all-in too, or the filter is answering a different question from the one
+the screen is asking.
+
+> The load-bearing test asserts the advertised price equals the charged price **on every listing on
+> every island**. That is what stops a screen quietly going back to `fromAmountMinor`.
+
+---
+
+#### The data gaps — both were structural, not cosmetic
+
+**Distance could not tell two listings apart.** It was measured from the **vendor**, and 39 listings
+shared 15 operators — about five coordinates per island. Dunn's River Falls and Mystic Mountain,
+2 km apart, both read "8 MIN DRIVE · 3.6 KM". A sort keyed on a number that cannot discriminate is
+not a sort, and "nearest first" was the claim the screen was making.
+
+`DemoExperience` now takes an optional `meetingPoint`, and **24 listings across all three islands
+carry a real one**. It is omitted where the operator's base genuinely *is* the meeting point — a
+transfer desk, a studio — so the field marks a difference rather than restating the vendor on every
+record. Live in Ocho Rios the three nearest now read **1.6 km / 2.9 km / 3.6 km** where all three
+used to be identical.
+
+`experienceCoords()` is the single place that answers where a listing starts, and **the coordinate
+carries its own `destinationSlug`**. That detail is load-bearing: a listing's slug says where it is
+*filed*, not where it *starts* — the West Coast catamaran is filed on the west coast and leaves
+from Carlisle Bay, 12 km away — so anything asking "is this here?" has to mean the point it just
+measured, or it is back to asserting a proximity nobody computed. The existing offer test caught
+exactly that when the first version of this change got it wrong.
+
+**George Town had no operator based in it** — the destination every Cayman guest opens the app in.
+Cayman Heritage & Harbour Co. now runs three listings that start there: the Eden Rock snorkel, the
+old town walk, Smith Cove. That data gap is the whole reason the offer needed an 8 km radius to
+find anything at all. Camana Bay, which had been filed under George Town to give the default
+destination *something*, now sits where it actually is, 4.3 km up the coast.
+
+**Two consequences, both surfaced by tests rather than by reading the diff:**
+
+- The Barbados promotion moved from `exp-bb-catamaran` to `exp-bb-turtles`. The catamaran only ever
+  read as Carlisle Bay because it shared the vendor's coordinates. The turtle swim genuinely starts
+  on the boardwalk.
+- The Cayman promotion moved to `exp-ky-eden-rock`, which is local to George Town rather than 4.3 km
+  from it.
+
+> New tests pin the general rule, not the instances: **every island's default destination must have
+> both a listing that starts there and an approved operator based in it.** The next island added
+> cannot repeat George Town.
+
+---
+
+#### `Irie` was planning a 5.7 km drive as "no transfer"
+
+Found while verifying the above in the browser, and the most serious defect of the session.
+
+The planner decided "same site" by `from.vendorId === to.vendorId` — true of every listing an
+operator runs. So White River Tubing and the Dunn's River climb, on opposite sides of Ocho Rios,
+were planned as **"Same site — no transfer" with zero travel time budgeted**, and the route distance
+came out as zero. On the screen whose entire promise is *every stop fits, nothing overlaps*, the
+promise was being made from an assumption rather than a measurement.
+
+It asks the distance now, against `AT_VENUE_METRES` — already the app's answer to "close enough to
+be standing there". The same day reads **"12 min drive · 5.7 km"**.
+
+> **The test that had to change is the lesson.** It asserted same-vendor ⇒ same-site, which was
+> true when location lived only on the vendor and is false now. Only two pairs in the catalogue
+> genuinely share a site and the builder never happens to place either together, so the branch is
+> asserted by a focused test that **plans both Rum Point boats** rather than by a sweep hoping for a
+> coincidence. The bio bay tour lost the meeting point this session had given it — it leaves from
+> the Rum Point jetty like its sibling, so the operator's location was the truthful answer, and a
+> made-up launch point would have been the same defect as the taxi fare.
+
+---
+
+#### Four UI defects, and the splash
+
+`Montego Bay` was hidden by the search field. `.ex-hero` carries `isolation: isolate`, so
+`.island-menu`'s z-index is scoped **inside** the hero, while `.search-pill` is a *sibling* at
+`z-index: 8` — which puts the entire hero beneath it. **No number on the menu could ever have fixed
+it**; the hero itself is raised while the menu is open.
+
+The mood tiles' four colours were hand-picked hex and the purple belonged to no token in the
+palette, which is what made the 2×2 read as a stock category grid dropped into the app. They are
+`--green-900` / `--teal-text` / `--coral-text` / `--gold-text` now. The ragged rhythm is fixed by
+**reserving two lines of label height whether or not they are used** — sizing to the content means
+the grid is only ever as even as the current wording, and the wording changes with the island.
+
+Time format is one format: `formatClock()` in `availability.ts`, so Confirmation and Ticket stop
+printing "13:30" on the two screens a guest screenshots. `pickupTime` was refactored onto it rather
+than keeping a third copy of the same arithmetic.
+
+**The splash is now a crest, three island names and three proofs. Nothing else.** Ro cut the
+overline, the headline and the subline — including the headline last session added. His reasoning,
+and it is right: *a premium mark asserts less.* The argument is not lost, it changes voice — the
+proof row still says *plans your day*, *verified operators*, *VIP benefits*, three words a column,
+and substantiation reads as more confident than a claim. The islands carry the middle of the screen
+now and are **sized against the viewport**, because at a flat 13px the line wrapped on a 375px
+phone, dropping "BARBADOS" to its own row and leaving the two hairlines stranded either side of the
+row above — a masthead rule with nothing under half of it.
+
+> **The wash has now been wrong in three directions across two sessions.** It is no longer fighting
+> a paragraph, so the photograph carries the screen. The rule in `Welcome.css` still governs:
+> **check both heroes whenever it changes.**
+
+---
+
+#### Irie's rule sweeps, and Trips carries the unpaid count
+
+Ro asked for the rule under "extraordinary?" to travel across the page, to show Irie is live. It
+does — a gold highlight crossing a 240px track on a 2.8s loop, the highlight its own element so the
+rule underneath stays put between sweeps, and `prefers-reduced-motion` gets the rule without the
+signal. The track is laid across the column rather than sized to the old 52px dash **because the
+travel is the signal**: a sweep with 52px to cross is a flicker.
+
+Ro then asked whether a guest selecting from Irie should be able to **book immediately**, and
+whether they would otherwise know to go to Trips. The answer has a hard constraint in it and is
+worth keeping:
+
+**A day plan cannot be captured as one sale.** The route is `/checkout/:id` — checkout charges **one
+experience**. A four-stop day is four payments, so "book from Irie" is not a copy change, it is a
+basket. That is a real feature and a real decision, not a tweak.
+
+**What was wrong was the signal, and that is fixed.** Irie already said "nothing is booked or paid
+for until you check out" and swapped its button to "See it on Trips" — but a state change *in
+place*, on a screen the guest is still reading, is the weakest signal in the interface. A guest who
+looked away at that moment had a planned day, no booking, and nothing anywhere telling them so.
+**The Trips tab now carries a coral count of planned-but-unpaid stops.** Coral not gold: gold is the
+affirmative accent and is already on the Irie badge two tabs away, so it would read as decoration.
+It sits on Trips because that is where the day is completed *and where the clash resolver runs* — a
+guest booking straight from a suggestion would skip the one check that stops them holding two
+things at once, which is the argument against the single-stop "Book now" shortcut as well.
+
+**Still open, and it is Ro's call:** a *single-listing* suggestion could carry "Book now" straight
+to checkout, because one listing is one payment. It would capture the sale earlier and bypass the
+clash check. The multi-stop basket is the larger question behind it.
+
+---
+
+#### The open list, carried forward
+
+Closed this session: the old **#4** (fabricated "Cruise-Friendly" — still open, see below), **#5**
+(Nearby's sort), **#7** (George Town), **#10** (drip pricing), **#11** (time format), **#13**
+(eslint), and **#8**/**#9** (dropdown, mood tiles).
+
+0. **The live demo is `https://caribbean-vip-tourist-web.vercel.app`.** Every push to `main`
+   auto-deploys; check with `gh api repos/vildelsol/caribbean-vip/deployments --jq '.[0].sha'`.
+   Never put a `...-li58ewgtb-...` deployment URL in front of anyone.
+1. **PUSH THE TWELVE COMMITS.** Until then every fix above exists only on this machine.
+2. **The first live Stripe payment has still never been executed.** Card `4242 4242 4242 4242` on
+   the Vercel URL. **Until it runs, M3 is not complete** — the biggest single gap.
+   **Claude cannot do this one**: entering card numbers into a payment form is refused regardless of
+   the card being a test card, so it is Ro's to run. Claude can drive the journey up to the card
+   step and verify everything either side of it.
+3. **The 250m/400m geofence hysteresis still has no unit tests.** Carried six sessions now. It is
+   the exact function you would point at to say "the proximity logic is real", it is pure, and it is
+   about thirty minutes.
+4. **Background geofencing needs a native shell (M6).** Unchanged — see §"Is the proximity feature
+   ready for Apple and Android" below. The decision logic is built and port-isolated; the trigger is
+   not reachable from a browser.
+5. **"Cruise-Friendly" on the feature card is still fabricated.** No field backs it. Add
+   `cruiseFriendly: boolean` to `DemoExperience` or delete the badge. It survived this session's
+   audit only because the audit was scoped to arithmetic.
+6. **Social proof is 5 experiences out of 42.** Only five listings carry a `review` — the Eden Rock
+   snorkel added one. In a demonstration, whichever listing gets tapped decides whether the product
+   looks reviewed or empty. Ro's framing applies: this is a demo and there are no real vendors, so
+   the honest options are to write the rest or hide the section until reviews are real.
+7. **The ticket can still say the guest's name is "Guest".** Ro's call this session was that guest
+   exploration stays and sign-up is **not** being hardened for the demo — "they can explore as
+   guest, let's not complicate". So the placeholder remains reachable, and `GUEST / Guest` beside
+   `GUESTS / 1 adult` is still two near-identical labels on the artefact a vendor scans. Worth
+   twenty minutes to drop the row when there is no name.
+8. **Single-stop "Book now" from Irie, and the multi-stop basket.** See the section above — the
+   constraint is that `/checkout/:id` charges one experience.
+9. **MiroFish — agreed as the next piece of work, not started.** Unchanged for three sessions: it is
+   a *population simulator, not a UI testing tool*, so it needs a written scenario rather than a
+   running build; and the main repo depends on paid Zep where `nikmcfly/MiroFish-Offline` swaps in
+   local Neo4j + Ollama. Decide the input artefact and the fork before standing up a Neo4j stack.
+
+---
+
+#### Previous session — 2026-09-23, third session
 
 ### Session close — 2026-09-23, third session (read this first)
 
