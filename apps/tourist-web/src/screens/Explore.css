@@ -5,6 +5,20 @@
   isolation: isolate;
 }
 
+/*
+ * The hero has to outrank the search pill *while the menu is open*, and no z-index on the menu
+ * itself can do it: `isolation: isolate` above makes the hero a stacking context, so the menu's
+ * z-index is scoped to its inside. `.search-pill` is a **sibling** of the hero at `z-index: 8`,
+ * which puts the whole hero — menu included — beneath it. That is why "Montego Bay" was covered,
+ * and why raising `.island-menu` from 12 to any number changed nothing.
+ *
+ * It is only raised while open, so the pill keeps its shadow over the photograph the rest of the
+ * time.
+ */
+.ex-hero--menu {
+  z-index: 14;
+}
+
 .ex-hero__photo {
   border-radius: 0;
 }
@@ -214,9 +228,20 @@
   color: #f1dcac;
 }
 
+/*
+ * The label reserves two lines whether or not it uses them.
+ *
+ * Two of the four labels wrapped and two did not, so the 2x2 had a ragged internal rhythm that
+ * changed again with the island ("Taste Cayman" against "Taste Barbados"). Sizing to the content
+ * means the grid is only ever as even as the current wording; reserving the taller case means it
+ * cannot go ragged at any island, label length or font-scale setting.
+ */
 .ex-mood__label {
   flex: 1;
   min-width: 0;
+  display: flex;
+  align-items: center;
+  min-height: calc(13px * 1.25 * 2);
   font-size: 13px;
   font-weight: 700;
   line-height: 1.25;

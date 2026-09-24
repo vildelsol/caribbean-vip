@@ -37,7 +37,6 @@ export default function BillingPage() {
   const [done, setDone] = useState(false);
 
   const brand = cardBrand(form.cardNumber);
-  const lastFour = form.cardNumber.replace(/\s/g, '').slice(-4);
   const displayName = form.cardName || 'YOUR NAME';
   const displayExpiry = form.expiry || 'MM / YY';
 

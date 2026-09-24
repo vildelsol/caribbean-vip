@@ -1,6 +1,6 @@
 import { useNavigate, useParams } from 'react-router-dom';
 import { experienceById, islandById, vendorFor } from '../data/catalogue';
-import { formatLongDate } from '../data/availability';
+import { formatClock, formatLongDate } from '../data/availability';
 import { useStore, type VoucherState } from '../state/store';
 import { QR } from '../components/QR';
 import { Icon } from '../components/Icon';
@@ -96,7 +96,7 @@ export function Ticket() {
           <div>
             <dt className="t-micro c-faint">DATE &amp; TIME</dt>
             <dd className="t-caption-strong">
-              {formatLongDate(booking.dateISO).replace(/,\s\d{4}$/, '')} · {booking.time}
+              {formatLongDate(booking.dateISO).replace(/,\s\d{4}$/, '')} · {formatClock(booking.time)}
             </dd>
           </div>
           <div>

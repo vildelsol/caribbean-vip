@@ -33,7 +33,7 @@ export function soonestDayFitting(
   lookaheadDays = 3,
 ): Itinerary {
   const anchorId = input.anchorExperienceId;
-  let first = buildItinerary({ ...input, dateISO: fromISO });
+  const first = buildItinerary({ ...input, dateISO: fromISO });
   if (!anchorId || first.stops.some((s) => s.experience.id === anchorId)) return first;
 
   for (let offset = 1; offset <= lookaheadDays; offset++) {

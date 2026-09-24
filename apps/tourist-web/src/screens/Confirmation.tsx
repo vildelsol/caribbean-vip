@@ -1,6 +1,6 @@
 import { useNavigate, useParams } from 'react-router-dom';
 import { byDistanceFrom, destinationBySlug, experienceById, experiencesFor, heroUrl, simulatedPosition } from '../data/catalogue';
-import { formatLongDate, pickupTime } from '../data/availability';
+import { formatLongDate, pickupTime, formatClock } from '../data/availability';
 import { useStore } from '../state/store';
 import { QR } from '../components/QR';
 import { Icon } from '../components/Icon';
@@ -79,7 +79,7 @@ export function Confirmation() {
           <div className="grow">
             <p className="t-micro c-faint confirm__key">{formatLongDate(booking.dateISO).toUpperCase()}</p>
             <p className="t-caption-strong confirm__val">
-              {booking.time} · {booking.party.adults} adult{booking.party.adults === 1 ? '' : 's'}
+              {formatClock(booking.time)} · {booking.party.adults} adult{booking.party.adults === 1 ? '' : 's'}
               {booking.party.children > 0 ? `, ${booking.party.children} child` : ''}
             </p>
 

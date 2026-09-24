@@ -139,10 +139,21 @@ export function firstBookableDay(experience: DemoExperience): Day | undefined {
 export function pickupTime(time: string): string {
   const [h, m] = time.split(':').map(Number);
   const total = (h ?? 0) * 60 + (m ?? 0) - 35;
-  const hh = Math.floor(total / 60);
-  const mm = total % 60;
-  const hour12 = (hh % 12) || 12;
-  return `${hour12}:${String(mm).padStart(2, '0')} ${hh < 12 ? 'AM' : 'PM'}`;
+  return formatClock(`${Math.floor(total / 60)}:${total % 60}`);
+}
+
+/**
+ * One 24h "HH:MM" rendered the one way this app says a time: "1:30 PM".
+ *
+ * Confirmation and Ticket printed `booking.time` raw, so they read "13:30" while every browse
+ * surface the guest had just come through read "1:30 PM" — a format change on the two screens a
+ * guest screenshots and shows a vendor. The stored value stays 24h, which is what sorts and
+ * compares correctly; this is the display edge.
+ */
+export function formatClock(time: string): string {
+  const [h, m] = time.split(':').map(Number);
+  const hh = h ?? 0;
+  return `${hh % 12 || 12}:${String(m ?? 0).padStart(2, '0')} ${hh < 12 ? 'AM' : 'PM'}`;
 }
 
 /** "Saturday, 24 May 2026" */

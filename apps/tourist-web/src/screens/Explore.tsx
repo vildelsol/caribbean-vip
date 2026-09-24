@@ -50,11 +50,19 @@ import './Explore.css';
  * "Taste" is labelled dynamically from the island's brand name ("Taste Jamaica",
  * "Taste Cayman", "Taste Barbados"). Tapping the active mood deselects → all.
  */
+/*
+ * Every tile colour is a palette token.
+ *
+ * The four were hand-picked hex — and the purple on "Explore Like a Local" belonged to no token in
+ * the palette, which is what made the 2x2 read as a stock category grid dropped into the app
+ * rather than part of it. Deep green, teal, coral and gold are the brand's own four, they stay
+ * distinguishable from one another, and each is dark enough to carry white type.
+ */
 const MOODS: readonly { id: string; icon: IconName; color: string; categories: readonly string[] }[] = [
-  { id: 'adventure', icon: 'mountain', color: '#17683D', categories: ['adventure', 'water_sports', 'waterfalls', 'day_trips'] },
-  { id: 'relax',     icon: 'beach',    color: '#0E7490', categories: ['beaches', 'wellness'] },
-  { id: 'taste',     icon: 'food',     color: '#B04E1C', categories: ['food', 'nightlife'] },
-  { id: 'explore',   icon: 'compass',  color: '#573593', categories: ['culture', 'family', 'shopping'] },
+  { id: 'adventure', icon: 'mountain', color: 'var(--green-900)', categories: ['adventure', 'water_sports', 'waterfalls', 'day_trips'] },
+  { id: 'relax',     icon: 'beach',    color: 'var(--teal-text)', categories: ['beaches', 'wellness'] },
+  { id: 'taste',     icon: 'food',     color: 'var(--coral-text)', categories: ['food', 'nightlife'] },
+  { id: 'explore',   icon: 'compass',  color: 'var(--gold-text)', categories: ['culture', 'family', 'shopping'] },
 ];
 
 /** The design labels a card by what kind of thing it is, not by its raw category id. */
@@ -218,7 +226,7 @@ export function Explore() {
   return (
     <main className="screen">
       {/* ---------------- Hero ---------------- */}
-      <header className="ex-hero">
+      <header className={`ex-hero ${islandOpen ? 'ex-hero--menu' : ''}`}>
         <Photo
           src={mediaUrl(island.hero_media_path ?? undefined)}
           mediaKey={island.hero_media_path ?? undefined}
