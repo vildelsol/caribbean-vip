@@ -68,8 +68,15 @@ export function Confirmation() {
             <Icon name="check" size={22} color="var(--green-900)" strokeWidth={3} />
           </p>
           <h1 className="confirm__shout">Confirmed!</h1>
+          {/*
+            * Who is going, when it is not the person who paid. A guest who has just bought a
+            * ticket for their partner needs the screen to say so — "You're going to" is the wrong
+            * sentence, and it is the last chance to catch a name typed into the wrong booking.
+            */}
           <p className="t-title c-on-dark confirm__going">
-            You&rsquo;re going to {experience.title}
+            {booking.attendeeName
+              ? `${booking.attendeeName} is going to ${experience.title}`
+              : `You’re going to ${experience.title}`}
           </p>
         </div>
       </header>
@@ -87,6 +94,12 @@ export function Confirmation() {
             <p className="t-amount-sm c-brand confirm__ref">{booking.reference}</p>
 
             <p className="t-micro c-muted confirm__pickup">Hotel pickup around {pickupTime(booking.time)}</p>
+
+            {booking.attendeeName ? (
+              <p className="t-micro c-muted confirm__pickup">
+                The ticket is in {booking.attendeeName}&rsquo;s name — send it to them from Trips.
+              </p>
+            ) : null}
 
             {voucher ? (
               <p className="confirm__voucher t-micro-strong">

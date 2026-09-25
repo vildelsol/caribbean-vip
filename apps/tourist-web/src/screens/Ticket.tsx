@@ -1,10 +1,12 @@
+import { useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { experienceById, islandById, vendorFor } from '../data/catalogue';
+import { attendeeLabel } from '../data/bookingClash';
 import { formatClock, formatLongDate } from '../data/availability';
 import { useStore, type VoucherState } from '../state/store';
 import { QR } from '../components/QR';
 import { Icon } from '../components/Icon';
-import { EmptyState, formatUsd } from '../components/kit';
+import { EmptyState, SecondaryButton, formatUsd } from '../components/kit';
 import './Ticket.css';
 
 /**
@@ -25,7 +27,9 @@ const VOUCHER_STATES: VoucherState[] = ['available', 'attached', 'redeemed', 'ex
 export function Ticket() {
   const { bookingId } = useParams<{ bookingId: string }>();
   const navigate = useNavigate();
-  const { state } = useStore();
+  const { state, dispatch } = useStore();
+  const [renaming, setRenaming] = useState(false);
+  const [nameDraft, setNameDraft] = useState('');
 
   const booking = state.bookings.find((b) => b.id === bookingId);
   const experience = booking ? experienceById(booking.experienceId) : undefined;
@@ -48,6 +52,11 @@ export function Ticket() {
 
   const vendor = vendorFor(experience);
   const cancelled = booking.status === 'cancelled';
+  // `null` when neither a specific attendee nor an onboarding name exists, which is what lets the
+  // GUEST row drop out rather than print a placeholder.
+  const named =
+    booking.attendeeName?.trim() || state.guestName.trim() || null;
+  const holderLabel = attendeeLabel(null, state.guestName);
 
   return (
     <main className="screen screen--deep ticket">
@@ -74,18 +83,26 @@ export function Ticket() {
         </div>
 
         <dl className="stub__grid">
-          <div>
-            <dt className="t-micro c-faint">GUEST</dt>
-            {/*
-              * This read "Alex Bennett" — a literal, on every ticket, for every
-              * guest. It is the field a vendor reads off the screen when they
-              * scan, so it was the one hardcoded string in the app that a real
-              * person could be turned away over. `guestName` is what onboarding
-              * collected; guests who skipped it are stored as "Guest", which is
-              * the honest answer rather than someone else's name.
-              */}
-            <dd className="t-caption-strong">{state.guestName || 'Guest'}</dd>
-          </div>
+          {/*
+            * This read "Alex Bennett" — a literal, on every ticket, for every guest. It is the
+            * field a vendor reads off the screen when they scan, so it was the one hardcoded
+            * string in the app that a real person could be turned away over.
+            *
+            * It now names the person *this booking is for*, which is not always the account
+            * holder: one card pays for a couple who are doing different things at the same hour,
+            * and the ticket the second person holds has to have their name on it or the vendor is
+            * looking at a mismatch.
+            *
+            * The row is dropped entirely when nobody has been named, rather than printing the
+            * placeholder "Guest" beside "1 adult" — two near-identical labels, one of them
+            * holding nothing, on the artefact a vendor scans.
+            */}
+          {named ? (
+            <div>
+              <dt className="t-micro c-faint">GUEST</dt>
+              <dd className="t-caption-strong">{named}</dd>
+            </div>
+          ) : null}
           <div>
             <dt className="t-micro c-faint">GUESTS</dt>
             <dd className="t-caption-strong">
@@ -161,6 +178,75 @@ export function Ticket() {
         </div>
       </article>
 
+      {/*
+        Handing the ticket to the person it was bought for.
+        ---------------------------------------------------
+        A couple pays from one account and then needs two tickets in two hands. Nothing here
+        re-issues anything: the token, the QR and the reference are the same artefact throughout —
+        this writes the name the vendor reads beside the code, which is the part that was missing
+        and the part that gets someone turned away. It is on the ticket rather than buried in
+        Profile because the ticket is the thing being handed over.
+      */}
+      {!cancelled ? (
+        <section className="ticket__handoff">
+          {renaming ? (
+            <>
+              <label className="t-micro c-faint" htmlFor="ticket-attendee">
+                Whose ticket is this?
+              </label>
+              <input
+                id="ticket-attendee"
+                className="ticket__handoff-input"
+                type="text"
+                autoComplete="off"
+                maxLength={40}
+                value={nameDraft}
+                placeholder={holderLabel}
+                onChange={(e) => setNameDraft(e.target.value)}
+              />
+              <div className="ticket__handoff-actions">
+                <SecondaryButton
+                  onClick={() => {
+                    dispatch({
+                      type: 'assignAttendee',
+                      bookingId: booking.id,
+                      attendeeName: nameDraft.trim() || null,
+                    });
+                    setRenaming(false);
+                  }}
+                >
+                  Save the name
+                </SecondaryButton>
+                <button
+                  type="button"
+                  className="ticket__handoff-cancel t-micro"
+                  onClick={() => setRenaming(false)}
+                >
+                  Cancel
+                </button>
+              </div>
+              <p className="t-micro c-faint">
+                Leave it empty to put the ticket back in {holderLabel}&rsquo;s name.
+              </p>
+            </>
+          ) : (
+            <>
+              <p className="t-micro c-faint ticket__handoff-line">
+                {booking.attendeeName
+                  ? `Booked by ${holderLabel} for ${booking.attendeeName}.`
+                  : 'Booked for you. If someone else is going, put their name on it.'}
+              </p>
+              <SecondaryButton onClick={() => {
+                setNameDraft(booking.attendeeName ?? '');
+                setRenaming(true);
+              }}>
+                <Icon name="share" size={15} strokeWidth={2.2} />
+                {booking.attendeeName ? 'Change who this is for' : 'This is for someone else'}
+              </SecondaryButton>
+            </>
+          )}
+        </section>
+      ) : null}
     </main>
   );
 }

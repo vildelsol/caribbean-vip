@@ -200,3 +200,53 @@
 .ticket__actions {
   padding: 20px var(--s-md) 0;
 }
+
+/* --- Hand-off ------------------------------------------------------------- */
+/*
+ * Sits below the stub, on the deep screen rather than on the ticket stock: it is an action the
+ * holder takes, not part of the artefact the vendor scans.
+ */
+.ticket__handoff {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin: 18px var(--s-md) 28px;
+}
+
+.ticket__handoff-line {
+  margin: 0;
+}
+
+.ticket__handoff-input {
+  min-height: 46px;
+  padding: 0 14px;
+  border-radius: var(--r-sm);
+  border: 1px solid rgba(255, 255, 255, 0.24);
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--on-dark);
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.ticket__handoff-input::placeholder {
+  color: rgba(255, 255, 255, 0.5);
+}
+
+.ticket__handoff-input:focus-visible {
+  outline: 2px solid var(--gold);
+  outline-offset: 1px;
+}
+
+.ticket__handoff-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.ticket__handoff-cancel {
+  flex: none;
+  min-height: 44px;
+  padding: 0 6px;
+  color: rgba(255, 255, 255, 0.72);
+  font-weight: 600;
+}
