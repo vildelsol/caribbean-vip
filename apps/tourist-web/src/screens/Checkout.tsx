@@ -20,6 +20,12 @@ import {
   slotOn,
   slotsFor,
 } from '../data/availability';
+import {
+  attendeeLabel,
+  describeClash,
+  findBookingClashes,
+  knownAttendees,
+} from '../data/bookingClash';
 import { useStore } from '../state/store';
 import { isLiveMode, callCheckout, resolveSlot, ensureLiveUser } from '../lib/api';
 import { Icon } from '../components/Icon';
@@ -28,7 +34,9 @@ import {
   EmptyState,
   Photo,
   PrimaryButton,
+  SecondaryButton,
   Stepper,
+  TextButton,
   formatUsd,
 } from '../components/kit';
 import './Checkout.css';
@@ -72,6 +80,18 @@ export function Checkout() {
   const [paying, setPaying] = useState(false);
   const [payError, setPayError] = useState<string | null>(null);
 
+  /*
+   * Who is going. `null` is the account holder and is the default, because they are who is booking
+   * in almost every case and a picker that demands an answer before it has a reason to is friction
+   * on the money screen. It only becomes a question when a clash makes it one.
+   */
+  const [attendee, setAttendee] = useState<string | null>(null);
+  const [nameDraft, setNameDraft] = useState('');
+  const [namingSomeoneElse, setNamingSomeoneElse] = useState(false);
+  /** The clash the guest has been shown and accepted, so the warning is not raised twice. */
+  const [clashAccepted, setClashAccepted] = useState(false);
+  const [clashPrompt, setClashPrompt] = useState(false);
+
   const days = useMemo(() => (experience ? daysFor(experience) : []), [experience]);
   const slots = useMemo(
     () => (experience && dateISO ? slotsFor(experience, dateISO) : []),
@@ -87,6 +107,24 @@ export function Checkout() {
     if (!experience || !slot) return null;
     return priceFor(experience, party, slot.capacityRemaining);
   }, [experience, slot, party]);
+
+  /*
+   * Everything this attendee already holds that this departure cannot sit beside.
+   *
+   * Recomputed from the chosen day, departure and attendee rather than checked once at payment, so
+   * changing any of the three clears or raises the warning immediately — a guest who moves to a
+   * later departure to resolve a clash should see it resolve, not discover at the Pay button that
+   * it did.
+   */
+  const clashes = useMemo(() => {
+    if (!experience || !dateISO || !activeTime) return [];
+    return findBookingClashes(
+      { experienceId: experience.id, dateISO, time: activeTime, attendeeName: attendee },
+      state.bookings,
+    );
+  }, [experience, dateISO, activeTime, attendee, state.bookings]);
+
+  const clash = clashes[0] ?? null;
 
   if (!experience) {
     return (
@@ -109,8 +147,30 @@ export function Checkout() {
     (v) => v.promotionId === 'promo-rum-punch' && v.state === 'available',
   );
 
-  const pay = async () => {
+  const ownLabel = attendeeLabel(null, state.guestName);
+  const attendees = knownAttendees(state.bookings, state.guestName);
+  const clashMessage = clash ? describeClash(clash, attendeeLabel(attendee, state.guestName)) : null;
+
+  const pay = async (force = false) => {
     if (!quote?.ok || !dateISO || !activeTime || paying) return;
+
+    /*
+     * The double-booking gate.
+     *
+     * It stops at the Pay button rather than disabling it, because a clash is not always a mistake:
+     * a couple paying from one card genuinely book two things at the same hour, for two people. The
+     * guest is the only one who knows which case this is, so the app asks instead of ruling — and
+     * the dialog offers naming the other person as a first-class answer, not a way of dismissing
+     * the warning. Refusing outright would block the legitimate case; saying nothing, which is what
+     * it did before, sells a seat nobody can use.
+     */
+    // `force` is passed by the dialog's own "book it anyway", because `clashAccepted` is state and
+    // would not be readable in this closure on the same tick the guest pressed it.
+    if (clash && !clashAccepted && !force) {
+      setClashPrompt(true);
+      return;
+    }
+
     setPaying(true);
     setPayError(null);
 
@@ -162,6 +222,9 @@ export function Checkout() {
           sessionStorage.setItem(`slot_date_${bookingId}`, `${dateISO}T${activeTime}`);
           sessionStorage.setItem(`slot_time_${bookingId}`, activeTime);
           sessionStorage.setItem(`party_${bookingId}`, JSON.stringify(party));
+          // Stripe takes the guest off-site, so the attendee has to survive the round trip or the
+          // ticket comes back in the account holder's name for a booking made for someone else.
+          if (attendee) sessionStorage.setItem(`attendee_${bookingId}`, attendee);
         } catch {
           // sessionStorage unavailable — BookingReturn falls back to sensible defaults.
         }
@@ -207,6 +270,7 @@ export function Checkout() {
       serviceFeeMinor: b.serviceFee.amountMinor,
       status: 'confirmed',
       voucherId: rumPunch && liveVoucher ? liveVoucher.id : null,
+      attendeeName: attendee,
     });
     navigate(`/confirmation/${booking.id}`, { replace: true });
   };
@@ -250,6 +314,7 @@ export function Checkout() {
                 onClick={() => {
                   setDateISO(d.iso);
                   setTime(null);
+                  setClashAccepted(false);
                 }}
                 aria-pressed={on}
                 aria-label={`${formatLongDate(d.iso)}${d.hasAvailability ? '' : ', fully booked'}`}
@@ -279,7 +344,10 @@ export function Checkout() {
                   type="button"
                   className={`slot ${on ? 'slot--on' : ''} ${full ? 'slot--full' : ''}`}
                   disabled={full}
-                  onClick={() => setTime(s.time)}
+                  onClick={() => {
+                    setTime(s.time);
+                    setClashAccepted(false);
+                  }}
                   aria-pressed={on}
                 >
                   <span className="t-caption-strong">{s.label}</span>
@@ -332,6 +400,97 @@ export function Checkout() {
           </label>
         </div>
       </section>
+
+      {/* ---------------- Who it is for ---------------- */}
+      {/*
+        Shown only once this account has booked something, because until then there is nobody else
+        it could be for and the question is noise on the screen where the guest is deciding to pay.
+        After that it is the control that makes a couple's two overlapping bookings expressible.
+      */}
+      {state.bookings.length > 0 ? (
+        <section className="checkout__block">
+          <h3 className="t-caption-strong checkout__label">Who is this for?</h3>
+          <div className="attendee-row">
+            {attendees.map((name) => {
+              const value = name === ownLabel ? null : name;
+              const on = (attendee ?? ownLabel) === (value ?? ownLabel);
+              return (
+                <button
+                  key={name}
+                  type="button"
+                  className={`attendee ${on ? 'attendee--on' : ''}`}
+                  aria-pressed={on}
+                  onClick={() => {
+                    setAttendee(value);
+                    setNamingSomeoneElse(false);
+                    setClashAccepted(false);
+                  }}
+                >
+                  {name}
+                </button>
+              );
+            })}
+            <button
+              type="button"
+              className={`attendee attendee--add ${namingSomeoneElse ? 'attendee--on' : ''}`}
+              aria-pressed={namingSomeoneElse}
+              onClick={() => {
+                setNamingSomeoneElse(true);
+                setNameDraft('');
+              }}
+            >
+              <Icon name="plus" size={13} strokeWidth={2.4} />
+              Someone else
+            </button>
+          </div>
+
+          {namingSomeoneElse ? (
+            <div className="attendee-name">
+              <label className="t-micro c-muted" htmlFor="attendee-name">
+                Their name, as it should read on the ticket
+              </label>
+              <input
+                id="attendee-name"
+                className="attendee-name__input"
+                type="text"
+                autoComplete="off"
+                maxLength={40}
+                value={nameDraft}
+                placeholder="e.g. Marcus Bennett"
+                onChange={(e) => {
+                  // Committed as it is typed rather than on blur. Blur ordering is the kind of
+                  // thing that works until a guest taps Pay directly from the field, and a name
+                  // that silently failed to attach is a ticket in the wrong person's name.
+                  setNameDraft(e.target.value);
+                  setAttendee(e.target.value.trim() || null);
+                  setClashAccepted(false);
+                }}
+              />
+            </div>
+          ) : null}
+
+          <p className="t-micro c-faint checkout__attendee-note">
+            They get their own ticket and QR code, which you can send them from Trips.
+          </p>
+        </section>
+      ) : null}
+
+      {/*
+        The warning sits here, above the total, not on the Pay button. A guest who is about to pay
+        for something they cannot attend should find that out while the departure list is still on
+        screen and changing it is one tap, rather than at the last control.
+      */}
+      {clash && clashMessage ? (
+        <section className="checkout__clash" role="status">
+          <span className="checkout__clash-icon" aria-hidden>
+            <Icon name="calendar" size={15} color="var(--coral-text)" strokeWidth={2.2} />
+          </span>
+          <div className="grow">
+            <p className="t-caption-strong">{clashMessage.headline}</p>
+            <p className="t-micro c-muted">{clashMessage.detail}</p>
+          </div>
+        </section>
+      ) : null}
 
       {rumPunch && liveVoucher ? (
         <section className="checkout__voucher">
@@ -429,7 +588,7 @@ export function Checkout() {
           </p>
         )}
         <PrimaryButton
-          onClick={pay}
+          onClick={() => void pay()}
           disabled={!quote?.ok || paying || seats === 0}
           aria-label={quote?.ok ? `Pay ${formatUsd(quote.breakdown.total.amountMinor)}` : 'Pay'}
         >
@@ -451,6 +610,55 @@ export function Checkout() {
             : 'Operator confirms instantly · free cancellation applies'}
         </p>
       </div>
+
+      {/*
+        The gate itself. Three ways out and they are not equally weighted on purpose: changing the
+        departure is the plain fix and leads; naming the other guest is the couple's answer and is
+        the reason this is a question rather than a refusal; paying anyway is last and is still
+        allowed, because the app does not know better than the guest who is standing where.
+      */}
+      {clashPrompt && clash && clashMessage ? (
+        <div className="clash-scrim" role="presentation" onClick={() => setClashPrompt(false)}>
+          <div
+            className="clash-sheet"
+            role="alertdialog"
+            aria-modal="true"
+            aria-labelledby="clash-title"
+            aria-describedby="clash-detail"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h2 id="clash-title" className="t-display-sm clash-sheet__title">
+              {clashMessage.headline}
+            </h2>
+            <p id="clash-detail" className="t-caption c-muted clash-sheet__detail">
+              {clashMessage.detail}
+            </p>
+
+            <div className="clash-sheet__actions">
+              <PrimaryButton onClick={() => setClashPrompt(false)}>Choose another time</PrimaryButton>
+              <SecondaryButton
+                onClick={() => {
+                  setClashPrompt(false);
+                  setNamingSomeoneElse(true);
+                  setNameDraft('');
+                  setAttendee(null);
+                }}
+              >
+                It is for someone else
+              </SecondaryButton>
+              <TextButton
+                onClick={() => {
+                  setClashAccepted(true);
+                  setClashPrompt(false);
+                  void pay(true);
+                }}
+              >
+                {clashMessage.proceedLabel}
+              </TextButton>
+            </div>
+          </div>
+        </div>
+      ) : null}
     </main>
   );
 }

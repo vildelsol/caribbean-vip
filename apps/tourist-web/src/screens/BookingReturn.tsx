@@ -75,6 +75,7 @@ export function BookingReturn() {
               createdAtISO: result.createdAt,
               ticketToken: result.ticketToken,
               voucherId: null,
+              attendeeName: sessionStorage.getItem(`attendee_${bookingId}`) || null,
             },
           });
         }

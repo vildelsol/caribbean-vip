@@ -335,3 +335,121 @@
 .checkout__error svg {
   flex: none;
 }
+
+/* --- Who it is for -------------------------------------------------------- */
+/*
+ * One account routinely buys for more than one person. These chips are what make that expressible,
+ * and they are what the clash dialog sends a guest to when the answer to "you are already booked"
+ * is "yes, and this one is not for me".
+ */
+.attendee-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 0 var(--s-md);
+}
+
+.attendee {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  min-height: 38px;
+  padding: 0 14px;
+  border-radius: var(--r-pill);
+  border: 1px solid var(--sand-border);
+  background: var(--ivory-raised);
+  color: var(--ink-muted);
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1;
+}
+
+.attendee--on {
+  background: var(--green-900);
+  border-color: var(--green-900);
+  color: var(--on-dark);
+}
+
+.attendee--add {
+  border-style: dashed;
+}
+
+.attendee-name {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin: 10px var(--s-md) 0;
+}
+
+.attendee-name__input {
+  min-height: 46px;
+  padding: 0 14px;
+  border-radius: var(--r-sm);
+  border: 1px solid var(--sand-border);
+  background: var(--ivory-raised);
+  color: var(--ink);
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.attendee-name__input:focus-visible {
+  outline: 2px solid var(--green-900);
+  outline-offset: 1px;
+}
+
+.checkout__attendee-note {
+  margin: 10px var(--s-md) 0;
+}
+
+/* --- Clash ---------------------------------------------------------------- */
+
+.checkout__clash {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  margin: 22px var(--s-md) 0;
+  padding: 12px 14px;
+  border-radius: var(--r-md);
+  border: 1px solid var(--coral);
+  background: #fbeeea;
+}
+
+.checkout__clash-icon {
+  flex: none;
+  display: inline-flex;
+  padding-top: 1px;
+}
+
+.clash-scrim {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  background: rgba(7, 40, 33, 0.42);
+  padding: 0 0 env(safe-area-inset-bottom, 0px);
+}
+
+.clash-sheet {
+  width: 100%;
+  max-width: var(--app-width);
+  padding: 22px var(--s-md) calc(20px + env(safe-area-inset-bottom, 0px));
+  border-radius: var(--r-xl) var(--r-xl) 0 0;
+  background: var(--ivory-raised);
+  box-shadow: 0 -10px 30px rgba(7, 40, 33, 0.22);
+}
+
+.clash-sheet__title {
+  margin: 0 0 8px;
+}
+
+.clash-sheet__detail {
+  margin: 0 0 18px;
+}
+
+.clash-sheet__actions {
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+}
