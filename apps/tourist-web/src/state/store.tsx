@@ -69,6 +69,19 @@ export interface Booking {
   /** The signed voucher token behind the QR. */
   ticketToken: string;
   voucherId: string | null;
+  /**
+   * Who is actually going, when that is not the account holder.
+   *
+   * `null` means the account holder themselves, and is the normal case. It is stored as `null`
+   * rather than as their name so that a guest who books before telling the app their name does not
+   * freeze "Guest" onto the ticket; the name is resolved when the ticket renders.
+   *
+   * The field exists because one account routinely buys for more than one person — a couple paying
+   * from the same card, one doing the catamaran while the other does the cooking class at the same
+   * hour. Without it the app could not tell that legitimate case apart from one person accidentally
+   * buying two overlapping excursions, and so said nothing about either. See `data/bookingClash.ts`.
+   */
+  attendeeName: string | null;
 }
 
 export interface AppState {
@@ -101,7 +114,7 @@ export interface AppState {
   guestName: string;
 }
 
-function initialState(): AppState {
+export function initialState(): AppState {
   const island = ISLANDS[0];
   const destination = island ? destinationsFor(island.id)[0] : undefined;
   return {
@@ -128,6 +141,7 @@ type Action =
   | { type: 'addBooking'; booking: Booking }
   | { type: 'cancelBooking'; bookingId: string }
   | { type: 'rescheduleBooking'; bookingId: string; dateISO: string; time: string }
+  | { type: 'assignAttendee'; bookingId: string; attendeeName: string | null }
   | { type: 'redeemVoucher'; voucherId: string; by: string }
   | { type: 'expireVoucher'; voucherId: string }
   | { type: 'planExperience'; experienceId: string }
@@ -136,7 +150,17 @@ type Action =
   | { type: 'setOnboarded'; name: string }
   | { type: 'reset' };
 
-function reducer(state: AppState, action: Action): AppState {
+export type { Action as StoreAction };
+
+/**
+ * Exported so the booking state machine can be driven without React.
+ *
+ * `journey.test.ts` runs several hundred simulated customers through this — book, clash, reassign,
+ * cancel, reschedule, redeem — and asserts the invariants that hold across all of them. Those are
+ * properties of the reducer, not of the screens, and testing them through a rendered component
+ * would be testing the wrong thing slowly.
+ */
+export function reducer(state: AppState, action: Action): AppState {
   switch (action.type) {
     case 'selectIsland': {
       if (action.islandId === state.islandId) return state;
@@ -243,6 +267,26 @@ function reducer(state: AppState, action: Action): AppState {
       };
     }
 
+    /**
+     * Hands a ticket to the person it was bought for.
+     *
+     * Only the name changes. The token, the reference and the price are untouched: the ticket is
+     * the same ticket and the vendor scans the same code — this says who will be standing there,
+     * which is what the vendor reads off the screen beside it. A cancelled booking is left alone
+     * because there is nothing to hand over.
+     */
+    case 'assignAttendee': {
+      const name = action.attendeeName?.trim() ?? '';
+      return {
+        ...state,
+        bookings: state.bookings.map((b) =>
+          b.id === action.bookingId && b.status === 'confirmed'
+            ? { ...b, attendeeName: name || null }
+            : b,
+        ),
+      };
+    }
+
     case 'redeemVoucher':
       return {
         ...state,
@@ -308,7 +352,13 @@ function load(): AppState {
     if (parsed.version !== VERSION) return initialState();
     // Merge over a fresh baseline so a key added since the state was written is present and typed
     // rather than undefined — the failure mode is otherwise a screen crashing on `.map` of nothing.
-    return { ...initialState(), ...parsed, version: VERSION };
+    const merged = { ...initialState(), ...parsed, version: VERSION };
+    // `attendeeName` was added after bookings were already being persisted. Defaulting it here
+    // rather than bumping `VERSION` is deliberate: a version bump discards the whole store, and
+    // losing a booking mid-presentation is the exact failure persistence exists to prevent. The
+    // field is additive and `null` is the correct answer for every booking made before it existed.
+    merged.bookings = merged.bookings.map((b) => ({ ...b, attendeeName: b.attendeeName ?? null }));
+    return merged;
   } catch {
     // Corrupt or unreadable storage (private mode, quota, a half-written value) must not stop the
     // app from opening. Starting fresh is always recoverable; failing to render is not.
