@@ -1,6 +1,6 @@
 # Handover — Caribbean VIP
 
-**Written:** 2026-08-02 · **Updated:** 2026-09-24 (fifth session) — **start at §5 "Session close" for the current state and pick-up list** · **Branch:** `main` at `2fc1903`, working tree clean, **pushed** · **Gates:** green — 361 tests, tourist-web typechecks clean, eslint clean
+**Written:** 2026-08-02 · **Updated:** 2026-09-24 (sixth session) — **start at §5 "Session close" for the current state and pick-up list** · **Branch:** `main` at `2fc1903` plus **uncommitted work**, see §5 · **Gates:** green — 384 tests, tourist-web typechecks clean, eslint clean
 
 Read this first, then [`PRD.md`](PRD.md) (product source of truth),
 [`architecture.md`](architecture.md) (the numbered decisions), and
@@ -150,6 +150,127 @@ applies** and has been superseded. The mockups now drive layout and visual langu
 ---
 
 ## 5. Pick up here
+
+### Session close — 2026-09-24, sixth session (read this first)
+
+> ### ⚠ NOT COMMITTED — review the diff first
+>
+> Gates: **384 tests** (25 files), typecheck clean, eslint clean. 10 modified files, 3 new.
+
+Ro's report: **one account could book two excursions at the same time on the same day and the app
+said nothing.** The fix is not a guard, because a second thing he named is the reason a guard would
+be wrong: **a couple pays from one card and books two different excursions at the same hour, for
+two different people.** Both are the same missing fact.
+
+---
+
+#### Nothing on a booking said who it was for
+
+That is the whole defect. `Booking` recorded a party *size* and no identity, so the app could not
+tell one person double-booked from two people booked in parallel — and, having no way to tell, said
+nothing about either. `attendeeName: string | null` is the field that resolves it (`null` = the
+account holder, stored as null rather than their name so a booking made before onboarding does not
+freeze "Guest" onto the ticket).
+
+`data/bookingClash.ts` is the new rule, pure and tested: **two bookings clash only when they are
+for the same person, on the same day, and confirmed.** Cancelled bookings free their time.
+`overlap` (they run together) and `travel` (they do not, but the transfer does not fit) are
+distinguished because they deserve different sentences.
+
+**Name matching is deliberately not fuzzy.** "Sarah" and "sarah" are one person; "Sarah" and
+"Sarah M" are two. Merging them would silently suppress a warning, which is the failure this exists
+to prevent — and erring the other way costs one tap, since the guest can always say it is for
+someone else.
+
+**The gate stops at the Pay button rather than disabling it**, with three exits and they are not
+equally weighted: *Choose another time* leads, *It is for someone else* is the couple's answer and
+is first-class rather than a dismissal, *Book it anyway* is last and still allowed. The app does not
+know better than the guest who is standing where. The same warning also sits inline above the total,
+so a guest finds out while the departure list is still on screen.
+
+---
+
+#### The consequence that would have been the next defect
+
+`Irie` and `ExperienceDetail` built the guest's day from **every** confirmed booking on the island.
+The moment a couple books separately, the concierge starts planning the account holder's day around
+their partner's catamaran, and `describeDayFit` answers *"your day is already full"* about a morning
+that is entirely free. `bookingsFor()` is the same matching rule as the clash detector, used by
+both, so the two cannot drift: **if two bookings are not for the same person, neither constrains
+the other, anywhere.**
+
+---
+
+#### 500 customer journeys — `data/journey.test.ts`
+
+Asked for directly. It drives the **real reducer** (now exported for this), from a fixed
+`mulberry32` seed so a failure replays exactly, and asserts **invariants rather than outcomes**:
+the itemisation adds to the subtotal, advertised price equals charged price, no unwarned overlap
+under one name, a ticket always names someone, the clock is 12-hour, a reschedule is not a
+repricing, a hand-over does not re-issue the code.
+
+> **The harness was checked against the bug it exists to catch.** Mutating the gate away —
+> `acceptedClash = false`, never abandon — the run reports **`no silent double booking — 25 of
+> 500`**. A simulation that cannot fail proves nothing, and this one was made to fail on purpose
+> before it was trusted. Two further tests assert the run *reached* the gate and took all three
+> exits, so a green pass cannot mean "never exercised".
+
+---
+
+#### Three fabricated numbers on `Trips`, found by walking it
+
+Same defect class as the taxi fare and the vendor-based distance, and all three were on the screen a
+guest plans a morning from:
+
+- **The transfer time was `8 + |durationA - durationB| / 20`** — travel derived from how *long* two
+  excursions run, which has nothing to do with how far apart they are. Two listings on opposite
+  sides of the island read "12 min" because they happen to last similar lengths. Measured now,
+  through the same `experienceCoords` as everything else, and it states the kilometres beside it.
+- **`routeKm` was `max(6, stops * 11)`** — eleven kilometres per stop, from nothing. The day read
+  "Route · 22 km" where the real answer was 2 km. Summed from the legs now, so the summary and the
+  legs above it cannot disagree.
+- **A leg was drawn between two different people's stops**, and between two that start at the same
+  minute. "8 min drive" between Sarah's falls climb and Marcus's bobsled describes a journey nobody
+  makes. A leg is only drawn when the two stops share an attendee *and* are sequential.
+
+**`Trips` was also still printing 24-hour time** — "09:00" in the countdown, the Next Up line and
+every timeline row, while every browse surface said "9:00 AM". Open item #11 was closed on
+Confirmation and Ticket two sessions ago and this screen was never covered. It is `formatClock()`
+now, like everything else.
+
+---
+
+#### What the guest sees
+
+- **Checkout** — a "Who is this for?" row, shown only once the account has booked something, since
+  until then there is nobody else it could be for. Remembers names already used.
+- **Confirmation** — *"Marcus is going to …"*, and the ticket is in his name, send it from Trips.
+  Last chance to catch a name typed onto the wrong booking.
+- **Ticket** — GUEST names the attendee, and **the row drops entirely when nobody is named** rather
+  than printing "Guest" beside "1 adult". *That closes carried open item #7.* A hand-off control
+  below the stub changes who it is for; the token, reference and price are untouched, because it is
+  the same ticket — only the name a vendor reads beside the code changes.
+- **Trips** — a "For Marcus" badge on the stop, and `NEXT UP · MARCUS` on the card that says *leave
+  by 7:55 AM*, because that is an instruction and it must not be given to the wrong person.
+
+---
+
+#### Notes for next session
+
+- **`VERSION` was deliberately not bumped.** A bump discards the whole store, and losing a booking
+  mid-presentation is the exact failure persistence exists to prevent. `attendeeName` is additive
+  and `null` is correct for every booking written before it, so `load()` defaults it instead.
+- **The live Stripe path carries the attendee through `sessionStorage`**, like the party and slot
+  already did — it has to survive the off-site round trip or the ticket returns in the wrong name.
+  Untested end to end, because item #2 below is still untested end to end.
+- **`apps/tourist-web/.env.demo` was added (gitignored).** `npx vite --mode demo` in
+  `apps/tourist-web` runs the app in **demo mode on localhost**, which the local `.env` otherwise
+  prevents — this is what made walking the journey locally possible at all. Worth keeping.
+- **Still open and unchanged:** the first live Stripe payment (#2), geofence hysteresis tests (#3),
+  the native shell (#4), "Cruise-Friendly" (#5), social proof (#6), the multi-stop basket (#8),
+  MiroFish (#9), and the night strip photograph (#1).
+
+---
 
 ### Session close — 2026-09-24, fifth session (read this first)
 
