@@ -28,6 +28,7 @@ import {
   type ItineraryShape,
   type ItineraryStop,
 } from '../data/itinerary';
+import { bookingsFor } from '../data/bookingClash';
 import { useStore } from '../state/store';
 import { Icon, type IconName } from '../components/Icon';
 import { PalmFronds } from '../components/PalmFronds';
@@ -561,9 +562,12 @@ function DayAnswer({
         islandId: state.islandId,
         destination,
         party: turn.party,
-        bookings: state.bookings
-          .filter((b) => b.status === 'confirmed' && b.islandId === state.islandId)
-          .map((b) => ({ ...b, seats: seatsIn(b.party) })),
+        // The account holder's own bookings only. Irie plans *your* day, and a booking this
+        // account made for a partner is their constraint, not yours — see `bookingsFor`.
+        bookings: bookingsFor(
+          state.bookings.filter((b) => b.status === 'confirmed' && b.islandId === state.islandId),
+          null,
+        ).map((b) => ({ ...b, seats: seatsIn(b.party) })),
         plannedExperienceIds: state.plannedExperienceIds,
         anchorExperienceId: turn.anchorExperienceId,
       },

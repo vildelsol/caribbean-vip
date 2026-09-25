@@ -17,6 +17,7 @@ import { distanceMetres } from '@cvip/types';
 import { firstBookableDay, isoDate, slotsFor } from '../data/availability';
 import { shapeById } from '../data/itinerary';
 import { describeDayFit, soonestDayFitting } from '../data/dayFit';
+import { bookingsFor } from '../data/bookingClash';
 import { DEFAULT_PARTY } from '../data/catalogue';
 import { useStore } from '../state/store';
 import { Icon } from '../components/Icon';
@@ -69,7 +70,12 @@ export function ExperienceDetail() {
         islandId: state.islandId,
         destination,
         party: DEFAULT_PARTY,
-        bookings: state.bookings.filter((b) => b.status === 'confirmed' && b.islandId === state.islandId),
+        // The account holder's own bookings only. A partner's booking, made from the same account,
+        // is not a constraint on this guest's day — see `bookingsFor`.
+        bookings: bookingsFor(
+          state.bookings.filter((b) => b.status === 'confirmed' && b.islandId === state.islandId),
+          null,
+        ),
         plannedExperienceIds: state.plannedExperienceIds,
         anchorExperienceId: experience.id,
       },
