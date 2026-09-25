@@ -1,24 +1,46 @@
 import { useNavigate } from 'react-router-dom';
+import { distanceMetres } from '@cvip/types';
 import {
   destinationBySlug,
   experienceById,
+  experienceCoords,
   experiencesFor,
+  formatKm,
+  formatTravelMinutes,
   heroUrl,
   islandById,
+  travelFrom,
   type DemoExperience,
   allInFromMinor,
 } from '../data/catalogue';
 import { useStore } from '../state/store';
+import { sameAttendee } from '../data/bookingClash';
+import { formatClock } from '../data/availability';
 import { describeDay, isoOf, tripDay } from '../data/day';
 import { Badge, Card, Photo, SectionHeader, formatUsd } from '../components/kit';
 import { Icon } from '../components/Icon';
 import { QR } from '../components/QR';
 import './Trips.css';
 
-function transitMinutes(from: DemoExperience | undefined, to: DemoExperience | undefined): number {
-  if (!from || !to) return 12;
-  const diff = Math.abs(from.durationMinutes - to.durationMinutes);
-  return Math.max(5, Math.min(25, 8 + Math.round(diff / 20)));
+/**
+ * The real transfer between two stops, or `null` when the dataset cannot say.
+ *
+ * This used to be `8 + |durationA - durationB| / 20`, clamped to 5–25 minutes — a travel time
+ * derived from how *long* the two excursions last, which has nothing to do with how far apart
+ * they are. Two listings on opposite sides of the island came out as "12 min" because they happen
+ * to run for similar lengths. Same defect class as the invented taxi fare and the vendor-based
+ * distance before it: a plausible-looking number on the screen a guest plans a day from.
+ *
+ * It measures now, through the same `experienceCoords` every other distance in the app goes
+ * through, and returns `null` rather than a guess when either stop has no coordinate.
+ */
+function transitBetween(from: DemoExperience | undefined, to: DemoExperience | undefined) {
+  if (!from || !to) return null;
+  const a = experienceCoords(from);
+  const b = experienceCoords(to);
+  if (!a || !b) return null;
+  const metres = distanceMetres(a, b);
+  return { ...travelFrom(metres), metres };
 }
 
 /**
@@ -35,14 +57,17 @@ function transitMinutes(from: DemoExperience | undefined, to: DemoExperience | u
  * included, which is the part that is actually true and the part the guest needs.
  */
 function transitNote(from: DemoExperience | undefined, to: DemoExperience | undefined) {
-  const mins = transitMinutes(from, to);
-  if (mins <= 9 && to && !to.pickupInfo) {
-    return { icon: 'walk' as const, text: `${mins} min walk along the shore road` };
+  const travel = transitBetween(from, to);
+  if (!travel) return null;
+  const distance = formatKm(travel.metres);
+  const duration = formatTravelMinutes(travel.minutes);
+  if (travel.mode === 'walk') {
+    return { icon: 'walk' as const, text: `${duration} walk · ${distance}` };
   }
   if (to?.pickupInfo) {
-    return { icon: 'car' as const, text: `${mins} min drive · included pickup` };
+    return { icon: 'car' as const, text: `${duration} drive · ${distance} · included pickup` };
   }
-  return { icon: 'car' as const, text: `${mins} min drive · taxi not included` };
+  return { icon: 'car' as const, text: `${duration} drive · ${distance} · taxi not included` };
 }
 
 /** Food stops get their own colour on the timeline — the design reads the day by rhythm, not list. */
@@ -65,9 +90,20 @@ function startsIn(time: string): string | null {
   return hrs > 0 ? `${hrs}h ${mins}m` : `${mins}m`;
 }
 
-/** Rough distance covered by a day with this many stops. Demo figure, as the note below says. */
-function routeKm(stops: number): number {
-  return Math.max(6, stops * 11);
+/**
+ * How far the day actually travels: the legs between consecutive stops, added up.
+ *
+ * It was `max(6, stops * 11)` — eleven kilometres per stop, from nothing. A guest reads that
+ * number as the distance they are about to cover. It is measured now, from the same coordinates
+ * the timeline's legs are, so the figure on the summary and the legs above it cannot disagree.
+ */
+function routeKm(stops: (DemoExperience | undefined)[]): number {
+  let metres = 0;
+  for (let i = 1; i < stops.length; i++) {
+    const leg = transitBetween(stops[i - 1], stops[i]);
+    if (leg) metres += leg.metres;
+  }
+  return Math.round(metres / 100) / 10;
 }
 
 /** Subtract the pickup lead time from a HH:MM start, for the "leave by" line. */
@@ -286,7 +322,7 @@ export function Trips() {
                 <p className="t-micro trips__countdown-label">
                   {countdown ? 'STARTS IN' : 'STARTS AT'}
                 </p>
-                <p className="t-amount-sm c-on-dark">{countdown ?? next.time}</p>
+                <p className="t-amount-sm c-on-dark">{countdown ?? formatClock(next.time)}</p>
               </div>
             ) : null}
           </div>
@@ -300,9 +336,16 @@ export function Trips() {
               <Icon name="clock" size={21} color="var(--green-900)" />
             </span>
             <div className="grow">
-              <p className="t-micro-strong c-locator">NEXT UP</p>
+              {/*
+                * "NEXT UP … leave by 7:55 AM" is an instruction, and it must not be given to the
+                * wrong person. The first booking of the day can belong to whoever this account
+                * booked for, so the label says whose departure it is when it is not the holder's.
+                */}
+              <p className="t-micro-strong c-locator">
+                {next.attendeeName ? `NEXT UP · ${next.attendeeName.toUpperCase()}` : 'NEXT UP'}
+              </p>
               <h2 className="t-caption-strong next-up__title">
-                {experienceById(next.experienceId)?.title ?? 'Your booking'} · {next.time}
+                {experienceById(next.experienceId)?.title ?? 'Your booking'} · {formatClock(next.time)}
               </h2>
               {/* The day is named whenever it is not today. "Leave by 12:55 PM" in urgent coral
                   is a call to action for the next hour; against tomorrow's departure it is the app
@@ -332,7 +375,18 @@ export function Trips() {
             const e = experienceById(b.experienceId);
             const nextBooking = bookings[idx + 1];
             const nextE = nextBooking ? experienceById(nextBooking.experienceId) : undefined;
-            const hop = nextBooking ? transitNote(e, nextE) : null;
+            /*
+             * A leg is only drawn between two stops the same person actually travels between.
+             *
+             * One account can now hold bookings for two people, so consecutive entries in this
+             * list are not necessarily consecutive stops in anyone's day — and drawing "12 min
+             * drive" between Sarah's falls climb and Marcus's bobsled describes a journey nobody
+             * makes. Two stops at the same time are the same case in the clearest possible form.
+             */
+            const sharesTraveller =
+              nextBooking && sameAttendee(b.attendeeName, nextBooking.attendeeName);
+            const sequential = nextBooking && nextBooking.time !== b.time;
+            const hop = sharesTraveller && sequential ? transitNote(e, nextE) : null;
             return (
               <li key={b.id} className="timeline__item">
                 <span className={`timeline__dot timeline__dot--${dotTone(e)}`} />
@@ -349,10 +403,17 @@ export function Trips() {
                       />
                     ) : null}
                     <div className="grow">
-                      <p className="t-micro-strong c-locator">{b.time}</p>
+                      <p className="t-micro-strong c-locator">{formatClock(b.time)}</p>
                       <h3 className="t-card-title timeline__title">{e?.title ?? 'Booking'}</h3>
                       <div className="timeline__tags">
                         <Badge tone="aqua">Confirmed · {formatUsd(b.totalMinor)}</Badge>
+                        {/*
+                          * Names the other person when there is one. Without it, a couple's day
+                          * reads as one person booked into two places at once — which is exactly
+                          * what it would have been before the clash gate existed, so the day view
+                          * has to be able to tell the two apart on sight.
+                          */}
+                        {b.attendeeName ? <Badge tone="muted">For {b.attendeeName}</Badge> : null}
                         {b.voucherId ? <Badge tone="sand">Voucher attached</Badge> : null}
                       </div>
                     </div>
@@ -401,7 +462,7 @@ export function Trips() {
           <span className="trips__route-stop trips__route-stop--0" />
           <span className="trips__route-stop trips__route-stop--1" />
           <span className="trips__route-stop trips__route-stop--2" />
-          <span className="trips__route-label t-micro-strong">Route · {routeKm(bookings.length)} km</span>
+          <span className="trips__route-label t-micro-strong">Route · {routeKm(bookings.map((b) => experienceById(b.experienceId)))} km</span>
         </div>
 
         {/*
