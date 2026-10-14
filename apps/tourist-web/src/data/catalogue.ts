@@ -14,6 +14,7 @@ import {
   type DemoVendor,
 } from '@cvip/demo';
 import { calculateBookingTotal, distanceMetres, type PriceBreakdown } from '@cvip/types';
+import { dataMode, hugeExperiences, worstCaseExperiences, worstCaseVendor } from './__fixtures__/worstCase';
 
 /**
  * The catalogue the app reads.
@@ -58,12 +59,38 @@ export function destinationBySlug(slug: string): DemoDestination | undefined {
 }
 
 export function vendorFor(experience: DemoExperience): DemoVendor | undefined {
-  return DEMO_VENDORS.find((v) => v.id === experience.vendorId);
+  const vendor = DEMO_VENDORS.find((v) => v.id === experience.vendorId);
+  if (vendor && dataMode() === 'worst') return worstCaseVendor(vendor);
+  return vendor;
 }
 
 /** Every listing the public may see. The single place the visibility rule is applied. */
 export function visibleExperiences(): DemoExperience[] {
-  return DEMO_EXPERIENCES.filter(isPubliclyVisibleDemo);
+  const live = DEMO_EXPERIENCES.filter(isPubliclyVisibleDemo);
+  /*
+   * The one seam the dev-only worst-case fixture enters through. Please leave it here.
+   *
+   * It looks like something to tidy away and it is the opposite. Breaking this UI has to not
+   * involve editing this UI: whatever a screen renders under `?data=worst`, it rendered from data
+   * that arrived through the same function real data arrives through, so a break found that way is
+   * a break a guest can reach. Move this into the screens and the test starts proving things about
+   * the test instead.
+   *
+   * `dataMode()` is hard-wired to `'demo'` outside a dev build, so this is three dead branches in
+   * anything shipped. See `data/__fixtures__/worstCase.ts`.
+   */
+  switch (dataMode()) {
+    case 'worst':
+      return worstCaseExperiences(live);
+    case 'empty':
+      return [];
+    case 'one':
+      return live.slice(0, 1);
+    case 'huge':
+      return hugeExperiences(live);
+    default:
+      return live;
+  }
 }
 
 export function experiencesFor(islandId: string): DemoExperience[] {

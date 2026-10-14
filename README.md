@@ -58,6 +58,27 @@ pnpm vendor
 
 Full instructions in [`docs/setup.md`](docs/setup.md).
 
+### Stress-testing the tourist app
+
+The demo catalogue is kind data — short titles, prices that fit, every optional field filled in —
+which is what makes a design look finished before it is. Append `?data=` to the tourist app in dev
+to swap the catalogue for something harsher:
+
+| URL | What it loads |
+| --- | --- |
+| `?data=worst` | A 137-character listing title, a US$12,999 price, one rating, an unbreakable 73-character email, Spanish and French titles, an emoji vendor name, empty optional fields, a 404 image — spread across the first nine listings so the rest stay normal |
+| `?data=empty` | Zero listings |
+| `?data=one` | A single listing (catches "1 reviews" style pluralization) |
+| `?data=huge` | 1,000 listings (~11,000 DOM nodes — nothing paginates yet) |
+
+There is no switch in the interface on purpose: a debug control rendered into the app is one
+`NODE_ENV` mistake away from appearing under the hero during a demo. `dataMode()` returns `'demo'`
+unconditionally outside a dev build.
+
+The fixture is [`apps/tourist-web/src/data/__fixtures__/worstCase.ts`](apps/tourist-web/src/data/__fixtures__/worstCase.ts)
+and it enters through one seam in `visibleExperiences()`, so breaking the UI never involves editing
+the UI. Worth a pass before any PR that touches a card, a list row or a price.
+
 ## Ground rules
 
 Carried from the PRD's operating rules, and enforced in code where possible:
