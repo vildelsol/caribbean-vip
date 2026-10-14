@@ -27,3 +27,6 @@ npm-debug.log*
 
 # Third-party Claude Code tooling, vendored beside the project. Not part of the build.
 everything-claude-code/
+brag-output/
+brag-output-*/
+shorts-factory/
