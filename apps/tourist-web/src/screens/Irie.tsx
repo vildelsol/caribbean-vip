@@ -32,7 +32,7 @@ import { bookingsFor } from '../data/bookingClash';
 import { useStore } from '../state/store';
 import { Icon, type IconName } from '../components/Icon';
 import { PalmFronds } from '../components/PalmFronds';
-import { Badge, Photo, Price, Stepper, formatUsd, type BadgeTone } from '../components/kit';
+import { Badge, exactDuration, formatUsd, Photo, plural, Price, Stepper, type BadgeTone } from '../components/kit';
 import './Irie.css';
 
 /**
@@ -316,7 +316,7 @@ export function Irie() {
             the island, the catalogue size, the wallet, the day plan. */}
         <div className="irie__context">
           <span className="ctx">{destination.name}</span>
-          <span className="ctx">{ranked.length} experiences nearby</span>
+          <span className="ctx">{plural(ranked.length, 'experience')} nearby</span>
           <span className="ctx">{state.bookings.filter((b) => b.status === 'confirmed').length} booked</span>
           {planned > 0 ? <span className="ctx">{planned} planned</span> : null}
           <span className="ctx">
@@ -636,7 +636,7 @@ function DayAnswer({
 
       <div className="day__summary">
         <span className="t-micro-strong c-locator">
-          {day.stops.length} stop{day.stops.length === 1 ? '' : 's'} · {formatSpan(day.stops)}
+          {plural(day.stops.length, 'stop')} · {formatSpan(day.stops)}
         </span>
         <span className="t-micro c-muted">{whenLabel(day.dateISO)}</span>
       </div>
@@ -710,7 +710,7 @@ function DayAnswer({
 
       {day.unquotedCount > 0 ? (
         <p className="t-micro c-urgent day__caveat">
-          {day.unquotedCount} stop{day.unquotedCount === 1 ? '' : 's'} could not be priced for this party,
+          {plural(day.unquotedCount, 'stop')} could not be priced for this party,
           so the total is a floor rather than a quote.
         </p>
       ) : null}
@@ -736,7 +736,7 @@ function DayAnswer({
           </button>
         ) : (
           <button type="button" className="btn btn--secondary btn--full" onClick={onSeeTrips}>
-            Review &amp; book · {day.stops.length} stop{day.stops.length === 1 ? '' : 's'}
+            Review &amp; book · {plural(day.stops.length, 'stop')}
           </button>
         )}
       </div>
@@ -762,8 +762,8 @@ function Leg({ stop, onMove }: { stop: ItineraryStop; onMove: (r: ClashResolutio
         <span className="day__leg day__leg--clash t-micro">
           <Icon name="clock" size={12} color="var(--coral-text)" strokeWidth={2} />
           {stop.clash.kind === 'overlap'
-            ? `Runs over ${stop.clash.withTitle} — ${durationLabel(stop.clash.shortfallMinutes)} short`
-            : `Not enough time from ${stop.clash.withTitle} — ${durationLabel(stop.clash.shortfallMinutes)} short`}
+            ? `Runs over ${stop.clash.withTitle} — ${exactDuration(stop.clash.shortfallMinutes)} short`
+            : `Not enough time from ${stop.clash.withTitle} — ${exactDuration(stop.clash.shortfallMinutes)} short`}
         </span>
         {/*
           The fix, not just the fault. Naming a collision and stopping there hands the guest a
@@ -805,14 +805,6 @@ function Leg({ stop, onMove }: { stop: ItineraryStop; onMove: (r: ClashResolutio
       {arrival.minutes} min {arrival.mode} · {formatKm(arrival.metres)}
     </span>
   );
-}
-
-/** "45 min" / "2 hr 10 min" — a shortfall of 374 minutes means nothing read as a number of minutes. */
-function durationLabel(minutes: number): string {
-  if (minutes < 60) return `${minutes} min`;
-  const h = Math.floor(minutes / 60);
-  const m = minutes % 60;
-  return m === 0 ? `${h} hr` : `${h} hr ${m} min`;
 }
 
 function StopBadge({ stop }: { stop: ItineraryStop }) {

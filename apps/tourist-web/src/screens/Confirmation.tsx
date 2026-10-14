@@ -4,7 +4,7 @@ import { formatLongDate, pickupTime, formatClock } from '../data/availability';
 import { useStore } from '../state/store';
 import { QR } from '../components/QR';
 import { Icon } from '../components/Icon';
-import { Badge, Card, EmptyState, Photo, PrimaryButton, SecondaryButton, formatUsd } from '../components/kit';
+import { Badge, Card, EmptyState, formatUsd, Photo, plural, PrimaryButton, SecondaryButton } from '../components/kit';
 import './Confirmation.css';
 
 /**
@@ -86,7 +86,7 @@ export function Confirmation() {
           <div className="grow">
             <p className="t-micro c-faint confirm__key">{formatLongDate(booking.dateISO).toUpperCase()}</p>
             <p className="t-caption-strong confirm__val">
-              {formatClock(booking.time)} · {booking.party.adults} adult{booking.party.adults === 1 ? '' : 's'}
+              {formatClock(booking.time)} · {plural(booking.party.adults, 'adult')}
               {booking.party.children > 0 ? `, ${booking.party.children} child` : ''}
             </p>
 

@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { LISTING_LIMITS } from '@cvip/types';
 import { Crest } from '../../components/Crest';
 import { formatUsd, vendorListings } from '../../lib/vendorData';
 import type { DemoExperience } from '@cvip/demo';
@@ -21,7 +22,9 @@ function toLocal(e: DemoExperience): LocalListing {
   return {
     id: e.id,
     title: e.title,
-    summary: e.summary,
+    // Nullable in Postgres; the form below requires one, so a listing without a summary is a
+    // seeded or API-created row and presents here as blank for the operator to fill.
+    summary: e.summary ?? '',
     fromAmountMinor: e.fromAmountMinor,
     durationMinutes: e.durationMinutes,
     ratingCount: e.ratingCount,
@@ -124,7 +127,7 @@ export default function Listings() {
                     </span>
                     <h3 className="listing__title">{l.title}</h3>
                   </div>
-                  <p className="listing__summary">{l.summary}</p>
+                  <p className="listing__summary">{l.summary || 'No summary yet — add one so guests know what this is.'}</p>
                   <p className="listing__meta">
                     {formatUsd(l.fromAmountMinor)} per adult ·{' '}
                     {Math.round(l.durationMinutes / 60)} hr{l.durationMinutes >= 120 ? 's' : ''} ·{' '}
@@ -170,6 +173,7 @@ export default function Listings() {
               <input
                 type="text"
                 className="input"
+                maxLength={LISTING_LIMITS.title}
                 value={editing.title}
                 onChange={(e) => setEditing({ ...editing, title: e.target.value })}
               />
@@ -180,6 +184,7 @@ export default function Listings() {
               <textarea
                 className="input"
                 rows={3}
+                maxLength={LISTING_LIMITS.summary}
                 value={editing.summary}
                 onChange={(e) => setEditing({ ...editing, summary: e.target.value })}
                 style={{ resize: 'vertical' }}
@@ -239,6 +244,7 @@ export default function Listings() {
               <input
                 type="text"
                 className="input"
+                maxLength={LISTING_LIMITS.title}
                 value={newForm.title}
                 onChange={(e) => setNewForm({ ...newForm, title: e.target.value })}
                 placeholder="e.g. Sunset Catamaran Cruise"
@@ -250,6 +256,7 @@ export default function Listings() {
               <textarea
                 className="input"
                 rows={3}
+                maxLength={LISTING_LIMITS.summary}
                 value={newForm.summary}
                 onChange={(e) => setNewForm({ ...newForm, summary: e.target.value })}
                 placeholder="What makes this experience special…"

@@ -244,6 +244,21 @@ button.chip:active {
   object-fit: cover;
 }
 
+/* The frame when there is no photograph to put in it. A shade darker than the empty frame so the
+   mark has something to sit on, and no border — this is a listing without a picture, not an error. */
+.photo--failed {
+  background: var(--ivory-sunken);
+}
+
+.photo__fallback {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0.55;
+}
+
 /* --- Card ---------------------------------------------------------------- */
 
 .card {

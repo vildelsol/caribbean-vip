@@ -17,7 +17,7 @@ import { useStore } from '../state/store';
 import { sameAttendee } from '../data/bookingClash';
 import { formatClock } from '../data/availability';
 import { describeDay, isoOf, tripDay } from '../data/day';
-import { Badge, Card, Photo, SectionHeader, formatUsd } from '../components/kit';
+import { Badge, Card, formatUsd, listingDuration, Photo, SectionHeader } from '../components/kit';
 import { Icon } from '../components/Icon';
 import { QR } from '../components/QR';
 import './Trips.css';
@@ -247,9 +247,7 @@ export function Trips() {
                 <div className="grow">
                   <h3 className="t-card-title starter__title">{e.title}</h3>
                   <p className="t-micro c-locator starter__meta">
-                    {e.durationMinutes >= 60
-                      ? `${Math.round(e.durationMinutes / 60)} hr`
-                      : `${e.durationMinutes} min`}
+                    {listingDuration(e.durationMinutes)}
                     {e.pickupInfo ? ' · hotel pickup' : ''}
                   </p>
                   <div className="starter__foot">

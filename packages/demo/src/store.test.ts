@@ -6,11 +6,12 @@ import {
   DEMO_DESTINATIONS,
   DEMO_EXPERIENCES,
   DEMO_ISLANDS,
+  DEMO_VENDORS,
   demoOptionsFor,
   isPubliclyVisibleDemo,
 } from './dataset';
 import { DEMO_MEDIA_CREDITS } from './credits';
-import { signVoucherToken, verifyVoucherToken } from '@cvip/types';
+import { LISTING_LIMITS, signVoucherToken, verifyVoucherToken } from '@cvip/types';
 
 /**
  * The demo backend earns tests for one reason: a demo that shows something the real system would
@@ -299,9 +300,12 @@ describe('dataset integrity', () => {
 
   it('gives every visible listing a real description and inclusions', () => {
     for (const e of demoBackend.visibleExperiences()) {
-      expect(e.description.length).toBeGreaterThan(40);
+      // `?? 0` rather than `!`: these columns are nullable in Postgres, and a null here means the
+      // demo dataset has regressed, which is exactly what this test is for. Coalescing to 0 keeps
+      // that a failure instead of a crash.
+      expect(e.description?.length ?? 0).toBeGreaterThan(40);
       expect(e.inclusions.length).toBeGreaterThan(0);
-      expect(e.pickupInfo.length).toBeGreaterThan(0);
+      expect(e.pickupInfo?.length ?? 0).toBeGreaterThan(0);
     }
   });
 
@@ -473,5 +477,34 @@ describe('the vendor scanner path', () => {
     expect((await demoBackend.redeemScannedToken('hello', 'Front desk')).result).toBe(
       'unknown_token',
     );
+  });
+});
+
+describe('listing text limits', () => {
+  /*
+   * The headroom has to be real before the constraint reaches a database.
+   *
+   * `LISTING_LIMITS` is enforced in three places — the Zod schema, the Postgres check constraint
+   * in `20261014000001_listing_text_limits.sql`, and the `maxLength` on the vendor form. A limit
+   * the seeded catalogue already violates is one that gets quietly raised the first time someone
+   * runs the migration against real data, which makes it no limit at all. This test lives here
+   * rather than in `@cvip/types` because types is the lower layer and must not import the dataset.
+   */
+  it('every seeded listing fits inside the limits', () => {
+    for (const e of DEMO_EXPERIENCES) {
+      expect(e.title.length, `${e.id} title`).toBeLessThanOrEqual(LISTING_LIMITS.title);
+      expect(e.summary?.length ?? 0, `${e.id} summary`).toBeLessThanOrEqual(LISTING_LIMITS.summary);
+      expect(e.description?.length ?? 0, `${e.id} description`).toBeLessThanOrEqual(
+        LISTING_LIMITS.description,
+      );
+      expect(e.pickupInfo?.length ?? 0, `${e.id} pickupInfo`).toBeLessThanOrEqual(
+        LISTING_LIMITS.pickupInfo,
+      );
+    }
+    for (const v of DEMO_VENDORS) {
+      expect(v.description?.length ?? 0, `${v.id} description`).toBeLessThanOrEqual(
+        LISTING_LIMITS.vendorDescription,
+      );
+    }
   });
 });

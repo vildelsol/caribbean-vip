@@ -12,5 +12,6 @@ export * from './states.ts';
 export * from './domain.ts';
 export * from './geo.ts';
 export * from './search.ts';
+export * from './listing.ts';
 export * from './providers.ts';
 export * from './env.ts';

@@ -5,9 +5,16 @@
   padding: 20px var(--s-md) 0;
 }
 
+/*
+ * Top-aligned, because the title beside it wraps.
+ *
+ * `center` is right while a title is one line and wrong the moment it is four: the 76px thumbnail
+ * drifts to the middle of a tall block of text and reads as unmoored from the listing it belongs
+ * to. Nothing bounds a listing title, so the long case is not the exception.
+ */
 .checkout__listing {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   gap: 13px;
   padding: 22px var(--s-md) 0;
 }
