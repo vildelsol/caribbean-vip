@@ -77,18 +77,12 @@ pnpm admin
 ```
 
 ```bash
-pnpm mobile
+pnpm tourist
 ```
 
-Vendor portal serves on `http://localhost:3001`, admin console on `http://localhost:3002`. `pnpm
-mobile` starts the Expo dev server; press `i` for the iOS simulator or scan the QR code with Expo
-Go.
-
-To verify the mobile app bundles without launching a simulator:
-
-```bash
-pnpm bundle:mobile
-```
+Vendor portal serves on `http://localhost:3001`, admin console on `http://localhost:3002`, tourist
+app on `http://localhost:5173`. `pnpm demo` starts the tourist app and the vendor scanner together,
+which is the usual way to run the whole journey end to end.
 
 ## Environment
 
