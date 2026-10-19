@@ -3,7 +3,8 @@
 import { useCallback, useEffect, useState } from 'react';
 import { Crest } from '../../components/Crest';
 import { formatUsd } from '../../lib/vendorData';
-import { useActiveMembership } from '../../lib/session';
+import { useActiveMembership, useCanManageListings } from '../../lib/session';
+import { NO_LISTING_PERMISSION } from '../../lib/permissions';
 import {
   LISTING_CATEGORIES,
   LISTING_LIMITS,
@@ -41,11 +42,19 @@ function categoryLabel(c: string): string {
  * arrives as an exception, and a `ListingInvalid` is the operator's to fix while anything else is
  * reported as a problem on our side rather than theirs.
  *
+ * Write controls are gated on `can_manage_listings` (an owner always counts — see
+ * `lib/permissions.ts`). Reading is not: RLS leaves SELECT open to every member because
+ * scan-only staff still need to see the inventory, so the list renders for everyone and only
+ * New listing, Edit, Publish and Unpublish are withheld. They are disabled rather than hidden —
+ * a member who has been told the controls exist should see why they cannot use them, not find a
+ * card that looks broken.
+ *
  * `description` and `pickup_info` are bounded in Postgres but still have no input here, so a
  * vendor cannot set them from this screen. That is a gap in the form, not in the constraints.
  */
 export default function Listings() {
   const membership = useActiveMembership();
+  const canManage = useCanManageListings();
   const orgId = membership?.vendor_org_id ?? null;
   const islandId = membership?.vendor_organizations?.island_id ?? null;
 
@@ -145,14 +154,14 @@ export default function Listings() {
 
   const toggle = (l: VendorListing) =>
     run(async () => {
-      const next = await setListingStatus(orgId, l.id, l.status === 'approved' ? 'draft' : 'approved');
+      const next = await setListingStatus(canManage, orgId, l.id, l.status === 'approved' ? 'draft' : 'approved');
       setListings((prev) => prev.map((x) => (x.id === next.id ? next : x)));
     });
 
   const saveEdit = () => {
     if (!editing) return;
     void run(async () => {
-      const next = await saveListing(orgId, editing);
+      const next = await saveListing(canManage, orgId, editing);
       setListings((prev) => prev.map((x) => (x.id === next.id ? next : x)));
       flashSaved(next.id);
       setEditing(null);
@@ -161,7 +170,7 @@ export default function Listings() {
 
   const addListing = () =>
     void run(async () => {
-      const next = await createListing(orgId, islandId, {
+      const next = await createListing(canManage, orgId, islandId, {
         title: newForm.title,
         summary: newForm.summary,
         // The placeholders the form shows are the values an operator gets by leaving these blank.
@@ -200,13 +209,25 @@ export default function Listings() {
                 {live} live · {draft} in draft
               </p>
             </div>
-            <button type="button" className="btn btn--secondary" onClick={openAdd} disabled={loading}>
+            <button
+              type="button"
+              className="btn btn--secondary"
+              onClick={openAdd}
+              disabled={loading || !canManage}
+              title={canManage ? undefined : NO_LISTING_PERMISSION}
+            >
               New listing
             </button>
           </div>
 
           {/* Operating rule 9: demo content is never passed off as live. An operator who edits
               here and finds the change gone tomorrow should have been told why today. */}
+          {!canManage && (
+            <p className="card__note">
+              View only. {NO_LISTING_PERMISSION}
+            </p>
+          )}
+
           {isDemoListings && (
             <p className="card__note card__note--demo">
               Demo mode — changes stay in this browser and reset when you reload.
@@ -249,6 +270,8 @@ export default function Listings() {
                     type="button"
                     className="btn btn--secondary btn--sm"
                     onClick={() => openEdit(l)}
+                    disabled={!canManage}
+                    title={canManage ? undefined : NO_LISTING_PERMISSION}
                   >
                     Edit
                   </button>
@@ -256,6 +279,8 @@ export default function Listings() {
                     type="button"
                     className={`btn btn--sm ${l.status === 'approved' ? 'btn--ghost' : 'btn--primary'}`}
                     onClick={() => void toggle(l)}
+                    disabled={!canManage}
+                    title={canManage ? undefined : NO_LISTING_PERMISSION}
                   >
                     {l.status === 'approved' ? 'Unpublish' : 'Publish'}
                   </button>
@@ -341,7 +366,12 @@ export default function Listings() {
               <button type="button" className="btn btn--secondary" onClick={closeEdit}>
                 Cancel
               </button>
-              <button type="button" className="btn btn--primary" onClick={saveEdit} disabled={busy}>
+              <button
+                type="button"
+                className="btn btn--primary"
+                onClick={saveEdit}
+                disabled={busy || !canManage}
+              >
                 {busy ? 'Saving…' : 'Save changes'}
               </button>
             </div>
@@ -459,7 +489,7 @@ export default function Listings() {
               <button
                 type="button"
                 className="btn btn--primary"
-                disabled={busy || !newForm.title.trim() || !newForm.summary.trim()}
+                disabled={busy || !canManage || !newForm.title.trim() || !newForm.summary.trim()}
                 onClick={addListing}
               >
                 {busy ? 'Creating…' : 'Create draft'}

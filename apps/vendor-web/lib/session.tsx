@@ -4,6 +4,7 @@ import { createContext, useContext, useEffect, useMemo, useState, type ReactNode
 import type { Session } from '@supabase/supabase-js';
 import type { UserRole } from '@cvip/types';
 import { isSupabaseConfigured, supabase } from './supabase';
+import { isListingManager } from './permissions';
 
 /**
  * Vendor-portal session context.
@@ -35,16 +36,49 @@ interface VendorSessionValue {
   memberships: Membership[];
   activeOrgId: string | null;
   setActiveOrgId: (id: string) => void;
+  /**
+   * May the current member write listings and availability?
+   *
+   * Derived here rather than read off the row, because an owner counts as a manager whatever
+   * `can_manage_listings` says — see `isListingManager` in `lib/permissions.ts`, which mirrors
+   * the RLS helper. False with no active membership: nothing is writable until one is in scope.
+   */
+  canManageListings: boolean;
   signOut: () => Promise<void>;
 }
 
 const Ctx = createContext<VendorSessionValue | null>(null);
 
+/**
+ * The membership demo mode runs as.
+ *
+ * Demo mode has no Supabase and so no `vendor_members` row, but the permission gate has to be
+ * live there too — a demo that silently grants everything is not demonstrating the product. So
+ * the demo supplies a membership and the same `isListingManager` reads it. The demo persona is
+ * the owner of the seeded organisation, which is why the write controls are offered; setting
+ * `NEXT_PUBLIC_DEMO_VENDOR_SCAN_ONLY=1` runs the demo as ungranted staff instead, which is how
+ * the withheld-controls state is viewed without a database.
+ */
+const DEMO_SCAN_ONLY = process.env.NEXT_PUBLIC_DEMO_VENDOR_SCAN_ONLY === '1';
+
+const DEMO_MEMBERSHIP: Membership = {
+  vendor_org_id: 'demo-vendor-org',
+  role: DEMO_SCAN_ONLY ? 'vendor_staff' : 'vendor_owner',
+  can_manage_listings: false,
+  can_scan_vouchers: true,
+  can_view_payouts: !DEMO_SCAN_ONLY,
+  vendor_organizations: null,
+};
+
 export function VendorSessionProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(isSupabaseConfigured);
   const [session, setSession] = useState<Session | null>(null);
-  const [memberships, setMemberships] = useState<Membership[]>([]);
-  const [activeOrgId, setActiveOrgId] = useState<string | null>(null);
+  const [memberships, setMemberships] = useState<Membership[]>(
+    isSupabaseConfigured ? [] : [DEMO_MEMBERSHIP],
+  );
+  const [activeOrgId, setActiveOrgId] = useState<string | null>(
+    isSupabaseConfigured ? null : DEMO_MEMBERSHIP.vendor_org_id,
+  );
 
   useEffect(() => {
     if (!isSupabaseConfigured) {
@@ -110,6 +144,9 @@ export function VendorSessionProvider({ children }: { children: ReactNode }) {
       memberships,
       activeOrgId,
       setActiveOrgId,
+      canManageListings: isListingManager(
+        memberships.find((m) => m.vendor_org_id === activeOrgId) ?? null,
+      ),
       signOut: async () => {
         await supabase.auth.signOut();
       },
@@ -124,6 +161,16 @@ export function useVendorSession(): VendorSessionValue {
   const ctx = useContext(Ctx);
   if (!ctx) throw new Error('useVendorSession must be used inside <VendorSessionProvider>');
   return ctx;
+}
+
+/**
+ * May the current member write listings and availability?
+ *
+ * The one gate the listings and availability screens read. It is also enforced inside
+ * `lib/listings.ts` and `lib/availability.ts`, so a control that slipped through cannot write.
+ */
+export function useCanManageListings(): boolean {
+  return useVendorSession().canManageListings;
 }
 
 /** The membership currently in scope, including its permission flags. */
