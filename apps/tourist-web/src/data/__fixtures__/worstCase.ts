@@ -2,8 +2,16 @@
  * Worst-case data, for breaking this UI on purpose.
  *
  * Dev-only, and reached only by putting `?data=worst` on the URL — see `dataMode()` below.
- * Nothing here is reachable in a production build: `dataMode()` returns `'demo'` unless
- * `import.meta.env.DEV` is true, so the bundler drops the rest as dead code.
+ *
+ * Nothing here is *reachable* in a production build: `import.meta.env.DEV` is replaced with
+ * `false`, so `dataMode()` folds to `return 'demo'` and the `?data=` read is eliminated — grep a
+ * production bundle for `URLSearchParams` against `"data"` and it is gone.
+ *
+ * It is not *absent* from one, though. `visibleExperiences()` calls `dataMode()`, and Rollup will
+ * not propagate a function's return value across a module boundary, so every branch of that
+ * switch is kept along with the imports it names, and these strings ship. They are inert and they
+ * are small, but "unreachable" and "not in the bundle" are different claims and only the first
+ * one is true here.
  *
  * ## The rule every value here follows
  *
@@ -14,11 +22,16 @@
  *
  * The limits worth knowing, because they are the reason some of these are as long as they are:
  *
- *  - `experiences.title`, `.summary`, `.description`, `.pickup_info` are **`text` with no length
- *    constraint** (`supabase/migrations/20260802000004_inventory.sql:14-20`). There is no Zod
- *    schema bounding them either. Nothing in the stack stops a vendor pasting a paragraph into
- *    the title field, so the only honest worst case is "as long as a real OTA listing title gets",
- *    and those run past 120 characters routinely.
+ *  - `experiences.title`, `.summary`, `.description` and `.pickup_info` are bounded, as of
+ *    `supabase/migrations/20261014000001_listing_text_limits.sql`: 120, 280, 2000 and 280
+ *    characters, mirrored by `LISTING_LIMITS` in `packages/types/src/listing.ts`. They were plain
+ *    `text` with no constraint and no schema above them until that migration, which is why the
+ *    values below were originally written longer than the column now accepts.
+ *
+ *    The limit is the worst case now, and that is a stronger fixture rather than a weaker one: a
+ *    title of exactly 120 characters is a row that can really exist, where 136 was a row the
+ *    database would refuse. The migration does not use `not valid`, so the existing rows were
+ *    checked too — nothing longer is out there to find.
  *  - `summary` and `description` are **nullable in Postgres** but typed `string` (not `string | undefined`)
  *    in `DemoExperience` (`packages/demo/src/dataset.ts:89-90`). The empty-string rows below stand
  *    in for the null the database will eventually hand this app.
@@ -64,11 +77,15 @@ export function dataMode(): DataMode {
 // ---------------------------------------------------------------------------
 
 /**
- * 137 characters. Shorter than plenty of live Viator and GetYourGuide titles, which stack every
- * keyword the operator wants to rank for into the name of the thing.
+ * Exactly 120 characters: `experiences_title_length` to the character.
+ *
+ * Still shorter than plenty of live Viator and GetYourGuide titles, which stack every keyword the
+ * operator wants to rank for into the name of the thing — those get truncated on the way in now,
+ * which is its own behaviour and not this fixture's job. This is the longest title the UI can
+ * ever actually be handed.
  */
 const LONG_TITLE =
-  'Seven Mile Beach Sunset Catamaran Cruise with Open Bar, Snorkelling at Stingray City, Caribbean Buffet Dinner and Return Hotel Transfers';
+  'Seven Mile Beach Sunset Catamaran Cruise with Open Bar, Snorkelling at Stingray City and Caribbean Buffet Dinner for Two';
 
 /** A one-word listing name. Operators do this, and it is the other end of the same problem. */
 const SHORT_TITLE = 'Zip';
