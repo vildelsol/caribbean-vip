@@ -186,7 +186,7 @@
   align-items: center;
   justify-content: center;
   gap: var(--s-sm);
-  transition: transform 0.12s ease, background 0.12s ease;
+  transition: transform var(--dur-press) var(--ease-out), background var(--dur-press) var(--ease-out);
 }
 
 .btn:active {
@@ -388,7 +388,9 @@
   height: 100%;
   background: var(--green-900);
   border-radius: var(--r-pill);
-  transition: width 0.4s ease;
+  /* 0.4s is outside plan 001's table on purpose: this bar fills to report progress rather than
+     answering a tap, so it is paced to be readable, not immediate. Only the curve is tokenised. */
+  transition: width 0.4s var(--ease-out);
 }
 
 .field__optional {
@@ -1199,7 +1201,7 @@
 .listing--saved {
   outline: 2px solid var(--green-900, #16302a);
   border-radius: 10px;
-  transition: outline 0.3s;
+  transition: outline var(--dur-base) var(--ease-out);
 }
 
 .listing__saved-notice {

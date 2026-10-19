@@ -386,7 +386,7 @@
   color: var(--gold-light);
   background: rgba(7, 40, 33, 0.28);
   white-space: nowrap;
-  transition: background 0.14s ease, transform 0.12s ease;
+  transition: background var(--dur-fast) var(--ease-out), transform var(--dur-press) var(--ease-out);
 }
 
 .trips__total-cta:active {
@@ -408,7 +408,7 @@
   border: 1px solid var(--sand-border);
   box-shadow: var(--e-card);
   text-align: left;
-  transition: transform 0.12s ease, box-shadow 0.16s ease;
+  transition: transform var(--dur-press) var(--ease-out), box-shadow var(--dur-fast) var(--ease-out);
 }
 
 .vip-pass:active {

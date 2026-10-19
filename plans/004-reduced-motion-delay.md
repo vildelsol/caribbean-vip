@@ -1,6 +1,6 @@
 # 004 — Reduced motion leaves the Welcome screen blank for 620ms
 
-- **Status**: TODO
+- **Status**: DONE (2026-10-19)
 - **Commit**: 19506a1
 - **Severity**: MEDIUM
 - **Category**: Accessibility

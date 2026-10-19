@@ -205,7 +205,7 @@
   box-shadow: var(--e-modal), 0 0 0 1px rgba(227, 194, 113, 0.18);
   color: var(--ink);
   width: calc(100% - var(--s-md) * 2);
-  animation: offer-rise 460ms cubic-bezier(0.16, 1, 0.3, 1) both;
+  animation: offer-rise 460ms var(--ease-entrance) both;
 }
 
 @keyframes offer-rise {
@@ -403,7 +403,7 @@
   border-right: 1.5px solid currentColor;
   border-bottom: 1.5px solid currentColor;
   transform: rotate(45deg) translate(-1px, -1px);
-  transition: transform 0.15s ease;
+  transition: transform var(--dur-fast) var(--ease-out);
 }
 
 .voucher__terms[open] .voucher__terms-summary::after {

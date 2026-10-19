@@ -10,10 +10,10 @@ out inside it.
 
 | # | Title | Severity | Category | Scope | Status |
 | --- | --- | --- | --- | --- | --- |
-| [001](001-motion-tokens-and-ease-out.md) | Add motion tokens and replace every `ease` transition with ease-out | HIGH | Easing + Cohesion | 12 files, ~55 lines | TODO |
+| [001](001-motion-tokens-and-ease-out.md) | Add motion tokens and replace every `ease` transition with ease-out | HIGH | Easing + Cohesion | 12 files, ~55 lines | DONE |
 | [002](002-irie-aura-composite.md) | Stop the Irie badge aura repainting on every screen | HIGH | Performance | 1 file, ~25 lines | TODO |
 | [003](003-skeleton-shimmer-composite.md) | Stop the skeleton shimmer repainting every frame | HIGH | Performance | 1 file, ~20 lines | TODO |
-| [004](004-reduced-motion-delay.md) | Reduced motion leaves the Welcome screen blank for 620ms | MEDIUM | Accessibility | 1 file, 2 lines | TODO |
+| [004](004-reduced-motion-delay.md) | Reduced motion leaves the Welcome screen blank for 620ms | MEDIUM | Accessibility | 1 file, 2 lines | DONE |
 | [005](005-route-transitions.md) | Give navigation a direction (View Transitions) | MEDIUM | Missed opportunity | 16 files, 1 new | TODO |
 
 ## Recommended order

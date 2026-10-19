@@ -242,7 +242,7 @@
   font-size: 15px;
   font-weight: 700;
   min-height: 52px;
-  transition: transform 0.12s ease, background 0.12s ease;
+  transition: transform var(--dur-press) var(--ease-out), background var(--dur-press) var(--ease-out);
 }
 
 .search__more:active {

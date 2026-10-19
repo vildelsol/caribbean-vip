@@ -513,7 +513,7 @@
   border-radius: 50%;
   background: rgba(251, 246, 236, 0.45);
   box-shadow: 0 1px 3px rgba(7, 40, 33, 0.5);
-  transition: width 0.2s ease, background 0.2s ease;
+  transition: width var(--dur-base) var(--ease-out), background var(--dur-base) var(--ease-out);
 }
 
 /* The active dot stretches rather than growing: a larger circle among circles

@@ -135,7 +135,7 @@
   color: var(--green-900);
   box-shadow: 0 5px 14px rgba(7, 40, 33, 0.18);
   z-index: 3;
-  transition: transform 0.14s ease;
+  transition: transform var(--dur-fast) var(--ease-out);
 }
 
 .map-pin.is-on {
@@ -266,7 +266,7 @@
   font-weight: 700;
   color: var(--ink-muted);
   white-space: nowrap;
-  transition: background 0.12s ease, color 0.12s ease;
+  transition: background var(--dur-press) var(--ease-out), color var(--dur-press) var(--ease-out);
 }
 
 .map-toggle--on {

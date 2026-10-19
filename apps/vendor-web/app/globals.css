@@ -55,11 +55,19 @@ h2 {
   border-radius: var(--r-xs);
 }
 
+/*
+ * Reduced motion means less movement, not a slower screen. Collapsing a duration while leaving
+ * its delay intact holds the `from` state of a `both`-filled animation for the whole delay, so
+ * the operator who asked for less motion waits longer and then gets a hard pop. Same fix as the
+ * tourist app's block in `apps/tourist-web/src/design/global.css`; the two stay in step.
+ */
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
   *::after {
     animation-duration: 0.01ms !important;
+    animation-delay: 0ms !important;
     transition-duration: 0.01ms !important;
+    transition-delay: 0ms !important;
   }
 }

@@ -14,7 +14,7 @@
   font-weight: 700;
   font-size: 15px;
   line-height: 1.1;
-  transition: transform 0.12s ease, opacity 0.12s ease, background-color 0.12s ease;
+  transition: transform var(--dur-press) var(--ease-out), opacity var(--dur-press) var(--ease-out), background-color var(--dur-press) var(--ease-out);
 }
 
 .btn--full {
@@ -64,7 +64,7 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  transition: transform 0.12s ease;
+  transition: transform var(--dur-press) var(--ease-out);
 }
 
 /* The 44px hit area is applied centrally in global.css, alongside every other control the design
@@ -273,7 +273,7 @@ button.chip:active {
 }
 
 .card--tappable {
-  transition: transform 0.14s ease, box-shadow 0.14s ease;
+  transition: transform var(--dur-fast) var(--ease-out), box-shadow var(--dur-fast) var(--ease-out);
 }
 
 .card--tappable:active {

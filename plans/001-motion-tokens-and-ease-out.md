@@ -1,6 +1,6 @@
 # 001 — Add motion tokens and replace every `ease` transition with ease-out
 
-- **Status**: TODO
+- **Status**: DONE (2026-10-19)
 - **Commit**: 19506a1
 - **Severity**: HIGH
 - **Category**: Easing & duration + Cohesion & tokens
