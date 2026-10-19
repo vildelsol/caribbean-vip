@@ -555,13 +555,23 @@ button.badge::after {
   animation-delay: 0.95s;
 }
 
+/*
+ * Reduced motion means less movement, not a slower screen.
+ *
+ * Collapsing `animation-duration` without collapsing `animation-delay` is worse than leaving the
+ * animation alone: `wl-rise` on the Welcome screen fills `both`, so the `from` state (opacity: 0)
+ * holds for the whole delay and the guest who asked for less motion waits 620ms in front of three
+ * invisible buttons and then gets a hard pop. The delays have to go to zero with the durations.
+ */
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
   *::after {
     animation-duration: 0.001ms !important;
+    animation-delay: 0ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.001ms !important;
+    transition-delay: 0ms !important;
     scroll-behavior: auto !important;
   }
 }

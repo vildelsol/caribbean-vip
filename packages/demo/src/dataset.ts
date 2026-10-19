@@ -67,7 +67,8 @@ export interface DemoVendor {
   islandId: string;
   tradingName: string;
   status: 'approved' | 'pending_review';
-  description: string;
+  /** Nullable in Postgres (`vendor_organizations.description`). See the note on `DemoExperience`. */
+  description: string | null;
   location: { name: string; lat: number; lng: number; destinationSlug: string };
 }
 
@@ -86,11 +87,26 @@ export interface DemoExperience {
   destinationSlug: string;
   category: ExperienceCategory;
   title: string;
-  summary: string;
-  description: string;
+  /**
+   * The three fields the database may hand back as `null`.
+   *
+   * `experiences.summary`, `.description` and `.pickup_info` are plain `text` with no `not null`
+   * (`supabase/migrations/20260802000004_inventory.sql:15-20`), and the vendor app only requires a
+   * title and a summary to save a listing — so a draft promoted by an admin, or any row created
+   * through the API rather than the form, can reach this app with all three empty.
+   *
+   * They were typed `string` anyway, which is the kind of lie that costs nothing until the first
+   * real listing arrives and `summary.toLowerCase()` throws somewhere in search. `title`,
+   * `durationMinutes` and `inclusions` really are `not null` and stay that way.
+   *
+   * `packages/types/src/search.ts` already had this right (`summary: string | null`), which is
+   * what made the disagreement worth fixing rather than arguing about.
+   */
+  summary: string | null;
+  description: string | null;
   durationMinutes: number;
   inclusions: string[];
-  pickupInfo: string;
+  pickupInfo: string | null;
   fromAmountMinor: number;
   status: 'approved' | 'draft';
   cancellationHours: number;

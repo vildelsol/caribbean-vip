@@ -73,7 +73,7 @@
 .masthead__title {
   font-family: var(--font-display);
   font-size: 27px;
-  font-weight: 600;
+  font-weight: 700;
   color: var(--on-dark);
   line-height: 1.1;
   margin: 0;
@@ -186,7 +186,7 @@
   align-items: center;
   justify-content: center;
   gap: var(--s-sm);
-  transition: transform 0.12s ease, background 0.12s ease;
+  transition: transform var(--dur-press) var(--ease-out), background var(--dur-press) var(--ease-out);
 }
 
 .btn:active {
@@ -388,7 +388,9 @@
   height: 100%;
   background: var(--green-900);
   border-radius: var(--r-pill);
-  transition: width 0.4s ease;
+  /* 0.4s is outside plan 001's table on purpose: this bar fills to report progress rather than
+     answering a tap, so it is paced to be readable, not immediate. Only the curve is tokenised. */
+  transition: width 0.4s var(--ease-out);
 }
 
 .field__optional {
@@ -547,6 +549,18 @@
 }
 
 .auth-error {
+  margin: 0;
+  font-size: 14px;
+  color: var(--coral-text);
+  font-weight: 600;
+}
+
+.card__note--demo {
+  color: var(--gold-text);
+  font-weight: 600;
+}
+
+.field-error {
   margin: 0;
   font-size: 14px;
   color: var(--coral-text);
@@ -763,10 +777,14 @@
   color: #e3c271;
 }
 
+/* The one thing on the dashboard a vendor reads at a glance, and a card title besides: sans, so
+   the experience name carries rather than the serif. */
 .next-card__title {
   margin: 0;
+  font-family: var(--font-sans);
   font-size: 19px;
   font-weight: 700;
+  letter-spacing: -0.012em;
   color: #fffdf7;
 }
 
@@ -909,10 +927,13 @@
   flex-wrap: wrap;
 }
 
+/* A card title, so sans and not serif — see the note on the heading rule in `globals.css`. */
 .listing__title {
   margin: 0;
+  font-family: var(--font-sans);
   font-size: 16px;
   font-weight: 700;
+  letter-spacing: -0.012em;
   color: var(--ink, #16302a);
 }
 
@@ -1192,7 +1213,7 @@
 .listing--saved {
   outline: 2px solid var(--green-900, #16302a);
   border-radius: 10px;
-  transition: outline 0.3s;
+  transition: outline var(--dur-base) var(--ease-out);
 }
 
 .listing__saved-notice {

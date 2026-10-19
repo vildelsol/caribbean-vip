@@ -26,16 +26,7 @@ import { useNavigate } from 'react-router-dom';
 import { availabilityLabel, firstBookableDay, slotsFor } from '../data/availability';
 import { useStore } from '../state/store';
 import { Icon, type IconName } from '../components/Icon';
-import {
-  Badge,
-  Card,
-  Photo,
-  Price,
-  formatUsd,
-  Rating,
-  RoundButton,
-  SectionHeader,
-} from '../components/kit';
+import { Badge, Card, formatUsd, Photo, plural, Price, Rating, RoundButton, SectionHeader } from '../components/kit';
 import './Explore.css';
 
 /**
@@ -483,7 +474,7 @@ export function Explore() {
             <div className="grow">
               <Badge tone="gold-glass">7:30 PM · 3 tables left</Badge>
               <h3 className="t-display-sm c-on-dark tonight__title">{evening.title}</h3>
-              <p className="t-caption tonight__sub">{evening.summary}</p>
+              {evening.summary ? <p className="t-caption tonight__sub">{evening.summary}</p> : null}
             </div>
             <Photo
               src={heroUrl(evening)}
@@ -529,7 +520,7 @@ export function Explore() {
             </span>
           ))}
           <span className="ex-map__count t-caption-strong">
-            {nearby.length} experiences within 5 km
+            {plural(nearby.length, 'experience')} within 5 km
           </span>
           <button type="button" className="ex-map__cta" onClick={() => navigate('/nearby')}>
             Open map
@@ -585,7 +576,9 @@ function FeatureCard({ experience }: { experience: DemoExperience }) {
         <p className="t-micro c-locator feature__meta">
           {experience.category.replace(/_/g, ' ')} · {vendor?.location.name ?? ''}
         </p>
-        <p className="t-caption c-muted feature__summary">{experience.summary}</p>
+        {experience.summary ? (
+          <p className="t-caption c-muted feature__summary">{experience.summary}</p>
+        ) : null}
         <div className="row feature__foot">
           <div className="grow">
             <Rating average={experience.ratingAverage} count={experience.ratingCount} />

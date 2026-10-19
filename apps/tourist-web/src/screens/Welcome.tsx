@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { ISLANDS, destinationsFor, experiencesFor, mediaUrl } from '../data/catalogue';
 import { useStore } from '../state/store';
 import { Icon, type IconName } from '../components/Icon';
+import { plural } from '../components/kit';
 import './Welcome.css';
 
 /**
@@ -244,7 +245,7 @@ export function Welcome() {
                         <span className="wl__island-name">{island.in_app_brand}</span>
                         <span className="wl__island-dest">
                           {first ? first.name : island.name}
-                          {count ? ` · ${count} experiences` : ''}
+                          {count ? ` · ${plural(count, 'experience')}` : ''}
                         </span>
                       </span>
                       <span className="wl__island-check" aria-hidden="true">

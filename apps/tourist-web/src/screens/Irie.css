@@ -271,7 +271,7 @@
   );
   /* Starts fully off the left edge and ends fully off the right, so the sweep
      enters and leaves rather than appearing and vanishing mid-track. */
-  animation: irie-sweep 2.8s var(--ease-inout, ease-in-out) infinite;
+  animation: irie-sweep 2.8s var(--ease-in-out) infinite;
 }
 
 @keyframes irie-sweep {
@@ -351,7 +351,7 @@
   backdrop-filter: blur(6px);
   -webkit-backdrop-filter: blur(6px);
   text-align: left;
-  transition: background 0.16s ease, border-color 0.16s ease, transform 0.12s ease;
+  transition: background var(--dur-fast) var(--ease-out), border-color var(--dur-fast) var(--ease-out), transform var(--dur-press) var(--ease-out);
 }
 
 .irie-intent:hover {
@@ -397,7 +397,7 @@
   min-height: 40px;
   padding: 10px 13px;
   border-radius: var(--r-pill);
-  transition: background-color 0.14s ease, transform 0.12s ease;
+  transition: background-color var(--dur-fast) var(--ease-out), transform var(--dur-press) var(--ease-out);
 }
 
 .irie-chip:hover {
@@ -637,7 +637,7 @@
   border-radius: var(--r-sm);
   background: rgba(227, 194, 113, 0.1);
   border: 1px solid rgba(227, 194, 113, 0.38);
-  transition: background 0.12s ease, border-color 0.12s ease;
+  transition: background var(--dur-press) var(--ease-out), border-color var(--dur-press) var(--ease-out);
 }
 
 .day__fix:active {
@@ -777,7 +777,7 @@
   background: rgba(251, 246, 236, 0.08);
   border: 1px solid rgba(251, 246, 236, 0.14);
   text-align: left;
-  transition: transform 0.12s ease, background 0.12s ease;
+  transition: transform var(--dur-press) var(--ease-out), background var(--dur-press) var(--ease-out);
 }
 
 .pop-card:active {

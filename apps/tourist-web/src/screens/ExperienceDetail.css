@@ -92,11 +92,27 @@
 
 /* --- Price card ------------------------------------------------------------ */
 
+/*
+ * Both columns must be allowed to shrink, and the row must be allowed to break.
+ *
+ * A flex child defaults to `min-width: auto`, which refuses to go narrower than its own content —
+ * the same trap `global.css` fixes for `.row > *` and `.col > *`, which this card is not. With a
+ * four-figure price on the left the right column could not fit and did not shrink: it overflowed
+ * the card by 27px at 320px, and because `.app` is `overflow-x: clip` the overflow was *cut off
+ * rather than scrollable*. "Next today 8:30 AM" lost its M and half of "reviews" disappeared, with
+ * no way for the guest to reach either. A listing at US$65 fits and never showed it; a listing at
+ * US$15,598.80 is not a hypothetical in a market that charters boats.
+ *
+ * `flex-wrap` is the other half: below some width there is genuinely no room for both, and the
+ * honest answer is a second line rather than two squeezed columns. `flex: 1 1 auto` on the right
+ * column keeps it flush with the card's right edge whether it is beside the price or under it.
+ */
 .detail__price-card {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
-  gap: 14px;
+  gap: 8px 14px;
   margin-top: 18px;
   padding: 14px 16px;
   background: var(--ivory-raised);
@@ -104,11 +120,17 @@
   box-shadow: var(--e-card);
 }
 
+.detail__price-left {
+  min-width: 0;
+}
+
 .detail__from {
   letter-spacing: 0.1em;
 }
 
 .detail__price-right {
+  flex: 1 1 auto;
+  min-width: 0;
   text-align: right;
   display: flex;
   flex-direction: column;
@@ -491,7 +513,7 @@
   border-radius: 50%;
   background: rgba(251, 246, 236, 0.45);
   box-shadow: 0 1px 3px rgba(7, 40, 33, 0.5);
-  transition: width 0.2s ease, background 0.2s ease;
+  transition: width var(--dur-base) var(--ease-out), background var(--dur-base) var(--ease-out);
 }
 
 /* The active dot stretches rather than growing: a larger circle among circles

@@ -220,3 +220,36 @@
 .result-row__cta {
   padding: 6px 12px;
 }
+
+/* --- Show more ------------------------------------------------------------
+ *
+ * A button, not an infinite scroll. The results list sits above a fixed bottom bar on a screen the
+ * guest also uses to go back to what they were reading; a list that grows as they scroll has no
+ * bottom, and the footer of the screen becomes unreachable.
+ */
+.search__more {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  width: 100%;
+  margin-top: 14px;
+  padding: 14px 16px;
+  border-radius: var(--r-md);
+  border: 1.5px solid var(--border);
+  background: var(--ivory-raised);
+  color: var(--green-900);
+  font-size: 15px;
+  font-weight: 700;
+  min-height: 52px;
+  transition: transform var(--dur-press) var(--ease-out), background var(--dur-press) var(--ease-out);
+}
+
+.search__more:active {
+  transform: scale(0.99);
+  background: var(--ivory-sunken);
+}
+
+.search__more-rest {
+  font-weight: 500;
+}

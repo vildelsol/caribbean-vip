@@ -24,7 +24,7 @@ import {
 } from '../data/catalogue';
 import { searchCandidates } from '../data/search';
 import { useStore } from '../state/store';
-import { Badge, Card, Chip, EmptyState, Photo, Price, Rating } from '../components/kit';
+import { Badge, Card, Chip, EmptyState, listingDuration, Photo, plural, Price, Rating } from '../components/kit';
 import { Icon } from '../components/Icon';
 import './Search.css';
 
@@ -85,6 +85,9 @@ const DURATIONS: { label: string; max?: number }[] = [
   { label: 'Full day', max: 600 },
 ];
 
+/** Results rendered before the guest asks for more. Twenty fills about four phone screens. */
+const PAGE_SIZE = 20;
+
 export function Search() {
   const { state } = useStore();
   const navigate = useNavigate();
@@ -128,6 +131,30 @@ export function Search() {
     () => new Map(experiencesFor(state.islandId).map((e) => [e.id, e])),
     [state.islandId],
   );
+
+  /*
+   * How many results are on screen at once.
+   *
+   * Nothing capped this, so the screen rendered one card per matching listing — fine against 49
+   * demo listings and not fine against real inventory: a thousand of them is ~11,000 DOM nodes and
+   * a 75,000px scroll, built on the main thread of a phone held outdoors. The guest never reaches
+   * result 200 either way; the only thing the other 800 cards do is make the first twenty slower
+   * to arrive.
+   *
+   * A page and a button rather than virtualization: the rails on this screen scroll horizontally
+   * inside a vertical list, and a windowing library that has to measure both is a large dependency
+   * and a new class of bug in exchange for a problem this app does not have yet.
+   */
+  const [shown, setShown] = useState(PAGE_SIZE);
+
+  // A new query is a new list. Without this, searching again from result 120 leaves the next
+  // search scrolled deep into results it has not got.
+  useEffect(() => {
+    setShown(PAGE_SIZE);
+  }, [state.islandId, filters, query]);
+
+  const visible = results.slice(0, shown);
+  const remaining = results.length - visible.length;
 
   const filterCount = activeFilterCount(filters);
   const clearAll = () => {
@@ -230,7 +257,7 @@ export function Search() {
             * order wrong. Both facts were correct; the absent label was what
             * made them contradict each other.
             */}
-          {results.length} {results.length === 1 ? 'result' : 'results'} in {destination.name}
+          {plural(results.length, 'result')} in {destination.name}
           {` · ${SORT_LABELS[filters.sort].toLowerCase()}`}
         </p>
       ) : null}
@@ -251,7 +278,7 @@ export function Search() {
       ) : (
         <section className="pad search__list">
           <div className="col" style={{ gap: 12 }}>
-            {results.map((r) => {
+            {visible.map((r) => {
               const experience = byId.get(r.id);
               if (!experience) return null;
               const metres = distances.get(experience.id);
@@ -282,7 +309,7 @@ export function Search() {
                       */}
                       <h3 className="t-caption-strong result-row__title">{experience.title}</h3>
                       <div className="result-row__tags">
-                        <Badge tone="muted">{durationLabel(experience.durationMinutes)}</Badge>
+                        <Badge tone="muted">{listingDuration(experience.durationMinutes)}</Badge>
                         {travel && metres !== undefined ? (
                           <span className="row result-row__dist t-micro c-locator">
                             <Icon
@@ -306,6 +333,15 @@ export function Search() {
               );
             })}
           </div>
+
+          {remaining > 0 ? (
+            <button type="button" className="search__more" onClick={() => setShown((n) => n + PAGE_SIZE)}>
+              Show {Math.min(remaining, PAGE_SIZE)} more
+              <span className="t-micro c-faint search__more-rest">
+                {plural(remaining, 'result')} left
+              </span>
+            </button>
+          ) : null}
         </section>
       )}
 
@@ -416,11 +452,4 @@ function FilterGroup({ label, children }: { label: string; children: React.React
       <div className="filter-group__row">{children}</div>
     </div>
   );
-}
-
-function durationLabel(minutes: number): string {
-  if (minutes < 60) return `${minutes} min`;
-  const h = Math.floor(minutes / 60);
-  const m = minutes % 60;
-  return m > 0 ? `${h}h ${m}m` : `${h} hour${h === 1 ? '' : 's'}`;
 }

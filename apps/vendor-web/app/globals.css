@@ -25,12 +25,28 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
+/*
+ * The serif is for screen and section headings, at the weight the tourist app sets it.
+ *
+ * `apps/tourist-web/src/design/global.css` carries the rule: the design reserves the serif for
+ * screen and section headings and sets card titles in heavy Manrope, "so a scanning eye lands on
+ * the name of the thing before anything else on the card". The portal had every heading level in
+ * Cormorant at 600 — 27px, 23px and a 16px card title four points apart in one family — so no
+ * level read as different from the one above it. Weight 700 and the tighter tracking are
+ * `.t-display`/`.t-section`'s own values; 600 Cormorant is thin enough to wash out in sun, which
+ * PRD §16 does not allow.
+ *
+ * Card titles override the family back to sans. Heading level does not tell you which a heading
+ * is — `.next-card__title` is an `h2` on a card — so the override is by class, as it is in the
+ * tourist app's `.t-card-title`.
+ */
 h1,
 h2,
 h3 {
   font-family: var(--font-display);
-  font-weight: 600;
-  letter-spacing: -0.01em;
+  font-weight: 700;
+  letter-spacing: -0.012em;
+  text-wrap: balance;
   color: var(--green-900);
   margin: 0;
 }
@@ -40,9 +56,11 @@ h1 {
   line-height: 1.1;
 }
 
+/* `.t-section` in the tourist app. Was 23px, which left four points between a section heading and
+   the screen heading above it. */
 h2 {
-  font-size: 23px;
-  line-height: 1.2;
+  font-size: 21px;
+  line-height: 1.19;
 }
 
 /* --- Focus ---------------------------------------------------------------- */
@@ -55,11 +73,19 @@ h2 {
   border-radius: var(--r-xs);
 }
 
+/*
+ * Reduced motion means less movement, not a slower screen. Collapsing a duration while leaving
+ * its delay intact holds the `from` state of a `both`-filled animation for the whole delay, so
+ * the operator who asked for less motion waits longer and then gets a hard pop. Same fix as the
+ * tourist app's block in `apps/tourist-web/src/design/global.css`; the two stay in step.
+ */
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
   *::after {
     animation-duration: 0.01ms !important;
+    animation-delay: 0ms !important;
     transition-duration: 0.01ms !important;
+    transition-delay: 0ms !important;
   }
 }

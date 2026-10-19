@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { LISTING_LIMITS } from '@cvip/types';
 
 const ISLANDS = [
   { id: 'jamaica',    label: 'Jamaica' },
@@ -145,13 +146,18 @@ export default function OnboardingPage() {
               <span className="field__label">Short description <span className="field__optional">optional</span></span>
               <textarea
                 className="input"
+                maxLength={LISTING_LIMITS.vendorDescription}
                 value={form.description}
                 onChange={set('description')}
                 rows={3}
                 placeholder="Tell guests what makes your experience special…"
                 style={{ resize: 'vertical' }}
               />
-              <p className="field__hint">{form.description.length}/280 characters</p>
+              {/* Both numbers come from the constant the Postgres constraint mirrors. The counter
+                  read /280 while the column allowed 600, so it called a valid blurb over-length. */}
+              <p className="field__hint">
+                {form.description.length}/{LISTING_LIMITS.vendorDescription} characters
+              </p>
             </label>
           </section>
 

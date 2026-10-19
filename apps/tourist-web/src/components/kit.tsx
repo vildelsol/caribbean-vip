@@ -1,4 +1,4 @@
-import type { CSSProperties, ReactNode } from 'react';
+import { useState, type CSSProperties, type ReactNode } from 'react';
 import { Icon, type IconName } from './Icon';
 import './kit.css';
 
@@ -29,6 +29,59 @@ export function formatUsd(minor: number, opts: { withCode?: boolean; forceCents?
     maximumFractionDigits: hasCents || opts.forceCents ? 2 : 0,
   });
   return `US$${body}`;
+}
+
+/**
+ * A count and its noun, agreeing.
+ *
+ * `${n} reviews` is correct for every number this app had in its demo catalogue and wrong for the
+ * one every new listing starts at. "1 reviews" appeared under every rating, "1 places left" on the
+ * last seat of a departure, and "1 experiences" in the island picker a guest sees before they have
+ * seen anything else — the first sentence the product says about itself, ungrammatical.
+ *
+ * `Intl.PluralRules` rather than `n === 1`, because the rule is the locale's to know, and this app
+ * is for a region where English is one of four languages in daily use.
+ *
+ * Every noun here happens to be regular, so `many` is usually left to default.
+ */
+const PLURAL_RULES = new Intl.PluralRules('en-US');
+
+export function plural(count: number, one: string, many: string = `${one}s`): string {
+  return `${count.toLocaleString('en-US')} ${PLURAL_RULES.select(count) === 'one' ? one : many}`;
+}
+
+/**
+ * How long a listing takes, as the listing advertises it.
+ *
+ * A band, not a figure: a 90-minute tour that depends on the group, the road and the weather is
+ * honestly "1–2 hours" and dishonestly "1 hr 30 min". Four screens used to answer this question
+ * and all four answered it differently — Search said "1h 30m", Trips said "2 hr" (`Math.round`,
+ * which advertised a 90-minute tour as two hours in the itinerary a guest plans their day around),
+ * the detail screen said "1–2 hours". A guest comparing a card against the page it opens has to
+ * see one number, so there is now one function.
+ *
+ * For a gap or a shortfall — a quantity, not a claim — use `exactDuration`.
+ */
+export function listingDuration(minutes: number): string {
+  if (minutes < 60) return `${minutes} min`;
+  const h = Math.floor(minutes / 60);
+  const m = minutes % 60;
+  const upper = h + (m > 0 ? 1 : 0);
+  return m > 0 ? `${h}–${upper} hours` : `${h} hour${h === 1 ? '' : 's'}`;
+}
+
+/**
+ * An exact span of time. "45 min" / "2 hr 10 min".
+ *
+ * For the itinerary's shortfalls, where the number is a measurement rather than a description and
+ * rounding it would misstate whether a day actually fits. A shortfall of 374 minutes means nothing
+ * read as a number of minutes.
+ */
+export function exactDuration(minutes: number): string {
+  if (minutes < 60) return `${minutes} min`;
+  const h = Math.floor(minutes / 60);
+  const m = minutes % 60;
+  return m === 0 ? `${h} hr` : `${h} hr ${m} min`;
 }
 
 export function Price({ minor, className = '', size = 'md' }: { minor: number; className?: string; size?: 'sm' | 'md' | 'lg' }) {
@@ -174,11 +227,14 @@ export function Badge({ children, tone = 'plain' }: { children: ReactNode; tone?
 /** "★ 4.8 · 1,240 reviews". Star and score both gold — the score is the thing being rated. */
 export function Rating({ average, count, compact = false }: { average: number; count?: number; compact?: boolean }) {
   return (
-    <span className="rating" aria-label={`Rated ${average} out of 5${count ? ` from ${count} reviews` : ''}`}>
+    <span
+      className="rating"
+      aria-label={`Rated ${average} out of 5${count !== undefined ? ` from ${plural(count, 'review')}` : ''}`}
+    >
       <Icon name="star" size={compact ? 12 : 13} color="var(--gold)" />
       <span className={`rating__score ${compact ? 't-micro-strong' : 't-caption-strong'}`}>{average.toFixed(1)}</span>
       {count !== undefined && !compact ? (
-        <span className="t-caption c-muted">· {count.toLocaleString('en-US')} reviews</span>
+        <span className="t-caption c-muted">· {plural(count, 'review')}</span>
       ) : null}
     </span>
   );
@@ -249,24 +305,38 @@ export function Photo({
 }) {
   void credit;
   void mediaKey;
+  const [failed, setFailed] = useState(false);
   return (
-    <div className={`photo ${className}`} style={{ aspectRatio: ratio, borderRadius: radius, ...style }}>
-      <img
-        src={src}
-        alt={alt}
-        loading={priority ? 'eager' : 'lazy'}
-        fetchPriority={priority ? 'high' : undefined}
-        decoding={priority ? 'sync' : 'async'}
-        /**
-         * A file that 404s hides itself and leaves the frame's warm tint behind, rather than
-         * rendering the browser's broken-image glyph. The frame keeps its ratio either way, so the
-         * layout does not move. Two mood tiles pointed at keys that did not exist and this is the
-         * guard that makes that class of mistake cosmetic instead of conspicuous.
+    <div
+      className={`photo ${failed ? 'photo--failed' : ''} ${className}`}
+      style={{ aspectRatio: ratio, borderRadius: radius, ...style }}
+    >
+      {failed ? (
+        /*
+         * A listing whose photograph is missing still has to look like a listing.
+         *
+         * Hiding the broken `<img>` was the right instinct — the browser's broken-image glyph is
+         * worse than nothing — but it left a featureless slab in a row where every sibling carries
+         * a photograph, which reads as a load that failed rather than a listing without a picture.
+         * A mark in the middle of the frame says the second thing, which is the true one, and says
+         * it quietly enough not to compete with the cards that did load.
+         *
+         * `aria-hidden` because the frame is decorative here: the listing's name is already next
+         * to it, and "image placeholder" announced on every such row is noise.
          */
-        onError={(e) => {
-          e.currentTarget.style.visibility = 'hidden';
-        }}
-      />
+        <span className="photo__fallback" aria-hidden>
+          <Icon name="compass" size={22} color="var(--ink-faint)" strokeWidth={1.5} />
+        </span>
+      ) : (
+        <img
+          src={src}
+          alt={alt}
+          loading={priority ? 'eager' : 'lazy'}
+          fetchPriority={priority ? 'high' : undefined}
+          decoding={priority ? 'sync' : 'async'}
+          onError={() => setFailed(true)}
+        />
+      )}
       {children}
     </div>
   );

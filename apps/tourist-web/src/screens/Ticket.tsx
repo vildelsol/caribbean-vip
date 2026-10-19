@@ -6,7 +6,7 @@ import { formatClock, formatLongDate } from '../data/availability';
 import { useStore, type VoucherState } from '../state/store';
 import { QR } from '../components/QR';
 import { Icon } from '../components/Icon';
-import { EmptyState, SecondaryButton, formatUsd } from '../components/kit';
+import { EmptyState, formatUsd, plural, SecondaryButton } from '../components/kit';
 import './Ticket.css';
 
 /**
@@ -106,7 +106,7 @@ export function Ticket() {
           <div>
             <dt className="t-micro c-faint">GUESTS</dt>
             <dd className="t-caption-strong">
-              {booking.party.adults} adult{booking.party.adults === 1 ? '' : 's'}
+              {plural(booking.party.adults, 'adult')}
               {booking.party.children > 0 ? `, ${booking.party.children} child` : ''}
             </dd>
           </div>

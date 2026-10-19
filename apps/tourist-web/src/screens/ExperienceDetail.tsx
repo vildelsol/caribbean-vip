@@ -24,12 +24,14 @@ import { Icon } from '../components/Icon';
 import {
   Badge,
   EmptyState,
+  formatUsd,
+  listingDuration,
   Photo,
+  plural,
   PrimaryButton,
   Rating,
   RoundButton,
   StarRow,
-  formatUsd,
 } from '../components/kit';
 import './ExperienceDetail.css';
 
@@ -145,7 +147,7 @@ export function ExperienceDetail() {
   };
 
   const facts = [
-    { label: 'Duration', value: durationLabel(experience.durationMinutes) },
+    { label: 'Duration', value: listingDuration(experience.durationMinutes) },
     { label: 'Hotel pickup', value: experience.pickupInfo ? 'Included' : 'Not included' },
     experience.minAge
       ? { label: 'Families', value: `Ages ${experience.minAge} and up` }
@@ -239,11 +241,13 @@ export function ExperienceDetail() {
           ) : null}
         </div>
 
-        <p className="t-caption c-muted detail__summary">{experience.summary}</p>
+        {experience.summary ? (
+          <p className="t-caption c-muted detail__summary">{experience.summary}</p>
+        ) : null}
 
         {/* The two numbers the decision turns on, together, above the fold. */}
         <section className="detail__price-card">
-          <div>
+          <div className="detail__price-left">
             <p className="t-micro c-faint detail__from">FROM</p>
             <p className="t-amount c-brand">
               {formatUsd(allInFromMinor(experience))}
@@ -292,10 +296,14 @@ export function ExperienceDetail() {
           ))}
         </section>
 
-        <section className="detail__block">
-          <h2 className="t-section">About this experience</h2>
-          <p className="t-caption c-muted detail__body">{experience.description}</p>
-        </section>
+        {/* The heading goes with the prose. A listing saved without a description would otherwise
+            leave "About this experience" standing over nothing. */}
+        {experience.description ? (
+          <section className="detail__block">
+            <h2 className="t-section">About this experience</h2>
+            <p className="t-caption c-muted detail__body">{experience.description}</p>
+          </section>
+        ) : null}
 
         {experience.inclusions.length > 0 ? (
           <section className="detail__block">
@@ -335,10 +343,10 @@ export function ExperienceDetail() {
             <div className="grow">
               <StarRow />
               <p className="t-caption-strong detail__proof-claim">
-                {ratingClaim(experience.ratingAverage)}
+                {ratingClaim(experience.ratingAverage, experience.ratingCount)}
               </p>
               <p className="t-micro c-faint">
-                from {experience.ratingCount.toLocaleString()} guest ratings
+                from {plural(experience.ratingCount, 'guest rating')}
               </p>
             </div>
           </div>
@@ -348,7 +356,7 @@ export function ExperienceDetail() {
           {soonest && soonest.capacityRemaining <= 6 ? (
             <p className="t-caption-strong detail__proof-scarce">
               <Icon name="user" size={15} color="var(--coral-text)" />
-              Only {soonest.capacityRemaining} {soonest.capacityRemaining === 1 ? 'place' : 'places'} left on the
+              Only {plural(soonest.capacityRemaining, 'place')} left on the
               next departure
             </p>
           ) : null}
@@ -404,7 +412,7 @@ export function ExperienceDetail() {
             soonest.capacityRemaining <= 6 ? (
               <p className="t-micro c-urgent">Nearly full · {soonest.capacityRemaining} left</p>
             ) : (
-              <p className="t-micro c-muted">{soonest.capacityRemaining} places left</p>
+              <p className="t-micro c-muted">{plural(soonest.capacityRemaining, 'place')} left</p>
             )
           ) : (
             <p className="t-micro c-muted">Check other dates</p>
@@ -423,25 +431,31 @@ export function ExperienceDetail() {
 }
 
 /**
+ * The number of ratings a claim about a listing has to rest on before it is a claim and not a
+ * coincidence. One five-star review is not evidence that anything is among the best on an island.
+ */
+const MIN_RATINGS_FOR_CLAIM = 25;
+
+/**
  * What a rating of this strength actually claims.
  *
  * A band, not a sentence per listing: the dataset holds an average and a count, and anything more
  * specific than the band that average sits in would be a number this app does not have.
+ *
+ * The count is the other half of that, and it used not to be passed in. A listing with a single
+ * five-star rating printed "Among the highest rated on the island" directly above "from 1 guest
+ * ratings" — the page contradicting itself in two adjacent lines, in the block whose entire job is
+ * to be the credible one. Every new listing on the platform starts there, so this was not an edge
+ * case; it was the first thing every operator's first listing said about itself.
  */
-function ratingClaim(avg: number): string {
+function ratingClaim(avg: number, count: number): string {
+  if (count === 0) return 'Not yet rated';
+  if (count < MIN_RATINGS_FOR_CLAIM) return 'Newly listed';
   if (avg >= 4.8) return 'Among the highest rated on the island';
   if (avg >= 4.5) return 'Consistently loved by guests';
   return 'Well reviewed by guests';
 }
 
-
-function durationLabel(minutes: number): string {
-  if (minutes < 60) return `${minutes} min`;
-  const h = Math.floor(minutes / 60);
-  const m = minutes % 60;
-  const upper = h + (m > 0 ? 1 : 0);
-  return m > 0 ? `${h}–${upper} hours` : `${h} hour${h === 1 ? '' : 's'}`;
-}
 
 function todayISO(): string {
   const d = new Date();

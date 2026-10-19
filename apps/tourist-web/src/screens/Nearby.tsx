@@ -16,7 +16,7 @@ import { availabilityLabel } from '../data/availability';
 import { useStore } from '../state/store';
 import { useGuestPosition } from '../state/useGuestPosition';
 import { LocationBar } from '../components/LocationBar';
-import { Badge, Card, Chip, Photo, Price, SectionHeader } from '../components/kit';
+import { Badge, Card, Chip, Photo, plural, Price, SectionHeader } from '../components/kit';
 import { Icon } from '../components/Icon';
 import './Nearby.css';
 
@@ -160,7 +160,7 @@ export function Nearby() {
 
       {mapView ? (
         /* ---- Map view ---- */
-        <div className="nearby-map" role="img" aria-label={`Stylised map of ${destination.name} showing ${results.length} experiences`}>
+        <div className="nearby-map" role="img" aria-label={`Stylised map of ${destination.name} showing ${plural(results.length, 'experience')}`}>
           <span className="nearby-map__water" />
           <span className="nearby-map__land" />
           <span className="nearby-map__green" />
