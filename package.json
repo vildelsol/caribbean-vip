@@ -4,7 +4,7 @@
   "private": true,
   "description": "Caribbean VIP \u2014 regional tourism marketplace. One platform. Every island.",
   "engines": {
-    "node": ">=20"
+    "node": ">=22"
   },
   "scripts": {
     "typecheck": "pnpm -r --if-present run typecheck",
