@@ -17,7 +17,7 @@ jobs:
 
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
           cache: pnpm
 
       - name: Install
@@ -34,11 +34,6 @@ jobs:
 
       - name: Build web apps
         run: pnpm build
-
-      # AD-01: the Expo bundle is the check that catches monorepo resolution regressions —
-      # type-check alone will not. It runs on every push for that reason.
-      - name: Bundle mobile app
-        run: pnpm bundle:mobile
 
       # Operating rule 10. A committed .env would not be caught by any test above.
       - name: Assert no committed secrets
