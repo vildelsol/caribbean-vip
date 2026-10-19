@@ -2678,7 +2678,7 @@ pnpm verify
 
 `verify` = typecheck + lint + test + db:test. Others: `pnpm demo` (both apps), `pnpm db:concurrency`
 (16-way races on `reserve_availability` and `redeem_voucher` — run after touching either),
-`pnpm bundle:mobile`, `pnpm vendor` (:3001), `pnpm admin` (:3002).
+`pnpm tourist` (:5173), `pnpm vendor` (:3001), `pnpm admin` (:3002).
 
 ---
 
