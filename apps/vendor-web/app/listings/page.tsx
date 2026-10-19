@@ -38,6 +38,10 @@ const EMPTY_FORM = { title: '', summary: '', price: '', duration: '' };
  * The two text fields this form actually edits, validated by the same schema the database
  * constraints mirror.
  *
+ * `description` and `pickup_info` are bounded in Postgres but have no input here, so a vendor
+ * cannot set them from this screen at all. That is a gap in the form, not in the constraints —
+ * worth an input each, in a change that decides what this screen is for.
+ *
  * Both save paths persist `parsed.data`, not the raw input, and that is the point rather than a
  * detail: `listingTextSchema` trims before it measures length, while the Postgres check measures
  * what is stored. Save the raw string and a title of exactly `LISTING_LIMITS.title` characters
@@ -237,7 +241,7 @@ export default function Listings() {
             </label>
 
             <label className="field">
-              <span className="field__label">Description</span>
+              <span className="field__label">Summary</span>
               <textarea
                 className="input"
                 rows={3}
@@ -246,6 +250,9 @@ export default function Listings() {
                 onChange={(e) => setEditing({ ...editing, summary: e.target.value })}
                 style={{ resize: 'vertical' }}
               />
+              <p className="field__hint">
+                The line guests read on the card. {LISTING_LIMITS.summary} characters.
+              </p>
             </label>
 
             <label className="field">
@@ -315,7 +322,7 @@ export default function Listings() {
             </label>
 
             <label className="field">
-              <span className="field__label">Description</span>
+              <span className="field__label">Summary</span>
               <textarea
                 className="input"
                 rows={3}
@@ -325,6 +332,9 @@ export default function Listings() {
                 placeholder="What makes this experience special…"
                 style={{ resize: 'vertical' }}
               />
+              <p className="field__hint">
+                The line guests read on the card. {LISTING_LIMITS.summary} characters.
+              </p>
             </label>
 
             <label className="field">

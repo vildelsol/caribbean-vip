@@ -57,3 +57,21 @@ export const listingTextSchema = z.object({
 });
 
 export type ListingText = z.infer<typeof listingTextSchema>;
+
+/**
+ * The vendor organisation's own blurb, which is not part of a listing and so is not in
+ * `listingTextSchema`.
+ *
+ * `vendorDescription` sat in `LISTING_LIMITS` with a Postgres constraint under it and nothing else:
+ * no schema, and an onboarding textarea with no `maxLength` whose counter read `/280` while the
+ * column allowed 600. A vendor typing 400 characters saw a number that looked over the limit and
+ * saved anyway. This is the missing middle layer; the counter and the input cap now both come from
+ * the constant.
+ *
+ * Nullable, because `vendor_organizations.description` is, and the onboarding field is optional.
+ */
+export const vendorTextSchema = z.object({
+  description: z.string().trim().max(LISTING_LIMITS.vendorDescription).nullable(),
+});
+
+export type VendorText = z.infer<typeof vendorTextSchema>;
