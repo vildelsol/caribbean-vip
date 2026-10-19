@@ -553,6 +553,13 @@
   font-weight: 600;
 }
 
+.field-error {
+  margin: 0;
+  font-size: 14px;
+  color: var(--coral-text);
+  font-weight: 600;
+}
+
 .auth-switch {
   text-align: center;
   font-size: 14px;

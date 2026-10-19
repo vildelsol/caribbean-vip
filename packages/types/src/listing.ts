@@ -40,6 +40,14 @@ export const LISTING_LIMITS = {
 /**
  * `.trim()` before the length check, so trailing whitespace cannot be the thing that fails a save.
  * Nullable where the column is nullable — see the note on `DemoExperience`.
+ *
+ * ## Persist the parsed output, not the input
+ *
+ * Because the trim happens here and the Postgres check measures what is stored, a caller that
+ * validates the raw string and then saves that same raw string has not been protected: a title of
+ * exactly `LISTING_LIMITS.title` characters plus a trailing space passes this schema and violates
+ * `experiences_title_length`. Write `parse`/`safeParse` output to the database.
+ * `apps/vendor-web/app/listings/page.tsx` is the worked example.
  */
 export const listingTextSchema = z.object({
   title: z.string().trim().min(1, 'A listing needs a title.').max(LISTING_LIMITS.title),

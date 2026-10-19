@@ -21,6 +21,7 @@ do $$
 declare
   required text[] := array[
     'experiences_title_length',
+    'experiences_title_not_blank',
     'experiences_summary_length',
     'experiences_description_length',
     'experiences_pickup_info_length',
@@ -69,6 +70,27 @@ begin
       v_vendor, v_island, v_dest
     ),
     'a 281-character summary is rejected'
+  );
+
+  perform test.raises(
+    format(
+      $sql$insert into experiences (vendor_org_id, island_id, destination_id, category, title,
+             duration_minutes, currency)
+           values (%L, %L, %L, 'waterfalls', '', 60, 'USD')$sql$,
+      v_vendor, v_island, v_dest
+    ),
+    'an empty title is rejected'
+  );
+
+  -- The case the length check could never catch: `char_length('   ') <= 120` is true.
+  perform test.raises(
+    format(
+      $sql$insert into experiences (vendor_org_id, island_id, destination_id, category, title,
+             duration_minutes, currency)
+           values (%L, %L, %L, 'waterfalls', '   ', 60, 'USD')$sql$,
+      v_vendor, v_island, v_dest
+    ),
+    'a whitespace-only title is rejected'
   );
 end
 $$;

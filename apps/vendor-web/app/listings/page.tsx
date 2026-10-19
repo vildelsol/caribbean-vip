@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { LISTING_LIMITS } from '@cvip/types';
+import { LISTING_LIMITS, listingTextSchema } from '@cvip/types';
 import { Crest } from '../../components/Crest';
 import { formatUsd, vendorListings } from '../../lib/vendorData';
 import type { DemoExperience } from '@cvip/demo';
@@ -22,8 +22,8 @@ function toLocal(e: DemoExperience): LocalListing {
   return {
     id: e.id,
     title: e.title,
-    // Nullable in Postgres; the form below requires one, so a listing without a summary is a
-    // seeded or API-created row and presents here as blank for the operator to fill.
+    // Nullable in Postgres. The new-listing form asks for one, editing does not enforce it, so a
+    // blank summary here is a seeded or API-created row for the operator to fill.
     summary: e.summary ?? '',
     fromAmountMinor: e.fromAmountMinor,
     durationMinutes: e.durationMinutes,
@@ -33,6 +33,29 @@ function toLocal(e: DemoExperience): LocalListing {
 }
 
 const EMPTY_FORM = { title: '', summary: '', price: '', duration: '' };
+
+/**
+ * The two text fields this form actually edits, validated by the same schema the database
+ * constraints mirror.
+ *
+ * Both save paths persist `parsed.data`, not the raw input, and that is the point rather than a
+ * detail: `listingTextSchema` trims before it measures length, while the Postgres check measures
+ * what is stored. Save the raw string and a title of exactly `LISTING_LIMITS.title` characters
+ * followed by a space passes here and violates `experiences_title_length` on the way in.
+ */
+const formTextSchema = listingTextSchema.pick({ title: true, summary: true });
+
+/**
+ * The first problem, in words the operator can act on. Zod always reports at least one issue on a
+ * failure, but the index is unchecked, so the fallback is here to keep a silent save impossible:
+ * no message must never mean no error.
+ *
+ * Typed structurally rather than as `z.ZodError`, because `zod` is not a dependency of this app —
+ * the schema arrives through `@cvip/types`.
+ */
+function firstMessage(error: { issues: readonly { message: string }[] }): string {
+  return error.issues[0]?.message ?? 'That listing cannot be saved as it is.';
+}
 
 /**
  * Listings — V-02.
@@ -49,6 +72,28 @@ export default function Listings() {
   const [adding, setAdding] = useState(false);
   const [newForm, setNewForm] = useState(EMPTY_FORM);
   const [saved, setSaved] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  const openEdit = (l: LocalListing) => {
+    setError(null);
+    setEditing(l);
+  };
+
+  const closeEdit = () => {
+    setError(null);
+    setEditing(null);
+  };
+
+  const openAdd = () => {
+    setError(null);
+    setAdding(true);
+  };
+
+  const closeAdd = () => {
+    setError(null);
+    setNewForm(EMPTY_FORM);
+    setAdding(false);
+  };
 
   const flashSaved = (id: string) => {
     setSaved(id);
@@ -67,15 +112,26 @@ export default function Listings() {
 
   const saveEdit = () => {
     if (!editing) return;
-    setListings((prev) => prev.map((l) => (l.id === editing.id ? editing : l)));
-    flashSaved(editing.id);
+    const parsed = formTextSchema.safeParse({ title: editing.title, summary: editing.summary });
+    if (!parsed.success) {
+      setError(firstMessage(parsed.error));
+      return;
+    }
+    const next = { ...editing, title: parsed.data.title, summary: parsed.data.summary ?? '' };
+    setListings((prev) => prev.map((l) => (l.id === next.id ? next : l)));
+    setError(null);
+    flashSaved(next.id);
     setEditing(null);
   };
 
   const addListing = () => {
-    const title = newForm.title.trim();
-    const summary = newForm.summary.trim();
-    if (!title || !summary) return;
+    const parsed = formTextSchema.safeParse({ title: newForm.title, summary: newForm.summary });
+    if (!parsed.success) {
+      setError(firstMessage(parsed.error));
+      return;
+    }
+    const title = parsed.data.title;
+    const summary = parsed.data.summary ?? '';
     const price = Math.round(parseFloat(newForm.price || '0') * 100) || 9900;
     const duration = parseInt(newForm.duration || '120', 10) || 120;
     const id = `new-${Date.now()}`;
@@ -85,6 +141,7 @@ export default function Listings() {
     ]);
     setNewForm(EMPTY_FORM);
     setAdding(false);
+    setError(null);
     flashSaved(id);
   };
 
@@ -112,7 +169,7 @@ export default function Listings() {
                 {live} live · {draft} in draft
               </p>
             </div>
-            <button type="button" className="btn btn--secondary" onClick={() => setAdding(true)}>
+            <button type="button" className="btn btn--secondary" onClick={openAdd}>
               New listing
             </button>
           </div>
@@ -138,7 +195,7 @@ export default function Listings() {
                   <button
                     type="button"
                     className="btn btn--secondary btn--sm"
-                    onClick={() => setEditing(l)}
+                    onClick={() => openEdit(l)}
                   >
                     Edit
                   </button>
@@ -165,7 +222,7 @@ export default function Listings() {
           <div className="modal">
             <div className="modal__head">
               <h2>Edit listing</h2>
-              <button type="button" className="modal__close" onClick={() => setEditing(null)} aria-label="Close">✕</button>
+              <button type="button" className="modal__close" onClick={closeEdit} aria-label="Close">✕</button>
             </div>
 
             <label className="field">
@@ -218,8 +275,14 @@ export default function Listings() {
               />
             </label>
 
+            {error && (
+              <p className="field-error" role="alert">
+                {error}
+              </p>
+            )}
+
             <div className="modal__actions">
-              <button type="button" className="btn btn--secondary" onClick={() => setEditing(null)}>
+              <button type="button" className="btn btn--secondary" onClick={closeEdit}>
                 Cancel
               </button>
               <button type="button" className="btn btn--primary" onClick={saveEdit}>
@@ -236,7 +299,7 @@ export default function Listings() {
           <div className="modal">
             <div className="modal__head">
               <h2>New listing</h2>
-              <button type="button" className="modal__close" onClick={() => { setAdding(false); setNewForm(EMPTY_FORM); }} aria-label="Close">✕</button>
+              <button type="button" className="modal__close" onClick={closeAdd} aria-label="Close">✕</button>
             </div>
 
             <label className="field">
@@ -289,8 +352,14 @@ export default function Listings() {
               />
             </label>
 
+            {error && (
+              <p className="field-error" role="alert">
+                {error}
+              </p>
+            )}
+
             <div className="modal__actions">
-              <button type="button" className="btn btn--secondary" onClick={() => { setAdding(false); setNewForm(EMPTY_FORM); }}>
+              <button type="button" className="btn btn--secondary" onClick={closeAdd}>
                 Cancel
               </button>
               <button

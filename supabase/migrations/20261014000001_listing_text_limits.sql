@@ -13,8 +13,14 @@
 -- 54, so every existing row passes with room to spare. `not valid` is deliberately NOT used: these
 -- should be checked on the rows that are already here, and they are.
 
+-- A title also has to say something. `listingTextSchema` rejects a blank or whitespace-only title
+-- and nothing here did, so '   ' was storable: `char_length('   ') <= 120` is true, and the column
+-- has no not-null or non-empty check. `btrim` rather than a plain length test, so the two layers
+-- agree on what empty means — Zod trims before it measures.
+
 alter table experiences
   add constraint experiences_title_length check (char_length(title) <= 120),
+  add constraint experiences_title_not_blank check (char_length(btrim(title)) > 0),
   add constraint experiences_summary_length check (char_length(summary) <= 280),
   add constraint experiences_description_length check (char_length(description) <= 2000),
   add constraint experiences_pickup_info_length check (char_length(pickup_info) <= 280);
