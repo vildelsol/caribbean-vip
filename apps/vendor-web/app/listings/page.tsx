@@ -1,84 +1,127 @@
 'use client';
 
-import { useState } from 'react';
-import { LISTING_LIMITS, listingTextSchema } from '@cvip/types';
+import { useCallback, useEffect, useState } from 'react';
 import { Crest } from '../../components/Crest';
-import { formatUsd, vendorListings } from '../../lib/vendorData';
-import type { DemoExperience } from '@cvip/demo';
+import { formatUsd } from '../../lib/vendorData';
+import { useActiveMembership } from '../../lib/session';
+import {
+  LISTING_CATEGORIES,
+  LISTING_LIMITS,
+  ListingInvalid,
+  createListing,
+  isDemoListings,
+  loadDestinations,
+  loadListings,
+  saveListing,
+  setListingStatus,
+  type DestinationOption,
+  type VendorListing,
+} from '../../lib/listings';
 
-type ListingStatus = 'approved' | 'draft';
+const EMPTY_FORM = {
+  title: '',
+  summary: '',
+  price: '',
+  duration: '',
+  category: LISTING_CATEGORIES[0],
+  destinationId: '',
+};
 
-interface LocalListing {
-  id: string;
-  title: string;
-  summary: string;
-  fromAmountMinor: number;
-  durationMinutes: number;
-  ratingCount: number;
-  status: ListingStatus;
-}
-
-function toLocal(e: DemoExperience): LocalListing {
-  return {
-    id: e.id,
-    title: e.title,
-    // Nullable in Postgres. The new-listing form asks for one, editing does not enforce it, so a
-    // blank summary here is a seeded or API-created row for the operator to fill.
-    summary: e.summary ?? '',
-    fromAmountMinor: e.fromAmountMinor,
-    durationMinutes: e.durationMinutes,
-    ratingCount: e.ratingCount,
-    status: e.status === 'approved' ? 'approved' : 'draft',
-  };
-}
-
-const EMPTY_FORM = { title: '', summary: '', price: '', duration: '' };
-
-/**
- * The two text fields this form actually edits, validated by the same schema the database
- * constraints mirror.
- *
- * `description` and `pickup_info` are bounded in Postgres but have no input here, so a vendor
- * cannot set them from this screen at all. That is a gap in the form, not in the constraints —
- * worth an input each, in a change that decides what this screen is for.
- *
- * Both save paths persist `parsed.data`, not the raw input, and that is the point rather than a
- * detail: `listingTextSchema` trims before it measures length, while the Postgres check measures
- * what is stored. Save the raw string and a title of exactly `LISTING_LIMITS.title` characters
- * followed by a space passes here and violates `experiences_title_length` on the way in.
- */
-const formTextSchema = listingTextSchema.pick({ title: true, summary: true });
-
-/**
- * The first problem, in words the operator can act on. Zod always reports at least one issue on a
- * failure, but the index is unchecked, so the fallback is here to keep a silent save impossible:
- * no message must never mean no error.
- *
- * Typed structurally rather than as `z.ZodError`, because `zod` is not a dependency of this app —
- * the schema arrives through `@cvip/types`.
- */
-function firstMessage(error: { issues: readonly { message: string }[] }): string {
-  return error.issues[0]?.message ?? 'That listing cannot be saved as it is.';
+/** `waterfalls` reads as `Waterfalls`, `day_trips` as `Day trips`. */
+function categoryLabel(c: string): string {
+  const spaced = c.replace(/_/g, ' ');
+  return spaced.charAt(0).toUpperCase() + spaced.slice(1);
 }
 
 /**
  * Listings — V-02.
  *
- * Write path runs in local state so edit, publish/unpublish and new listings all work in the demo
- * without a Supabase round-trip. The initial data seeds from the demo catalogue; mutations are
- * in-memory and reset on reload, which is the correct behaviour for a demonstration.
+ * Reads and writes through `lib/listings`, which decides between Supabase and the demo store.
+ * This screen does not know which one it is talking to: every mutation is awaited, every failure
+ * arrives as an exception, and a `ListingInvalid` is the operator's to fix while anything else is
+ * reported as a problem on our side rather than theirs.
+ *
+ * `description` and `pickup_info` are bounded in Postgres but still have no input here, so a
+ * vendor cannot set them from this screen. That is a gap in the form, not in the constraints.
  */
 export default function Listings() {
-  const [listings, setListings] = useState<LocalListing[]>(() =>
-    vendorListings().map(toLocal),
-  );
-  const [editing, setEditing] = useState<LocalListing | null>(null);
+  const membership = useActiveMembership();
+  const orgId = membership?.vendor_org_id ?? null;
+  const islandId = membership?.vendor_organizations?.island_id ?? null;
+
+  const [listings, setListings] = useState<VendorListing[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const [destinations, setDestinations] = useState<DestinationOption[]>([]);
+  const [editing, setEditing] = useState<VendorListing | null>(null);
   const [adding, setAdding] = useState(false);
   const [newForm, setNewForm] = useState(EMPTY_FORM);
   const [saved, setSaved] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
 
-  const openEdit = (l: LocalListing) => {
+  useEffect(() => {
+    let active = true;
+    setLoading(true);
+    void (async () => {
+      try {
+        const rows = await loadListings(orgId);
+        if (active) {
+          setListings(rows);
+          setLoadError(null);
+        }
+      } catch (e) {
+        if (active) setLoadError(e instanceof Error ? e.message : 'Could not load your listings.');
+      } finally {
+        if (active) setLoading(false);
+      }
+    })();
+    return () => {
+      active = false;
+    };
+  }, [orgId]);
+
+  useEffect(() => {
+    let active = true;
+    void (async () => {
+      try {
+        const rows = await loadDestinations(islandId);
+        if (active) setDestinations(rows);
+      } catch {
+        /* The create form falls back to a free choice of nothing; the insert will say so. */
+      }
+    })();
+    return () => {
+      active = false;
+    };
+  }, [islandId]);
+
+  const flashSaved = (id: string) => {
+    setSaved(id);
+    setTimeout(() => setSaved(null), 1800);
+  };
+
+  /**
+   * One place where a failed write becomes something the operator reads.
+   *
+   * `ListingInvalid` is their problem and says what to change. Anything else reached the network
+   * or the database, so it is reported as ours — a vendor told "your title is wrong" because a
+   * connection dropped goes and rewrites text that was already fine.
+   */
+  const run = useCallback(async (work: () => Promise<void>) => {
+    setBusy(true);
+    try {
+      await work();
+      setError(null);
+    } catch (e) {
+      if (e instanceof ListingInvalid) setError(e.message);
+      else setError(`Could not save. ${e instanceof Error ? e.message : 'Please try again.'}`);
+    } finally {
+      setBusy(false);
+    }
+  }, []);
+
+  const openEdit = (l: VendorListing) => {
     setError(null);
     setEditing(l);
   };
@@ -90,6 +133,7 @@ export default function Listings() {
 
   const openAdd = () => {
     setError(null);
+    setNewForm({ ...EMPTY_FORM, destinationId: destinations[0]?.id ?? '' });
     setAdding(true);
   };
 
@@ -99,55 +143,38 @@ export default function Listings() {
     setAdding(false);
   };
 
-  const flashSaved = (id: string) => {
-    setSaved(id);
-    setTimeout(() => setSaved(null), 1800);
-  };
-
-  const toggle = (id: string) => {
-    setListings((prev) =>
-      prev.map((l) =>
-        l.id === id
-          ? { ...l, status: l.status === 'approved' ? 'draft' : 'approved' }
-          : l,
-      ),
-    );
-  };
+  const toggle = (l: VendorListing) =>
+    run(async () => {
+      const next = await setListingStatus(orgId, l.id, l.status === 'approved' ? 'draft' : 'approved');
+      setListings((prev) => prev.map((x) => (x.id === next.id ? next : x)));
+    });
 
   const saveEdit = () => {
     if (!editing) return;
-    const parsed = formTextSchema.safeParse({ title: editing.title, summary: editing.summary });
-    if (!parsed.success) {
-      setError(firstMessage(parsed.error));
-      return;
-    }
-    const next = { ...editing, title: parsed.data.title, summary: parsed.data.summary ?? '' };
-    setListings((prev) => prev.map((l) => (l.id === next.id ? next : l)));
-    setError(null);
-    flashSaved(next.id);
-    setEditing(null);
+    void run(async () => {
+      const next = await saveListing(orgId, editing);
+      setListings((prev) => prev.map((x) => (x.id === next.id ? next : x)));
+      flashSaved(next.id);
+      setEditing(null);
+    });
   };
 
-  const addListing = () => {
-    const parsed = formTextSchema.safeParse({ title: newForm.title, summary: newForm.summary });
-    if (!parsed.success) {
-      setError(firstMessage(parsed.error));
-      return;
-    }
-    const title = parsed.data.title;
-    const summary = parsed.data.summary ?? '';
-    const price = Math.round(parseFloat(newForm.price || '0') * 100) || 9900;
-    const duration = parseInt(newForm.duration || '120', 10) || 120;
-    const id = `new-${Date.now()}`;
-    setListings((prev) => [
-      ...prev,
-      { id, title, summary, fromAmountMinor: price, durationMinutes: duration, ratingCount: 0, status: 'draft' },
-    ]);
-    setNewForm(EMPTY_FORM);
-    setAdding(false);
-    setError(null);
-    flashSaved(id);
-  };
+  const addListing = () =>
+    void run(async () => {
+      const next = await createListing(orgId, islandId, {
+        title: newForm.title,
+        summary: newForm.summary,
+        // The placeholders the form shows are the values an operator gets by leaving these blank.
+        fromAmountMinor: Math.round(parseFloat(newForm.price || '0') * 100) || 9900,
+        durationMinutes: parseInt(newForm.duration || '120', 10) || 120,
+        category: newForm.category,
+        destinationId: newForm.destinationId,
+      });
+      setListings((prev) => [...prev, next]);
+      setNewForm(EMPTY_FORM);
+      setAdding(false);
+      flashSaved(next.id);
+    });
 
   const live = listings.filter((l) => l.status === 'approved').length;
   const draft = listings.filter((l) => l.status !== 'approved').length;
@@ -173,10 +200,32 @@ export default function Listings() {
                 {live} live · {draft} in draft
               </p>
             </div>
-            <button type="button" className="btn btn--secondary" onClick={openAdd}>
+            <button type="button" className="btn btn--secondary" onClick={openAdd} disabled={loading}>
               New listing
             </button>
           </div>
+
+          {/* Operating rule 9: demo content is never passed off as live. An operator who edits
+              here and finds the change gone tomorrow should have been told why today. */}
+          {isDemoListings && (
+            <p className="card__note card__note--demo">
+              Demo mode — changes stay in this browser and reset when you reload.
+            </p>
+          )}
+
+          {loading && <p className="card__note">Loading your listings…</p>}
+
+          {loadError && (
+            <p className="field-error" role="alert">
+              Could not load your listings. {loadError}
+            </p>
+          )}
+
+          {!loading && !loadError && listings.length === 0 && (
+            <p className="card__note">
+              No listings yet. Use <strong>New listing</strong> to add your first experience.
+            </p>
+          )}
 
           <ul className="listing-list">
             {listings.map((l) => (
@@ -206,7 +255,7 @@ export default function Listings() {
                   <button
                     type="button"
                     className={`btn btn--sm ${l.status === 'approved' ? 'btn--ghost' : 'btn--primary'}`}
-                    onClick={() => toggle(l.id)}
+                    onClick={() => void toggle(l)}
                   >
                     {l.status === 'approved' ? 'Unpublish' : 'Publish'}
                   </button>
@@ -292,8 +341,8 @@ export default function Listings() {
               <button type="button" className="btn btn--secondary" onClick={closeEdit}>
                 Cancel
               </button>
-              <button type="button" className="btn btn--primary" onClick={saveEdit}>
-                Save changes
+              <button type="button" className="btn btn--primary" onClick={saveEdit} disabled={busy}>
+                {busy ? 'Saving…' : 'Save changes'}
               </button>
             </div>
           </div>
@@ -362,6 +411,41 @@ export default function Listings() {
               />
             </label>
 
+            {/* `experiences` requires a category and a destination, so the form has to ask. The
+                island is not asked: it is the vendor's own, and offering a choice invites a
+                listing filed under an island the operator does not trade in. */}
+            <label className="field">
+              <span className="field__label">Category</span>
+              <select
+                className="input"
+                value={newForm.category}
+                onChange={(e) =>
+                  setNewForm({ ...newForm, category: e.target.value as typeof newForm.category })
+                }
+              >
+                {LISTING_CATEGORIES.map((c) => (
+                  <option key={c} value={c}>
+                    {categoryLabel(c)}
+                  </option>
+                ))}
+              </select>
+            </label>
+
+            <label className="field">
+              <span className="field__label">Where it runs</span>
+              <select
+                className="input"
+                value={newForm.destinationId}
+                onChange={(e) => setNewForm({ ...newForm, destinationId: e.target.value })}
+              >
+                {destinations.map((d) => (
+                  <option key={d.id} value={d.id}>
+                    {d.name}
+                  </option>
+                ))}
+              </select>
+            </label>
+
             {error && (
               <p className="field-error" role="alert">
                 {error}
@@ -375,10 +459,10 @@ export default function Listings() {
               <button
                 type="button"
                 className="btn btn--primary"
-                disabled={!newForm.title.trim() || !newForm.summary.trim()}
+                disabled={busy || !newForm.title.trim() || !newForm.summary.trim()}
                 onClick={addListing}
               >
-                Create draft
+                {busy ? 'Creating…' : 'Create draft'}
               </button>
             </div>
           </div>

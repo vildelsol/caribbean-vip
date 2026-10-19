@@ -555,6 +555,11 @@
   font-weight: 600;
 }
 
+.card__note--demo {
+  color: var(--gold-text);
+  font-weight: 600;
+}
+
 .field-error {
   margin: 0;
   font-size: 14px;

@@ -22,7 +22,10 @@ export interface Membership {
   can_manage_listings: boolean;
   can_scan_vouchers: boolean;
   can_view_payouts: boolean;
-  vendor_organizations: { trading_name: string; status: string } | null;
+  /* `island_id` is here for the listings create form: a new experience needs an island, and the
+     vendor's own island is the only correct answer — asking an operator to pick one invites a
+     listing filed under an island they do not trade in. */
+  vendor_organizations: { trading_name: string; status: string; island_id: string } | null;
 }
 
 interface VendorSessionValue {
@@ -80,7 +83,7 @@ export function VendorSessionProvider({ children }: { children: ReactNode }) {
       const { data, error } = await supabase
         .from('vendor_members')
         .select(
-          'vendor_org_id, role, can_manage_listings, can_scan_vouchers, can_view_payouts, vendor_organizations(trading_name, status)',
+          'vendor_org_id, role, can_manage_listings, can_scan_vouchers, can_view_payouts, vendor_organizations(trading_name, status, island_id)',
         )
         .eq('user_id', userId);
 
