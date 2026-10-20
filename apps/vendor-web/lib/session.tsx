@@ -37,6 +37,14 @@ interface VendorSessionValue {
   activeOrgId: string | null;
   setActiveOrgId: (id: string) => void;
   /**
+   * May the current member scan vouchers?
+   *
+   * Read straight off the row, unlike `canManageListings`: there is no ownership override here,
+   * because `can_scan_for_vendor()` in the database checks the column alone. The two must agree,
+   * so do not add one here without adding it there.
+   */
+  canScanVouchers: boolean;
+  /**
    * May the current member write listings and availability?
    *
    * Derived here rather than read off the row, because an owner counts as a manager whatever
@@ -147,6 +155,8 @@ export function VendorSessionProvider({ children }: { children: ReactNode }) {
       canManageListings: isListingManager(
         memberships.find((m) => m.vendor_org_id === activeOrgId) ?? null,
       ),
+      canScanVouchers:
+        memberships.find((m) => m.vendor_org_id === activeOrgId)?.can_scan_vouchers ?? false,
       signOut: async () => {
         await supabase.auth.signOut();
       },

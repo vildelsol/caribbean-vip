@@ -142,13 +142,13 @@ begin
   insert into vouchers (token_hash, user_id, booking_id, vendor_org_id, state, valid_until)
   values ('hash-happy', guest, booking, org_id, 'active', now() + interval '2 days');
 
-  select * into r from redeem_voucher('hash-happy', org_id, scanner);
+  select * into r from redeem_voucher_by_hash('hash-happy', org_id, scanner);
   perform test.eq(r.result, 'ok'::redemption_result, 'V-04: a valid voucher redeems');
   perform test.ok(r.redeemed_at is not null, 'V-04: the redemption timestamp is returned');
   first_redeemed_at := r.redeemed_at;
 
   -- Second scan.
-  select * into r from redeem_voucher('hash-happy', org_id, scanner);
+  select * into r from redeem_voucher_by_hash('hash-happy', org_id, scanner);
   perform test.eq(r.result, 'already_redeemed'::redemption_result,
     'V-05: a second scan is rejected as already_redeemed');
   perform test.eq(r.original_redeemed_at, first_redeemed_at,
@@ -156,7 +156,7 @@ begin
   perform test.eq(r.original_scanner_id, scanner, 'V-05: the original scanner is returned');
 
   -- Third scan, to be sure the terminal state holds.
-  select * into r from redeem_voucher('hash-happy', org_id, scanner);
+  select * into r from redeem_voucher_by_hash('hash-happy', org_id, scanner);
   perform test.eq(r.result, 'already_redeemed'::redemption_result, 'a third scan is still rejected');
 
   -- Every attempt is recorded, failures included.
@@ -181,49 +181,49 @@ begin
    where trading_name = '[Demo] Portland River Rafting';
 
   -- unknown token
-  select * into r from redeem_voucher('no-such-hash', org_id, scanner);
+  select * into r from redeem_voucher_by_hash('no-such-hash', org_id, scanner);
   perform test.eq(r.result, 'unknown_token'::redemption_result, 'an unknown token is rejected');
 
   -- expired
   insert into vouchers (token_hash, user_id, vendor_org_id, promotion_id, state, valid_from, valid_until)
   select 'hash-expired', guest, org_id, p.id, 'active', now() - interval '10 days', now() - interval '1 day'
     from promotions p limit 1;
-  select * into r from redeem_voucher('hash-expired', org_id, scanner);
+  select * into r from redeem_voucher_by_hash('hash-expired', org_id, scanner);
   perform test.eq(r.result, 'expired'::redemption_result, 'an expired voucher is rejected');
 
   -- not yet valid (future window)
   insert into vouchers (token_hash, user_id, vendor_org_id, promotion_id, state, valid_from, valid_until)
   select 'hash-future', guest, org_id, p.id, 'active', now() + interval '5 days', now() + interval '10 days'
     from promotions p limit 1;
-  select * into r from redeem_voucher('hash-future', org_id, scanner);
+  select * into r from redeem_voucher_by_hash('hash-future', org_id, scanner);
   perform test.eq(r.result, 'not_yet_valid'::redemption_result, 'a voucher outside its window is rejected');
 
   -- not yet valid (issued but never activated)
   insert into vouchers (token_hash, user_id, vendor_org_id, promotion_id, state, valid_until)
   select 'hash-issued', guest, org_id, p.id, 'issued', now() + interval '5 days'
     from promotions p limit 1;
-  select * into r from redeem_voucher('hash-issued', org_id, scanner);
+  select * into r from redeem_voucher_by_hash('hash-issued', org_id, scanner);
   perform test.eq(r.result, 'not_yet_valid'::redemption_result, 'an issued-but-inactive voucher is rejected');
 
   -- wrong vendor
   insert into vouchers (token_hash, user_id, vendor_org_id, promotion_id, state, valid_until)
   select 'hash-wrong-vendor', guest, org_id, p.id, 'active', now() + interval '5 days'
     from promotions p limit 1;
-  select * into r from redeem_voucher('hash-wrong-vendor', other_org, scanner);
+  select * into r from redeem_voucher_by_hash('hash-wrong-vendor', other_org, scanner);
   perform test.eq(r.result, 'wrong_vendor'::redemption_result, 'a voucher presented at the wrong vendor is rejected');
 
   -- cancelled
   insert into vouchers (token_hash, user_id, vendor_org_id, promotion_id, state, valid_until)
   select 'hash-cancelled', guest, org_id, p.id, 'cancelled', now() + interval '5 days'
     from promotions p limit 1;
-  select * into r from redeem_voucher('hash-cancelled', org_id, scanner);
+  select * into r from redeem_voucher_by_hash('hash-cancelled', org_id, scanner);
   perform test.eq(r.result, 'cancelled'::redemption_result, 'a cancelled voucher is rejected');
 
   -- invalidated
   insert into vouchers (token_hash, user_id, vendor_org_id, promotion_id, state, valid_until)
   select 'hash-invalidated', guest, org_id, p.id, 'invalidated', now() + interval '5 days'
     from promotions p limit 1;
-  select * into r from redeem_voucher('hash-invalidated', org_id, scanner);
+  select * into r from redeem_voucher_by_hash('hash-invalidated', org_id, scanner);
   perform test.eq(r.result, 'invalidated'::redemption_result, 'an invalidated voucher is rejected');
 
   -- booking not paid: the voucher is fine, but its booking never reached `confirmed`.
@@ -237,7 +237,7 @@ begin
   insert into vouchers (token_hash, user_id, booking_id, vendor_org_id, state, valid_until)
   values ('hash-unpaid', guest, pending_booking, org_id, 'active', now() + interval '5 days');
 
-  select * into r from redeem_voucher('hash-unpaid', org_id, scanner);
+  select * into r from redeem_voucher_by_hash('hash-unpaid', org_id, scanner);
   perform test.eq(r.result, 'booking_not_paid'::redemption_result,
     'a voucher whose booking is not paid is rejected');
 end
