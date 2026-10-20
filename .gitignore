@@ -30,3 +30,6 @@ everything-claude-code/
 brag-output/
 brag-output-*/
 shorts-factory/
+
+# Scanner test QR codes (staging vouchers)
+scanner-test-out/

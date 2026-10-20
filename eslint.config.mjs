@@ -60,6 +60,14 @@ export default tseslint.config(
     },
   },
   {
+    // Operator-run Node scripts. They print to the terminal on purpose; that is their interface.
+    files: ['apps/*/scripts/*.mjs'],
+    languageOptions: {
+      globals: { process: 'readonly', console: 'readonly', URL: 'readonly' },
+    },
+    rules: { 'no-console': 'off' },
+  },
+  {
     // Metro resolves bundled assets at build time from a *static* `require` — an ESM import or a
     // computed path silently produces nothing. This is the one file that maps demo media keys to
     // image files, so `require` there is the platform's requirement, not a style lapse.

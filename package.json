@@ -21,7 +21,8 @@
     "db:push": "./scripts/db-push.sh",
     "demo": "./scripts/demo.sh",
     "tourist": "pnpm --filter @cvip/tourist-web dev",
-    "tourist:build": "pnpm --filter @cvip/tourist-web build"
+    "tourist:build": "pnpm --filter @cvip/tourist-web build",
+    "scanner:seed": "pnpm --filter @cvip/tourist-web exec node scripts/seed-scanner-test.mjs"
   },
   "devDependencies": {
     "@eslint/js": "^9.17.0",
