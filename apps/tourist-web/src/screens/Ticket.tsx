@@ -4,6 +4,7 @@ import { experienceById, islandById, vendorFor } from '../data/catalogue';
 import { attendeeLabel } from '../data/bookingClash';
 import { formatClock, formatLongDate } from '../data/availability';
 import { useStore, type VoucherState } from '../state/store';
+import { isLiveMode } from '../lib/supabase';
 import { QR } from '../components/QR';
 import { Icon } from '../components/Icon';
 import { EmptyState, formatUsd, plural, SecondaryButton } from '../components/kit';
@@ -125,11 +126,25 @@ export function Ticket() {
         </dl>
 
         <div className="stub__qr">
-          <div className="stub__qr-frame">
-            <QR value={booking.ticketToken} size={172} label={`Ticket for ${booking.reference}`} />
-          </div>
-          <p className="t-amount-sm stub__ref">{booking.reference}</p>
-          <p className="t-micro c-muted">Show this code at the {vendor?.location.name}</p>
+          {/*
+            Live mode: a cancelled or refunded booking carries no token (my_bookings returns none,
+            and the merge clears any local one), so there is no code to show. Demo keeps its
+            existing voided-ticket rendering unchanged.
+          */}
+          {cancelled && isLiveMode ? (
+            <>
+              <p className="t-amount-sm stub__ref">{booking.reference}</p>
+              <p className="t-micro c-muted">This booking was cancelled. There is no code to scan.</p>
+            </>
+          ) : (
+            <>
+              <div className="stub__qr-frame">
+                <QR value={booking.ticketToken} size={172} label={`Ticket for ${booking.reference}`} />
+              </div>
+              <p className="t-amount-sm stub__ref">{booking.reference}</p>
+              <p className="t-micro c-muted">Show this code at the {vendor?.location.name}</p>
+            </>
+          )}
         </div>
 
         {/* The perforation, with notches punched out of the dark screen behind. */}

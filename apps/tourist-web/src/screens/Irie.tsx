@@ -30,6 +30,8 @@ import {
 } from '../data/itinerary';
 import { bookingsFor } from '../data/bookingClash';
 import { useStore } from '../state/store';
+import { isLiveMode } from '../lib/supabase';
+import { RESCHEDULE_UNAVAILABLE } from '../lib/accountCopy';
 import { Icon, type IconName } from '../components/Icon';
 import { PalmFronds } from '../components/PalmFronds';
 import { Badge, exactDuration, formatUsd, Photo, plural, Price, Stepper, type BadgeTone } from '../components/kit';
@@ -583,6 +585,9 @@ function DayAnswer({
    * step with it.
    */
   const moveBooking = (stop: ItineraryStop, resolution: ClashResolution) => {
+    // Live mode: the move would be local only and the next sync would put the server's departure
+    // back. `Leg` offers no Move button live; this is the backstop.
+    if (isLiveMode) return;
     const booking = state.bookings.find(
       (b) =>
         b.status === 'confirmed' &&
@@ -772,7 +777,11 @@ function Leg({ stop, onMove }: { stop: ItineraryStop; onMove: (r: ClashResolutio
           reconciled by moving either one, and a button that pretended otherwise would be worse
           than the collision.
         */}
-        {resolution ? (
+        {resolution && isLiveMode ? (
+          // Live mode: a paid booking cannot be moved from the app yet (the move would be local
+          // only, and the next sync would undo it). Demo keeps the Move button exactly as before.
+          <span className="day__fix day__fix--none t-micro">{RESCHEDULE_UNAVAILABLE}</span>
+        ) : resolution ? (
           <button type="button" className="day__fix" onClick={() => onMove(resolution)}>
             <Icon name="sparkle" size={13} color="var(--gold-light)" />
             <span className="day__fix-text">

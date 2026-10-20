@@ -3,6 +3,8 @@ import { ISLANDS, destinationsFor, experiencesFor, mediaUrl } from '../data/cata
 import { useStore } from '../state/store';
 import { Icon, type IconName } from '../components/Icon';
 import { plural } from '../components/kit';
+import { SignInSheet } from '../components/SignInSheet';
+import { isLiveMode } from '../lib/supabase';
 import './Welcome.css';
 
 /**
@@ -52,7 +54,8 @@ const PROOF: { icon: IconName; label: string }[] = [
 
 export function Welcome() {
   const { dispatch } = useStore();
-  const [step, setStep] = useState<'splash' | 'setup'>('splash');
+  // 'signin' is reached only in live mode; demo moves between 'splash' and 'setup' as before.
+  const [step, setStep] = useState<'splash' | 'setup' | 'signin'>('splash');
   const [guestPath, setGuestPath] = useState(false);
   const [name, setName] = useState('');
   const [islandId, setIslandId] = useState(ISLANDS[0]?.id ?? 'island-jm');
@@ -74,7 +77,7 @@ export function Welcome() {
   };
 
   return (
-    <main className={`wl wl--${step}`}>
+    <main className={`wl wl--${step === 'signin' ? 'setup' : step}`}>
       <div className="wl__stage" aria-hidden="true">
         {HERO_FRAMES.map((frame, i) => (
           <div key={frame.key} className="wl__frame" style={{ animationDelay: `${i * 7}s` }}>
@@ -149,12 +152,41 @@ export function Welcome() {
             <button type="button" className="wl-cta wl-cta--gold" onClick={() => enter(true)}>
               Continue as Guest
             </button>
-            <button type="button" className="wl-cta wl-cta--outline" onClick={() => enter(false)}>
+            <button
+              type="button"
+              className="wl-cta wl-cta--outline"
+              onClick={() => (isLiveMode ? setStep('signin') : enter(false))}
+            >
               Sign In
             </button>
             <button type="button" className="wl__link" onClick={() => enter(false)}>
               Create an Account
             </button>
+          </div>
+        </div>
+      ) : step === 'signin' ? (
+        /* ---------------- Live mode only — sign in to an existing account ---------------- */
+        <div className="wl__setup">
+          <div className="wl__strip">
+            <button
+              type="button"
+              className="wl__back"
+              onClick={() => setStep('splash')}
+              aria-label="Back"
+            >
+              <Icon name="chevron-left" size={18} strokeWidth={2.2} color="var(--ivory)" />
+            </button>
+            <div className="wl__mark" aria-hidden="true">
+              <span className="wl__mark-crest">VIP</span>
+              <span className="wl__mark-word">CARIBBEAN VIP</span>
+            </div>
+          </div>
+          <div className="wl__card">
+            <header className="wl__card-head">
+              <h2 className="wl__card-title">Welcome back</h2>
+            </header>
+            {/* Signed in: carry on to the same name-and-island step as before. */}
+            <SignInSheet onDone={() => enter(false)} onCancel={() => setStep('splash')} />
           </div>
         </div>
       ) : (

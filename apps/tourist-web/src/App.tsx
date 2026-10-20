@@ -2,6 +2,7 @@ import { Route, Routes, useLocation } from 'react-router-dom';
 import { useEffect } from 'react';
 import { BottomNav } from './components/BottomNav';
 import { useStore } from './state/store';
+import { useLiveSync } from './state/useLiveSync';
 import { Welcome } from './screens/Welcome';
 import { Explore } from './screens/Explore';
 import { Nearby } from './screens/Nearby';
@@ -38,6 +39,10 @@ export function App() {
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: 'instant' as ScrollBehavior });
   }, [pathname]);
+
+  // Live mode only: recover the guest's bookings from the server. A no-op in demo. Above the
+  // early return for the same hook-order reason as the effect above.
+  useLiveSync();
 
   if (!state.onboarded) return <Welcome />;
 

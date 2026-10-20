@@ -9,6 +9,9 @@ import {
 } from 'react';
 import { formatBookingReference, generateVoucherId } from '@cvip/types';
 import { ISLANDS, destinationsFor, type PartySelection } from '../data/catalogue';
+import { mergeBookings } from '../data/serverBooking';
+import { signOut } from '../lib/account';
+import { isLiveMode } from '../lib/supabase';
 
 /**
  * Application state, persisted to LocalStorage.
@@ -82,6 +85,15 @@ export interface Booking {
    * buying two overlapping excursions, and so said nothing about either. See `data/bookingClash.ts`.
    */
   attendeeName: string | null;
+  /**
+   * `'server'` when the booking came from the server (`bookingFromServer`, or BookingReturn after a
+   * Stripe payment) — LIVE MODE ONLY. Signing out removes these from the device
+   * (`purgeServerBookings`), because they belong to the account, not the phone.
+   *
+   * Optional and absent on every demo booking, so the persisted demo shape is byte-for-byte what it
+   * was and no `VERSION` bump is needed: an older stored booking simply has no source.
+   */
+  source?: 'server';
 }
 
 export interface AppState {
@@ -139,6 +151,13 @@ type Action =
   | { type: 'saveVoucher'; promotionId: string }
   | { type: 'markOfferShown'; key: string }
   | { type: 'addBooking'; booking: Booking }
+  /**
+   * Live mode only: bookings recovered from `my_bookings()`, already converted. `fillOnly` marks
+   * BookingReturn's fallback reconstruction, which may only fill fields the device still lacks.
+   */
+  | { type: 'mergeServerBookings'; bookings: readonly Booking[]; fillOnly?: boolean }
+  /** Live mode only: sign-out. Removes every booking that came from the server. */
+  | { type: 'purgeServerBookings' }
   | { type: 'cancelBooking'; bookingId: string }
   | { type: 'rescheduleBooking'; bookingId: string; dateISO: string; time: string }
   | { type: 'assignAttendee'; bookingId: string; attendeeName: string | null }
@@ -230,6 +249,63 @@ export function reducer(state: AppState, action: Action): AppState {
         // A booked listing is no longer merely planned.
         plannedExperienceIds: state.plannedExperienceIds.filter((id) => id !== booking.experienceId),
       };
+    }
+
+    /**
+     * Folds the server's copy of the guest's bookings into the device's — live mode only.
+     *
+     * Dispatched after a sign-in on a new device, with rows from `my_bookings()` converted by
+     * `bookingFromServer`. The rules live in `data/serverBooking.ts`: the server wins for status,
+     * token, reference and totals, the device keeps attendee, voucher and itemisation, and a
+     * booking only the device holds is never removed. Vouchers are left alone — attaching one is a
+     * checkout decision, not something to infer from a recovered booking. Demo mode never
+     * dispatches this.
+     */
+    case 'mergeServerBookings': {
+      const bookings = mergeBookings(state.bookings, action.bookings, { fillOnly: action.fillOnly });
+      // What was already confirmed on the device before this merge. A booking that was confirmed
+      // already had its plan entry removed when it first arrived; a listing planned again since
+      // then is a new decision, and a re-sync must not keep undoing it. (A booking matched by
+      // reference takes the server id, hence the second key.)
+      const confirmedBefore = new Set(
+        state.bookings.filter((b) => b.status === 'confirmed').flatMap((b) => [b.id, b.reference]),
+      );
+      // The merge matches by id or by reference, so either identifies a booking the server sent.
+      const fromServer = new Set(action.bookings.flatMap((b) => [b.id, b.reference]));
+      const booked = new Set(
+        bookings
+          .filter(
+            (b) =>
+              b.status === 'confirmed' &&
+              (fromServer.has(b.id) || fromServer.has(b.reference)) &&
+              !confirmedBefore.has(b.id) &&
+              !confirmedBefore.has(b.reference),
+          )
+          .map((b) => b.experienceId),
+      );
+      const unchangedBookings =
+        bookings.length === state.bookings.length && bookings.every((b, i) => b === state.bookings[i]);
+      const plannedExperienceIds = booked.size
+        ? state.plannedExperienceIds.filter((id) => !booked.has(id))
+        : state.plannedExperienceIds;
+      // A sync that changes nothing returns the same state, so it neither re-renders nor persists.
+      if (unchangedBookings && plannedExperienceIds.length === state.plannedExperienceIds.length) return state;
+      return {
+        ...state,
+        bookings: unchangedBookings ? state.bookings : bookings,
+        // As addBooking: a booked listing is no longer merely planned.
+        plannedExperienceIds,
+      };
+    }
+
+    /**
+     * Sign-out, live mode only: the account's bookings leave the device with the account. Only
+     * server-sourced bookings go; demo bookings never carry a source, so this is a no-op for them
+     * and returns the same state.
+     */
+    case 'purgeServerBookings': {
+      const bookings = state.bookings.filter((b) => b.source !== 'server');
+      return bookings.length === state.bookings.length ? state : { ...state, bookings };
     }
 
     case 'cancelBooking': {
@@ -413,6 +489,9 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       // Nothing to do — the reducer reset below is what the user actually sees.
     }
     dispatch({ type: 'reset' });
+    // Live mode only: a reset device must not stay signed in to the account whose bookings it just
+    // dropped. Demo mode has no client and does nothing here, exactly as before.
+    if (isLiveMode) void signOut();
   }, []);
 
   const value = useMemo<StoreValue>(
