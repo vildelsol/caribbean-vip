@@ -89,6 +89,8 @@ export type VendorOrganizationRow = {
   trading_name: string;
   status: VendorStatus;
   description: string | null;
+  contact_name: string | null;
+  business_type: string | null;
   is_demo: boolean;
 }
 
@@ -223,6 +225,29 @@ export interface Database {
           original_redeemed_at: string | null;
           original_scanner: string | null;
         }[];
+      };
+      /**
+       * Create a vendor organisation and its owner membership — the onboarding write path.
+       *
+       * One function rather than two inserts because the client cannot do the second one at all:
+       * the only insert policy on `vendor_members` requires `is_vendor_owner()`, which needs the
+       * owner row that insert would create. See
+       * `supabase/migrations/20261020000001_vendor_onboarding.sql`.
+       *
+       * The owner is `auth.uid()` and the contact email is that account's, so neither is an
+       * argument here — on a `security definer` function both would be impersonation primitives.
+       */
+      create_vendor_organization: {
+        Args: {
+          p_island_id: string;
+          p_legal_name: string;
+          p_trading_name: string;
+          p_contact_name: string;
+          p_contact_phone: string;
+          p_business_type: string;
+          p_description?: string | null;
+        };
+        Returns: string;
       };
     };
     Enums: { [_ in never]: never };
