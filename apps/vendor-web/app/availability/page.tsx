@@ -2,6 +2,8 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import { Crest } from '../../components/Crest';
+import { useCanManageListings } from '../../lib/session';
+import { NO_LISTING_PERMISSION } from '../../lib/permissions';
 import { vendorListings } from '../../lib/vendorData';
 import {
   SlotInvalid,
@@ -21,8 +23,14 @@ type SlotKey = string;
  * Reads and writes through `lib/availability`, which decides between Supabase and the generated
  * demo calendar. Capacity below what is already booked is refused in words here rather than
  * reaching `availability_slots_not_oversold` and coming back as a constraint name.
+ *
+ * Capacity is a listing write, so it is gated on `can_manage_listings` (an owner always counts —
+ * see `lib/permissions.ts`). The calendar itself is not: RLS leaves SELECT open to every member
+ * because scan-only staff need to see what they are scanning. So an ungranted member reads the
+ * week exactly as an owner does; the slots simply stop being buttons, and a line above says why.
  */
 export default function Availability() {
+  const canManage = useCanManageListings();
   const listings = vendorListings();
   const [selectedId, setSelectedId] = useState(listings[0]?.id ?? '');
   const [days, setDays] = useState<Day[]>([]);
@@ -65,7 +73,7 @@ export default function Availability() {
     async (iso: string, slot: Slot) => {
       const parsed = Number.parseInt(editValue, 10);
       try {
-        const next = await setSlotCapacity(slot, parsed);
+        const next = await setSlotCapacity(canManage, slot, parsed);
         setDays((prev) =>
           prev.map((d) =>
             d.iso === iso
@@ -82,7 +90,7 @@ export default function Availability() {
         else setError(`Could not save. ${e instanceof Error ? e.message : 'Please try again.'}`);
       }
     },
-    [editValue],
+    [canManage, editValue],
   );
 
   if (!primary) {
@@ -110,7 +118,16 @@ export default function Availability() {
           <div className="card__head card__head--row">
             <div>
               <h2>{primary.title}</h2>
-              <p className="card__note">Next seven days. Tap a slot to change its capacity.</p>
+              <p className="card__note">
+                {canManage
+                  ? 'Next seven days. Tap a slot to change its capacity.'
+                  : 'Next seven days.'}
+              </p>
+              {!canManage && (
+                <p className="card__note">
+                  View only. {NO_LISTING_PERMISSION}
+                </p>
+              )}
               {isDemoAvailability && (
                 <p className="card__note card__note--demo">
                   Demo mode — capacity changes reset when you reload.
@@ -153,6 +170,16 @@ export default function Availability() {
                     const capacity = s.capacity;
                     const left = Math.max(0, capacity - s.sold);
                     const state = left === 0 ? 'full' : left <= 3 ? 'tight' : 'open';
+
+                    if (!canManage) {
+                      return (
+                        <div key={s.time} className={`slot slot--${state} slot--readonly`}>
+                          <span className="slot__time">{s.time}</span>
+                          <span className="slot__count">{s.sold}/{capacity}</span>
+                          <span className="slot__state">{left === 0 ? 'Full' : `${left} left`}</span>
+                        </div>
+                      );
+                    }
 
                     if (editingSlot === key) {
                       return (

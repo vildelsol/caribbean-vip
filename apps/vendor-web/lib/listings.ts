@@ -8,6 +8,7 @@ import {
 } from '@cvip/types';
 import { demoBackend } from '@cvip/demo';
 import { supabase, isSupabaseConfigured } from './supabase';
+import { NO_LISTING_PERMISSION } from './permissions';
 import { vendorListings } from './vendorData';
 
 /**
@@ -24,6 +25,13 @@ import { vendorListings } from './vendorData';
  * mutate, in a module-level store seeded from the shared catalogue, and really does reject what
  * the live path would reject. It loses its writes on reload, which is correct for a demonstration
  * and is the one difference from live.
+ *
+ * ## The permission gate runs before either branch
+ *
+ * Every write takes `canManage`, the caller's derived listing-manager permission, and refuses
+ * before it reaches a backend. Live, RLS would refuse anyway and the throw only turns a policy
+ * error into a sentence; in demo mode there is no RLS at all, so this is the whole enforcement
+ * and the demo keeps showing what the real permission does.
  *
  * ## Validation runs before either branch
  *
@@ -72,6 +80,11 @@ export const LISTING_CATEGORIES = EXPERIENCE_CATEGORIES;
  * rewriting text that was already fine.
  */
 export class ListingInvalid extends Error {}
+
+/** Refuses a write by an ungranted member. `ListingInvalid`, so pages report it as operator-facing. */
+function requireManager(canManage: boolean): void {
+  if (!canManage) throw new ListingInvalid(NO_LISTING_PERMISSION);
+}
 
 /** The columns a listing write touches. Everything else on the row is set once, at creation. */
 const SELECT = 'id, title, summary, from_amount_minor, duration_minutes, status';
@@ -181,9 +194,11 @@ export async function loadListings(orgId: string | null): Promise<VendorListing[
 // ---------------------------------------------------------------------------
 
 export async function saveListing(
+  canManage: boolean,
   orgId: string | null,
   edit: ListingEdit,
 ): Promise<VendorListing> {
+  requireManager(canManage);
   const text = parseText(edit.title, edit.summary);
   const nums = parseNumbers(edit.fromAmountMinor, edit.durationMinutes);
 
@@ -219,10 +234,12 @@ export async function saveListing(
 }
 
 export async function createListing(
+  canManage: boolean,
   orgId: string | null,
   islandId: string | null,
   input: NewListingInput,
 ): Promise<VendorListing> {
+  requireManager(canManage);
   const text = parseText(input.title, input.summary);
   const nums = parseNumbers(input.fromAmountMinor, input.durationMinutes);
 
@@ -272,10 +289,12 @@ export async function createListing(
 }
 
 export async function setListingStatus(
+  canManage: boolean,
   orgId: string | null,
   id: string,
   status: 'approved' | 'draft',
 ): Promise<VendorListing> {
+  requireManager(canManage);
   if (isDemoListings || !orgId) {
     const rows = demoStore();
     const i = rows.findIndex((l) => l.id === id);

@@ -1,6 +1,7 @@
 'use client';
 
 import { supabase, isSupabaseConfigured } from './supabase';
+import { NO_LISTING_PERMISSION } from './permissions';
 import { capacityFor } from './vendorData';
 import type { DemoExperience } from '@cvip/demo';
 
@@ -8,6 +9,12 @@ import type { DemoExperience } from '@cvip/demo';
  * The availability write path — V-03.
  *
  * Same shape as `lib/listings.ts`: one async surface, the demo/live branch inside this file.
+ *
+ * ## A capacity change is a listing write
+ *
+ * `availability_slots` is gated by the same `is_vendor_listing_manager()` policy as
+ * `experiences`, so `setSlotCapacity` takes the caller's permission and refuses before either
+ * branch — including the demo branch, which has no RLS behind it.
  *
  * ## Capacity cannot go below what is already sold
  *
@@ -102,7 +109,12 @@ export async function loadAvailability(
   return out;
 }
 
-export async function setSlotCapacity(slot: Slot, capacity: number): Promise<Slot> {
+export async function setSlotCapacity(
+  canManage: boolean,
+  slot: Slot,
+  capacity: number,
+): Promise<Slot> {
+  if (!canManage) throw new SlotInvalid(NO_LISTING_PERMISSION);
   if (!Number.isFinite(capacity) || capacity < 0) {
     throw new SlotInvalid('Capacity cannot be negative.');
   }
