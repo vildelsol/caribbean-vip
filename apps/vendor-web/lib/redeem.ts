@@ -26,9 +26,16 @@ export interface RedemptionView {
 
 export const isDemoScanner = !isSupabaseConfigured;
 
+/**
+ * `scannerName` is for the DEMO path and for local display only. The live path does not send it:
+ * `redeem_voucher()` derives the scanner from `auth.uid()` and records that, because an identity
+ * a client can type is an identity a client can forge. `vendorOrgId` is sent and is checked
+ * against `can_scan_vouchers` in the database, so passing someone else's org gets refused.
+ */
 export async function redeemToken(
   token: string,
   scannerName: string,
+  vendorOrgId: string | null,
 ): Promise<RedemptionView> {
   const trimmed = token.trim();
   if (trimmed.length === 0) {
@@ -50,9 +57,15 @@ export async function redeemToken(
     };
   }
 
+  if (!vendorOrgId) {
+    // Not a redemption decision, so it must not be rendered as one: with no organisation in
+    // scope there is nothing to scan for.
+    throw new Error('No vendor organisation is selected, so a voucher cannot be scanned.');
+  }
+
   const { data, error } = await supabase.rpc('redeem_voucher', {
     p_token: trimmed,
-    p_scanner_name: scannerName,
+    p_vendor_org_id: vendorOrgId,
   });
 
   if (error) {

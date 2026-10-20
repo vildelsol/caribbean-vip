@@ -111,3 +111,31 @@ describe('booking reference', () => {
     }
   });
 });
+
+describe('hashVoucherToken — the SQL mirror', () => {
+  /**
+   * This literal is duplicated on purpose. `voucher_token_hash()` in
+   * `supabase/migrations/20261020000003_redeem_voucher_entry_point.sql` must produce the same
+   * string, and `supabase/tests/voucher_hash.test.sql` asserts it against this exact value. If
+   * only one side changes, one of the two tests fails instead of every real voucher quietly
+   * reporting `unknown_token` at a gate.
+   *
+   * The vector is chosen so its standard-base64 digest contains both a `+` and a `/`, which
+   * base64url writes as `-` and `_` — a missing translation cannot pass by luck.
+   */
+  const TOKEN = 'cvip://v1/eyJ2IjoxLCJpZCI6IkFBQUFBQUFBQUFBQUFBQUFBQSJ9.c2lnc2lnc2ln';
+  const EXPECTED = 'je1SoA-NKZ3pWKrYzNELzjvYYPaJXm8EPKU_VFmSM6U';
+
+  it('produces the base64url digest the database expects', async () => {
+    expect(await hashVoucherToken(TOKEN)).toBe(EXPECTED);
+  });
+
+  it('is unpadded and uses no standard-base64 characters', async () => {
+    const hash = await hashVoucherToken(TOKEN);
+    expect(hash).not.toMatch(/[+/=]/);
+  });
+
+  it('trims surrounding whitespace, which the SQL side must also do', async () => {
+    expect(await hashVoucherToken(`\t ${TOKEN}\n  `)).toBe(EXPECTED);
+  });
+});

@@ -244,13 +244,14 @@ export interface Database {
       redeem_voucher: {
         Args: {
           p_token: string;
-          p_scanner_name: string;
+          p_vendor_org_id: string;
         };
         Returns: {
           result: RedemptionResult;
           voucher_id: string | null;
           redeemed_at: string | null;
           original_redeemed_at: string | null;
+          /** The first scanner's `profiles.display_name`, resolved server-side. */
           original_scanner: string | null;
         }[];
       };

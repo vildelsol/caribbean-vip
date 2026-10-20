@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { REDEMPTION_COPY, isDemoScanner, redeemToken, type RedemptionView } from '../lib/redeem';
+import { useVendorSession } from '../lib/session';
 
 /**
  * Voucher scanner — V-04 and V-05.
@@ -17,6 +18,7 @@ import { REDEMPTION_COPY, isDemoScanner, redeemToken, type RedemptionView } from
  * scope, which does not exist while Next renders this page on the server.
  */
 export function Scanner() {
+  const { activeOrgId, canScanVouchers } = useVendorSession();
   const [mode, setMode] = useState<'idle' | 'camera'>('idle');
   const [manual, setManual] = useState('');
   const [scannerName, setScannerName] = useState('Front desk');
@@ -35,7 +37,7 @@ export function Scanner() {
     setBusy(true);
     setTransportError(null);
     try {
-      setOutcome(await redeemToken(token, scannerName));
+      setOutcome(await redeemToken(token, scannerName, activeOrgId));
     } catch (error) {
       setOutcome(null);
       setTransportError(error instanceof Error ? error.message : 'Could not reach the server.');
@@ -98,22 +100,44 @@ export function Scanner() {
   // vendor does not need three colours to be told the same thing.
   const verdictTone = copy?.tone === 'ok' ? 'ok' : copy?.tone === 'warn' ? 'warn' : 'bad';
 
+  // The mirror of `can_scan_for_vendor()`. The database is the boundary — this only avoids
+  // offering a camera to someone whose every scan would be refused.
+  if (!isDemoScanner && !canScanVouchers) {
+    return (
+      <section style={{ display: 'grid', gap: 'var(--s-md)' }}>
+        <p className="field__hint">
+          You do not have permission to scan vouchers for this organisation. Ask an owner at your
+          organisation to grant it.
+        </p>
+      </section>
+    );
+  }
+
   return (
     <section style={{ display: 'grid', gap: 'var(--s-md)' }}>
-      <div className="field">
-        <label htmlFor="scanner-name" className="field__label">
-          Who is scanning?
-        </label>
-        <input
-          id="scanner-name"
-          className="input"
-          value={scannerName}
-          onChange={(e) => setScannerName(e.target.value)}
-        />
+      {isDemoScanner ? (
+        <div className="field">
+          <label htmlFor="scanner-name" className="field__label">
+            Who is scanning?
+          </label>
+          <input
+            id="scanner-name"
+            className="input"
+            value={scannerName}
+            onChange={(e) => setScannerName(e.target.value)}
+          />
+          <p className="field__hint">
+            Recorded against the redemption, and shown to whoever scans the voucher next.
+          </p>
+        </div>
+      ) : (
+        /* No name box on the live path. `redeem_voucher()` records `auth.uid()`, so a typed name
+           would be decoration that disagrees with the audit trail. */
         <p className="field__hint">
-          Recorded against the redemption, and shown to whoever scans the voucher next.
+          Redemptions are recorded against your signed-in account and shown to whoever scans the
+          voucher next.
         </p>
-      </div>
+      )}
 
       {mode === 'camera' ? (
         <div style={{ display: 'grid', gap: 'var(--s-sm)' }}>
@@ -194,7 +218,8 @@ export function Scanner() {
 
           {outcome.result === 'ok' && outcome.redeemedAt ? (
             <span className="verdict__stamp">
-              Redeemed at {new Date(outcome.redeemedAt).toLocaleString()} by {scannerName}
+              Redeemed at {new Date(outcome.redeemedAt).toLocaleString()}
+              {isDemoScanner ? ` by ${scannerName}` : ' by you'}
             </span>
           ) : null}
 
