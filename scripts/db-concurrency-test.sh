@@ -94,7 +94,7 @@ for i in $(seq 1 "$WORKERS"); do
   (
     perl -e 'select undef, undef, undef, rand(0.05)'
     psql --quiet --no-psqlrc -t -A -d "$DB_NAME" \
-      -c "select result from redeem_voucher('race-hash', '$ORG_ID', '$SCANNER_ID');" \
+      -c "select result from redeem_voucher_by_hash('race-hash', '$ORG_ID', '$SCANNER_ID');" \
       > "$TMP/scan.$i" 2>/dev/null || echo "error" > "$TMP/scan.$i"
   ) &
 done
