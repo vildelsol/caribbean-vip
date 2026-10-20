@@ -20,14 +20,31 @@ export function AuthGate({ children }: { children: ReactNode }) {
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
 
+  // Demo mode renders the console rather than refusing. The demo is shown to investors, so an
+  // admin console that only prints a configuration error is a console they never see; the surfaces
+  // themselves branch on `isSupabaseConfigured` and work against seeded data. There is no sign-in
+  // here because there is no backend to authenticate against — the banner says so rather than
+  // implying this is an authenticated session.
   if (!isSupabaseConfigured) {
     return (
-      <Panel title="No backend configured">
-        <p style={{ color: semantic.textMuted }}>
-          Set <code>NEXT_PUBLIC_SUPABASE_URL</code> and <code>NEXT_PUBLIC_SUPABASE_ANON_KEY</code>{' '}
-          in <code>apps/admin-web/.env</code>. See <code>docs/setup.md</code>.
+      <>
+        <p
+          style={{
+            margin: 0,
+            padding: spacing.xs,
+            textAlign: 'center',
+            fontSize: 14,
+            color: semantic.premiumText,
+            background: semantic.surface,
+            borderBottom: `1px solid ${semantic.border}`,
+          }}
+        >
+          Demo mode — no backend configured, so nothing here is a real decision. Set{' '}
+          <code>NEXT_PUBLIC_SUPABASE_URL</code> and <code>NEXT_PUBLIC_SUPABASE_ANON_KEY</code> in{' '}
+          <code>apps/admin-web/.env</code> for the live console. See <code>docs/setup.md</code>.
         </p>
-      </Panel>
+        {children}
+      </>
     );
   }
 

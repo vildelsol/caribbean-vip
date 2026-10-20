@@ -9,6 +9,7 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "@cvip/demo": "workspace:*",
     "@cvip/supabase": "workspace:^",
     "@cvip/types": "workspace:*",
     "@cvip/ui": "workspace:*",

@@ -1,10 +1,18 @@
+import Link from 'next/link';
 import { semantic, spacing, radius } from '@cvip/ui';
 
 /**
  * M0 shell. Admin console surfaces per PRD §7. Every privileged action listed here must write an
  * `audit_logs` row when it is implemented in M5.
  */
-const areas = [
+interface Area {
+  name: string;
+  milestone: string;
+  detail: string;
+  href?: string;
+}
+
+const areas: Area[] = [
   {
     name: 'Dashboard',
     milestone: 'M5',
@@ -12,7 +20,8 @@ const areas = [
   },
   {
     name: 'Vendor review',
-    milestone: 'M5',
+    milestone: 'Built',
+    href: '/vendors',
     detail: 'Approve, reject, request changes, suspend — each with a recorded reason.',
   },
   {
@@ -65,7 +74,13 @@ export default function AdminHome() {
             }}
           >
             <div style={{ display: 'flex', justifyContent: 'space-between', gap: spacing.md }}>
-              <strong style={{ color: semantic.brand }}>{a.name}</strong>
+              {a.href ? (
+                <Link href={a.href} style={{ color: semantic.brand, fontWeight: 700 }}>
+                  {a.name}
+                </Link>
+              ) : (
+                <strong style={{ color: semantic.brand }}>{a.name}</strong>
+              )}
               <span style={{ color: semantic.premiumText, fontSize: 14 }}>{a.milestone}</span>
             </div>
             <p style={{ margin: `${spacing.xs}px 0 0`, color: semantic.textMuted, fontSize: 14 }}>
@@ -75,8 +90,8 @@ export default function AdminHome() {
         ))}
       </ul>
 
-      <p style={{ color: semantic.urgentText, fontSize: 14 }}>
-        Demo build — seeded content only, no live vendor verification.
+      <p style={{ color: semantic.textMuted, fontSize: 14 }}>
+        Vendor review is live. The remaining areas are seeded content only.
       </p>
     </main>
   );

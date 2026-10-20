@@ -111,7 +111,11 @@ remembered. `pnpm test` asserts it.
   rule-matched Irie AI, Trips and Profile. It needs no environment file: it runs entirely on the
   demo catalogue and LocalStorage. The Expo app it replaced is retired in `.archive/mobile`.
 - `apps/vendor-web` — membership-gated portal shell.
-- `apps/admin-web` — role-gated console shell.
+- `apps/admin-web` — role-gated console. Vendor review is live: approve, reject, request changes
+  and suspend, each recording a reason and an `audit_logs` entry. Only a platform admin can move
+  a vendor's review state — a trigger blocks it for everyone else, including the vendor's own
+  owner, because `vendor_orgs_owner_update` covers the whole row and RLS has no column-level
+  rule. The remaining console areas are still shells.
 
 Every app runs against a real database as soon as one is configured, and renders a labelled
 unconfigured state when one is not.
