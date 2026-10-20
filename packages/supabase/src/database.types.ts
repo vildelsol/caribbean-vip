@@ -90,6 +90,16 @@ export type VendorOrganizationRow = {
   status: VendorStatus;
   description: string | null;
   is_demo: boolean;
+  /**
+   * Admin review columns. Writable only by a platform admin: the
+   * `vendor_organizations_review_guard` trigger raises for anyone else, because
+   * `vendor_orgs_owner_update` grants an owner UPDATE on the whole row and RLS has no
+   * column-level rule. `reviewed_by` and `reviewed_at` are stamped from `auth.uid()` by
+   * `vendor_organizations_review_stamp`, so a client never sends them.
+   */
+  review_notes: string | null;
+  reviewed_by: string | null;
+  reviewed_at: string | null;
 }
 
 /** Minimal typing for tables the apps do not yet read column-by-column. */
@@ -171,6 +181,24 @@ export interface Database {
       };
     };
     Functions: {
+      /**
+       * Records a privileged action in `audit_logs` — PRD §7.
+       *
+       * The actor is taken from `auth.uid()` inside the function rather than passed in, so an
+       * entry cannot name someone else. `audit_logs` has an admin-read policy and no insert
+       * policy, so this `security definer` function is the only way a row gets there.
+       */
+      write_audit_log: {
+        Args: {
+          p_action: string;
+          p_entity_type: string;
+          p_entity_id: string;
+          p_before?: unknown;
+          p_after?: unknown;
+          p_reason?: string | null;
+        };
+        Returns: undefined;
+      };
       /**
        * Public catalogue search. Runs as the caller, so RLS decides visibility (T-03, V-02).
        * A null argument means "no constraint" for that dimension.
