@@ -27,12 +27,33 @@ import {
 } from '@cvip/types';
 import type { PaymentCoreDeps, PromotionSnapshot } from './ports.ts';
 
+/** Seats one line may ask for. A request naming a whole departure is a hold, not a booking. */
+export const MAX_LINE_QUANTITY = 20;
+
+/**
+ * Bookings one guest may have started and not paid for at once. Anonymous sign-in is free, so this
+ * does not stop a determined attacker (that needs sign-in rate limits or a CAPTCHA at Auth); it
+ * stops the casual hold and makes the rest cost an account per few seats.
+ */
+export const MAX_OPEN_PENDING_BOOKINGS = 3;
+
+// Stripe accepts an expiry between 30 minutes and 24 hours from ITS clock. Ask for a minute more
+// than the floor so our clock running slightly ahead of Stripe's cannot make the request invalid.
+const MIN_EXPIRY_MINUTES = 31;
+const MAX_EXPIRY_MINUTES = 1439;
+
+/** When a checkout session should stop accepting payment. */
+export function checkoutExpiry(now: Date, ttlMinutes: number): Date {
+  const minutes = Math.min(Math.max(ttlMinutes, MIN_EXPIRY_MINUTES), MAX_EXPIRY_MINUTES);
+  return new Date(now.getTime() + minutes * 60_000);
+}
+
 export const checkoutRequestSchema = z.object({
   userId: z.string().uuid(),
   availabilitySlotId: z.string().uuid(),
   /** Option id → quantity. The ONLY pricing input the client controls. */
   lines: z
-    .array(z.object({ optionId: z.string().uuid(), quantity: z.number().int().positive() }))
+    .array(z.object({ optionId: z.string().uuid(), quantity: z.number().int().positive().max(MAX_LINE_QUANTITY) }))
     .min(1),
   promotionId: z.string().uuid().nullable().default(null),
   customerEmail: z.string().email().nullable().default(null),
@@ -54,6 +75,7 @@ export type CheckoutError =
   | { code: 'PROMOTION_INVALID'; message: string; detail: string }
   | { code: 'SOLD_OUT'; message: string }
   | { code: 'IDEMPOTENCY_KEY_IN_USE'; message: string }
+  | { code: 'TOO_MANY_PENDING_BOOKINGS'; message: string }
   | { code: 'PROVIDER_FAILED'; message: string };
 
 export type CheckoutResult =
@@ -88,7 +110,7 @@ export async function startCheckout(
   request: CheckoutRequest,
 ): Promise<CheckoutResult> {
   // The clock is used inside priceFromDatabase (slot-in-past check), not here.
-  const { store, payments, ids } = deps;
+  const { store, payments, ids, clock } = deps;
 
   // Idempotency first. A retry must never reach the pricing or reservation path again.
   const existing = await store.findBookingByIdempotencyKey(request.idempotencyKey);
@@ -111,6 +133,7 @@ export async function startCheckout(
       successUrl: deps.successUrl,
       cancelUrl: deps.cancelUrl,
       idempotencyKey: request.idempotencyKey,
+      expiresAt: checkoutExpiry(clock.now(), deps.pendingPaymentTtlMinutes),
     });
 
     return {
@@ -126,6 +149,24 @@ export async function startCheckout(
   const priced = await priceFromDatabase(deps, request);
   if (!priced.ok) return priced;
   const { breakdown, slot, lineDetails } = priced;
+
+  // After the idempotency replay above, so retrying one request is never a second hold; before the
+  // reservation, so a refused guest holds nothing.
+  const now = clock.now();
+  const expiresAt = checkoutExpiry(now, deps.pendingPaymentTtlMinutes);
+  // A session older than its own lifetime (plus slack for the webhook) is dead whether or not we
+  // heard about it, so it must not count against the guest.
+  const openSince = new Date(now.getTime() - (expiresAt.getTime() - now.getTime()) - 5 * 60_000);
+  const open = await store.countOpenPendingBookings(request.userId, openSince);
+  if (open >= MAX_OPEN_PENDING_BOOKINGS) {
+    return {
+      ok: false,
+      error: {
+        code: 'TOO_MANY_PENDING_BOOKINGS',
+        message: 'Finish or cancel your open bookings before starting another.',
+      },
+    };
+  }
 
   // Reserve BEFORE creating the payment session. If this fails the guest is told the slot is gone
   // and is never charged; the alternative order charges first and apologises afterwards.
@@ -171,6 +212,7 @@ export async function startCheckout(
       successUrl: deps.successUrl,
       cancelUrl: deps.cancelUrl,
       idempotencyKey: request.idempotencyKey,
+      expiresAt,
     });
 
     await store.upsertPaymentForCheckout({

@@ -135,6 +135,17 @@ export function makeSupabaseStore(supabase: SupabaseClient): BookingStore {
       if (error) throw error;
     },
 
+    async countOpenPendingBookings(userId, since) {
+      const { count, error } = await supabase
+        .from('bookings')
+        .select('id', { count: 'exact', head: true })
+        .eq('user_id', userId)
+        .eq('status', 'pending_payment')
+        .gte('created_at', since.toISOString());
+      if (error) throw error;
+      return count ?? 0;
+    },
+
     async findBookingByIdempotencyKey(key) {
       const { data, error } = await supabase
         .from('bookings')

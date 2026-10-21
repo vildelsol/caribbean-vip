@@ -33,6 +33,8 @@ export function makeStripeProvider(secretKey: string, webhookSecret: string): Pa
           metadata: req.metadata,
           success_url: req.successUrl,
           cancel_url: req.cancelUrl,
+          // Without this Stripe keeps the session open for 24 hours and the seats stay held.
+          expires_at: Math.floor(req.expiresAt.getTime() / 1000),
         },
         { idempotencyKey: req.idempotencyKey },
       );

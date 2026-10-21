@@ -123,6 +123,13 @@ export interface BookingStore {
   reserveCapacity(slotId: string, seats: number): Promise<boolean>;
   releaseCapacity(slotId: string, seats: number): Promise<void>;
 
+  /**
+   * Bookings this guest has started but not paid for, created at or after `since`. The cap on these
+   * is what stops one guest holding a departure's seats; `since` keeps a booking whose expiry event
+   * never arrived from counting against them forever.
+   */
+  countOpenPendingBookings(userId: string, since: Date): Promise<number>;
+
   findBookingByIdempotencyKey(key: string): Promise<BookingRecord | null>;
   createBooking(input: Omit<BookingRecord, 'id'>): Promise<BookingRecord>;
   updateBookingStatus(bookingId: string, status: BookingStatus): Promise<void>;
@@ -193,6 +200,11 @@ export interface CheckoutSessionRequest {
   cancelUrl: string;
   /** Stripe idempotency key — a retried create must not open a second session. */
   idempotencyKey: string;
+  /**
+   * When the session stops accepting payment. Without it Stripe leaves a session open for 24 hours,
+   * and the seats reserved for it stay taken that long. See `checkoutExpiry`.
+   */
+  expiresAt: Date;
 }
 
 export interface CheckoutSession {

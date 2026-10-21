@@ -1,5 +1,13 @@
 import { describe, expect, it } from 'vitest';
-import { quoteBooking, startCheckout, type CheckoutRequest } from './checkout.ts';
+import {
+  MAX_LINE_QUANTITY,
+  MAX_OPEN_PENDING_BOOKINGS,
+  checkoutExpiry,
+  checkoutRequestSchema,
+  quoteBooking,
+  startCheckout,
+  type CheckoutRequest,
+} from './checkout.ts';
 import type { PaymentCoreDeps, PromotionSnapshot } from './ports.ts';
 import {
   FakeBookingStore,
@@ -42,6 +50,7 @@ function build(over: { slot?: Parameters<typeof slotFixture>[0] } = {}) {
     successUrl: 'https://app.test/success',
     cancelUrl: 'https://app.test/cancel',
   };
+  store.now = () => clock.now();
   return { deps, store, payments, clock };
 }
 
@@ -268,6 +277,101 @@ describe('a withdrawn listing cannot be booked', () => {
   it('still books an approved listing (positive control)', async () => {
     const { deps } = build({ slot: { listingBookable: true } });
     expect((await startCheckout(deps, request())).ok).toBe(true);
+  });
+});
+
+describe('holding seats without paying (audit finding 1)', () => {
+  const MIN = 60_000;
+
+  it('opens the Stripe session with a short expiry, not the 24 hours Stripe defaults to', async () => {
+    const { deps, payments, clock } = build({ slot: { capacity: 10 } });
+    await startCheckout(deps, request());
+    const expiresAt = payments.sessions[0]?.expiresAt;
+    expect(expiresAt).toBeInstanceOf(Date);
+    expect(expiresAt!.getTime() - clock.now().getTime()).toBeLessThanOrEqual(60 * MIN);
+  });
+
+  describe('checkoutExpiry', () => {
+    const now = new Date('2026-08-02T12:00:00Z');
+    it('never asks for less than Stripe will accept (30 min from ITS clock, so 31 from ours)', () => {
+      expect(checkoutExpiry(now, 30).getTime() - now.getTime()).toBe(31 * MIN);
+      expect(checkoutExpiry(now, 1).getTime() - now.getTime()).toBe(31 * MIN);
+    });
+    it('uses the configured ttl when it is in range', () => {
+      expect(checkoutExpiry(now, 45).getTime() - now.getTime()).toBe(45 * MIN);
+    });
+    it('never asks for more than Stripe allows (24 h)', () => {
+      expect(checkoutExpiry(now, 99_999).getTime() - now.getTime()).toBe(1439 * MIN);
+    });
+  });
+
+  describe('open unpaid bookings per guest', () => {
+    const open = async (ctx: ReturnType<typeof build>, n: number, userId = USER) => {
+      for (let i = 0; i < n; i++) {
+        const r = await startCheckout(ctx.deps, request({ userId, idempotencyKey: `${userId.slice(0, 4)}-key-${i}-xxxx` }));
+        expect(r.ok).toBe(true);
+      }
+    };
+
+    it(`refuses a guest's ${MAX_OPEN_PENDING_BOOKINGS + 1}th open unpaid booking, and reserves nothing for it`, async () => {
+      const ctx = build({ slot: { capacity: 100 } });
+      await open(ctx, MAX_OPEN_PENDING_BOOKINGS);
+      const heldBefore = ctx.store.slots.get(slotFixture().id)?.bookedCount;
+      const sessionsBefore = ctx.payments.sessions.length;
+
+      const r = await startCheckout(ctx.deps, request({ idempotencyKey: 'one-too-many-key' }));
+
+      expect(r.ok).toBe(false);
+      if (r.ok) return;
+      expect(r.error.code).toBe('TOO_MANY_PENDING_BOOKINGS');
+      expect(ctx.store.slots.get(slotFixture().id)?.bookedCount).toBe(heldBefore);
+      expect(ctx.payments.sessions.length).toBe(sessionsBefore);
+    });
+
+    it('does not stop a different guest (positive control)', async () => {
+      const ctx = build({ slot: { capacity: 100 } });
+      await open(ctx, MAX_OPEN_PENDING_BOOKINGS);
+      const other = 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb';
+      const r = await startCheckout(ctx.deps, request({ userId: other, idempotencyKey: 'other-guest-key' }));
+      expect(r.ok).toBe(true);
+    });
+
+    it('does not count a booking that was paid for', async () => {
+      const ctx = build({ slot: { capacity: 100 } });
+      await open(ctx, MAX_OPEN_PENDING_BOOKINGS);
+      for (const b of ctx.store.bookings.values()) b.status = 'confirmed';
+      const r = await startCheckout(ctx.deps, request({ idempotencyKey: 'after-paying-key' }));
+      expect(r.ok).toBe(true);
+    });
+
+    it('stops counting a booking once its session must have expired, even if the expiry event never arrived', async () => {
+      const ctx = build({ slot: { capacity: 100 } });
+      await open(ctx, MAX_OPEN_PENDING_BOOKINGS);
+      ctx.clock.advance(3 * 60 * MIN);
+      const r = await startCheckout(ctx.deps, request({ idempotencyKey: 'much-later-key' }));
+      expect(r.ok).toBe(true);
+    });
+
+    it('lets a guest retry the same request (idempotent replay is not a new hold)', async () => {
+      const ctx = build({ slot: { capacity: 100 } });
+      await open(ctx, MAX_OPEN_PENDING_BOOKINGS);
+      const again = await startCheckout(ctx.deps, request({ idempotencyKey: `${USER.slice(0, 4)}-key-0-xxxx` }));
+      expect(again.ok && again.idempotentReplay).toBe(true);
+    });
+  });
+
+  describe('seats per line', () => {
+    const parse = (quantity: number) =>
+      checkoutRequestSchema.safeParse({
+        ...request(),
+        lines: [{ optionId: ADULT, quantity }],
+      });
+    it(`allows up to ${MAX_LINE_QUANTITY}`, () => {
+      expect(parse(MAX_LINE_QUANTITY).success).toBe(true);
+    });
+    it('refuses more, so one request cannot name a whole departure', () => {
+      expect(parse(MAX_LINE_QUANTITY + 1).success).toBe(false);
+    });
   });
 });
 
