@@ -53,6 +53,7 @@ export type CheckoutError =
   | { code: 'PRICING_FAILED'; message: string; detail: string }
   | { code: 'PROMOTION_INVALID'; message: string; detail: string }
   | { code: 'SOLD_OUT'; message: string }
+  | { code: 'IDEMPOTENCY_KEY_IN_USE'; message: string }
   | { code: 'PROVIDER_FAILED'; message: string };
 
 export type CheckoutResult =
@@ -92,6 +93,14 @@ export async function startCheckout(
   // Idempotency first. A retry must never reach the pricing or reservation path again.
   const existing = await store.findBookingByIdempotencyKey(request.idempotencyKey);
   if (existing) {
+    // A key is only a retry token for the guest who made it. Without this, anyone who learned a key
+    // (or guessed a weak one) was handed that guest's booking and a payment link for it.
+    if (existing.userId !== request.userId) {
+      return {
+        ok: false,
+        error: { code: 'IDEMPOTENCY_KEY_IN_USE', message: 'That request key has already been used.' },
+      };
+    }
     const session = await payments.createCheckoutSession({
       bookingReference: existing.reference,
       amountMinor: existing.totalMinor,
