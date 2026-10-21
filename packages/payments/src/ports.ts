@@ -133,6 +133,13 @@ export interface BookingStore {
   findBookingByIdempotencyKey(key: string): Promise<BookingRecord | null>;
   createBooking(input: Omit<BookingRecord, 'id'>): Promise<BookingRecord>;
   updateBookingStatus(bookingId: string, status: BookingStatus): Promise<void>;
+  /**
+   * Moves a booking `from` -> `to` only if it is still in `from`, and says whether THIS call did it.
+   * This is what makes a webhook exactly-once: of any number of concurrent deliveries, one gets
+   * `true` and runs the side effects (voucher, seat release); the rest get `false` and stop. A
+   * read-then-write cannot do this, because both deliveries read the old status.
+   */
+  transitionBookingStatus(bookingId: string, from: BookingStatus, to: BookingStatus): Promise<boolean>;
   getBooking(bookingId: string): Promise<BookingRecord | null>;
 
   createGuestLines(
@@ -150,9 +157,9 @@ export interface BookingStore {
   /**
    * Records a webhook event against a payment.
    *
-   * MUST be backed by the unique index on `payments.stripe_event_id` and MUST return
-   * `alreadyProcessed: true` rather than throwing when the event has been seen before. That
-   * constraint — not handler care — is what makes T-05's "exactly once" true.
+   * A record, not a gate. A replay writes the same event id onto the same row, which violates no
+   * unique index, so the store cannot reliably say "seen before" and the handler does not rely on
+   * it. Exactly-once comes from `transitionBookingStatus`.
    */
   recordPaymentEvent(input: {
     stripeEventId: string;

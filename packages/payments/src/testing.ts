@@ -145,7 +145,7 @@ export class FakeBookingStore implements BookingStore {
   }
 
   async findBookingByIdempotencyKey(key: string): Promise<BookingRecord | null> {
-    for (const b of this.bookings.values()) if (b.idempotencyKey === key) return b;
+    for (const b of this.bookings.values()) if (b.idempotencyKey === key) return { ...b };
     return null;
   }
 
@@ -156,13 +156,25 @@ export class FakeBookingStore implements BookingStore {
     return record;
   }
 
+  async transitionBookingStatus(bookingId: string, from: BookingStatus, to: BookingStatus): Promise<boolean> {
+    // One synchronous step with no await between the check and the write, which is what a
+    // conditional UPDATE guarantees and a read-then-write does not.
+    const b = this.bookings.get(bookingId);
+    if (!b || b.status !== from) return false;
+    b.status = to;
+    return true;
+  }
+
   async updateBookingStatus(bookingId: string, status: BookingStatus): Promise<void> {
     const b = this.bookings.get(bookingId);
     if (b) b.status = status;
   }
 
   async getBooking(bookingId: string): Promise<BookingRecord | null> {
-    return this.bookings.get(bookingId) ?? null;
+    // A copy, as a database returns: handing out the stored object let one handler's write change
+    // what a concurrent handler had already read, which hid exactly the races these tests exist for.
+    const b = this.bookings.get(bookingId);
+    return b ? { ...b } : null;
   }
 
   async createGuestLines(): Promise<void> {
@@ -200,9 +212,9 @@ export class FakeBookingStore implements BookingStore {
     status: PaymentRecord['status'];
     paidAt: Date | null;
   }): Promise<{ alreadyProcessed: boolean; payment: PaymentRecord | null }> {
-    if (this.seenEventIds.has(input.stripeEventId)) {
-      return { alreadyProcessed: true, payment: null };
-    }
+    // Records only. The real store cannot detect a replay here (the same id written to the same
+    // row violates nothing), so this fake must not either: it used to answer `alreadyProcessed`,
+    // which made replay tests pass on a gate that does not exist in production.
     this.seenEventIds.add(input.stripeEventId);
 
     let payment: PaymentRecord | null = null;
@@ -226,7 +238,8 @@ export class FakeBookingStore implements BookingStore {
   async findBookingByCheckoutSession(sessionId: string): Promise<BookingRecord | null> {
     for (const p of this.payments.values()) {
       if (p.stripeCheckoutSessionId === sessionId) {
-        return this.bookings.get(p.bookingId) ?? null;
+        const b = this.bookings.get(p.bookingId);
+        return b ? { ...b } : null;
       }
     }
     return null;
