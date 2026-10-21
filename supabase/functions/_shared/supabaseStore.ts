@@ -17,17 +17,23 @@ import type {
   SlotSnapshot,
 } from '@cvip/payments';
 import type { BookingStatus, Currency, VoucherState } from '@cvip/types';
+import { isPubliclyBookable } from './listingVisibility.ts';
 
 export function makeSupabaseStore(supabase: SupabaseClient): BookingStore {
   return {
     async getSlot(slotId) {
       const { data, error } = await supabase
         .from('availability_slots')
-        .select('id, experience_id, starts_at, ends_at, capacity, booked_count, status, experiences!inner(vendor_org_id)')
+        .select('id, experience_id, starts_at, ends_at, capacity, booked_count, status, experiences!inner(vendor_org_id, status, vendor_organizations!inner(status))')
         .eq('id', slotId)
         .single();
       if (error || !data) return null;
-      const exp = data.experiences as { vendor_org_id: string };
+      const exp = data.experiences as {
+        vendor_org_id: string;
+        status: string;
+        vendor_organizations: { status: string } | { status: string }[];
+      };
+      const vendor = Array.isArray(exp.vendor_organizations) ? exp.vendor_organizations[0] : exp.vendor_organizations;
       return {
         id: data.id,
         experienceId: data.experience_id,
@@ -37,6 +43,7 @@ export function makeSupabaseStore(supabase: SupabaseClient): BookingStore {
         capacity: data.capacity,
         bookedCount: data.booked_count,
         status: data.status as SlotSnapshot['status'],
+        listingBookable: isPubliclyBookable(exp.status, vendor?.status),
       };
     },
 
