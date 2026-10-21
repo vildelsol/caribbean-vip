@@ -125,9 +125,17 @@ export async function resolveSlot(params: {
 export async function pollBookingStatus(sessionId: string): Promise<BookingStatusResponse | null> {
   if (!supabase) return null;
 
+  // The function answers only the guest who owns the booking, so it needs their token. The anon
+  // key alone gets a 401 — it satisfies `verify_jwt` but is not a user.
+  const { data: { session } } = await supabase.auth.getSession();
+  const token = session?.access_token;
+
   const res = await fetch(
     `${FUNCTIONS_BASE}/booking-status?session_id=${encodeURIComponent(sessionId)}`,
-    { method: 'GET', headers: anonHeaders() },
+    {
+      method: 'GET',
+      headers: { ...anonHeaders(), ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+    },
   );
 
   if (!res.ok) return null;
