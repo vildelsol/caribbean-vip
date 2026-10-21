@@ -40,6 +40,11 @@ export interface SlotSnapshot {
   capacity: number;
   bookedCount: number;
   status: 'open' | 'closed' | 'cancelled';
+  /**
+   * Whether the listing is publicly visible: approved, from an approved vendor. The store computes
+   * it; checkout treats a slot where it is false exactly like a missing one.
+   */
+  listingBookable: boolean;
 }
 
 export interface OptionSnapshot {

@@ -13,6 +13,7 @@
  */
 
 import { createClient } from 'npm:@supabase/supabase-js@^2';
+import { isPubliclyBookable } from '../_shared/listingVisibility.ts';
 
 const CORS = {
   'Access-Control-Allow-Origin': '*',
@@ -49,12 +50,19 @@ Deno.serve(async (req) => {
     // request surfaced as a 500 with no usable message.
     const { data: experience, error: expError } = await supabase
       .from('experiences')
-      .select('id')
+      .select('id, status, vendor_organizations!inner(status)')
       .eq('title', title)
       .maybeSingle();
 
     if (expError) return json({ error: 'Lookup failed', detail: expError.message }, 500);
-    if (!experience) return json({ error: 'Experience not found', title }, 404);
+    // The service client skips RLS, so apply the public-visibility rule here: a draft or suspended
+    // listing must read as not found, or its slot and option ids (and prices) can be fetched by title.
+    const vendor = Array.isArray(experience?.vendor_organizations)
+      ? experience?.vendor_organizations[0]
+      : experience?.vendor_organizations;
+    if (!experience || !isPubliclyBookable(experience.status, vendor?.status)) {
+      return json({ error: 'Experience not found', title }, 404);
+    }
 
     // `maybeSingle` rather than `single`: a missing slot is an ordinary outcome the guest caused
     // by picking a time we do not run, and it must read as 404, not as a server fault.

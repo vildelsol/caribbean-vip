@@ -286,6 +286,7 @@ export function slotFixture(over: Partial<SlotSnapshot> = {}): SlotSnapshot {
     capacity: 10,
     bookedCount: 0,
     status: 'open',
+    listingBookable: true,
     ...over,
   };
 }

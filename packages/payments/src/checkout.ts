@@ -222,7 +222,9 @@ async function priceFromDatabase(
   const { store, clock } = deps;
 
   const slot = await store.getSlot(input.availabilitySlotId);
-  if (!slot) {
+  // A withdrawn listing is "not found", the same answer as a slot that never existed: the service
+  // client skips RLS, so this is the only thing keeping a draft or suspended listing off sale.
+  if (!slot || !slot.listingBookable) {
     return { ok: false, error: { code: 'SLOT_NOT_FOUND', message: 'That departure is no longer listed.' } };
   }
   if (slot.status !== 'open') {

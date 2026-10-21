@@ -245,6 +245,32 @@ describe('idempotency (T-05)', () => {
   });
 });
 
+describe('a withdrawn listing cannot be booked', () => {
+  it('treats a slot on an unapproved listing exactly like a missing one', async () => {
+    const { deps, store, payments } = build({ slot: { listingBookable: false } });
+
+    const result = await startCheckout(deps, request());
+
+    expect(result.ok).toBe(false);
+    if (result.ok) return;
+    expect(result.error.code).toBe('SLOT_NOT_FOUND');
+    expect(store.bookings.size).toBe(0);
+    expect(store.slots.get(slotFixture().id)?.bookedCount).toBe(0);
+    expect(payments.sessions.length).toBe(0);
+  });
+
+  it('refuses a quote too, so the price of a withdrawn listing is not readable', async () => {
+    const { deps } = build({ slot: { listingBookable: false } });
+    const quote = await quoteBooking(deps, request());
+    expect(quote.ok).toBe(false);
+  });
+
+  it('still books an approved listing (positive control)', async () => {
+    const { deps } = build({ slot: { listingBookable: true } });
+    expect((await startCheckout(deps, request())).ok).toBe(true);
+  });
+});
+
 describe('idempotency keys belong to the guest who made them', () => {
   const STRANGER = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa';
 
