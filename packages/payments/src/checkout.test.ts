@@ -245,6 +245,33 @@ describe('idempotency (T-05)', () => {
   });
 });
 
+describe('idempotency keys belong to the guest who made them', () => {
+  const STRANGER = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa';
+
+  it('refuses another guest replaying a key, and returns nothing of the first booking', async () => {
+    const { deps, store, payments } = build({ slot: { capacity: 10 } });
+    const first = await startCheckout(deps, request());
+    expect(first.ok).toBe(true);
+    const sessionsBefore = payments.sessions.length;
+
+    const replay = await startCheckout(deps, request({ userId: STRANGER }));
+
+    expect(replay.ok).toBe(false);
+    if (replay.ok) return;
+    expect(replay.error.code).toBe('IDEMPOTENCY_KEY_IN_USE');
+    expect(JSON.stringify(replay)).not.toContain(first.ok ? first.reference : 'x');
+    expect(payments.sessions.length).toBe(sessionsBefore);
+    expect(store.bookings.size).toBe(1);
+  });
+
+  it('still replays for the guest who owns the key (positive control)', async () => {
+    const { deps } = build();
+    await startCheckout(deps, request());
+    const again = await startCheckout(deps, request());
+    expect(again.ok && again.idempotentReplay).toBe(true);
+  });
+});
+
 describe('promotions (PRD §9)', () => {
   function withPromo(over: Partial<PromotionSnapshot> = {}) {
     const ctx = build();
