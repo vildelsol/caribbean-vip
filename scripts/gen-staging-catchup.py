@@ -67,6 +67,9 @@ PROBES = {
     "20261021000003_my_bookings_ticket_token_by_status": """
        case when exists (select 1 from pg_proc where proname='my_bookings'
               and prosrc like '%then b.ticket_token else null%') then 'applied' else 'missing' end""",
+    "20261022000001_transfer_guest_bookings": """
+       case when to_regprocedure('transfer_guest_bookings(uuid,uuid)') is not null
+            then 'applied' else 'missing' end""",
 }
 
 HEADER = """\
