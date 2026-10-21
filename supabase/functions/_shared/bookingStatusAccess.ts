@@ -32,9 +32,3 @@ export function decideBookingStatusAccess(
   const releasable = TICKET_STATUSES.includes(booking.status);
   return { ok: true, ticketToken: releasable ? (booking.ticket_token ?? null) : null };
 }
-
-/** The bearer token from an `Authorization` header, or null. */
-export function bearerToken(header: string | null): string | null {
-  const match = /^Bearer\s+(\S+)$/i.exec(header ?? '');
-  return match?.[1] ?? null;
-}
