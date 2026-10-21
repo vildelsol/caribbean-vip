@@ -17,7 +17,11 @@ create table if not exists auth.users (
   id                  uuid primary key default gen_random_uuid(),
   email               text unique,
   raw_user_meta_data  jsonb not null default '{}'::jsonb,
-  created_at          timestamptz not null default now()
+  created_at          timestamptz not null default now(),
+  -- GoTrue's own columns, which transfer_guest_bookings() reads. An anonymous Supabase user has
+  -- is_anonymous = true and no email; adding an email and confirming it sets email_confirmed_at.
+  is_anonymous        boolean not null default false,
+  email_confirmed_at  timestamptz
 );
 
 -- Supabase derives this from the request JWT. Here it reads a session GUC that the tests set,
