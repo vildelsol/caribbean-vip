@@ -70,6 +70,11 @@ PROBES = {
     "20261022000001_transfer_guest_bookings": """
        case when to_regprocedure('transfer_guest_bookings(uuid,uuid)') is not null
             then 'applied' else 'missing' end""",
+    # Platform default privileges give anon/authenticated SELECT on every table, so on an
+    # unmigrated project this reads "missing" and on a migrated one "applied".
+    "20261022000002_bookings_ticket_token_column_privilege": """
+       case when not has_column_privilege('anon','bookings','ticket_token','select')
+            then 'applied' else 'missing' end""",
 }
 
 HEADER = """\
