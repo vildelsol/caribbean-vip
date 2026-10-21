@@ -86,9 +86,12 @@ export async function handleStripeWebhook(
 
   const nextStatus = paymentStatusFor(event.type, object.payment_status ?? null);
 
-  // 3. Record the event. The unique index makes this the idempotency gate: a replay returns
-  // alreadyProcessed and we stop here, before touching booking state or issuing a voucher.
-  const recorded = await store.recordPaymentEvent({
+  // 3. Act, then record. Exactly-once comes from the compare-and-set in `transitionBookingStatus`:
+  // of any number of concurrent or repeated deliveries one wins the transition and runs the side
+  // effects; the rest see `duplicate`. The payment event is only a record of what Stripe sent.
+  const outcome = await applyEvent(deps, event.id, nextStatus, booking);
+
+  await store.recordPaymentEvent({
     stripeEventId: event.id,
     stripePaymentIntentId: paymentIntentId,
     stripeCheckoutSessionId: sessionId,
@@ -96,53 +99,62 @@ export async function handleStripeWebhook(
     paidAt: nextStatus === 'paid' ? clock.now() : null,
   });
 
-  if (recorded.alreadyProcessed) {
-    return { status: 'duplicate', eventId: event.id };
-  }
+  return outcome;
+}
+
+type PendingBooking = NonNullable<Awaited<ReturnType<PaymentCoreDeps['store']['getBooking']>>>;
+
+async function applyEvent(
+  deps: PaymentCoreDeps,
+  eventId: string,
+  nextStatus: ReturnType<typeof paymentStatusFor>,
+  booking: PendingBooking,
+): Promise<WebhookOutcome> {
+  const { store } = deps;
 
   switch (nextStatus) {
     case 'paid':
-      return confirmBooking(deps, event.id, booking);
+      return confirmBooking(deps, eventId, booking);
 
     case 'failed': {
+      if (booking.status === 'cancelled') return { status: 'duplicate', eventId };
       // Only a booking still awaiting payment may be failed. A confirmed booking that later
       // receives a stale failure event must not be torn down.
       if (booking.status !== 'pending_payment') {
-        return { status: 'ignored', reason: 'booking_not_pending', eventId: event.id };
+        return { status: 'ignored', reason: 'booking_not_pending', eventId };
       }
-      await store.updateBookingStatus(booking.id, 'cancelled');
+      // Only the delivery that wins the transition releases the seats; releasing twice would give
+      // away places that other guests hold.
+      if (!(await store.transitionBookingStatus(booking.id, 'pending_payment', 'cancelled'))) {
+        return { status: 'duplicate', eventId };
+      }
       await store.releaseCapacity(booking.availabilitySlotId, booking.seats);
-      return {
-        status: 'processed',
-        eventId: event.id,
-        bookingId: booking.id,
-        action: 'failed',
-      };
+      return { status: 'processed', eventId, bookingId: booking.id, action: 'failed' };
     }
 
     case 'refunded': {
-      await store.updateBookingStatus(booking.id, 'refunded');
+      if (booking.status === 'refunded') return { status: 'duplicate', eventId };
+      if (!['confirmed', 'completed', 'cancelled'].includes(booking.status)) {
+        return { status: 'ignored', reason: `cannot_refund_from:${booking.status}`, eventId };
+      }
+      if (!(await store.transitionBookingStatus(booking.id, booking.status, 'refunded'))) {
+        return { status: 'ignored', reason: 'booking_changed_concurrently', eventId };
+      }
       // Capacity is NOT released on refund: the departure may already have happened, and the
       // vendor's remaining places are theirs to re-open, not ours to assume.
-      return {
-        status: 'processed',
-        eventId: event.id,
-        bookingId: booking.id,
-        action: 'refunded',
-      };
+      return { status: 'processed', eventId, bookingId: booking.id, action: 'refunded' };
     }
 
     default:
-      return { status: 'ignored', reason: `no_action_for:${event.type}`, eventId: event.id };
+      return { status: 'ignored', reason: `no_action_for:${nextStatus}`, eventId };
   }
 }
 
 /**
  * Confirm a paid booking and issue its voucher.
  *
- * Guarded against confirming twice even if the idempotency check above were somehow bypassed:
- * a booking already past `pending_payment` yields no second voucher. Two independent guards for
- * the one thing that must never happen twice.
+ * Guarded against confirming twice: the transition is a compare-and-set, so a booking that is
+ * already past `pending_payment` yields no second voucher however many deliveries race.
  */
 async function confirmBooking(
   deps: PaymentCoreDeps,
@@ -151,14 +163,16 @@ async function confirmBooking(
 ): Promise<WebhookOutcome> {
   const { store, clock } = deps;
 
-  if (booking.status === 'confirmed') {
-    return { status: 'ignored', reason: 'already_confirmed', eventId };
-  }
+  if (booking.status === 'confirmed') return { status: 'duplicate', eventId };
   if (booking.status !== 'pending_payment') {
     return { status: 'ignored', reason: `cannot_confirm_from:${booking.status}`, eventId };
   }
 
-  await store.updateBookingStatus(booking.id, 'confirmed');
+  // The compare-and-set, not the read above, is the guard: a concurrent delivery read the same
+  // `pending_payment`, and only one of the two can win this.
+  if (!(await store.transitionBookingStatus(booking.id, 'pending_payment', 'confirmed'))) {
+    return { status: 'duplicate', eventId };
+  }
 
   const slot = await store.getSlot(booking.availabilitySlotId);
   const { token, tokenHash } = await mintVoucherToken(deps);

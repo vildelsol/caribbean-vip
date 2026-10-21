@@ -96,8 +96,8 @@ describe('exactly once (T-05)', () => {
   });
 
   it('issues no second voucher even if a DIFFERENT event tries to confirm again', async () => {
-    // Belt and braces: the idempotency index is the primary guard, the booking-state check is
-    // the backstop. This test removes the primary guard to prove the backstop works.
+    // Exactly-once rests on the booking's own state (a compare-and-set), not on remembering event
+    // ids, so a different event for an already-confirmed booking is a no-op too.
     const { deps, store, bookingId } = await withPendingBooking();
 
     await handleStripeWebhook(deps, stripeEvent({ bookingId, id: 'evt_1' }), 'valid-signature');
@@ -107,8 +107,56 @@ describe('exactly once (T-05)', () => {
       'valid-signature',
     );
 
-    expect(second.status).toBe('ignored');
+    expect(second.status).toBe('duplicate');
     expect(store.vouchers).toHaveLength(1);
+  });
+});
+
+describe('concurrent delivery (audit finding 3)', () => {
+  // Stripe retries a slow delivery while the first is still running, and may send two different
+  // events for one payment at once. Every `await` in the handler is a point where they interleave.
+  const pi = (id: string) =>
+    ({ id, type: 'payment_intent.succeeded', objectType: 'payment_intent', objectId: 'pi_test_1' }) as const;
+
+  it('issues ONE voucher when the same event is delivered twice at once', async () => {
+    const { deps, store, bookingId } = await withPendingBooking();
+    const body = stripeEvent({ bookingId, id: 'evt_race' });
+
+    const results = await Promise.all([
+      handleStripeWebhook(deps, body, 'valid-signature'),
+      handleStripeWebhook(deps, body, 'valid-signature'),
+    ]);
+
+    expect(store.vouchers).toHaveLength(1);
+    expect(store.tripItems).toHaveLength(1);
+    expect(results.filter((r) => r.status === 'processed')).toHaveLength(1);
+    expect(store.bookings.get(bookingId)?.status).toBe('confirmed');
+  });
+
+  it('issues ONE voucher when two different events confirm the same booking at once', async () => {
+    const { deps, store, bookingId } = await withPendingBooking();
+
+    const results = await Promise.all([
+      handleStripeWebhook(deps, stripeEvent({ bookingId, id: 'evt_a' }), 'valid-signature'),
+      handleStripeWebhook(deps, stripeEvent({ bookingId, ...pi('evt_b') }), 'valid-signature'),
+    ]);
+
+    expect(store.vouchers).toHaveLength(1);
+    expect(results.filter((r) => r.status === 'processed')).toHaveLength(1);
+  });
+
+  it('releases the seats ONCE when two failure events arrive at once', async () => {
+    const { deps, store, bookingId } = await withPendingBooking();
+    expect(store.slots.get(slotFixture().id)?.bookedCount).toBe(2);
+
+    await Promise.all([
+      handleStripeWebhook(deps, stripeEvent({ bookingId, id: 'evt_x1', type: 'checkout.session.expired' }), 'valid-signature'),
+      handleStripeWebhook(deps, stripeEvent({ bookingId, id: 'evt_x2', type: 'checkout.session.expired' }), 'valid-signature'),
+    ]);
+
+    expect(store.releases).toHaveLength(1);
+    expect(store.slots.get(slotFixture().id)?.bookedCount).toBe(0);
+    expect(store.bookings.get(bookingId)?.status).toBe('cancelled');
   });
 });
 
@@ -138,7 +186,7 @@ describe('out-of-order delivery', () => {
       stripeEvent({ bookingId, id: 'evt_cs' }),
       'valid-signature',
     );
-    expect(second.status).toBe('ignored');
+    expect(second.status).toBe('duplicate');
     expect(store.vouchers).toHaveLength(1);
   });
 });

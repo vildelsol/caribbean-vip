@@ -191,6 +191,19 @@ export function makeSupabaseStore(supabase: SupabaseClient): BookingStore {
       if (error) throw error;
     },
 
+    async transitionBookingStatus(bookingId, from, to) {
+      // Conditional on the current status, so of any number of concurrent callers exactly one
+      // changes the row and gets it back.
+      const { data, error } = await supabase
+        .from('bookings')
+        .update({ status: to })
+        .eq('id', bookingId)
+        .eq('status', from)
+        .select('id');
+      if (error) throw error;
+      return (data?.length ?? 0) > 0;
+    },
+
     async getBooking(bookingId) {
       const { data, error } = await supabase
         .from('bookings')
