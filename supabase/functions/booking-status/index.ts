@@ -14,7 +14,8 @@
  */
 
 import { createClient } from 'npm:@supabase/supabase-js@^2';
-import { bearerToken, decideBookingStatusAccess } from '../_shared/bookingStatusAccess.ts';
+import { decideBookingStatusAccess } from '../_shared/bookingStatusAccess.ts';
+import { bearerToken } from '../_shared/callerIdentity.ts';
 
 const CORS = {
   'Access-Control-Allow-Origin': '*',

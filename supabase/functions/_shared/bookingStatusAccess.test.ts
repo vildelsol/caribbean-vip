@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { bearerToken, decideBookingStatusAccess } from './bookingStatusAccess';
+import { decideBookingStatusAccess } from './bookingStatusAccess';
 
 /**
  * booking-status used to answer anyone holding a Stripe checkout session id, with the booking and
@@ -62,17 +62,5 @@ describe('when the owner may have the ticket token', () => {
 
   it('reports no token when the booking has none yet', () => {
     expect(decideBookingStatusAccess(OWNER, booking({ ticket_token: null }))).toEqual({ ok: true, ticketToken: null });
-  });
-});
-
-describe('reading the caller token from the Authorization header', () => {
-  it('extracts a bearer token', () => {
-    expect(bearerToken('Bearer abc.def.ghi')).toBe('abc.def.ghi');
-  });
-  it('is case-insensitive about the scheme', () => {
-    expect(bearerToken('bearer abc')).toBe('abc');
-  });
-  it.each([null, '', 'Bearer', 'Bearer ', 'Basic abc', 'abc'])('returns null for %j', (h) => {
-    expect(bearerToken(h)).toBeNull();
   });
 });
