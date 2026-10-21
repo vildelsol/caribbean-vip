@@ -136,4 +136,50 @@ begin
 end
 $$;
 
+-- --------------------------------------------------------------------------
+-- my_bookings(): signed-in callers only
+-- --------------------------------------------------------------------------
+--
+-- Unlike the two above, this one IS meant to be called from the browser — by a signed-in
+-- tourist. It is `security definer` and filters on auth.uid() itself, so anon gets nothing from
+-- it either way; the grant is narrowed anyway so the anon key cannot reach a function that reads
+-- past RLS at all. Same PUBLIC trap: revoking only `anon` leaves the PUBLIC grant in force.
+-- Ownership and filtering are covered in my_bookings.test.sql.
+
+do $$
+begin
+  perform test.ok(
+    not has_function_privilege('anon', 'my_bookings()', 'execute'),
+    'anon holds no EXECUTE on my_bookings'
+  );
+  perform test.ok(
+    has_function_privilege('authenticated', 'my_bookings()', 'execute'),
+    'authenticated still holds EXECUTE on my_bookings — the tourist app depends on it'
+  );
+end
+$$;
+
+set local role anon;
+
+do $$
+begin
+  perform test.become_anon();
+  perform test.raises($q$ select * from my_bookings() $q$, 'anon cannot call my_bookings');
+end
+$$;
+
+set local role authenticated;
+
+do $$
+declare
+  u uuid := gen_random_uuid();
+  n integer;
+begin
+  -- A uid with no bookings: the call must succeed and return nothing, rather than raise.
+  perform test.become(u);
+  select count(*) into n from my_bookings();
+  perform test.eq(n, 0, 'control: a signed-in caller can call my_bookings');
+end
+$$;
+
 rollback;

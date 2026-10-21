@@ -11,6 +11,8 @@ import {
 import { useStore } from '../state/store';
 import { Badge, Card, EmptyState, Photo, SecondaryButton, formatUsd } from '../components/kit';
 import { Icon } from '../components/Icon';
+import { AccountCard } from '../components/AccountCard';
+import { isLiveMode } from '../lib/supabase';
 import './Profile.css';
 
 /**
@@ -73,6 +75,9 @@ export function Profile() {
           </div>
         </div>
       </div>
+
+      {/* Live mode only: add an email so bookings survive a lost phone. Nothing in demo. */}
+      {isLiveMode ? <AccountCard /> : null}
 
       {/* --- Island switching --- */}
       <section className="pad profile__block">

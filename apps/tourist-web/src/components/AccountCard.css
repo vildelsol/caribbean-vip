@@ -1,0 +1,94 @@
+/*
+ * Account: add an email, sign in, keep bookings. LIVE MODE ONLY — nothing here renders in demo.
+ *
+ * Colour comes only from existing custom properties. Spacing is on wrappers rather than on
+ * elements carrying a type class, because the type classes zero margin (see global.css).
+ */
+
+.acct {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding-top: 12px;
+}
+
+.acct__form {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.acct__field {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+
+.acct__label {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+}
+
+.acct__input {
+  height: 52px;
+  padding: 0 16px;
+  border-radius: var(--r-md);
+  border: 1.5px solid var(--border-strong);
+  background: var(--ivory-raised);
+  color: var(--ink);
+  /* 16px: anything smaller makes iOS Safari zoom the page on focus. */
+  font-size: 16px;
+  font-family: var(--font-ui, var(--font-sans));
+  -webkit-appearance: none;
+}
+
+.acct__input::placeholder {
+  color: var(--ink-faint);
+}
+
+.acct__input:focus-visible {
+  outline: 2px solid var(--green-900);
+  outline-offset: 1px;
+  border-color: var(--green-900);
+}
+
+.acct__input--code {
+  font-size: 22px;
+  font-weight: 700;
+  letter-spacing: 0.3em;
+  text-align: center;
+}
+
+.acct__row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 4px 8px;
+}
+
+.acct__status {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 14px;
+}
+
+.acct__status-icon {
+  flex: none;
+  padding-top: 1px;
+}
+
+.acct__nudge {
+  padding: 20px var(--s-md) 0;
+}
+
+.acct__nudge-inner {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 14px;
+}

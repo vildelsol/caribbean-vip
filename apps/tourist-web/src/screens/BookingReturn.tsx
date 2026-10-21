@@ -3,8 +3,9 @@
  *
  * Stripe sends the guest to /?session_id=cs_xxx after payment. This screen polls
  * /booking-status until the webhook confirms the booking (or up to ~30 s), then
- * reconstructs the local Booking shape from the server response and adds it to the
- * store so the existing Confirmation, Ticket and Trips screens work unchanged.
+ * merges the booking's `my_bookings()` row into the store (or, if that read has not
+ * caught up, a fill-only reconstruction) so the existing Confirmation, Ticket and
+ * Trips screens work unchanged.
  *
  * If the session_id is missing or the booking cannot be found, it falls back to a
  * helpful error screen. Demo mode (no Supabase) never reaches this route.
@@ -14,6 +15,7 @@ import { useEffect, useRef, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useStore } from '../state/store';
 import { pollBookingStatus } from '../lib/api';
+import { findMyBookingRow, returnedBookingAction } from '../state/liveSync';
 import { Icon } from '../components/Icon';
 import { EmptyState } from '../components/kit';
 
@@ -39,10 +41,14 @@ export function BookingReturn() {
     }
 
     let count = 0;
+    // Set by the cleanup: after unmount nothing may dispatch, navigate or set state.
+    let cancelled = false;
 
     const poll = async () => {
+      if (cancelled) return;
       setAttempt((n) => n + 1);
       const result = await pollBookingStatus(sessionId);
+      if (cancelled) return;
 
       if (!result) {
         setPhase('error');
@@ -50,35 +56,33 @@ export function BookingReturn() {
       }
 
       if (result.status === 'confirmed' && result.ticketToken) {
-        // Reconstruct enough of the Booking shape for the existing confirmation + ticket screens.
-        // Lines are not stored locally — the confirmation screen falls back gracefully when empty.
         const bookingId = result.bookingId;
+        // One read of `my_bookings()`. With the row, the booking is the server's own (real
+        // departure, catalogue id, itemisation); without it, a fill-only reconstruction from
+        // booking-status and what Checkout left in sessionStorage. See `returnedBookingAction`.
+        const row = await findMyBookingRow(bookingId);
+        if (cancelled) return;
+        const attendeeName = sessionStorage.getItem(`attendee_${bookingId}`) || null;
 
-        // Only add if not already in store (idempotent on double-render).
-        if (!state.bookings.some((b) => b.id === bookingId)) {
-          dispatch({
-            type: 'addBooking',
-            booking: {
-              id: bookingId,
-              reference: result.reference,
-              experienceId: result.experienceId,
-              islandId: state.islandId,
-              dateISO: extractDateFromSlot(sessionStorage.getItem(`slot_date_${bookingId}`) ?? ''),
-              time: sessionStorage.getItem(`slot_time_${bookingId}`) ?? '',
-              party: JSON.parse(sessionStorage.getItem(`party_${bookingId}`) ?? 'null') ?? { adults: result.seats, children: 0, photoPackage: false },
-              totalMinor: result.totalMinor,
-              lines: [],
-              taxMinor: result.taxMinor,
-              serviceFeeMinor: result.serviceFeeMinor,
-              subtotalMinor: result.subtotalMinor,
-              status: 'confirmed',
-              createdAtISO: result.createdAt,
-              ticketToken: result.ticketToken,
-              voucherId: null,
-              attendeeName: sessionStorage.getItem(`attendee_${bookingId}`) || null,
+        // A merge, not `addBooking`: `useLiveSync` may already have recovered this booking on page
+        // load, and `state` here is the first render's. The merge matches by id, so whichever lands
+        // first there is still one booking.
+        dispatch(
+          returnedBookingAction(
+            row,
+            result,
+            {
+              slotDate: sessionStorage.getItem(`slot_date_${bookingId}`),
+              slotTime: sessionStorage.getItem(`slot_time_${bookingId}`),
+              party: sessionStorage.getItem(`party_${bookingId}`),
+              attendee: attendeeName,
             },
-          });
-        }
+            state.islandId,
+          ),
+        );
+        // The merge keeps the device's attendee; if the sync landed first that is null, so the
+        // one carried through Stripe is set explicitly.
+        if (attendeeName) dispatch({ type: 'assignAttendee', bookingId, attendeeName });
 
         navigate(`/confirmation/${bookingId}`, { replace: true });
         return;
@@ -95,12 +99,21 @@ export function BookingReturn() {
         return;
       }
 
-      timerRef.current = setTimeout(poll, POLL_INTERVAL_MS);
+      timerRef.current = setTimeout(run, POLL_INTERVAL_MS);
     };
 
-    poll();
+    // Any rejection (network, a non-JSON body) ends on the error screen, never an unhandled
+    // rejection with the spinner left turning.
+    const run = () => {
+      poll().catch(() => {
+        if (!cancelled) setPhase('error');
+      });
+    };
+
+    run();
 
     return () => {
+      cancelled = true;
       if (timerRef.current) clearTimeout(timerRef.current);
     };
     // Deliberately keyed on `sessionId` alone. `state` and `dispatch` are read inside the poll
@@ -133,8 +146,4 @@ export function BookingReturn() {
       </p>
     </main>
   );
-}
-
-function extractDateFromSlot(raw: string): string {
-  return raw ? raw.split('T')[0] ?? '' : '';
 }

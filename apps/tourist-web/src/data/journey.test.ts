@@ -19,7 +19,11 @@
  *    a ticket. Outcomes change when the catalogue does; these should not.
  */
 
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
+
+// ../state/store imports the Supabase client; pin demo mode whatever VITE_SUPABASE_* says.
+vi.mock('../lib/supabase', () => ({ supabase: null, isLiveMode: false }));
+
 import {
   ISLANDS,
   allInFromMinor,

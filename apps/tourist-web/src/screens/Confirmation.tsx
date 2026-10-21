@@ -5,6 +5,8 @@ import { useStore } from '../state/store';
 import { QR } from '../components/QR';
 import { Icon } from '../components/Icon';
 import { Badge, Card, EmptyState, formatUsd, Photo, plural, PrimaryButton, SecondaryButton } from '../components/kit';
+import { KeepBookingNudge } from '../components/AccountCard';
+import { isLiveMode } from '../lib/supabase';
 import './Confirmation.css';
 
 /**
@@ -120,6 +122,9 @@ export function Confirmation() {
         <PrimaryButton onClick={() => navigate('/trips')}>Add to my day</PrimaryButton>
         <SecondaryButton onClick={() => navigate(`/ticket/${booking.id}`)}>Show ticket</SecondaryButton>
       </div>
+
+      {/* Live mode only: every booking here is a live one. Nothing in demo. */}
+      {isLiveMode ? <KeepBookingNudge /> : null}
 
       <p className="confirm__total t-caption">
         <span className="grow c-muted">Paid</span>
