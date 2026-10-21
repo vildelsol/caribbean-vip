@@ -4,12 +4,17 @@
  * GET ?session_id=cs_xxx
  * → { status: 'pending_payment'|'confirmed'|'cancelled', ticketToken?: string }
  *
- * Returns 404 if the booking is not found for the session. Uses the service-role client
- * so it can read across user boundaries — security relies on the session_id being
- * unguessable (it is a Stripe-generated opaque ID, not sequential).
+ * The caller must be signed in (anonymous sign-in counts) AS THE GUEST WHO OWNS THE BOOKING.
+ * The session id alone is not enough: it is in the success URL, so it leaks through browser
+ * history, Referer headers and screenshots. A missing user is 401; a booking that is missing or
+ * belongs to someone else is the same 404, so session ids cannot be probed.
+ *
+ * Uses the service-role client for the lookup, so the ownership check below is the only thing
+ * standing between a session id and a ticket — see `_shared/bookingStatusAccess.ts`.
  */
 
 import { createClient } from 'npm:@supabase/supabase-js@^2';
+import { bearerToken, decideBookingStatusAccess } from '../_shared/bookingStatusAccess.ts';
 
 const CORS = {
   'Access-Control-Allow-Origin': '*',
@@ -33,15 +38,29 @@ Deno.serve(async (req) => {
     { auth: { persistSession: false, autoRefreshToken: false } },
   );
 
+  // `verify_jwt` only proves the bearer is SOME valid Supabase JWT, and the publishable anon key
+  // is one. Ask Auth who the user is; the anon key has no user and comes back null.
+  const token = bearerToken(req.headers.get('Authorization'));
+  const { data: auth } = token ? await supabase.auth.getUser(token) : { data: { user: null } };
+  const callerUserId = auth.user?.id ?? null;
+  if (!callerUserId) return json({ error: 'Sign in required' }, 401);
+
   const { data, error } = await supabase
     .from('payments')
-    .select('bookings!inner(id, status, ticket_token, reference, experience_id, availability_slot_id, total_minor, tax_minor, service_fee_minor, subtotal_minor, seats, created_at)')
+    .select('bookings!inner(id, user_id, status, ticket_token, reference, experience_id, availability_slot_id, total_minor, tax_minor, service_fee_minor, subtotal_minor, seats, created_at)')
     .eq('stripe_checkout_session_id', sessionId)
     .single();
 
   if (error || !data) return json({ error: 'Booking not found' }, 404);
 
   const booking = (data as { bookings: Record<string, unknown> }).bookings;
+
+  const access = decideBookingStatusAccess(callerUserId, {
+    user_id: booking.user_id as string,
+    status: booking.status as string,
+    ticket_token: (booking.ticket_token as string | null) ?? null,
+  });
+  if (!access.ok) return json({ error: 'Booking not found' }, 404);
 
   return json({
     bookingId: booking.id,
@@ -55,7 +74,7 @@ Deno.serve(async (req) => {
     subtotalMinor: booking.subtotal_minor,
     seats: booking.seats,
     createdAt: booking.created_at,
-    ticketToken: booking.ticket_token ?? null,
+    ticketToken: access.ticketToken,
   });
 });
 
