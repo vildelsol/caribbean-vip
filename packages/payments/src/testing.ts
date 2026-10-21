@@ -131,6 +131,19 @@ export class FakeBookingStore implements BookingStore {
     if (slot) slot.bookedCount = Math.max(slot.bookedCount - seats, 0);
   }
 
+  /** Tests point this at their FakeClock; creation times are what the open-booking window reads. */
+  now: () => Date = () => new Date();
+  private createdAt = new Map<string, Date>();
+
+  async countOpenPendingBookings(userId: string, since: Date): Promise<number> {
+    let n = 0;
+    for (const b of this.bookings.values()) {
+      const at = this.createdAt.get(b.id);
+      if (b.userId === userId && b.status === 'pending_payment' && at && at >= since) n++;
+    }
+    return n;
+  }
+
   async findBookingByIdempotencyKey(key: string): Promise<BookingRecord | null> {
     for (const b of this.bookings.values()) if (b.idempotencyKey === key) return b;
     return null;
@@ -139,6 +152,7 @@ export class FakeBookingStore implements BookingStore {
   async createBooking(input: Omit<BookingRecord, 'id'>): Promise<BookingRecord> {
     const record: BookingRecord = { ...input, id: this.nextId('booking') };
     this.bookings.set(record.id, record);
+    this.createdAt.set(record.id, this.now());
     return record;
   }
 

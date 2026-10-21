@@ -76,6 +76,7 @@ Deno.serve(async (req) => {
   if (!result.ok) {
     const status = result.error.code === 'SLOT_NOT_FOUND' ? 404
       : result.error.code === 'SOLD_OUT' || result.error.code === 'IDEMPOTENCY_KEY_IN_USE' ? 409
+      : result.error.code === 'TOO_MANY_PENDING_BOOKINGS' ? 429
       : 422;
     return json({ ok: false, code: result.error.code, message: result.error.message }, status);
   }
