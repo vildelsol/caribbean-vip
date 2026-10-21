@@ -14,6 +14,7 @@
 
 import { createClient } from 'npm:@supabase/supabase-js@^2';
 import { isPubliclyBookable } from '../_shared/listingVisibility.ts';
+import { parseSlotQuery } from '../_shared/slotQuery.ts';
 
 const CORS = {
   'Access-Control-Allow-Origin': '*',
@@ -26,17 +27,17 @@ Deno.serve(async (req) => {
   if (req.method !== 'GET') return json({ error: 'GET only' }, 405);
 
   const url = new URL(req.url);
-  const title = url.searchParams.get('experience_title');
-  const date = url.searchParams.get('date');
-  const time = url.searchParams.get('time');
-
-  if (!title || !date || !time) {
-    return json({ error: 'experience_title, date, and time are required' }, 400);
+  // Validated before any query: a malformed date or time used to reach Postgres, whose error text
+  // was then returned to the caller. Every refusal reads the same, so it does not say which part failed.
+  const query = parseSlotQuery(
+    url.searchParams.get('experience_title'),
+    url.searchParams.get('date'),
+    url.searchParams.get('time'),
+  );
+  if (!query.ok) {
+    return json({ error: 'experience_title, date (YYYY-MM-DD) and time (HH:MM) are required' }, 400);
   }
-
-  // Build the starts_at timestamp. The seed generates slots in UTC; the demo times are wall-clock
-  // so we treat them as UTC (matching how the seed generates them with make_interval).
-  const startsAt = `${date}T${time}:00+00:00`;
+  const { title, startsAt } = query;
 
   const supabase = createClient(
     Deno.env.get('SUPABASE_URL') ?? '',
@@ -54,14 +55,14 @@ Deno.serve(async (req) => {
       .eq('title', title)
       .maybeSingle();
 
-    if (expError) return json({ error: 'Lookup failed', detail: expError.message }, 500);
+    if (expError) return lookupFailed('experiences', expError);
     // The service client skips RLS, so apply the public-visibility rule here: a draft or suspended
     // listing must read as not found, or its slot and option ids (and prices) can be fetched by title.
     const vendor = Array.isArray(experience?.vendor_organizations)
       ? experience?.vendor_organizations[0]
       : experience?.vendor_organizations;
     if (!experience || !isPubliclyBookable(experience.status, vendor?.status)) {
-      return json({ error: 'Experience not found', title }, 404);
+      return json({ error: 'Experience not found' }, 404);
     }
 
     // `maybeSingle` rather than `single`: a missing slot is an ordinary outcome the guest caused
@@ -73,8 +74,8 @@ Deno.serve(async (req) => {
       .eq('starts_at', startsAt)
       .maybeSingle();
 
-    if (slotError) return json({ error: 'Lookup failed', detail: slotError.message }, 500);
-    if (!slot) return json({ error: 'Slot not found', title, startsAt }, 404);
+    if (slotError) return lookupFailed('availability_slots', slotError);
+    if (!slot) return json({ error: 'Slot not found' }, 404);
 
     const { data: options, error: optError } = await supabase
       .from('experience_options')
@@ -83,7 +84,7 @@ Deno.serve(async (req) => {
       .eq('is_active', true)
       .order('sort_order');
 
-    if (optError) return json({ error: 'Lookup failed', detail: optError.message }, 500);
+    if (optError) return lookupFailed('experience_options', optError);
 
     return json({
       slotId: slot.id,
@@ -100,6 +101,15 @@ Deno.serve(async (req) => {
     return json({ error: 'Lookup failed' }, 500);
   }
 });
+
+/**
+ * Database errors name tables, columns and types, so they go to the log and never to the caller.
+ * The caller gets the same two words whatever failed.
+ */
+function lookupFailed(step: string, error: { message?: string; code?: string }): Response {
+  console.error(`resolve-slot: ${step} lookup failed:`, error.code ?? '', error.message ?? '');
+  return json({ error: 'Lookup failed' }, 500);
+}
 
 function json(body: unknown, status = 200): Response {
   return new Response(JSON.stringify(body), {
