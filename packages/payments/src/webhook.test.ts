@@ -296,6 +296,110 @@ describe('refunds', () => {
     // The departure may already have happened; re-opening the place is the vendor's call.
     expect(store.slots.get(slotFixture().id)?.bookedCount).toBe(bookedAfterPayment);
   });
+
+  // What Stripe really sends: a charge with no booking metadata (checkout copies metadata to the
+  // session, not to the charge) and no session id. Only its payment intent leads back.
+  it('finds the booking from the charge\'s payment intent when it carries no metadata', async () => {
+    const { deps, store, bookingId } = await withPendingBooking();
+    await handleStripeWebhook(deps, stripeEvent({ bookingId, id: 'evt_paid', paymentIntent: 'pi_real' }), 'valid-signature');
+
+    const r = await handleStripeWebhook(
+      deps,
+      stripeEvent({ id: 'evt_refund', type: 'charge.refunded', objectType: 'charge', objectId: 'ch_1', paymentIntent: 'pi_real' }),
+      'valid-signature',
+    );
+
+    expect(r.status).toBe('processed');
+    expect(store.bookings.get(bookingId)?.status).toBe('refunded');
+  });
+
+  it('records the charge\'s payment intent, not the charge id', async () => {
+    const { deps, store, bookingId } = await withPendingBooking();
+    await handleStripeWebhook(deps, stripeEvent({ bookingId, id: 'evt_paid', paymentIntent: 'pi_real' }), 'valid-signature');
+    await handleStripeWebhook(
+      deps,
+      stripeEvent({ id: 'evt_refund', type: 'charge.refunded', objectType: 'charge', objectId: 'ch_1', paymentIntent: 'pi_real' }),
+      'valid-signature',
+    );
+
+    const payment = [...store.payments.values()].find((p) => p.bookingId === bookingId);
+    expect(payment?.stripePaymentIntentId).toBe('pi_real');
+    expect(payment?.status).toBe('refunded');
+  });
+
+  it('ignores a charge whose payment intent matches no booking', async () => {
+    const { deps, store, bookingId } = await withPendingBooking();
+    await handleStripeWebhook(deps, stripeEvent({ bookingId, id: 'evt_paid', paymentIntent: 'pi_real' }), 'valid-signature');
+
+    const r = await handleStripeWebhook(
+      deps,
+      stripeEvent({ id: 'evt_refund', type: 'charge.refunded', objectType: 'charge', objectId: 'ch_1', paymentIntent: 'pi_other' }),
+      'valid-signature',
+    );
+
+    expect(r).toMatchObject({ status: 'ignored', reason: 'no_matching_booking' });
+    expect(store.bookings.get(bookingId)?.status).toBe('confirmed');
+  });
+
+  it('cancels the booking\'s voucher when the booking is refunded', async () => {
+    const { deps, store, bookingId } = await withPendingBooking();
+    await handleStripeWebhook(deps, stripeEvent({ bookingId, id: 'evt_paid', paymentIntent: 'pi_real' }), 'valid-signature');
+    expect(store.vouchers.map((v) => v.state)).toEqual(['active']);
+
+    await handleStripeWebhook(
+      deps,
+      stripeEvent({ id: 'evt_refund', type: 'charge.refunded', objectType: 'charge', objectId: 'ch_1', paymentIntent: 'pi_real' }),
+      'valid-signature',
+    );
+
+    expect(store.vouchers.map((v) => v.state)).toEqual(['cancelled']);
+  });
+
+  it('leaves a redeemed voucher redeemed: the guest already took the tour', async () => {
+    const { deps, store, bookingId } = await withPendingBooking();
+    await handleStripeWebhook(deps, stripeEvent({ bookingId, id: 'evt_paid', paymentIntent: 'pi_real' }), 'valid-signature');
+    store.vouchers[0]!.state = 'redeemed';
+
+    await handleStripeWebhook(
+      deps,
+      stripeEvent({ id: 'evt_refund', type: 'charge.refunded', objectType: 'charge', objectId: 'ch_1', paymentIntent: 'pi_real' }),
+      'valid-signature',
+    );
+
+    expect(store.vouchers.map((v) => v.state)).toEqual(['redeemed']);
+  });
+
+  it('does nothing for a partial refund: the booking and voucher stay valid', async () => {
+    const { deps, store, bookingId } = await withPendingBooking();
+    await handleStripeWebhook(deps, stripeEvent({ bookingId, id: 'evt_paid', paymentIntent: 'pi_real' }), 'valid-signature');
+
+    const r = await handleStripeWebhook(
+      deps,
+      stripeEvent({ id: 'evt_refund', type: 'charge.refunded', objectType: 'charge', objectId: 'ch_1', paymentIntent: 'pi_real', refund: 'partial' }),
+      'valid-signature',
+    );
+
+    expect(r).toMatchObject({ status: 'ignored', reason: 'no_action_for:partially_refunded' });
+    expect(store.bookings.get(bookingId)?.status).toBe('confirmed');
+    expect(store.vouchers.map((v) => v.state)).toEqual(['active']);
+  });
+
+  it('a redelivered refund still cancels a voucher an earlier crashed delivery left live', async () => {
+    const { deps, store, bookingId } = await withPendingBooking();
+    await handleStripeWebhook(deps, stripeEvent({ bookingId, id: 'evt_paid', paymentIntent: 'pi_real' }), 'valid-signature');
+    // The first delivery won the transition, then crashed before voiding.
+    store.bookings.get(bookingId)!.status = 'refunded';
+    expect(store.vouchers.map((v) => v.state)).toEqual(['active']);
+
+    const r = await handleStripeWebhook(
+      deps,
+      stripeEvent({ id: 'evt_refund', type: 'charge.refunded', objectType: 'charge', objectId: 'ch_1', paymentIntent: 'pi_real' }),
+      'valid-signature',
+    );
+
+    expect(r.status).toBe('duplicate');
+    expect(store.vouchers.map((v) => v.state)).toEqual(['cancelled']);
+  });
 });
 
 describe('events we should not act on', () => {

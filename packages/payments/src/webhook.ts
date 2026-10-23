@@ -20,7 +20,9 @@
  * handled, and whichever lands first confirms the booking.
  */
 
-import type { PaymentCoreDeps } from './ports.ts';
+import type { PaymentCoreDeps, StripeLikeEvent } from './ports.ts';
+
+type PaymentCoreEventObject = StripeLikeEvent['data']['object'];
 import { mintVoucherToken } from './checkout.ts';
 
 export type WebhookOutcome =
@@ -72,19 +74,24 @@ export async function handleStripeWebhook(
   const isSession = object.object === 'checkout.session';
 
   const sessionId = isSession ? object.id : null;
-  const paymentIntentId = isSession ? (object.payment_intent ?? null) : object.id;
+  // A session and a charge both point at their payment intent; a payment_intent event is one.
+  // Using `object.id` for a charge would store `ch_…` where a `pi_…` belongs.
+  const paymentIntentId =
+    object.object === 'payment_intent' ? object.id : (object.payment_intent ?? null);
 
-  // 2. Locate the booking. Metadata is the fast path; the session id is the fallback for events
-  // that carry no metadata (payment_intent.* often does not).
+  // 2. Locate the booking. Metadata is the fast path. Fallbacks for events that carry none: the
+  // session id, then the payment intent, which `checkout.session.completed` stored on the
+  // payment row. A charge has no session id, so a refund can only be found by its payment intent.
   const bookingId = object.metadata?.booking_id ?? null;
   let booking = bookingId ? await store.getBooking(bookingId) : null;
   if (!booking && sessionId) booking = await store.findBookingByCheckoutSession(sessionId);
+  if (!booking && paymentIntentId) booking = await store.findBookingByPaymentIntent(paymentIntentId);
 
   if (!booking) {
     return { status: 'ignored', reason: 'no_matching_booking', eventId: event.id };
   }
 
-  const nextStatus = paymentStatusFor(event.type, object.payment_status ?? null);
+  const nextStatus = paymentStatusFor(event.type, object);
 
   // 3. Act, then record. Exactly-once comes from the compare-and-set in `transitionBookingStatus`:
   // of any number of concurrent or repeated deliveries one wins the transition and runs the side
@@ -133,13 +140,19 @@ async function applyEvent(
     }
 
     case 'refunded': {
-      if (booking.status === 'refunded') return { status: 'duplicate', eventId };
+      // Idempotent, and repeated on a redelivery: a crash after the transition below but before
+      // the void would otherwise leave a refunded booking with a live voucher for good.
+      if (booking.status === 'refunded') {
+        await store.voidBookingVouchers(booking.id);
+        return { status: 'duplicate', eventId };
+      }
       if (!['confirmed', 'completed', 'cancelled'].includes(booking.status)) {
         return { status: 'ignored', reason: `cannot_refund_from:${booking.status}`, eventId };
       }
       if (!(await store.transitionBookingStatus(booking.id, booking.status, 'refunded'))) {
         return { status: 'ignored', reason: 'booking_changed_concurrently', eventId };
       }
+      await store.voidBookingVouchers(booking.id);
       // Capacity is NOT released on refund: the departure may already have happened, and the
       // vendor's remaining places are theirs to re-open, not ours to assume.
       return { status: 'processed', eventId, bookingId: booking.id, action: 'refunded' };
@@ -214,16 +227,29 @@ async function confirmBooking(
   };
 }
 
+type EventObject = PaymentCoreEventObject;
+
+/** A charge is fully refunded when Stripe says so, or when the refunded amount covers it. */
+function isFullyRefunded(object: EventObject): boolean {
+  if (object.refunded === true) return true;
+  return (
+    typeof object.amount === 'number' &&
+    typeof object.amount_refunded === 'number' &&
+    object.amount > 0 &&
+    object.amount_refunded >= object.amount
+  );
+}
+
 function paymentStatusFor(
   eventType: string,
-  paymentStatus: string | null,
+  object: EventObject,
 ): 'pending' | 'paid' | 'failed' | 'refunded' | 'partially_refunded' {
   switch (eventType) {
     case 'checkout.session.completed':
       // A completed session is not necessarily a paid one — delayed methods report `unpaid` here
       // and settle later via async_payment_succeeded. Confirming on `completed` alone would hand
       // out a voucher for money that never arrives.
-      return paymentStatus === 'paid' ? 'paid' : 'pending';
+      return (object.payment_status ?? null) === 'paid' ? 'paid' : 'pending';
     case 'checkout.session.async_payment_succeeded':
     case 'payment_intent.succeeded':
       return 'paid';
@@ -233,7 +259,9 @@ function paymentStatusFor(
     case 'checkout.session.expired':
       return 'failed';
     case 'charge.refunded':
-      return 'refunded';
+      // Stripe also sends this for a partial refund. Treating it as a full one would void a
+      // voucher the guest still has money in, so a partial refund is recorded and nothing else.
+      return isFullyRefunded(object) ? 'refunded' : 'partially_refunded';
     default:
       return 'pending';
   }

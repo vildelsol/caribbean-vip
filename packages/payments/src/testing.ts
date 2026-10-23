@@ -245,6 +245,25 @@ export class FakeBookingStore implements BookingStore {
     return null;
   }
 
+  async findBookingByPaymentIntent(paymentIntentId: string): Promise<BookingRecord | null> {
+    for (const p of this.payments.values()) {
+      if (p.stripePaymentIntentId === paymentIntentId) {
+        const b = this.bookings.get(p.bookingId);
+        return b ? { ...b } : null;
+      }
+    }
+    return null;
+  }
+
+  /** Same states the `vouchers_transition_check` trigger lets move to `cancelled`. */
+  async voidBookingVouchers(bookingId: string): Promise<void> {
+    for (const v of this.vouchers) {
+      if (v.bookingId === bookingId && ['issued', 'saved', 'attached_to_booking', 'active'].includes(v.state)) {
+        v.state = 'cancelled';
+      }
+    }
+  }
+
   async issueVoucher(input: {
     tokenHash: string;
     bookingId: string | null;
@@ -340,6 +359,8 @@ export function stripeEvent(over: {
   paymentStatus?: string | null;
   paymentIntent?: string | null;
   bookingId?: string | null;
+  /** `charge` events only. Defaults to a full refund; `partial` leaves part of the charge unrefunded. */
+  refund?: 'full' | 'partial';
 }): string {
   const event: StripeLikeEvent = {
     id: over.id ?? 'evt_test_1',
@@ -351,6 +372,13 @@ export function stripeEvent(over: {
         payment_status: over.paymentStatus === undefined ? 'paid' : over.paymentStatus,
         payment_intent: over.paymentIntent ?? 'pi_test_1',
         metadata: over.bookingId ? { booking_id: over.bookingId } : {},
+        ...(over.objectType === 'charge'
+          ? {
+              amount: 10000,
+              amount_refunded: over.refund === 'partial' ? 2500 : 10000,
+              refunded: over.refund !== 'partial',
+            }
+          : {}),
       },
     },
   };
