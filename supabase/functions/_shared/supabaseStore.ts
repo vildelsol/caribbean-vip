@@ -294,6 +294,28 @@ export function makeSupabaseStore(supabase: SupabaseClient): BookingStore {
       return rowToBooking(booking);
     },
 
+    async findBookingByPaymentIntent(paymentIntentId) {
+      const { data, error } = await supabase
+        .from('payments')
+        .select('bookings!inner(*)')
+        .eq('stripe_payment_intent_id', paymentIntentId)
+        .maybeSingle();
+      if (error || !data) return null;
+      const booking = (data as { bookings: Record<string, unknown> }).bookings;
+      return rowToBooking(booking);
+    },
+
+    async voidBookingVouchers(bookingId) {
+      // Only states the transition trigger lets move to `cancelled`; redeemed, expired and the
+      // other terminal states are left alone, so the update never raises and is safe to repeat.
+      const { error } = await supabase
+        .from('vouchers')
+        .update({ state: 'cancelled' as VoucherState })
+        .eq('booking_id', bookingId)
+        .in('state', ['issued', 'saved', 'attached_to_booking', 'active']);
+      if (error) throw error;
+    },
+
     async issueVoucher(input) {
       const { data, error } = await supabase
         .from('vouchers')

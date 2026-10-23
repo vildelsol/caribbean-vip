@@ -170,6 +170,16 @@ export interface BookingStore {
   }): Promise<{ alreadyProcessed: boolean; payment: PaymentRecord | null }>;
 
   findBookingByCheckoutSession(sessionId: string): Promise<BookingRecord | null>;
+  /**
+   * The booking whose payment row carries this payment intent. A refund arrives as a charge, which
+   * has no session id, so this is the only way to find the booking when no metadata was copied.
+   */
+  findBookingByPaymentIntent(paymentIntentId: string): Promise<BookingRecord | null>;
+  /**
+   * Cancels every voucher of the booking that is not already terminal. Idempotent. A redeemed
+   * voucher stays redeemed: the guest already took the tour.
+   */
+  voidBookingVouchers(bookingId: string): Promise<void>;
 
   issueVoucher(input: {
     tokenHash: string;
@@ -247,6 +257,10 @@ export interface StripeLikeEvent {
       payment_intent?: string | null;
       payment_status?: string | null;
       status?: string | null;
+      /** `charge` objects: the amounts and the flag Stripe sets once a charge is fully refunded. */
+      amount?: number | null;
+      amount_refunded?: number | null;
+      refunded?: boolean | null;
       metadata?: Record<string, string> | null;
       last_payment_error?: { code?: string | null; message?: string | null } | null;
     };
