@@ -122,6 +122,27 @@ export async function resolveSlot(params: {
   return res.json() as Promise<ResolvedSlot>;
 }
 
+/**
+ * Ask `claim-guest-bookings` to move the bookings of the anonymous guest holding `guestToken` into
+ * the signed-in account (the bearer). Returns how many moved, or null when the call failed — the
+ * caller treats a failure as "nothing moved", never as a failed sign-in.
+ */
+export async function callClaimGuestBookings(accountToken: string, guestToken: string): Promise<number | null> {
+  if (!supabase) return null;
+  try {
+    const res = await fetch(`${FUNCTIONS_BASE}/claim-guest-bookings`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', ...anonHeaders(), Authorization: `Bearer ${accountToken}` },
+      body: JSON.stringify({ guestAccessToken: guestToken }),
+    });
+    if (!res.ok) return null;
+    const body = (await res.json()) as { moved?: unknown };
+    return typeof body.moved === 'number' ? body.moved : null;
+  } catch {
+    return null;
+  }
+}
+
 export async function pollBookingStatus(sessionId: string): Promise<BookingStatusResponse | null> {
   if (!supabase) return null;
 

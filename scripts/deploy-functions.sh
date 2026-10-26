@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #
-# Deploy the four Edge Functions.
+# Deploy the five Edge Functions.
 #
 # Two flags here are not optional and are not discoverable from the error messages:
 #
@@ -15,7 +15,7 @@
 #       booking is never confirmed, and the guest is charged for a booking stuck on
 #       `pending_payment`. The HMAC signature is the authentication.
 #
-# The other three keep JWT verification on and are called with the anon key.
+# The other four keep JWT verification on and are called with the anon key.
 #
 # Usage: ./scripts/deploy-functions.sh <project-ref>
 
@@ -34,7 +34,7 @@ MAP="supabase/functions/deno.json"
 
 echo "==> Deploying to $REF"
 
-for fn in resolve-slot booking-status checkout-session; do
+for fn in resolve-slot booking-status checkout-session claim-guest-bookings; do
   echo "--> $fn"
   npx supabase functions deploy "$fn" --project-ref "$REF" --import-map "$MAP"
 done

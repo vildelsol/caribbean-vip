@@ -630,3 +630,81 @@ describe('shouldConfirmSignIn', () => {
     expect(shouldConfirmSignIn(null, [confirmed])).toBe(false);
   });
 });
+
+// ---------------------------------------------------------------------------
+// Claiming the guest's bookings across a sign-in
+// ---------------------------------------------------------------------------
+
+describe('verifySignIn claims the anonymous guest’s bookings', () => {
+  type Session = { access_token: string; user?: { is_anonymous?: boolean } } | null;
+
+  /** getSession returns the guest's session before verifyOtp and the account's after it. */
+  function sessionClient(before: Session, after: Session, over: Parameters<typeof fakeClient>[0] = {}) {
+    const client = fakeClient(over);
+    let signedIn = false;
+    client.auth.verifyOtp.mockImplementation(async () => {
+      signedIn = !over.verifyOtp?.error;
+      return over.verifyOtp ?? { data: {}, error: null };
+    });
+    const withSession = client as typeof client & {
+      auth: { getSession: ReturnType<typeof vi.fn>; refreshSession: ReturnType<typeof vi.fn> };
+    };
+    withSession.auth.getSession = vi.fn(async () => ({ data: { session: signedIn ? after : before } }));
+    withSession.auth.refreshSession = vi.fn(async () => ({ error: null }));
+    return withSession as unknown as typeof client & AccountClient & {
+      auth: { getSession: ReturnType<typeof vi.fn>; refreshSession: ReturnType<typeof vi.fn> };
+    };
+  }
+
+  const guest: Session = { access_token: 'guest-jwt', user: { is_anonymous: true } };
+  const account: Session = { access_token: 'account-jwt', user: { is_anonymous: false } };
+
+  it('sends the guest token read BEFORE verifyOtp, with the account token as bearer', async () => {
+    const client = sessionClient(guest, account);
+    const claim = vi.fn(async () => 2);
+    expect(await verifySignIn('guest@example.com', '123456', client, claim)).toEqual({ ok: true });
+    expect(claim).toHaveBeenCalledWith('account-jwt', 'guest-jwt');
+  });
+
+  it('refreshes the session when bookings moved, so live sync fetches them', async () => {
+    const client = sessionClient(guest, account);
+    await verifySignIn('guest@example.com', '123456', client, vi.fn(async () => 2));
+    expect(client.auth.refreshSession).toHaveBeenCalledTimes(1);
+  });
+
+  it('does not refresh when nothing moved', async () => {
+    const client = sessionClient(guest, account);
+    await verifySignIn('guest@example.com', '123456', client, vi.fn(async () => 0));
+    expect(client.auth.refreshSession).not.toHaveBeenCalled();
+  });
+
+  it('a failed claim does not fail the sign-in', async () => {
+    const client = sessionClient(guest, account);
+    expect(await verifySignIn('guest@example.com', '123456', client, vi.fn(async () => null))).toEqual({ ok: true });
+    const throwing = vi.fn(async () => {
+      throw new Error('network');
+    });
+    expect(await verifySignIn('guest@example.com', '123456', client, throwing)).toEqual({ ok: true });
+  });
+
+  it('does not claim when the current session is not anonymous', async () => {
+    const client = sessionClient(account, account);
+    const claim = vi.fn(async () => 1);
+    await verifySignIn('guest@example.com', '123456', client, claim);
+    expect(claim).not.toHaveBeenCalled();
+  });
+
+  it('does not claim when verifyOtp failed', async () => {
+    const client = sessionClient(guest, account, { verifyOtp: { data: null, error: { code: 'otp_expired' } } });
+    const claim = vi.fn(async () => 1);
+    expect(await verifySignIn('guest@example.com', '123456', client, claim)).toEqual({ ok: false, reason: 'expired_code' });
+    expect(claim).not.toHaveBeenCalled();
+  });
+
+  it('a client with no getSession signs in without claiming', async () => {
+    const client = fakeClient();
+    const claim = vi.fn(async () => 1);
+    expect(await verifySignIn('guest@example.com', '123456', client, claim)).toEqual({ ok: true });
+    expect(claim).not.toHaveBeenCalled();
+  });
+});

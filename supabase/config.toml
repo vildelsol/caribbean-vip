@@ -21,3 +21,6 @@ verify_jwt = true
 
 [functions.booking-status]
 verify_jwt = true
+
+[functions.claim-guest-bookings]
+verify_jwt = true

@@ -17,6 +17,7 @@
  */
 
 import { supabase } from './supabase';
+import { callClaimGuestBookings } from './api';
 import type { ServerBookingRow, ServerBookingStatus, ServerGuest } from '../data/serverBooking';
 
 // ---------------------------------------------------------------------------
@@ -36,6 +37,11 @@ export interface AccountClient {
       options?: { shouldCreateUser?: boolean };
     }): Promise<{ error: unknown }>;
     signOut(options?: { scope?: 'global' | 'local' | 'others' }): Promise<{ error: unknown }>;
+    /** Optional so a fake that never signs in need not provide them. Absent means no claim. */
+    getSession?(): Promise<{
+      data: { session: { access_token: string; user?: { is_anonymous?: boolean } } | null };
+    }>;
+    refreshSession?(): Promise<{ error: unknown }>;
   };
   rpc(fn: 'my_bookings'): PromiseLike<{ data: unknown; error: unknown }>;
 }
@@ -219,13 +225,52 @@ export async function verifySignIn(
   rawEmail: string,
   rawCode: string,
   client: AccountClient | null = appClient,
+  claim: typeof callClaimGuestBookings = callClaimGuestBookings,
 ): Promise<AccountResult> {
   if (!client) return { ok: false, reason: 'demo' };
   const email = normaliseEmail(rawEmail);
   if (!isValidEmail(email)) return { ok: false, reason: 'invalid_email' };
   const token = normaliseCode(rawCode);
   if (!isValidCode(token)) return { ok: false, reason: 'invalid_code' };
-  return settle(() => client.auth.verifyOtp({ email, token, type: 'email' }));
+
+  // `verifyOtp` replaces the anonymous session. Keep its access token first: it is the proof, sent
+  // to `claim-guest-bookings`, that this phone controls the guest whose bookings are to move.
+  const guestToken = await anonymousAccessToken(client);
+  const result = await settle(() => client.auth.verifyOtp({ email, token, type: 'email' }));
+  if (!result.ok || !guestToken) return result;
+
+  await claimBookings(client, guestToken, claim);
+  return result;
+}
+
+/** The access token of the current session when it belongs to an anonymous user, else null. */
+async function anonymousAccessToken(client: AccountClient): Promise<string | null> {
+  try {
+    const session = (await client.auth.getSession?.())?.data.session;
+    return session?.user?.is_anonymous === true ? session.access_token : null;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Best effort and silent: a failure leaves the bookings on the guest, and signing in has already
+ * worked. If any moved, refresh the session so `startLiveSync` (which fired on `SIGNED_IN` before
+ * the move) fetches the account's bookings again.
+ */
+async function claimBookings(
+  client: AccountClient,
+  guestToken: string,
+  claim: typeof callClaimGuestBookings,
+): Promise<void> {
+  try {
+    const accountToken = (await client.auth.getSession?.())?.data.session?.access_token;
+    if (!accountToken) return;
+    const moved = await claim(accountToken, guestToken);
+    if (moved && moved > 0) await client.auth.refreshSession?.();
+  } catch {
+    // leave the guest's bookings where they are
+  }
 }
 
 /**

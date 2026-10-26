@@ -42,7 +42,7 @@ describe('account copy', () => {
     expect(messageFor('something_else' as FailReason)).toBe(messageFor('unknown'));
   });
 
-  it('the sign-in warning says the tickets stay on this phone and go if the browser is cleared', () => {
+  it('the sign-in warning says the tickets move, and stay on this phone only if the move fails', () => {
     expect(SIGN_IN_ORPHAN_WARNING).toMatch(/this phone/i);
     expect(SIGN_IN_ORPHAN_WARNING).toMatch(/clear/i);
     expect(SIGN_IN_ORPHAN_WARNING).not.toMatch(/!/);
