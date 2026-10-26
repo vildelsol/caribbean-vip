@@ -75,6 +75,8 @@ PROBES = {
     "20261022000002_bookings_ticket_token_column_privilege": """
        case when not has_column_privilege('anon','bookings','ticket_token','select')
             then 'applied' else 'missing' end""",
+    "20261026000001_storage_policies_complete": """
+       case when exists (select 1 from pg_proc where proname='vendor_documents_editable') then 'applied' else 'missing' end""",
 }
 
 HEADER = """\
