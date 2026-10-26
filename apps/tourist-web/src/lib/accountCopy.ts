@@ -14,7 +14,7 @@ export const LOSS_WARNING =
 
 /** Shown before signing in over an anonymous session that holds tickets (`shouldConfirmSignIn`). */
 export const SIGN_IN_ORPHAN_WARNING =
-  'Tickets you bought on this phone will only stay on this phone. They will not move to the account you sign in to, and they will be lost if this browser is cleared.';
+  'Tickets you bought on this phone will move to the account you sign in to. If the move fails, they stay on this phone only, and they will be lost if this browser is cleared.';
 
 /** Live mode: Irie cannot move a paid booking yet, so it says who can. */
 export const RESCHEDULE_UNAVAILABLE =

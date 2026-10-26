@@ -1598,6 +1598,7 @@ RLS policies, functions, demo vendors, experiences and availability slots for th
 | `checkout-session` | `supabase/functions/checkout-session/index.ts` | Creates Stripe Checkout session, inserts pending booking |
 | `stripe-webhook` | `supabase/functions/stripe-webhook/index.ts` | Handles `checkout.session.completed`, confirms booking, stores `ticket_token` |
 | `booking-status` | `supabase/functions/booking-status/index.ts` | Guest polls after Stripe redirect — returns status + ticketToken |
+| `claim-guest-bookings` | `supabase/functions/claim-guest-bookings/index.ts` | After an email sign-in, moves the anonymous guest's bookings into the account. Needs both users' tokens (account as bearer, guest in body); calls `transfer_guest_bookings` |
 | `resolve-slot` | `supabase/functions/resolve-slot/index.ts` | Maps (experience title + date + time) → DB slot UUID + option UUIDs |
 
 **Shared adapters written:**
