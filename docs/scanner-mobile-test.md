@@ -8,8 +8,8 @@ Staging only. The demo scanner is untouched and must still work afterwards.
 ## Before you start
 
 1. PR #7 merged and its CI green (`gh pr checks 7`).
-2. Staging project `xtyuvtlnfougbjadkull` has every migration applied, including
-   `20261019*` and `20261020*`. `scripts/db-push.sh` refuses a non-empty database, so apply the
+2. Staging project `fsnkzpxgrckfifmhwsff` has every migration applied, including
+   `20261019*` and `20261020*`. `scripts/db-push.sh` refuses a non-empty database, so apply any
    missing files in filename order from the SQL editor, or with `supabase db push`.
 3. Auth settings: email provider on, and the vendor portal URL in **Auth, URL configuration,
    Redirect URLs**. Without it the magic link lands on the wrong host.
@@ -26,7 +26,7 @@ Supabase dashboard (**Settings, API** and **Edge Functions, Secrets**).
 Use `read -rs` so the secrets never enter shell history:
 
 ```bash
-export SUPABASE_URL="https://xtyuvtlnfougbjadkull.supabase.co"
+export SUPABASE_URL="https://fsnkzpxgrckfifmhwsff.supabase.co"
 read -rs SUPABASE_SERVICE_ROLE_KEY && export SUPABASE_SERVICE_ROLE_KEY
 read -rs VOUCHER_HMAC_SECRET && export VOUCHER_HMAC_SECRET
 export SCANNER_EMAIL="you+scanner@example.com"

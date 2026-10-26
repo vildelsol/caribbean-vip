@@ -48,7 +48,7 @@ if (hmacSecret.length < 32) {
 }
 // Hard allowlist. This script mints accounts, fake confirmed bookings and redeemable vouchers, so
 // it must never reach a project that is not named here. Add a staging ref; never a production one.
-const STAGING_HOSTS = ['xtyuvtlnfougbjadkull.supabase.co'];
+const STAGING_HOSTS = ['fsnkzpxgrckfifmhwsff.supabase.co'];
 let host = '';
 try {
   host = new URL(url).hostname;
