@@ -1640,9 +1640,16 @@ that project, kept for history. On the new project:
   confirms the booking and issues one active voucher; a different user gets 404 from
   `booking-status`; a full refund in Stripe moves the booking to `refunded` and the voucher to
   `cancelled`.
-- **Not yet verified:** the nested PostgREST embed in `getSlot`, SMTP (about 2 emails an hour), the
-  `{{ .Token }}` email template, Storage bucket policies, and a rate limit or CAPTCHA on anonymous
-  sign-in (until then the pending-checkout limits can be bypassed by creating free accounts).
+- **Also verified live on 2026-10-26:** the nested PostgREST embed in `getSlot` (as `anon`; the
+  functions use the service role); Storage buckets and policies, by rolled-back transactions as a
+  vendor member, a listing manager and a stranger. That found three gaps, closed by
+  `20261026000001_storage_policies_complete.sql` (applied to staging-2): no UPDATE policy on
+  `experience-media`, any member rather than a listing manager could write media, and no way to
+  replace a `vendor-documents` file during review. The local harness has no storage schema, so
+  `pnpm db:test` cannot cover these policies.
+- **Not yet verified:** SMTP (about 2 emails an hour), the `{{ .Token }}` email template, and a rate
+  limit or CAPTCHA on anonymous sign-in (until then the pending-checkout limits can be bypassed by
+  creating free accounts).
 - The Vercel app has **not** been repointed. Change its environment only after deciding whether the
   investor demo may keep depending on the paused project; a separate preview deployment against the
   new project avoids the question.
