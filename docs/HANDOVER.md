@@ -1616,13 +1616,44 @@ RLS policies, functions, demo vendors, experiences and availability slots for th
 - `apps/tourist-web/src/App.tsx` — route `<Route path="/booking-return" element={<BookingReturn />} />`
 - `supabase/migrations/20260802000013_ticket_token.sql` — `alter table bookings add column ticket_token text`
 
+**Current staging project, as of 2026-10-26: `caribbean-vip-staging-2`, ref `fsnkzpxgrckfifmhwsff`.**
+
+The project below (`xtyuvtlnfougbjadkull`, `caribbean-vip-staging`) is **paused** and holds the demo
+data. Leave it paused: the Vercel tourist app and its Stripe webhook may still point at it, and
+nothing in this repository targets it any more. The steps that follow are the 2026-09-21 record of
+that project, kept for history. On the new project:
+
+- Schema: all 25 migrations and the seed, applied with `scripts/db-push.sh` through the session
+  pooler (`aws-0-us-east-1.pooler.supabase.com:5432`, user `postgres.<ref>`); the direct host is
+  IPv6-only.
+- Functions: all four deployed with `./scripts/deploy-functions.sh fsnkzpxgrckfifmhwsff`.
+- Secrets: `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, `VOUCHER_HMAC_SECRET` (generated for this
+  project only), `APP_URL`.
+- Stripe webhook: `https://fsnkzpxgrckfifmhwsff.supabase.co/functions/v1/stripe-webhook`, snapshot
+  payloads, API version `2026-09-30.endive`, five events: `checkout.session.completed`,
+  `checkout.session.async_payment_succeeded`, `checkout.session.async_payment_failed`,
+  `checkout.session.expired`, `charge.refunded`. The old endpoint lacked `charge.refunded`, so a
+  refund could never arrive.
+- Anonymous sign-in: on.
+- **Verified live on 2026-10-26:** `auth.getUser` accepts an anonymous token; the anon key alone gets
+  401 from `checkout-session` and `booking-status`; a spoofed `userId` gets 403; a test-card payment
+  confirms the booking and issues one active voucher; a different user gets 404 from
+  `booking-status`; a full refund in Stripe moves the booking to `refunded` and the voucher to
+  `cancelled`.
+- **Not yet verified:** the nested PostgREST embed in `getSlot`, SMTP (about 2 emails an hour), the
+  `{{ .Token }}` email template, Storage bucket policies, and a rate limit or CAPTCHA on anonymous
+  sign-in (until then the pending-checkout limits can be bypassed by creating free accounts).
+- The Vercel app has **not** been repointed. Change its environment only after deciding whether the
+  investor demo may keep depending on the paused project; a separate preview deployment against the
+  new project avoids the question.
+
 **Status of each step as of 2026-09-21:**
 
 1. ~~**Deploy Edge Functions**~~ — **done.** All four are ACTIVE on `caribbean-vip-staging`
    (ref `xtyuvtlnfougbjadkull`) and answer correctly. Redeploy with:
 
    ```bash
-   ./scripts/deploy-functions.sh xtyuvtlnfougbjadkull
+   ./scripts/deploy-functions.sh <project-ref>
    ```
 
    Use the script, not bare `supabase functions deploy`. Two flags are load-bearing: `--import-map
