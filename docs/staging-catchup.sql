@@ -641,6 +641,11 @@ begin;
 --      carriage returns. A scanner that appends a newline would hash to something else entirely.
 --      Hence the regexp, which matches `\s` as `.trim()` does.
 --
+-- `sha256(bytea)` is built in (PG 11+). `digest()` is not usable here: Supabase installs pgcrypto
+-- in the `extensions` schema, outside this function's `search_path`, so it fails with "function
+-- digest(bytea, unknown) does not exist" on a real project while passing on the plain-Postgres
+-- test harness.
+--
 -- It lives in its own function so the entry point and `supabase/tests/voucher_hash.test.sql`
 -- exercise the same expression rather than two copies that can drift.
 
@@ -654,7 +659,7 @@ as $$
     translate(
       replace(
         encode(
-          digest(convert_to(regexp_replace(p_token, '^\s+|\s+$', '', 'g'), 'UTF8'), 'sha256'),
+          sha256(convert_to(regexp_replace(p_token, '^\s+|\s+$', '', 'g'), 'UTF8')),
           'base64'
         ),
         E'\n', ''
