@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, type ReactNode } from 'react';
+import { usePathname } from 'next/navigation';
 import { supabase, isSupabaseConfigured } from '../lib/supabase';
 import { useVendorSession } from '../lib/session';
 
@@ -8,6 +9,7 @@ type AuthView = 'signin' | 'signup' | 'verify-signin' | 'verify-signup';
 
 export function AuthGate({ children }: { children: ReactNode }) {
   const { loading, session, memberships } = useVendorSession();
+  const pathname = usePathname();
   const [view, setView] = useState<AuthView>('signin');
   const [email, setEmail] = useState('');
   const [code, setCode] = useState('');
@@ -156,7 +158,9 @@ export function AuthGate({ children }: { children: ReactNode }) {
     );
   }
 
-  if (memberships.length === 0) {
+  // A signed-in user with no organization must reach /onboarding to create one; gating it here is a dead end.
+  const onOnboarding = pathname === '/onboarding' || pathname?.startsWith('/onboarding/');
+  if (memberships.length === 0 && !onOnboarding) {
     return (
       <Panel title="Pending approval">
         <p className="card__note">
