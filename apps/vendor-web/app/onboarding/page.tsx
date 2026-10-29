@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { useVendorSession } from '../../lib/session';
 import {
   ApplicationInvalid,
   ONBOARDING_BUSINESS_TYPES,
@@ -25,6 +26,7 @@ import {
  */
 export default function OnboardingPage() {
   const router = useRouter();
+  const { refreshMemberships } = useVendorSession();
   const [form, setForm] = useState({
     businessName: '',
     contactName: '',
@@ -76,6 +78,9 @@ export default function OnboardingPage() {
     setError(null);
     try {
       await submitApplication(form);
+      // The new vendor_members row is not in the session's cached list; without this the gate
+      // still sees no organisation and sends the applicant back to /onboarding.
+      refreshMemberships();
       router.push('/billing');
     } catch (err) {
       if (err instanceof ApplicationInvalid) setError(err.message);

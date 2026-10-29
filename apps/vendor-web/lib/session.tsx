@@ -53,6 +53,8 @@ interface VendorSessionValue {
    */
   canManageListings: boolean;
   signOut: () => Promise<void>;
+  /** Re-read `vendor_members`. Call after an action that creates a membership (onboarding). */
+  refreshMemberships: () => void;
 }
 
 const Ctx = createContext<VendorSessionValue | null>(null);
@@ -87,6 +89,7 @@ export function VendorSessionProvider({ children }: { children: ReactNode }) {
   const [activeOrgId, setActiveOrgId] = useState<string | null>(
     isSupabaseConfigured ? null : DEMO_MEMBERSHIP.vendor_org_id,
   );
+  const [membershipsKey, setMembershipsKey] = useState(0);
 
   useEffect(() => {
     if (!isSupabaseConfigured) {
@@ -142,7 +145,7 @@ export function VendorSessionProvider({ children }: { children: ReactNode }) {
     return () => {
       active = false;
     };
-  }, [userId]);
+  }, [userId, membershipsKey]);
 
   const value = useMemo<VendorSessionValue>(
     () => ({
@@ -160,6 +163,7 @@ export function VendorSessionProvider({ children }: { children: ReactNode }) {
       signOut: async () => {
         await supabase.auth.signOut();
       },
+      refreshMemberships: () => setMembershipsKey((k) => k + 1),
     }),
     [loading, session, memberships, activeOrgId],
   );
