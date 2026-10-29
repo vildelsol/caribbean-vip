@@ -2,11 +2,15 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import { Crest } from '../../components/Crest';
-import { useCanManageListings } from '../../lib/session';
+import { useActiveMembership, useCanManageListings } from '../../lib/session';
+import { useIslandTimezone } from '../../lib/island';
+import { loadListings, type VendorListing } from '../../lib/listings';
+import { dayKey } from '../../lib/operations';
 import { NO_LISTING_PERMISSION } from '../../lib/permissions';
 import { vendorListings } from '../../lib/vendorData';
 import {
   SlotInvalid,
+  addSlots,
   isDemoAvailability,
   loadAvailability,
   setSlotCapacity,
@@ -31,8 +35,13 @@ type SlotKey = string;
  */
 export default function Availability() {
   const canManage = useCanManageListings();
-  const listings = vendorListings();
+  const orgId = useActiveMembership()?.vendor_org_id ?? null;
+  const timeZone = useIslandTimezone();
+  // Live reads the organisation's own listings. Demo keeps its generated catalogue.
+  const [liveListings, setLiveListings] = useState<VendorListing[] | null>(null);
+  const listings = isDemoAvailability ? vendorListings() : (liveListings ?? []);
   const [selectedId, setSelectedId] = useState(listings[0]?.id ?? '');
+  const [reload, setReload] = useState(0);
   const [days, setDays] = useState<Day[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -42,12 +51,32 @@ export default function Availability() {
   const primary = listings.find((l) => l.id === selectedId) ?? listings[0];
 
   useEffect(() => {
+    if (isDemoAvailability || !orgId) return;
+    let active = true;
+    loadListings(orgId)
+      .then((rows) => {
+        if (active) setLiveListings(rows);
+      })
+      .catch((e) => {
+        if (active) {
+          setLiveListings([]);
+          setError(e instanceof Error ? e.message : 'Could not load your listings.');
+        }
+      });
+    return () => {
+      active = false;
+    };
+  }, [orgId]);
+
+  useEffect(() => {
     if (!primary) return;
+    // Live times are the island's: wait for its timezone instead of guessing the browser's.
+    if (!isDemoAvailability && !timeZone) return;
     let active = true;
     setLoading(true);
     void (async () => {
       try {
-        const rows = await loadAvailability(primary, 7);
+        const rows = await loadAvailability(primary, 7, timeZone ?? undefined);
         if (active) {
           setDays(rows);
           setError(null);
@@ -61,7 +90,7 @@ export default function Availability() {
     return () => {
       active = false;
     };
-  }, [primary]);
+  }, [primary, timeZone, reload]);
 
   const openEdit = (key: SlotKey, slot: Slot) => {
     setError(null);
@@ -96,7 +125,9 @@ export default function Availability() {
   if (!primary) {
     return (
       <main className="page">
-        <p className="empty-line">No listings yet.</p>
+        <p className="empty-line">
+          {!isDemoAvailability && liveListings === null ? 'Loading your listings…' : 'No listings yet.'}
+        </p>
       </main>
     );
   }
@@ -128,6 +159,12 @@ export default function Availability() {
                   View only. {NO_LISTING_PERMISSION}
                 </p>
               )}
+              {!isDemoAvailability && primary.status !== 'approved' && (
+                <p className="card__note">
+                  Guests cannot see this experience until it is approved, so nobody can book these
+                  departures yet.
+                </p>
+              )}
               {isDemoAvailability && (
                 <p className="card__note card__note--demo">
                   Demo mode — capacity changes reset when you reload.
@@ -136,7 +173,7 @@ export default function Availability() {
             </div>
             <select
               className="input select-sm"
-              value={selectedId}
+              value={primary.id}
               onChange={(e) => { setSelectedId(e.target.value); setEditingSlot(null); setError(null); }}
               aria-label="Choose listing"
             >
@@ -145,6 +182,16 @@ export default function Availability() {
               ))}
             </select>
           </div>
+
+          {!isDemoAvailability && canManage && timeZone ? (
+            <AddDeparture
+              key={primary.id}
+              experienceId={primary.id}
+              durationMinutes={primary.durationMinutes}
+              timeZone={timeZone}
+              onAdded={() => setReload((k) => k + 1)}
+            />
+          ) : null}
 
           {loading && <p className="card__note">Loading the calendar…</p>}
 
@@ -223,5 +270,88 @@ export default function Availability() {
         </section>
       </main>
     </>
+  );
+}
+
+/**
+ * Schedule a departure, optionally repeated daily. Live only: the calendar is generated in demo
+ * mode, so there is nothing to add to.
+ */
+function AddDeparture({
+  experienceId,
+  durationMinutes,
+  timeZone,
+  onAdded,
+}: {
+  experienceId: string;
+  durationMinutes: number;
+  timeZone: string;
+  onAdded: () => void;
+}) {
+  const [date, setDate] = useState(() => dayKey(new Date(), timeZone));
+  const [time, setTime] = useState('09:00');
+  const [capacity, setCapacity] = useState('12');
+  const [repeat, setRepeat] = useState('1');
+  const [busy, setBusy] = useState(false);
+  const [message, setMessage] = useState<{ ok: boolean; text: string } | null>(null);
+
+  const submit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setBusy(true);
+    setMessage(null);
+    try {
+      const added = await addSlots(true, {
+        experienceId,
+        date,
+        time,
+        capacity: Number(capacity),
+        durationMinutes,
+        repeatDays: Number(repeat),
+        timeZone,
+      });
+      setMessage({ ok: true, text: `Added ${added} ${added === 1 ? 'departure' : 'departures'}.` });
+      onAdded();
+    } catch (err) {
+      setMessage({
+        ok: false,
+        text: err instanceof SlotInvalid ? err.message : `Could not add. ${err instanceof Error ? err.message : 'Please try again.'}`,
+      });
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <form onSubmit={submit} style={{ display: 'grid', gap: 'var(--s-sm)', marginBottom: 'var(--s-md)' }}>
+      <p className="card__note">
+        <strong>Add a departure</strong> ({timeZone.replace('_', ' ')} time)
+      </p>
+      <div style={{ display: 'grid', gap: 'var(--s-sm)', gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))' }}>
+        <label className="field">
+          <span className="field__label">First date</span>
+          <input type="date" className="input" value={date} onChange={(e) => setDate(e.target.value)} required />
+        </label>
+        <label className="field">
+          <span className="field__label">Time</span>
+          <input type="time" className="input" value={time} onChange={(e) => setTime(e.target.value)} required />
+        </label>
+        <label className="field">
+          <span className="field__label">Seats</span>
+          <input type="number" className="input" min={1} value={capacity} onChange={(e) => setCapacity(e.target.value)} required />
+        </label>
+        <label className="field">
+          <span className="field__label">Repeat for (days)</span>
+          <input type="number" className="input" min={1} max={60} value={repeat} onChange={(e) => setRepeat(e.target.value)} required />
+        </label>
+      </div>
+      <button type="submit" className="btn btn--primary btn--sm" disabled={busy}>
+        {busy ? 'Adding…' : 'Add departure'}
+      </button>
+      {message ? (
+        <p className={message.ok ? 'card__note' : 'field-error'} role={message.ok ? 'status' : 'alert'}>
+          {message.text}
+        </p>
+      ) : null}
+    </form>
   );
 }
