@@ -1,6 +1,10 @@
+'use client';
+
 import Link from 'next/link';
 import { Crest } from '../components/Crest';
-import { activeVendor, earningsFor, formatUsd, todaysBookings, vendorListings } from '../lib/vendorData';
+import { formatUsd } from '../lib/vendorData';
+import { useOperations } from '../lib/useOperations';
+import { OperationsStatus } from '../components/OperationsStatus';
 
 /**
  * Today — the operating picture.
@@ -11,10 +15,10 @@ import { activeVendor, earningsFor, formatUsd, todaysBookings, vendorListings } 
  * instead of being the only screen.
  */
 export default function Today() {
-  const vendor = activeVendor();
-  const bookings = todaysBookings();
-  const earnings = earningsFor(bookings);
-  const listings = vendorListings();
+  const ops = useOperations();
+  if (ops.status !== 'ready') return <OperationsStatus state={ops} title="Today" />;
+
+  const { vendorName, today: bookings, todayEarnings: earnings, listingCount } = ops.data;
   const now = new Date();
 
   const upcoming = bookings.filter((b) => b.status === 'confirmed');
@@ -26,7 +30,7 @@ export default function Today() {
         <div className="masthead__inner">
           <Crest />
           <div>
-            <p className="masthead__sub">{vendor.tradingName}</p>
+            <p className="masthead__sub">{vendorName}</p>
             <h1 className="masthead__title">Today</h1>
           </div>
         </div>
@@ -74,8 +78,8 @@ export default function Today() {
           <div className="card__head">
             <h2>Today&rsquo;s manifest</h2>
             <p className="card__note">
-              Everyone booked across your {listings.length}{' '}
-              {listings.length === 1 ? 'listing' : 'listings'}, in departure order.
+              Everyone booked across your {listingCount}{' '}
+              {listingCount === 1 ? 'listing' : 'listings'}, in departure order.
             </p>
           </div>
 

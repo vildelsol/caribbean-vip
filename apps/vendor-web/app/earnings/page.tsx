@@ -1,11 +1,9 @@
+'use client';
+
 import { Crest } from '../../components/Crest';
-import {
-  COMMISSION_RATE,
-  earningsFor,
-  formatUsd,
-  todaysBookings,
-  vendorListings,
-} from '../../lib/vendorData';
+import { OperationsStatus } from '../../components/OperationsStatus';
+import { formatUsd } from '../../lib/vendorData';
+import { useOperations } from '../../lib/useOperations';
 
 /**
  * Earnings — V-07, "see gross, platform fee and estimated net separately".
@@ -15,24 +13,10 @@ import {
  * the rate. The rate is therefore stated as a percentage as well as an amount.
  */
 export default function Earnings() {
-  const bookings = todaysBookings();
-  const today = earningsFor(bookings);
+  const ops = useOperations();
+  if (ops.status !== 'ready') return <OperationsStatus state={ops} title="Earnings" />;
 
-  // A settled week behind today, derived from the same manifest so the two screens agree.
-  const weekMultiplier = 5.4;
-  const week = {
-    grossMinor: Math.round(today.grossMinor * weekMultiplier),
-    commissionMinor: Math.round(today.commissionMinor * weekMultiplier),
-    netMinor: Math.round(today.netMinor * weekMultiplier),
-  };
-
-  const byListing = vendorListings()
-    .map((l) => {
-      const rows = bookings.filter((b) => b.experienceId === l.id);
-      return { listing: l, earnings: earningsFor(rows) };
-    })
-    .filter((r) => r.earnings.bookings > 0)
-    .sort((a, b) => b.earnings.grossMinor - a.earnings.grossMinor);
+  const { todayEarnings: today, week, byListing, commissionPct } = ops.data;
 
   return (
     <>
@@ -63,7 +47,9 @@ export default function Earnings() {
             <div className="ledger__row ledger__row--minus">
               <span className="ledger__label">
                 Platform fee
-                <span className="ledger__rate">{Math.round(COMMISSION_RATE * 100)}%</span>
+                <span className="ledger__rate">
+                  {commissionPct === null ? '—' : <>{commissionPct}%</>}
+                </span>
               </span>
               <span className="ledger__value">−{formatUsd(today.commissionMinor)}</span>
             </div>
@@ -104,9 +90,9 @@ export default function Earnings() {
               <h2>By listing, today</h2>
             </div>
             <ul className="bylisting">
-              {byListing.map(({ listing, earnings }) => (
-                <li key={listing.id} className="bylisting__row">
-                  <span className="bylisting__name">{listing.title}</span>
+              {byListing.map(({ id, title, earnings }) => (
+                <li key={id} className="bylisting__row">
+                  <span className="bylisting__name">{title}</span>
                   <span className="bylisting__meta">
                     {earnings.bookings} × {earnings.guests} guests
                   </span>
