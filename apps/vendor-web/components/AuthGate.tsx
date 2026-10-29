@@ -52,7 +52,7 @@ export function AuthGate({ children }: { children: ReactNode }) {
       return (
         <Panel title="Check your email">
           <p className="card__note">
-            We sent a 6-digit code to <strong>{email}</strong>. Enter it below to{' '}
+            We sent a code to <strong>{email}</strong>. Enter it below to{' '}
             {view === 'verify-signup' ? 'create your account' : 'sign in'}.
           </p>
           <form onSubmit={verifyOtp} style={{ display: 'grid', gap: 'var(--s-md)' }}>
@@ -63,15 +63,15 @@ export function AuthGate({ children }: { children: ReactNode }) {
                 inputMode="numeric"
                 className="input input--code"
                 value={code}
-                onChange={(e) => setCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
-                placeholder="000000"
-                maxLength={6}
+                onChange={(e) => setCode(e.target.value.replace(/\D/g, '').slice(0, 10))}
+                placeholder="Code from the email"
+                maxLength={10}
                 required
                 autoComplete="one-time-code"
                 autoFocus
               />
             </label>
-            <button type="submit" disabled={busy || code.length !== 6} className="btn btn--primary btn--full">
+            <button type="submit" disabled={busy || code.length < 6} className="btn btn--primary btn--full">
               {busy ? 'Verifying…' : 'Confirm'}
             </button>
             {message ? <p className="auth-error">{message}</p> : null}
