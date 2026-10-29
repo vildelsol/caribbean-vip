@@ -878,6 +878,16 @@
   color: #5c5a52;
 }
 
+.pill--review {
+  background: #d9ecea;
+  color: #16302a;
+}
+
+.pill--attention {
+  background: #f3ddd2;
+  color: #7a2f18;
+}
+
 .empty-line {
   margin: 0;
   padding: 10px 0;

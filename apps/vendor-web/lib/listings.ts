@@ -10,6 +10,7 @@ import { demoBackend } from '@cvip/demo';
 import { supabase, isSupabaseConfigured } from './supabase';
 import { NO_LISTING_PERMISSION } from './permissions';
 import { vendorListings } from './vendorData';
+import { parseListingStatus, type ListingStatus } from './listingStatus';
 
 /**
  * The listings write path — V-02.
@@ -48,7 +49,9 @@ export interface VendorListing {
   fromAmountMinor: number;
   durationMinutes: number;
   ratingCount: number;
-  status: 'approved' | 'draft';
+  status: ListingStatus;
+  /** The reviewer's reason, kept on the row; shown when a listing needs changes. */
+  reviewNotes: string | null;
 }
 
 export interface NewListingInput {
@@ -87,7 +90,7 @@ function requireManager(canManage: boolean): void {
 }
 
 /** The columns a listing write touches. Everything else on the row is set once, at creation. */
-const SELECT = 'id, title, summary, from_amount_minor, duration_minutes, status';
+const SELECT = 'id, title, summary, from_amount_minor, duration_minutes, status, review_notes';
 
 type Row = {
   id: string;
@@ -96,6 +99,7 @@ type Row = {
   from_amount_minor: number;
   duration_minutes: number;
   status: string;
+  review_notes: string | null;
 };
 
 function fromRow(r: Row, ratingCount = 0): VendorListing {
@@ -106,7 +110,8 @@ function fromRow(r: Row, ratingCount = 0): VendorListing {
     fromAmountMinor: r.from_amount_minor,
     durationMinutes: r.duration_minutes,
     ratingCount,
-    status: r.status === 'approved' ? 'approved' : 'draft',
+    status: parseListingStatus(r.status),
+    reviewNotes: r.review_notes ?? null,
   };
 }
 
@@ -163,6 +168,7 @@ function demoStore(): VendorListing[] {
     durationMinutes: e.durationMinutes,
     ratingCount: e.ratingCount,
     status: e.status === 'approved' ? 'approved' : 'draft',
+    reviewNotes: null,
   }));
   return demoRows;
 }
@@ -251,6 +257,7 @@ export async function createListing(
       ...nums,
       ratingCount: 0,
       status: 'draft',
+      reviewNotes: null,
     };
     demoStore().push(next);
     return next;
@@ -292,16 +299,27 @@ export async function setListingStatus(
   canManage: boolean,
   orgId: string | null,
   id: string,
-  status: 'approved' | 'draft',
+  status: ListingStatus,
 ): Promise<VendorListing> {
   requireManager(canManage);
   if (isDemoListings || !orgId) {
+    if (status !== 'approved' && status !== 'draft') {
+      throw new ListingInvalid('The demo only publishes and unpublishes.');
+    }
     const rows = demoStore();
     const i = rows.findIndex((l) => l.id === id);
     if (i === -1) throw new ListingInvalid('That listing no longer exists.');
     const next: VendorListing = { ...rows[i]!, status };
     rows[i] = next;
     return next;
+  }
+
+  /*
+   * A vendor never sets 'approved' or 'rejected': that is the review's decision, and the database
+   * refuses it (guard_listing_review_fields). Refusing here too turns that into a sentence.
+   */
+  if (status === 'approved' || status === 'rejected') {
+    throw new ListingInvalid('Only Platform review can approve or reject a listing.');
   }
 
   const { data, error } = await supabase

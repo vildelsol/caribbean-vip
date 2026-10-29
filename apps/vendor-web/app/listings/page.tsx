@@ -18,6 +18,7 @@ import {
   type DestinationOption,
   type VendorListing,
 } from '../../lib/listings';
+import { listingAction, statusView } from '../../lib/listingStatus';
 
 const EMPTY_FORM = {
   title: '',
@@ -154,7 +155,9 @@ export default function Listings() {
 
   const toggle = (l: VendorListing) =>
     run(async () => {
-      const next = await setListingStatus(canManage, orgId, l.id, l.status === 'approved' ? 'draft' : 'approved');
+      const action = listingAction(l.status, isDemoListings);
+      if (!action) return;
+      const next = await setListingStatus(canManage, orgId, l.id, action.to);
       setListings((prev) => prev.map((x) => (x.id === next.id ? next : x)));
     });
 
@@ -186,7 +189,8 @@ export default function Listings() {
     });
 
   const live = listings.filter((l) => l.status === 'approved').length;
-  const draft = listings.filter((l) => l.status !== 'approved').length;
+  const inReview = listings.filter((l) => l.status === 'pending_review').length;
+  const draft = listings.length - live - inReview;
 
   return (
     <>
@@ -206,7 +210,7 @@ export default function Listings() {
             <div>
               <h2>Your experiences</h2>
               <p className="card__note">
-                {live} live · {draft} in draft
+                {live} live · {draft} in draft{inReview > 0 ? ` · ${inReview} in review` : null}
               </p>
             </div>
             <button
@@ -253,12 +257,15 @@ export default function Listings() {
               <li key={l.id} className={`listing ${saved === l.id ? 'listing--saved' : ''}`}>
                 <div className="listing__main">
                   <div className="listing__head">
-                    <span className={`pill ${l.status === 'approved' ? 'pill--live' : 'pill--draft'}`}>
-                      {l.status === 'approved' ? 'Live' : 'Draft'}
+                    <span className={`pill ${statusView(l.status).pillClass}`}>
+                      {statusView(l.status).label}
                     </span>
                     <h3 className="listing__title">{l.title}</h3>
                   </div>
                   <p className="listing__summary">{l.summary || 'No summary yet — add one so guests know what this is.'}</p>
+                  {l.status === 'rejected' && l.reviewNotes ? (
+                    <p className="listing__summary">Needs changes: {l.reviewNotes}</p>
+                  ) : null}
                   <p className="listing__meta">
                     {formatUsd(l.fromAmountMinor)} per adult ·{' '}
                     {Math.round(l.durationMinutes / 60)} hr{l.durationMinutes >= 120 ? 's' : ''} ·{' '}
@@ -275,15 +282,20 @@ export default function Listings() {
                   >
                     Edit
                   </button>
-                  <button
-                    type="button"
-                    className={`btn btn--sm ${l.status === 'approved' ? 'btn--ghost' : 'btn--primary'}`}
-                    onClick={() => void toggle(l)}
-                    disabled={!canManage}
-                    title={canManage ? undefined : NO_LISTING_PERMISSION}
-                  >
-                    {l.status === 'approved' ? 'Unpublish' : 'Publish'}
-                  </button>
+                  {(() => {
+                    const action = listingAction(l.status, isDemoListings);
+                    return action ? (
+                      <button
+                        type="button"
+                        className={`btn btn--sm ${action.quiet ? 'btn--ghost' : 'btn--primary'}`}
+                        onClick={() => void toggle(l)}
+                        disabled={!canManage}
+                        title={canManage ? undefined : NO_LISTING_PERMISSION}
+                      >
+                        {action.label}
+                      </button>
+                    ) : null;
+                  })()}
                 </div>
                 {saved === l.id && (
                   <p className="listing__saved-notice" aria-live="polite">Saved</p>
