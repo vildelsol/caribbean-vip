@@ -197,7 +197,7 @@ describe('safeFileName', () => {
     // The bucket policy reads the first folder of the path; a name must never add one.
     expect(traversal).not.toMatch(/[\\/]/);
     expect(traversal.startsWith('.')).toBe(false);
-    expect(safeFileName('licence (final) é.pdf')).not.toMatch(/[^\w.\-]/);
+    expect(safeFileName('licence (final) é.pdf')).not.toMatch(/[^\w.-]/);
   });
   it('never returns an empty name', () => {
     expect(safeFileName('///')).toBe('_');
