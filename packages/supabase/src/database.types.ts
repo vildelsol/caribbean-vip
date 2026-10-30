@@ -158,6 +158,7 @@ export interface Database {
       saved_items: UntypedTable;
       trips: UntypedTable;
       bookings: UntypedTable;
+      payments: UntypedTable;
       vouchers: UntypedTable;
       promotions: UntypedTable;
       availability_slots: UntypedTable;

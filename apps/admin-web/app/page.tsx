@@ -15,7 +15,8 @@ interface Area {
 const areas: Area[] = [
   {
     name: 'Dashboard',
-    milestone: 'M5',
+    milestone: 'Built',
+    href: '/dashboard',
     detail: 'Pending reviews, booking volume, gross value, active promotions, failed payments, redemption anomalies.',
   },
   {
