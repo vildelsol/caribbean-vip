@@ -524,8 +524,9 @@ function VendorCard({
 }
 
 /**
- * `flagged` is an approved vendor short of documents. Plain "approved" next to a red "needs
- * attention" reads as a contradiction, so the chip says what is true: public, but short.
+ * `flagged` is an approved vendor short of documents. "Approved" means nothing is needed from an
+ * admin, so a vendor in Needs attention shows as pending. This is a label only: the stored status
+ * stays `approved`, which is what keeps the vendor and its listings public until an admin acts.
  */
 function StatusChip({ status, flagged = false }: { status: VendorStatus; flagged?: boolean }) {
   return (
@@ -538,7 +539,7 @@ function StatusChip({ status, flagged = false }: { status: VendorStatus; flagged
         flexShrink: 0,
       }}
     >
-      {flagged ? 'public · documents short' : status.replace('_', ' ')}
+      {flagged ? 'pending' : status.replace('_', ' ')}
     </span>
   );
 }
