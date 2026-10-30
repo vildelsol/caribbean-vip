@@ -150,3 +150,20 @@ export function needsAttention(
   const requiredOutstanding = readiness.blocking.length;
   return awaitingReview > 0 || requiredOutstanding > 0 ? { awaitingReview, requiredOutstanding } : null;
 }
+
+export type ReviewLane = 'waiting' | 'attention' | 'approved';
+
+/**
+ * Sorts vendors into the three lanes the console works from.
+ *
+ * Anything not approved is waiting on a decision. An approved vendor is in `attention` only when
+ * `needsAttention` flagged it; every other approved vendor is simply `approved`. Each vendor lands
+ * in exactly one lane, so the counts on screen always add up to the vendors loaded.
+ */
+export function reviewLane(
+  vendor: { id: string; status: VendorStatus },
+  flagged: ReadonlySet<string>,
+): ReviewLane {
+  if (vendor.status !== 'approved') return 'waiting';
+  return flagged.has(vendor.id) ? 'attention' : 'approved';
+}

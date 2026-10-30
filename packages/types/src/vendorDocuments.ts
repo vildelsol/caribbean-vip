@@ -483,6 +483,6 @@ export function parseDocumentUpload(i: DocumentUploadInput): {
 
 /** A storage-safe file name: the path is what the bucket policy reads, so keep it boring. */
 export function safeFileName(name: string): string {
-  const cleaned = name.normalize('NFKD').replace(/[^\w.\-]+/g, '_').replace(/^\.+/, '').slice(-80);
+  const cleaned = name.normalize('NFKD').replace(/[^\w.-]+/g, '_').replace(/^\.+/, '').slice(-80);
   return cleaned.length > 0 ? cleaned : 'document';
 }

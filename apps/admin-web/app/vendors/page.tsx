@@ -1,6 +1,7 @@
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import Link from 'next/link';
 import { semantic, spacing, radius } from '@cvip/ui';
 import type { VendorStatus } from '@cvip/types';
 import {
@@ -15,6 +16,8 @@ import {
   type AttentionReasons,
   reasonRequired,
   reviewDecision,
+  reviewLane,
+  type ReviewLane,
   type ReviewDecision,
 } from '../../lib/vendorReview';
 import { isSupabaseConfigured } from '../../lib/supabase';
@@ -36,6 +39,12 @@ const DECISION_LABELS: Record<ReviewDecision, string> = {
   suspend: 'Suspend',
 };
 
+const LANES: { key: ReviewLane; label: string; hint: string }[] = [
+  { key: 'waiting', label: 'Waiting', hint: 'Needs a decision' },
+  { key: 'attention', label: 'Needs attention', hint: 'Approved, documents short' },
+  { key: 'approved', label: 'Approved', hint: 'In the marketplace' },
+];
+
 export default function VendorReviewPage() {
   const [vendors, setVendors] = useState<ReviewableVendor[] | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -44,6 +53,10 @@ export default function VendorReviewPage() {
   const [notice, setNotice] = useState<string | null>(null);
   // Live only: approved vendors whose documents fall short. Empty in demo, so the demo is unchanged.
   const [attention, setAttention] = useState<Map<string, AttentionReasons>>(new Map());
+  const [lane, setLane] = useState<ReviewLane>('waiting');
+  const [query, setQuery] = useState('');
+  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const laneChosen = useRef(false);
 
   const load = useCallback(() => {
     setError(null);
@@ -65,6 +78,40 @@ export default function VendorReviewPage() {
 
   useEffect(load, [load]);
 
+  const flaggedIds = useMemo(() => new Set(attention.keys()), [attention]);
+
+  const byLane = useMemo(() => {
+    const groups: Record<ReviewLane, ReviewableVendor[]> = { waiting: [], attention: [], approved: [] };
+    for (const v of vendors ?? []) groups[reviewLane(v, flaggedIds)].push(v);
+    return groups;
+  }, [vendors, flaggedIds]);
+
+  // Open on the lane that has work in it, once, rather than on an empty queue.
+  useEffect(() => {
+    if (vendors === null || laneChosen.current) return;
+    laneChosen.current = true;
+    if (byLane.waiting.length === 0) setLane(byLane.attention.length > 0 ? 'attention' : 'approved');
+  }, [vendors, byLane]);
+
+  const shown = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    return q ? byLane[lane].filter((v) => v.tradingName.toLowerCase().includes(q)) : byLane[lane];
+  }, [byLane, lane, query]);
+
+  // Keep the detail pane filled: when the selected vendor leaves the list (decided, filtered out,
+  // lane changed) the reviewer lands on the vendor now at that position instead of a blank pane.
+  const lastIndex = useRef(0);
+  useEffect(() => {
+    const at = shown.findIndex((v) => v.id === selectedId);
+    if (at >= 0) {
+      lastIndex.current = at;
+      return;
+    }
+    setSelectedId(shown.length > 0 ? shown[Math.min(lastIndex.current, shown.length - 1)]!.id : null);
+  }, [shown, selectedId]);
+
+  const selected = shown.find((v) => v.id === selectedId) ?? null;
+
   const announce = useCallback(
     (vendor: ReviewableVendor, status: VendorStatus) => {
       setNotice(`${vendor.tradingName} is now ${status.replace('_', ' ')}.`);
@@ -73,20 +120,38 @@ export default function VendorReviewPage() {
     [load],
   );
 
-  const queue = (vendors ?? []).filter((v) => v.status !== 'approved');
-  const flagged = (vendors ?? []).filter((v) => v.status === 'approved' && attention.has(v.id));
-  const approved = (vendors ?? []).filter((v) => v.status === 'approved' && !attention.has(v.id));
+  // j / k step through the queue, so a reviewer can work it without leaving the keyboard.
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      const t = e.target as HTMLElement | null;
+      if (t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.isContentEditable)) return;
+      if (e.metaKey || e.ctrlKey || e.altKey) return;
+      const step = e.key === 'j' ? 1 : e.key === 'k' ? -1 : 0;
+      if (step === 0 || shown.length === 0) return;
+      const at = shown.findIndex((v) => v.id === selectedId);
+      setSelectedId(shown[Math.max(0, Math.min(shown.length - 1, at + step))]!.id);
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [shown, selectedId]);
 
   return (
-    <main style={{ maxWidth: 820, margin: '0 auto', padding: spacing.xl }}>
-      <p style={{ color: semantic.textMuted, margin: 0, fontSize: 14 }}>Caribbean VIP</p>
-      <h1 style={{ color: semantic.brand, margin: `${spacing.xs}px 0 ${spacing.sm}px` }}>
-        Vendor review
-      </h1>
-      <p style={{ color: semantic.textMuted, marginTop: 0 }}>
-        A vendor and its listings stay invisible to tourists until approved. Every decision is
-        recorded in the audit log.
-      </p>
+    <main style={{ maxWidth: 1280, margin: '0 auto', padding: spacing.lg }}>
+      <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', gap: spacing.md, flexWrap: 'wrap' }}>
+        <div>
+          <p style={{ color: semantic.textMuted, margin: 0, fontSize: 14 }}>
+            <Link href="/" style={{ color: 'inherit' }}>
+              Caribbean VIP
+            </Link>{' '}
+            · Admin
+          </p>
+          <h1 style={{ color: semantic.brand, margin: `${spacing.xs}px 0 0` }}>Vendor review</h1>
+        </div>
+        <p style={{ color: semantic.textMuted, margin: 0, fontSize: 14, maxWidth: 420 }}>
+          Vendors and their listings stay invisible to tourists until approved. Every decision is
+          recorded in the audit log.
+        </p>
+      </header>
 
       {!isSupabaseConfigured ? (
         <p style={{ color: semantic.premiumText, fontSize: 14 }}>
@@ -94,11 +159,28 @@ export default function VendorReviewPage() {
         </p>
       ) : null}
 
-      {notice ? (
-        <p style={{ color: semantic.brand, fontSize: 14 }} role="status">
-          {notice}
-        </p>
-      ) : null}
+      <div role="status" aria-live="polite">
+        {notice ? (
+          <p
+            style={{
+              margin: `${spacing.md}px 0 0`,
+              padding: `${spacing.sm}px ${spacing.md}px`,
+              background: semantic.locatorTintSoft,
+              color: semantic.brand,
+              borderRadius: radius.sm,
+              fontSize: 14,
+              display: 'flex',
+              justifyContent: 'space-between',
+              gap: spacing.md,
+            }}
+          >
+            {notice}
+            <button type="button" onClick={() => setNotice(null)} aria-label="Dismiss" style={linkButton}>
+              Dismiss
+            </button>
+          </p>
+        ) : null}
+      </div>
 
       {error ? (
         <p style={{ color: semantic.urgentText, fontSize: 14 }} role="alert">
@@ -110,71 +192,155 @@ export default function VendorReviewPage() {
         <p style={{ color: semantic.textMuted }}>Loading…</p>
       ) : (
         <>
-          {flagged.length > 0 ? (
-            <>
-              <h2 style={{ color: semantic.textPrimary, fontSize: 18, marginBottom: spacing.xs }}>
-                Needs attention
-              </h2>
-              <p style={{ color: semantic.textMuted, fontSize: 14, marginTop: 0 }}>
-                Approved vendors with documents to review, or required documents missing, rejected or
-                expired. They stay public until you suspend them.
-              </p>
-              <ul style={{ listStyle: 'none', padding: 0, display: 'grid', gap: spacing.sm }}>
-                {flagged.map((v) => (
-                  <VendorCard
-                    key={v.id}
-                    vendor={v}
-                    onDecided={announce}
-                    attention={attention.get(v.id)}
-                    onDocumentsChanged={load}
-                  />
-                ))}
-              </ul>
-            </>
-          ) : null}
+          <div
+            role="tablist"
+            aria-label="Review lanes"
+            style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(170px, 1fr))', gap: spacing.sm, margin: `${spacing.md}px 0` }}
+          >
+            {LANES.map((l) => {
+              const count = byLane[l.key].length;
+              const active = lane === l.key;
+              const urgent = l.key === 'attention' && count > 0;
+              return (
+                <button
+                  key={l.key}
+                  type="button"
+                  role="tab"
+                  aria-selected={active}
+                  className="review-tab"
+                  onClick={() => setLane(l.key)}
+                  style={{
+                    textAlign: 'left',
+                    padding: `${spacing.sm}px ${spacing.md}px`,
+                    background: active ? semantic.brand : semantic.surface,
+                    color: active ? semantic.textOnDark : semantic.textPrimary,
+                    border: `1px solid ${active ? semantic.brand : semantic.border}`,
+                    borderRadius: radius.md,
+                    cursor: 'pointer',
+                    font: 'inherit',
+                  }}
+                >
+                  <span style={{ display: 'block', fontSize: 28, fontWeight: 700, lineHeight: 1.1, fontVariantNumeric: 'tabular-nums', color: active ? semantic.textOnDark : urgent ? semantic.urgentText : semantic.brand }}>
+                    {count}
+                  </span>
+                  <span style={{ display: 'block', fontSize: 15, fontWeight: 600 }}>{l.label}</span>
+                  <span style={{ display: 'block', fontSize: 13, opacity: 0.8 }}>{l.hint}</span>
+                </button>
+              );
+            })}
+          </div>
 
-          <h2 style={{ color: semantic.textPrimary, fontSize: 18, marginBottom: spacing.xs }}>
-            Waiting on a decision
-          </h2>
-          {queue.length === 0 ? (
-            <p style={{ color: semantic.textMuted }}>Nothing is waiting on a decision.</p>
-          ) : (
-            <ul style={{ listStyle: 'none', padding: 0, display: 'grid', gap: spacing.sm }}>
-              {queue.map((v) => (
-                <VendorCard key={v.id} vendor={v} onDecided={announce} />
-              ))}
-            </ul>
-          )}
+          <div className="review-shell">
+            <nav className="review-queue" aria-label="Vendor queue">
+              <input
+                type="search"
+                aria-label="Search vendors"
+                placeholder="Search vendors"
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                style={{ width: '100%', padding: '10px 12px', fontSize: 15, border: `1px solid ${semantic.border}`, borderRadius: radius.sm, background: semantic.surface, color: semantic.textPrimary }}
+              />
+              {shown.length === 0 ? (
+                <p style={{ color: semantic.textMuted, fontSize: 15 }}>
+                  {query.trim()
+                    ? 'No vendor matches that search.'
+                    : lane === 'waiting'
+                      ? 'Nothing is waiting on a decision.'
+                      : lane === 'attention'
+                        ? 'Every approved vendor is in order.'
+                        : 'No approved vendors yet.'}
+                </p>
+              ) : (
+                <ul style={{ listStyle: 'none', padding: 0, margin: `${spacing.sm}px 0 0`, display: 'grid', gridTemplateColumns: 'minmax(0, 1fr)', gap: 6 }}>
+                  {shown.map((v) => {
+                    const active = v.id === selectedId;
+                    const why = attention.get(v.id);
+                    return (
+                      <li key={v.id}>
+                        <button
+                          type="button"
+                          className="review-row"
+                          aria-current={active ? 'true' : undefined}
+                          onClick={() => setSelectedId(v.id)}
+                          style={{
+                            width: '100%',
+                            textAlign: 'left',
+                            font: 'inherit',
+                            cursor: 'pointer',
+                            padding: `${spacing.sm}px ${spacing.md}px`,
+                            background: active ? semantic.surface : 'transparent',
+                            border: `1px solid ${active ? semantic.brand : semantic.border}`,
+                            borderLeft: `4px solid ${active ? semantic.brand : why ? semantic.urgentText : semantic.border}`,
+                            borderRadius: radius.sm,
+                            color: semantic.textPrimary,
+                          }}
+                        >
+                          <span style={{ display: 'flex', justifyContent: 'space-between', gap: spacing.sm, width: '100%' }}>
+                            <strong style={{ color: semantic.brand, fontSize: 15, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                              {v.tradingName}
+                            </strong>
+                            <StatusChip status={v.status} />
+                          </span>
+                          {why ? (
+                            <span style={{ display: 'block', fontSize: 13, color: semantic.urgentText, marginTop: 2 }}>
+                              {attentionSummary(why)}
+                            </span>
+                          ) : v.description ? (
+                            <span style={{ display: 'block', maxWidth: '100%', fontSize: 13, color: semantic.textMuted, marginTop: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                              {v.description}
+                            </span>
+                          ) : null}
+                        </button>
+                      </li>
+                    );
+                  })}
+                </ul>
+              )}
+              {shown.length > 1 ? (
+                <p style={{ color: semantic.textFaint, fontSize: 13 }}>
+                  <kbd>j</kbd> / <kbd>k</kbd> to move through the list
+                </p>
+              ) : null}
+            </nav>
 
-          {/* Approved vendors are kept behind a disclosure. Suspension has to be reachable —
-              PRD §7 lists it as one of the four actions — but there are far more approved
-              vendors than pending ones, and listing them inline buries the queue this page
-              exists for. */}
-          {approved.length > 0 ? (
-            <details style={{ marginTop: spacing.lg }}>
-              <summary style={{ cursor: 'pointer', color: semantic.textMuted, fontSize: 15 }}>
-                {approved.length} approved vendor{approved.length === 1 ? '' : 's'} — suspend one
-              </summary>
-              <ul
-                style={{
-                  listStyle: 'none',
-                  padding: 0,
-                  display: 'grid',
-                  gap: spacing.sm,
-                  marginTop: spacing.sm,
-                }}
-              >
-                {approved.map((v) => (
-                  <VendorCard key={v.id} vendor={v} onDecided={announce} />
-                ))}
-              </ul>
-            </details>
-          ) : null}
+            <section aria-label="Vendor detail">
+              {selected ? (
+                <VendorCard
+                  key={selected.id}
+                  vendor={selected}
+                  onDecided={announce}
+                  attention={attention.get(selected.id)}
+                  onDocumentsChanged={load}
+                />
+              ) : (
+                <p style={{ color: semantic.textMuted }}>Select a vendor to review.</p>
+              )}
+            </section>
+          </div>
         </>
       )}
     </main>
   );
 }
+
+function attentionSummary(a: AttentionReasons): string {
+  return [
+    a.awaitingReview > 0 ? `${a.awaitingReview} ${a.awaitingReview === 1 ? 'file' : 'files'} awaiting review` : null,
+    a.requiredOutstanding > 0 ? `${a.requiredOutstanding} required ${a.requiredOutstanding === 1 ? 'document' : 'documents'} outstanding` : null,
+  ]
+    .filter(Boolean)
+    .join(' · ');
+}
+
+const linkButton = {
+  background: 'none',
+  border: 'none',
+  padding: 0,
+  font: 'inherit',
+  color: 'inherit',
+  cursor: 'pointer',
+  textDecoration: 'underline',
+} as const;
 
 function VendorCard({
   vendor,
@@ -230,16 +396,16 @@ function VendorCard({
   };
 
   return (
-    <li
+    <article
       style={{
         background: semantic.surface,
         border: `1px solid ${semantic.border}`,
         borderRadius: radius.md,
-        padding: spacing.md,
+        padding: spacing.lg,
       }}
     >
-      <div style={{ display: 'flex', justifyContent: 'space-between', gap: spacing.md }}>
-        <strong style={{ color: semantic.brand }}>{vendor.tradingName}</strong>
+      <div style={{ display: 'flex', justifyContent: 'space-between', gap: spacing.md, alignItems: 'baseline' }}>
+        <h2 style={{ color: semantic.brand, margin: 0, fontSize: 22 }}>{vendor.tradingName}</h2>
         <StatusChip status={vendor.status} />
       </div>
 
@@ -257,16 +423,7 @@ function VendorCard({
 
       {attention ? (
         <p style={{ margin: `${spacing.xs}px 0 0`, color: semantic.urgentText, fontSize: 14, fontWeight: 600 }}>
-          {[
-            attention.awaitingReview > 0
-              ? `${attention.awaitingReview} ${attention.awaitingReview === 1 ? 'file' : 'files'} awaiting review`
-              : null,
-            attention.requiredOutstanding > 0
-              ? `${attention.requiredOutstanding} required ${attention.requiredOutstanding === 1 ? 'document' : 'documents'} outstanding`
-              : null,
-          ]
-            .filter(Boolean)
-            .join(' · ')}
+          {attentionSummary(attention)}
         </p>
       ) : null}
 
@@ -362,13 +519,13 @@ function VendorCard({
           {problem}
         </p>
       ) : null}
-    </li>
+    </article>
   );
 }
 
 function StatusChip({ status }: { status: VendorStatus }) {
   return (
-    <span style={{ color: semantic.premiumText, fontSize: 14 }}>
+    <span style={{ color: semantic.premiumText, fontSize: 13, whiteSpace: 'nowrap', flexShrink: 0 }}>
       {status.replace('_', ' ')}
     </span>
   );
