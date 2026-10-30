@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import { semantic, spacing, radius } from '@cvip/ui';
-import { DOCUMENT_REQUIREMENTS, type VendorStatus } from '@cvip/types';
+import type { VendorStatus } from '@cvip/types';
 import {
   decideVendor,
   listReviewableVendors,
@@ -16,13 +16,8 @@ import {
   type ReviewDecision,
 } from '../../lib/vendorReview';
 import { isSupabaseConfigured } from '../../lib/supabase';
-import {
-  loadDossier,
-  openDocument,
-  reviewDocument,
-  type Dossier,
-  type DossierDocument,
-} from '../../lib/vendorDossier';
+import { loadDossier, type Dossier } from '../../lib/vendorDossier';
+import { DocumentsPanel } from '../../components/DocumentsPanel';
 
 /**
  * Vendor review — PRD §7.
@@ -308,114 +303,5 @@ function StatusChip({ status }: { status: VendorStatus }) {
     <span style={{ color: semantic.premiumText, fontSize: 14 }}>
       {status.replace('_', ' ')}
     </span>
-  );
-}
-
-/**
- * The checklist and the uploaded files for one vendor. Shown in live mode only.
- *
- * Approval is gated on this being complete (see `documentsGate`), so the missing items are listed
- * first and in the same words the vendor sees.
- */
-function DocumentsPanel({ dossier, onChanged }: { dossier: Dossier; onChanged: () => void }) {
-  const label = (kind: string) => DOCUMENT_REQUIREMENTS.find((r) => r.key === kind)?.label ?? kind;
-  const [notes, setNotes] = useState<Record<string, string>>({});
-  const [busy, setBusy] = useState<string | null>(null);
-  const [problem, setProblem] = useState<string | null>(null);
-
-  const review = async (doc: DossierDocument, decision: 'accepted' | 'rejected') => {
-    setBusy(doc.id);
-    setProblem(null);
-    try {
-      await reviewDocument(doc, decision, notes[doc.id] ?? '');
-      onChanged();
-    } catch (e: unknown) {
-      setProblem(e instanceof Error ? e.message : String(e));
-    } finally {
-      setBusy(null);
-    }
-  };
-
-  const open = async (path: string) => {
-    try {
-      window.open(await openDocument(path), '_blank', 'noopener');
-    } catch (e: unknown) {
-      setProblem(e instanceof Error ? e.message : String(e));
-    }
-  };
-
-  const { readiness } = dossier;
-  const small = { fontSize: 14, color: semantic.textMuted } as const;
-
-  return (
-    <div style={{ marginTop: spacing.sm, borderTop: `1px solid ${semantic.border}`, paddingTop: spacing.sm }}>
-      <p style={{ margin: 0, fontWeight: 600, color: semantic.textPrimary }}>
-        Documents · {dossier.islandName ?? 'island unknown'}
-      </p>
-      {dossier.islandCode === null ? (
-        <p style={{ ...small, margin: `${spacing.xs}px 0 0` }}>
-          This vendor has no recognised island, so there is no checklist to hold them to. Do not approve.
-        </p>
-      ) : readiness.ready ? (
-        <p style={{ ...small, margin: `${spacing.xs}px 0 0` }}>Every required document is accepted and in date.</p>
-      ) : (
-        <p style={{ ...small, margin: `${spacing.xs}px 0 0` }}>
-          Still needed: {readiness.blocking.map((b) => `${b.requirement.label} (${b.state})`).join('; ')}.
-        </p>
-      )}
-      {readiness.toConfirm.length > 0 ? (
-        <p style={{ ...small, margin: `${spacing.xs}px 0 0` }}>
-          Confirm whether these apply: {readiness.toConfirm.map((c) => c.requirement.label).join('; ')}.
-        </p>
-      ) : null}
-      {dossier.businessType === null ? (
-        <p style={{ ...small, margin: `${spacing.xs}px 0 0` }}>No business type on file, so activity licences are not listed.</p>
-      ) : null}
-
-      {dossier.documents.length === 0 ? (
-        <p style={{ ...small, margin: `${spacing.xs}px 0 0` }}>Nothing uploaded yet.</p>
-      ) : (
-        <ul style={{ listStyle: 'none', padding: 0, margin: `${spacing.xs}px 0 0`, display: 'grid', gap: spacing.xs }}>
-          {dossier.documents.map((d) => (
-            <li key={d.id} style={{ ...small, borderTop: `1px dashed ${semantic.border}`, paddingTop: spacing.xs }}>
-              <strong style={{ color: semantic.textPrimary }}>{label(d.kind)}</strong> · {d.reviewState}
-              {d.documentNumber ? ` · No. ${d.documentNumber}` : ''}
-              {d.expiresOn ? ` · expires ${d.expiresOn}` : ''} ·{' '}
-              <button
-                type="button"
-                onClick={() => void open(d.storagePath)}
-                style={{ background: 'none', border: 'none', padding: 0, color: semantic.brand, cursor: 'pointer', textDecoration: 'underline', fontSize: 14 }}
-              >
-                {d.fileName ?? 'View'}
-              </button>
-              {d.reviewNotes ? <div>Note: {d.reviewNotes}</div> : null}
-              {d.reviewState === 'pending' ? (
-                <div style={{ display: 'flex', gap: spacing.xs, marginTop: 4, flexWrap: 'wrap' }}>
-                  <input
-                    type="text"
-                    placeholder="Note (required to reject)"
-                    value={notes[d.id] ?? ''}
-                    maxLength={300}
-                    onChange={(e) => setNotes((n) => ({ ...n, [d.id]: e.target.value }))}
-                    style={{ flex: 1, minWidth: 160, padding: 6, border: `1px solid ${semantic.border}`, borderRadius: radius.sm }}
-                  />
-                  <button type="button" disabled={busy === d.id} onClick={() => void review(d, 'accepted')}>
-                    Accept
-                  </button>
-                  <button type="button" disabled={busy === d.id} onClick={() => void review(d, 'rejected')}>
-                    Reject
-                  </button>
-                </div>
-              ) : null}
-            </li>
-          ))}
-        </ul>
-      )}
-      {problem ? (
-        <p style={{ color: semantic.urgentText, fontSize: 14, margin: `${spacing.xs}px 0 0` }} role="alert">
-          {problem}
-        </p>
-      ) : null}
-    </div>
   );
 }

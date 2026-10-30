@@ -1283,3 +1283,254 @@
   align-items: center;
   justify-content: center;
 }
+
+
+/* --- Documents -------------------------------------------------------------- */
+
+.docsum {
+  gap: var(--s-sm);
+}
+
+.docsum__line {
+  margin: 0;
+  font-size: 15px;
+  color: var(--ink);
+}
+
+.docsum__line strong {
+  font-variant-numeric: tabular-nums;
+}
+
+.docbar {
+  display: flex;
+  gap: 4px;
+}
+
+.docbar__seg {
+  flex: 1;
+  height: 6px;
+  border-radius: var(--r-pill);
+  background: var(--ivory-sunken);
+  box-shadow: inset 0 0 0 1px var(--border);
+}
+
+.docbar__seg--ok {
+  background: var(--green-900);
+  box-shadow: none;
+}
+
+.docbar__seg--review {
+  background: var(--teal);
+  box-shadow: none;
+}
+
+.doclist {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.docrow {
+  display: grid;
+  grid-template-columns: 24px minmax(0, 1fr) auto;
+  column-gap: 14px;
+  row-gap: 6px;
+  align-items: start;
+  padding: 20px 0;
+  border-top: 1px solid var(--border);
+}
+
+.docrow:first-child {
+  border-top: none;
+  padding-top: 4px;
+}
+
+.docmark {
+  display: grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  margin-top: 1px;
+  color: var(--ink-faint);
+}
+
+.docmark--review {
+  color: var(--teal-text);
+}
+
+.docmark--ok {
+  color: var(--green-900);
+}
+
+.docmark--warn {
+  color: var(--gold-text);
+}
+
+.docmark--bad {
+  color: var(--coral-text);
+}
+
+.docrow__body {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+}
+
+.docrow__title {
+  margin: 0;
+  font-family: var(--font-sans);
+  font-size: 16px;
+  font-weight: 700;
+  letter-spacing: -0.012em;
+  color: var(--ink);
+}
+
+.docrow__help {
+  margin: 0;
+  max-width: 62ch;
+  font-size: 13.5px;
+  line-height: 1.5;
+  color: var(--ink-muted);
+}
+
+.docrow__meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 14px;
+  align-items: center;
+  margin: 2px 0 0;
+  font-size: 13px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  color: var(--ink);
+}
+
+.docrow__note {
+  margin: 2px 0 0;
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--coral-text);
+}
+
+.docrow__side {
+  display: grid;
+  justify-items: end;
+  gap: 8px;
+}
+
+.docstate {
+  font-size: 12.5px;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  color: var(--ink-faint);
+}
+
+.docstate--review {
+  color: var(--teal-text);
+}
+
+.docstate--ok {
+  color: var(--green-900);
+}
+
+.docstate--warn {
+  color: var(--gold-text);
+}
+
+.docstate--bad {
+  color: var(--coral-text);
+}
+
+.docrow__form {
+  grid-column: 2 / -1;
+  margin-top: 8px;
+  padding-top: 16px;
+  border-top: 1px dashed var(--border-strong);
+}
+
+.docform {
+  display: grid;
+  gap: var(--s-md);
+}
+
+.docform__pair {
+  display: grid;
+  gap: var(--s-md);
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+}
+
+/* The native file control is kept (for the picker, keyboard and screen readers) and drawn over. */
+.docfile {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  min-height: 56px;
+  padding: 8px 14px 8px 8px;
+  border: 1px dashed var(--border-strong);
+  border-radius: var(--r-md);
+  background: var(--ivory-calm);
+  cursor: pointer;
+  transition: border-color var(--dur-fast) var(--ease-out), background var(--dur-fast) var(--ease-out);
+}
+
+.docfile:hover {
+  border-color: var(--green-900);
+  background: var(--ivory-raised);
+}
+
+.docfile:focus-within {
+  outline: 2px solid var(--teal);
+  outline-offset: 2px;
+}
+
+.docfile input {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.docfile__cta {
+  flex: none;
+  padding: 10px 16px;
+  border-radius: var(--r-sm);
+  background: var(--green-900);
+  color: var(--on-dark);
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.docfile__name {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 14px;
+  color: var(--ink-muted);
+}
+
+@media (max-width: 560px) {
+  .docrow {
+    grid-template-columns: 24px minmax(0, 1fr);
+  }
+
+  .docrow__side {
+    grid-column: 2;
+    grid-auto-flow: column;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 6px;
+  }
+
+  .docrow__form {
+    grid-column: 1 / -1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .docfile {
+    transition: none;
+  }
+}
