@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import { semantic, spacing, radius } from '@cvip/ui';
-import type { VendorStatus } from '@cvip/types';
+import { DOCUMENT_REQUIREMENTS, type VendorStatus } from '@cvip/types';
 import {
   decideVendor,
   listReviewableVendors,
@@ -10,11 +10,19 @@ import {
 } from '../../lib/vendors';
 import {
   allowedDecisions,
+  documentsGate,
   reasonRequired,
   reviewDecision,
   type ReviewDecision,
 } from '../../lib/vendorReview';
 import { isSupabaseConfigured } from '../../lib/supabase';
+import {
+  loadDossier,
+  openDocument,
+  reviewDocument,
+  type Dossier,
+  type DossierDocument,
+} from '../../lib/vendorDossier';
 
 /**
  * Vendor review — PRD §7.
@@ -144,15 +152,32 @@ function VendorCard({
   const [reason, setReason] = useState('');
   const [busy, setBusy] = useState<ReviewDecision | null>(null);
   const [problem, setProblem] = useState<string | null>(null);
+  // Live only. The demo has no documents, so nothing below changes what the demo shows.
+  const [dossier, setDossier] = useState<Dossier | null>(null);
+  const [dossierError, setDossierError] = useState<string | null>(null);
+  const [waive, setWaive] = useState(false);
 
   const decisions = allowedDecisions(vendor.status);
+
+  const reloadDossier = useCallback(() => {
+    if (!isSupabaseConfigured || vendor.status === 'approved') return;
+    loadDossier(vendor.id)
+      .then((d) => {
+        setDossier(d);
+        setDossierError(null);
+      })
+      .catch((e: unknown) => setDossierError(e instanceof Error ? e.message : String(e)));
+  }, [vendor.id, vendor.status]);
+
+  useEffect(reloadDossier, [reloadDossier]);
 
   const decide = async (decision: ReviewDecision) => {
     setProblem(null);
     setBusy(decision);
     try {
-      const result = await decideVendor(vendor, decision, reason);
+      const result = await decideVendor(vendor, decision, reason, waive);
       setReason('');
+      setWaive(false);
       onDecided(vendor, result.status);
     } catch (e: unknown) {
       setProblem(e instanceof Error ? e.message : String(e));
@@ -187,6 +212,20 @@ function VendorCard({
         </p>
       ) : null}
 
+      {dossierError ? (
+        <p style={{ color: semantic.urgentText, fontSize: 14 }} role="alert">
+          Could not load documents. {dossierError}
+        </p>
+      ) : null}
+      {dossier ? <DocumentsPanel dossier={dossier} onChanged={reloadDossier} /> : null}
+
+      {dossier && !dossier.readiness.ready && decisions.includes('approve') ? (
+        <label style={{ display: 'flex', gap: spacing.xs, marginTop: spacing.sm, fontSize: 14, color: semantic.textMuted }}>
+          <input type="checkbox" checked={waive} onChange={(e) => setWaive(e.target.checked)} />
+          Approve despite missing documents (needs a reason; recorded in the audit log)
+        </label>
+      ) : null}
+
       <label style={{ display: 'grid', gap: 4, marginTop: spacing.sm }}>
         <span style={{ fontSize: 14, color: semantic.textMuted }}>
           Reason{' '}
@@ -214,11 +253,13 @@ function VendorCard({
           // The same rule the write path applies, so a control is never offered for input that
           // would be refused a moment later.
           const checked = reviewDecision(vendor.status, d, reason);
+          const gate = documentsGate(d, dossier?.readiness ?? null, waive, reason);
+          const allowed = checked.ok && gate.ok;
           return (
             <button
               key={d}
               type="button"
-              disabled={busy !== null || !checked.ok}
+              disabled={busy !== null || !allowed}
               // Deliberately no `title`: it became these buttons' accessible name, so "Reject"
               // was announced as "This decision needs a recorded reason". The visible
               // "(required to refuse)" label on the field carries that information instead.
@@ -231,8 +272,8 @@ function VendorCard({
                 background: d === 'approve' ? semantic.brandActive : semantic.urgentText,
                 border: 'none',
                 borderRadius: radius.sm,
-                cursor: busy !== null || !checked.ok ? 'default' : 'pointer',
-                opacity: busy !== null || !checked.ok ? 0.55 : 1,
+                cursor: busy !== null || !allowed ? 'default' : 'pointer',
+                opacity: busy !== null || !allowed ? 0.55 : 1,
               }}
             >
               {busy === d ? 'Saving…' : DECISION_LABELS[d]}
@@ -255,5 +296,114 @@ function StatusChip({ status }: { status: VendorStatus }) {
     <span style={{ color: semantic.premiumText, fontSize: 14 }}>
       {status.replace('_', ' ')}
     </span>
+  );
+}
+
+/**
+ * The checklist and the uploaded files for one vendor. Shown in live mode only.
+ *
+ * Approval is gated on this being complete (see `documentsGate`), so the missing items are listed
+ * first and in the same words the vendor sees.
+ */
+function DocumentsPanel({ dossier, onChanged }: { dossier: Dossier; onChanged: () => void }) {
+  const label = (kind: string) => DOCUMENT_REQUIREMENTS.find((r) => r.key === kind)?.label ?? kind;
+  const [notes, setNotes] = useState<Record<string, string>>({});
+  const [busy, setBusy] = useState<string | null>(null);
+  const [problem, setProblem] = useState<string | null>(null);
+
+  const review = async (doc: DossierDocument, decision: 'accepted' | 'rejected') => {
+    setBusy(doc.id);
+    setProblem(null);
+    try {
+      await reviewDocument(doc, decision, notes[doc.id] ?? '');
+      onChanged();
+    } catch (e: unknown) {
+      setProblem(e instanceof Error ? e.message : String(e));
+    } finally {
+      setBusy(null);
+    }
+  };
+
+  const open = async (path: string) => {
+    try {
+      window.open(await openDocument(path), '_blank', 'noopener');
+    } catch (e: unknown) {
+      setProblem(e instanceof Error ? e.message : String(e));
+    }
+  };
+
+  const { readiness } = dossier;
+  const small = { fontSize: 14, color: semantic.textMuted } as const;
+
+  return (
+    <div style={{ marginTop: spacing.sm, borderTop: `1px solid ${semantic.border}`, paddingTop: spacing.sm }}>
+      <p style={{ margin: 0, fontWeight: 600, color: semantic.textPrimary }}>
+        Documents · {dossier.islandName ?? 'island unknown'}
+      </p>
+      {dossier.islandCode === null ? (
+        <p style={{ ...small, margin: `${spacing.xs}px 0 0` }}>
+          This vendor has no recognised island, so there is no checklist to hold them to. Do not approve.
+        </p>
+      ) : readiness.ready ? (
+        <p style={{ ...small, margin: `${spacing.xs}px 0 0` }}>Every required document is accepted and in date.</p>
+      ) : (
+        <p style={{ ...small, margin: `${spacing.xs}px 0 0` }}>
+          Still needed: {readiness.blocking.map((b) => `${b.requirement.label} (${b.state})`).join('; ')}.
+        </p>
+      )}
+      {readiness.toConfirm.length > 0 ? (
+        <p style={{ ...small, margin: `${spacing.xs}px 0 0` }}>
+          Confirm whether these apply: {readiness.toConfirm.map((c) => c.requirement.label).join('; ')}.
+        </p>
+      ) : null}
+      {dossier.businessType === null ? (
+        <p style={{ ...small, margin: `${spacing.xs}px 0 0` }}>No business type on file, so activity licences are not listed.</p>
+      ) : null}
+
+      {dossier.documents.length === 0 ? (
+        <p style={{ ...small, margin: `${spacing.xs}px 0 0` }}>Nothing uploaded yet.</p>
+      ) : (
+        <ul style={{ listStyle: 'none', padding: 0, margin: `${spacing.xs}px 0 0`, display: 'grid', gap: spacing.xs }}>
+          {dossier.documents.map((d) => (
+            <li key={d.id} style={{ ...small, borderTop: `1px dashed ${semantic.border}`, paddingTop: spacing.xs }}>
+              <strong style={{ color: semantic.textPrimary }}>{label(d.kind)}</strong> · {d.reviewState}
+              {d.documentNumber ? ` · No. ${d.documentNumber}` : ''}
+              {d.expiresOn ? ` · expires ${d.expiresOn}` : ''} ·{' '}
+              <button
+                type="button"
+                onClick={() => void open(d.storagePath)}
+                style={{ background: 'none', border: 'none', padding: 0, color: semantic.brand, cursor: 'pointer', textDecoration: 'underline', fontSize: 14 }}
+              >
+                {d.fileName ?? 'View'}
+              </button>
+              {d.reviewNotes ? <div>Note: {d.reviewNotes}</div> : null}
+              {d.reviewState === 'pending' ? (
+                <div style={{ display: 'flex', gap: spacing.xs, marginTop: 4, flexWrap: 'wrap' }}>
+                  <input
+                    type="text"
+                    placeholder="Note (required to reject)"
+                    value={notes[d.id] ?? ''}
+                    maxLength={300}
+                    onChange={(e) => setNotes((n) => ({ ...n, [d.id]: e.target.value }))}
+                    style={{ flex: 1, minWidth: 160, padding: 6, border: `1px solid ${semantic.border}`, borderRadius: radius.sm }}
+                  />
+                  <button type="button" disabled={busy === d.id} onClick={() => void review(d, 'accepted')}>
+                    Accept
+                  </button>
+                  <button type="button" disabled={busy === d.id} onClick={() => void review(d, 'rejected')}>
+                    Reject
+                  </button>
+                </div>
+              ) : null}
+            </li>
+          ))}
+        </ul>
+      )}
+      {problem ? (
+        <p style={{ color: semantic.urgentText, fontSize: 14, margin: `${spacing.xs}px 0 0` }} role="alert">
+          {problem}
+        </p>
+      ) : null}
+    </div>
   );
 }

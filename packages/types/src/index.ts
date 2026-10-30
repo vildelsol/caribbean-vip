@@ -16,3 +16,4 @@ export * from './listing.ts';
 export * from './providers.ts';
 export * from './env.ts';
 export * from './vendor.ts';
+export * from './vendorDocuments.ts';

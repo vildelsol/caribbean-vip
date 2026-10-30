@@ -1,4 +1,4 @@
-import type { VendorStatus } from '@cvip/types';
+import type { ApprovalReadiness, VendorStatus } from '@cvip/types';
 
 /**
  * Vendor review decisions — the rules, with no I/O.
@@ -88,4 +88,39 @@ export function reviewDecision(
   }
 
   return { ok: true, status: nextStatus(decision), reason: trimmed.length > 0 ? trimmed : null };
+}
+
+export interface DocumentsGateRejection {
+  ok: false;
+  problem: string;
+}
+
+/**
+ * Whether the documents allow an approval.
+ *
+ * The policy is strict: nothing is approved until every required document for the vendor's island
+ * and business type is accepted and unexpired. An admin can still approve with a recorded
+ * exception, because some requirements are flagged as awaiting counsel and a rule that cannot be
+ * overridden turns a legal question into a stuck vendor. The exception needs a reason, and the
+ * write path puts it and the missing items in the audit log, so waiving is a decision with a name
+ * on it rather than a quiet gap.
+ *
+ * Only `approve` is gated. Rejecting, requesting changes and suspending never need documents.
+ */
+export function documentsGate(
+  decision: ReviewDecision,
+  readiness: ApprovalReadiness | null,
+  waive: boolean,
+  reason: string,
+): { ok: true; waived: boolean } | DocumentsGateRejection {
+  if (decision !== 'approve' || readiness === null || readiness.ready) return { ok: true, waived: false };
+
+  const missing = readiness.blocking.map((b) => b.requirement.label).join(', ');
+  if (!waive) {
+    return { ok: false, problem: `Required documents are not accepted yet: ${missing}.` };
+  }
+  if (reason.trim().length === 0) {
+    return { ok: false, problem: 'Approving without the required documents needs a recorded reason.' };
+  }
+  return { ok: true, waived: true };
 }

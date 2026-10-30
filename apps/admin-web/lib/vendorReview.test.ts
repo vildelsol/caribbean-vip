@@ -1,9 +1,11 @@
 import { describe, expect, it } from 'vitest';
+import { approvalReadiness, documentRequirementsFor, requirementStatuses, type DocumentRecord } from '@cvip/types';
 import {
   allowedDecisions,
   nextStatus,
   reasonRequired,
   reviewDecision,
+  documentsGate,
 } from './vendorReview';
 
 /**
@@ -56,5 +58,47 @@ describe('vendor review decisions', () => {
       if (decision === 'request_changes') continue; // deliberately returns to the queue
       expect(['pending_review', 'changes_requested']).not.toContain(next);
     }
+  });
+});
+
+describe('documentsGate', () => {
+  const NOW = new Date('2026-10-29T12:00:00Z');
+  const reqs = documentRequirementsFor('JM', 'water');
+  const accepted = (kind: string): DocumentRecord => ({
+    kind,
+    reviewState: 'accepted',
+    expiresOn: '2027-12-31',
+    createdAt: '2026-10-01T00:00:00Z',
+  });
+  const readiness = (docs: DocumentRecord[]) => approvalReadiness(requirementStatuses(reqs, docs, NOW));
+  const complete = readiness(reqs.filter((r) => r.level === 'required').map((r) => accepted(r.key)));
+  const incomplete = readiness([]);
+
+  it('lets an approval through when every required document is accepted', () => {
+    expect(documentsGate('approve', complete, false, '')).toEqual({ ok: true, waived: false });
+  });
+
+  it('refuses an approval while required documents are missing, and names them', () => {
+    const gate = documentsGate('approve', incomplete, false, '');
+    expect(gate.ok).toBe(false);
+    expect(gate.ok === false && gate.problem).toContain('Water sports operator licence');
+  });
+
+  it('allows an exception only with a reason, and reports it as waived', () => {
+    expect(documentsGate('approve', incomplete, true, '   ').ok).toBe(false);
+    expect(documentsGate('approve', incomplete, true, 'Counsel confirmed no licence needed')).toEqual({
+      ok: true,
+      waived: true,
+    });
+  });
+
+  it('does not gate refusing, requesting changes or suspending', () => {
+    for (const d of ['reject', 'request_changes', 'suspend'] as const) {
+      expect(documentsGate(d, incomplete, false, '')).toEqual({ ok: true, waived: false });
+    }
+  });
+
+  it('does not gate when there is no dossier (demo)', () => {
+    expect(documentsGate('approve', null, false, '')).toEqual({ ok: true, waived: false });
   });
 });
