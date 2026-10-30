@@ -156,18 +156,21 @@ function VendorCard({
   const [dossier, setDossier] = useState<Dossier | null>(null);
   const [dossierError, setDossierError] = useState<string | null>(null);
   const [waive, setWaive] = useState(false);
+  // Approved vendors are not in the intake queue, so their documents load on request: renewals
+  // still arrive after approval and have to be reviewable, but there are many approved vendors.
+  const [showDocs, setShowDocs] = useState(false);
 
   const decisions = allowedDecisions(vendor.status);
 
   const reloadDossier = useCallback(() => {
-    if (!isSupabaseConfigured || vendor.status === 'approved') return;
+    if (!isSupabaseConfigured || (vendor.status === 'approved' && !showDocs)) return;
     loadDossier(vendor.id)
       .then((d) => {
         setDossier(d);
         setDossierError(null);
       })
       .catch((e: unknown) => setDossierError(e instanceof Error ? e.message : String(e)));
-  }, [vendor.id, vendor.status]);
+  }, [vendor.id, vendor.status, showDocs]);
 
   useEffect(reloadDossier, [reloadDossier]);
 
@@ -218,6 +221,15 @@ function VendorCard({
         </p>
       ) : null}
       {dossier ? <DocumentsPanel dossier={dossier} onChanged={reloadDossier} /> : null}
+      {isSupabaseConfigured && vendor.status === 'approved' && !showDocs ? (
+        <button
+          type="button"
+          onClick={() => setShowDocs(true)}
+          style={{ marginTop: spacing.sm, background: 'none', border: 'none', padding: 0, color: semantic.brand, cursor: 'pointer', textDecoration: 'underline', fontSize: 14 }}
+        >
+          Review documents
+        </button>
+      ) : null}
 
       {dossier && !dossier.readiness.ready && decisions.includes('approve') ? (
         <label style={{ display: 'flex', gap: spacing.xs, marginTop: spacing.sm, fontSize: 14, color: semantic.textMuted }}>
