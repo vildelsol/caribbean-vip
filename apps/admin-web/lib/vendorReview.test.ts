@@ -7,6 +7,7 @@ import {
   reviewDecision,
   documentsGate,
   needsAttention,
+  reviewLane,
 } from './vendorReview';
 
 /**
@@ -155,5 +156,23 @@ describe('needsAttention', () => {
 
   it('has nothing to say without a dossier (demo)', () => {
     expect(needsAttention(null, [])).toBeNull();
+  });
+});
+
+describe('review lanes', () => {
+  const flagged = new Set(['b']);
+
+  it('puts every vendor in exactly one lane', () => {
+    const vendors = [
+      { id: 'a', status: 'pending_review' as const },
+      { id: 'b', status: 'approved' as const },
+      { id: 'c', status: 'approved' as const },
+      { id: 'd', status: 'changes_requested' as const },
+    ];
+    expect(vendors.map((v) => reviewLane(v, flagged))).toEqual(['waiting', 'attention', 'approved', 'waiting']);
+  });
+
+  it('never calls an unapproved vendor needs-attention, even if flagged', () => {
+    expect(reviewLane({ id: 'b', status: 'pending_review' }, flagged)).toBe('waiting');
   });
 });

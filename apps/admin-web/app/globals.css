@@ -23,3 +23,31 @@ body {
   background: var(--sand);
   color: var(--ink);
 }
+
+/* Vendor review workbench: queue beside detail on wide screens, stacked on narrow ones. */
+.review-shell {
+  display: grid;
+  grid-template-columns: minmax(280px, 360px) minmax(0, 1fr);
+  gap: 24px;
+  align-items: start;
+}
+.review-queue {
+  position: sticky;
+  top: 16px;
+  max-height: calc(100vh - 32px);
+  overflow: auto;
+}
+.review-row:focus-visible,
+.review-tab:focus-visible {
+  outline: 2px solid var(--turquoise);
+  outline-offset: 2px;
+}
+@media (max-width: 880px) {
+  .review-shell {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .review-queue {
+    position: static;
+    max-height: none;
+  }
+}
