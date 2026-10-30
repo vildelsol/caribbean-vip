@@ -11,12 +11,14 @@ import {
 import {
   allowedDecisions,
   documentsGate,
+  needsAttention,
+  type AttentionReasons,
   reasonRequired,
   reviewDecision,
   type ReviewDecision,
 } from '../../lib/vendorReview';
 import { isSupabaseConfigured } from '../../lib/supabase';
-import { loadDossier, type Dossier } from '../../lib/vendorDossier';
+import { loadDossier, loadDossiers, type Dossier } from '../../lib/vendorDossier';
 import { DocumentsPanel } from '../../components/DocumentsPanel';
 
 /**
@@ -40,11 +42,24 @@ export default function VendorReviewPage() {
   // A decided vendor leaves the queue, so without this the card simply vanishes and the reviewer
   // has no confirmation that anything was recorded.
   const [notice, setNotice] = useState<string | null>(null);
+  // Live only: approved vendors whose documents fall short. Empty in demo, so the demo is unchanged.
+  const [attention, setAttention] = useState<Map<string, AttentionReasons>>(new Map());
 
   const load = useCallback(() => {
     setError(null);
     listReviewableVendors()
-      .then(setVendors)
+      .then(async (list) => {
+        setVendors(list);
+        if (!isSupabaseConfigured) return;
+        const approvedIds = list.filter((v) => v.status === 'approved').map((v) => v.id);
+        const dossiers = await loadDossiers(approvedIds);
+        const next = new Map<string, AttentionReasons>();
+        for (const [id, d] of dossiers) {
+          const reasons = needsAttention(d.readiness, d.documents);
+          if (reasons) next.set(id, reasons);
+        }
+        setAttention(next);
+      })
       .catch((e: unknown) => setError(e instanceof Error ? e.message : String(e)));
   }, []);
 
@@ -59,7 +74,8 @@ export default function VendorReviewPage() {
   );
 
   const queue = (vendors ?? []).filter((v) => v.status !== 'approved');
-  const approved = (vendors ?? []).filter((v) => v.status === 'approved');
+  const flagged = (vendors ?? []).filter((v) => v.status === 'approved' && attention.has(v.id));
+  const approved = (vendors ?? []).filter((v) => v.status === 'approved' && !attention.has(v.id));
 
   return (
     <main style={{ maxWidth: 820, margin: '0 auto', padding: spacing.xl }}>
@@ -94,6 +110,29 @@ export default function VendorReviewPage() {
         <p style={{ color: semantic.textMuted }}>Loading…</p>
       ) : (
         <>
+          {flagged.length > 0 ? (
+            <>
+              <h2 style={{ color: semantic.textPrimary, fontSize: 18, marginBottom: spacing.xs }}>
+                Needs attention
+              </h2>
+              <p style={{ color: semantic.textMuted, fontSize: 14, marginTop: 0 }}>
+                Approved vendors with documents to review, or required documents missing, rejected or
+                expired. They stay public until you suspend them.
+              </p>
+              <ul style={{ listStyle: 'none', padding: 0, display: 'grid', gap: spacing.sm }}>
+                {flagged.map((v) => (
+                  <VendorCard
+                    key={v.id}
+                    vendor={v}
+                    onDecided={announce}
+                    attention={attention.get(v.id)}
+                    onDocumentsChanged={load}
+                  />
+                ))}
+              </ul>
+            </>
+          ) : null}
+
           <h2 style={{ color: semantic.textPrimary, fontSize: 18, marginBottom: spacing.xs }}>
             Waiting on a decision
           </h2>
@@ -140,9 +179,15 @@ export default function VendorReviewPage() {
 function VendorCard({
   vendor,
   onDecided,
+  attention,
+  onDocumentsChanged,
 }: {
   vendor: ReviewableVendor;
   onDecided: (vendor: ReviewableVendor, status: VendorStatus) => void;
+  /** Set when this approved vendor is in Needs attention: documents load straight away. */
+  attention?: AttentionReasons;
+  /** Lets the page re-sort a vendor out of Needs attention once its documents are in order. */
+  onDocumentsChanged?: () => void;
 }) {
   const [reason, setReason] = useState('');
   const [busy, setBusy] = useState<ReviewDecision | null>(null);
@@ -153,7 +198,7 @@ function VendorCard({
   const [waive, setWaive] = useState(false);
   // Approved vendors are not in the intake queue, so their documents load on request: renewals
   // still arrive after approval and have to be reviewable, but there are many approved vendors.
-  const [showDocs, setShowDocs] = useState(false);
+  const [showDocs, setShowDocs] = useState(attention !== undefined);
 
   const decisions = allowedDecisions(vendor.status);
 
@@ -210,12 +255,35 @@ function VendorCard({
         </p>
       ) : null}
 
+      {attention ? (
+        <p style={{ margin: `${spacing.xs}px 0 0`, color: semantic.urgentText, fontSize: 14, fontWeight: 600 }}>
+          {[
+            attention.awaitingReview > 0
+              ? `${attention.awaitingReview} ${attention.awaitingReview === 1 ? 'file' : 'files'} awaiting review`
+              : null,
+            attention.requiredOutstanding > 0
+              ? `${attention.requiredOutstanding} required ${attention.requiredOutstanding === 1 ? 'document' : 'documents'} outstanding`
+              : null,
+          ]
+            .filter(Boolean)
+            .join(' · ')}
+        </p>
+      ) : null}
+
       {dossierError ? (
         <p style={{ color: semantic.urgentText, fontSize: 14 }} role="alert">
           Could not load documents. {dossierError}
         </p>
       ) : null}
-      {dossier ? <DocumentsPanel dossier={dossier} onChanged={reloadDossier} /> : null}
+      {dossier ? (
+        <DocumentsPanel
+          dossier={dossier}
+          onChanged={() => {
+            reloadDossier();
+            onDocumentsChanged?.();
+          }}
+        />
+      ) : null}
       {isSupabaseConfigured && vendor.status === 'approved' && !showDocs ? (
         <button
           type="button"

@@ -1,4 +1,4 @@
-import type { ApprovalReadiness, VendorStatus } from '@cvip/types';
+import type { ApprovalReadiness, DocumentRecord, VendorStatus } from '@cvip/types';
 
 /**
  * Vendor review decisions — the rules, with no I/O.
@@ -123,4 +123,30 @@ export function documentsGate(
     return { ok: false, problem: 'Approving without the required documents needs a recorded reason.' };
   }
   return { ok: true, waived: true };
+}
+
+export interface AttentionReasons {
+  /** Uploads nobody has reviewed yet. */
+  awaitingReview: number;
+  /** Required items not accepted and in date: missing, rejected, pending or expired. */
+  requiredOutstanding: number;
+}
+
+/**
+ * Why an APPROVED vendor needs an admin, or null if it does not.
+ *
+ * Approval only checks documents at the moment of approving. After that a licence can expire, a
+ * renewal can arrive unreviewed, and vendors approved before the document policy existed have
+ * nothing on file at all. Each of those leaves a public vendor short of the standard, so the
+ * console surfaces them instead of leaving them in a collapsed list. Vendors still in the intake
+ * queue are not covered here: their card already shows the checklist.
+ */
+export function needsAttention(
+  readiness: ApprovalReadiness | null,
+  documents: readonly DocumentRecord[],
+): AttentionReasons | null {
+  if (readiness === null) return null;
+  const awaitingReview = documents.filter((d) => d.reviewState === 'pending').length;
+  const requiredOutstanding = readiness.blocking.length;
+  return awaitingReview > 0 || requiredOutstanding > 0 ? { awaitingReview, requiredOutstanding } : null;
 }

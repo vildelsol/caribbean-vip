@@ -6,6 +6,7 @@ import {
   reasonRequired,
   reviewDecision,
   documentsGate,
+  needsAttention,
 } from './vendorReview';
 
 /**
@@ -100,5 +101,59 @@ describe('documentsGate', () => {
 
   it('does not gate when there is no dossier (demo)', () => {
     expect(documentsGate('approve', null, false, '')).toEqual({ ok: true, waived: false });
+  });
+});
+
+describe('needsAttention', () => {
+  const NOW = new Date('2026-10-29T12:00:00Z');
+  const reqs = documentRequirementsFor('JM', 'wellness');
+  const doc = (kind: string, reviewState: DocumentRecord['reviewState'], expiresOn: string | null = '2027-12-31'): DocumentRecord => ({
+    kind,
+    reviewState,
+    expiresOn,
+    createdAt: '2026-10-01T00:00:00Z',
+  });
+  const allAccepted = reqs.filter((r) => r.level === 'required').map((r) => doc(r.key, 'accepted'));
+  const check = (docs: DocumentRecord[]) =>
+    needsAttention(approvalReadiness(requirementStatuses(reqs, docs, NOW)), docs);
+
+  it('leaves alone a vendor whose required documents are all accepted and in date (positive control)', () => {
+    expect(check(allAccepted)).toBeNull();
+  });
+
+  it('flags a vendor approved with nothing on file, as vendors approved before the policy are', () => {
+    expect(check([])).toEqual({ awaitingReview: 0, requiredOutstanding: reqs.filter((r) => r.level === 'required').length });
+  });
+
+  it('flags a renewal waiting for review even when everything required is accepted', () => {
+    const renewal = { ...doc('owner_id', 'pending'), createdAt: '2026-10-28T00:00:00Z' };
+    const r = check([...allAccepted, renewal]);
+    expect(r?.awaitingReview).toBe(1);
+  });
+
+  it('flags a licence that expired after approval', () => {
+    const docs = allAccepted.map((d) => (d.kind === 'public_liability' ? doc(d.kind, 'accepted', '2026-01-01') : d));
+    expect(check(docs)).toEqual({ awaitingReview: 0, requiredOutstanding: 1 });
+  });
+
+  it('flags a rejected required document', () => {
+    const docs = allAccepted.map((d) => (d.kind === 'bank_proof' ? doc(d.kind, 'rejected') : d));
+    expect(check(docs)?.requiredOutstanding).toBe(1);
+  });
+
+  it('flags an upload waiting for review when that upload is the only reason', () => {
+    // Water sports: every required item accepted, plus an unreviewed upload for a conditional item.
+    // Nothing required is outstanding, so only the pending file can put this vendor on the list.
+    const water = documentRequirementsFor('JM', 'water');
+    const docs = [
+      ...water.filter((r) => r.level === 'required').map((r) => doc(r.key, 'accepted')),
+      doc('jm.fisheries_licence', 'pending'),
+    ];
+    const r = needsAttention(approvalReadiness(requirementStatuses(water, docs, NOW)), docs);
+    expect(r).toEqual({ awaitingReview: 1, requiredOutstanding: 0 });
+  });
+
+  it('has nothing to say without a dossier (demo)', () => {
+    expect(needsAttention(null, [])).toBeNull();
   });
 });

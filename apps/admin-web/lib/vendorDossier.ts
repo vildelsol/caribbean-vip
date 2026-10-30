@@ -53,55 +53,81 @@ type DocRow = {
 };
 
 export async function loadDossier(vendorId: string): Promise<Dossier> {
-  const [org, docs] = await Promise.all([
-    supabase
-      .from('vendor_organizations')
-      .select('business_type, islands(code, name)')
-      .eq('id', vendorId)
-      .maybeSingle(),
+  const map = await loadDossiers([vendorId]);
+  return map.get(vendorId) ?? emptyDossier();
+}
+
+function emptyDossier(): Dossier {
+  return {
+    islandCode: null,
+    islandName: null,
+    businessType: null,
+    documents: [],
+    statuses: [],
+    readiness: { ready: false, blocking: [], toConfirm: [] },
+  };
+}
+
+/**
+ * Dossiers for several vendors in two queries, not two per vendor. Used to find approved vendors
+ * that need attention without opening each card.
+ */
+export async function loadDossiers(vendorIds: readonly string[]): Promise<Map<string, Dossier>> {
+  const out = new Map<string, Dossier>();
+  if (vendorIds.length === 0) return out;
+
+  const [orgs, docs] = await Promise.all([
+    supabase.from('vendor_organizations').select('id, business_type, islands(code, name)').in('id', vendorIds),
     supabase
       .from('vendor_documents')
       .select(
-        'id, kind, review_state, review_notes, expires_on, document_number, storage_path, original_filename, created_at',
+        'id, vendor_org_id, kind, review_state, review_notes, expires_on, document_number, storage_path, original_filename, created_at',
       )
-      .eq('vendor_org_id', vendorId)
+      .in('vendor_org_id', vendorIds)
       .order('created_at', { ascending: false }),
   ]);
-  if (org.error) throw new Error(org.error.message);
+  if (orgs.error) throw new Error(orgs.error.message);
   if (docs.error) throw new Error(docs.error.message);
 
-  const row = org.data as unknown as {
+  const byVendor = new Map<string, DossierDocument[]>();
+  for (const r of (docs.data ?? []) as unknown as (DocRow & { vendor_org_id: string })[]) {
+    const list = byVendor.get(r.vendor_org_id) ?? [];
+    list.push({
+      id: r.id,
+      kind: r.kind,
+      reviewState: r.review_state,
+      reviewNotes: r.review_notes,
+      expiresOn: r.expires_on,
+      documentNumber: r.document_number,
+      storagePath: r.storage_path,
+      fileName: r.original_filename,
+      createdAt: r.created_at,
+    });
+    byVendor.set(r.vendor_org_id, list);
+  }
+
+  const now = new Date();
+  for (const row of (orgs.data ?? []) as unknown as {
+    id: string;
     business_type: VendorBusinessType | null;
     islands: { code: string; name: string } | null;
-  } | null;
-  const code = row?.islands?.code;
-  const islandCode: IslandCode | null = code === 'JM' || code === 'BB' || code === 'KY' ? code : null;
-
-  const documents: DossierDocument[] = ((docs.data ?? []) as unknown as DocRow[]).map((r) => ({
-    id: r.id,
-    kind: r.kind,
-    reviewState: r.review_state,
-    reviewNotes: r.review_notes,
-    expiresOn: r.expires_on,
-    documentNumber: r.document_number,
-    storagePath: r.storage_path,
-    fileName: r.original_filename,
-    createdAt: r.created_at,
-  }));
-
-  // Without an island there is no checklist to hold the vendor to; say so rather than pass them.
-  const requirements = islandCode ? documentRequirementsFor(islandCode, row?.business_type ?? null) : [];
-  const statuses = requirementStatuses(requirements, documents, new Date());
-  return {
-    islandCode,
-    islandName: row?.islands?.name ?? null,
-    businessType: row?.business_type ?? null,
-    documents,
-    statuses,
-    readiness: islandCode
-      ? approvalReadiness(statuses)
-      : { ready: false, blocking: [], toConfirm: [] },
-  };
+  }[]) {
+    const code = row.islands?.code;
+    const islandCode: IslandCode | null = code === 'JM' || code === 'BB' || code === 'KY' ? code : null;
+    const documents = byVendor.get(row.id) ?? [];
+    // Without an island there is no checklist to hold the vendor to; say so rather than pass them.
+    const requirements = islandCode ? documentRequirementsFor(islandCode, row.business_type) : [];
+    const statuses = requirementStatuses(requirements, documents, now);
+    out.set(row.id, {
+      islandCode,
+      islandName: row.islands?.name ?? null,
+      businessType: row.business_type,
+      documents,
+      statuses,
+      readiness: islandCode ? approvalReadiness(statuses) : { ready: false, blocking: [], toConfirm: [] },
+    });
+  }
+  return out;
 }
 
 export async function reviewDocument(
