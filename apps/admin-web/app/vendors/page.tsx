@@ -41,7 +41,7 @@ const DECISION_LABELS: Record<ReviewDecision, string> = {
 
 const LANES: { key: ReviewLane; label: string; hint: string }[] = [
   { key: 'waiting', label: 'Waiting', hint: 'Needs a decision' },
-  { key: 'attention', label: 'Needs attention', hint: 'Approved, documents short' },
+  { key: 'attention', label: 'Needs attention', hint: 'Pending, documents short' },
   { key: 'approved', label: 'Approved', hint: 'Public, documents in order' },
 ];
 
