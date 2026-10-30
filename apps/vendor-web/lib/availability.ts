@@ -4,6 +4,8 @@ import { supabase, isSupabaseConfigured } from './supabase';
 import { NO_LISTING_PERMISSION } from './permissions';
 import { capacityFor } from './vendorData';
 import type { DemoExperience } from '@cvip/demo';
+import { dayKey, timeLabel } from './operations';
+import { SlotInputInvalid, buildSlotRows, zonedToUtc, type NewSlotInput } from './slotTime';
 
 /**
  * The availability write path — V-03.
@@ -47,8 +49,8 @@ export const isDemoAvailability = !isSupabaseConfigured;
 /** Thrown for a capacity an operator can correct, as opposed to a transport failure. */
 export class SlotInvalid extends Error {}
 
-const dayLabel = (d: Date) =>
-  d.toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' });
+const dayLabel = (d: Date, timeZone?: string) =>
+  d.toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short', timeZone });
 
 type SlotRow = {
   id: string;
@@ -60,6 +62,8 @@ type SlotRow = {
 export async function loadAvailability(
   experience: DemoExperience | { id: string; durationMinutes: number },
   days = 7,
+  /** The island's timezone. Required live: days and times are the island's, not the browser's. */
+  timeZone?: string,
 ): Promise<Day[]> {
   if (isDemoAvailability) {
     return capacityFor(experience as DemoExperience, days).map((d) => ({
@@ -69,10 +73,16 @@ export async function loadAvailability(
     }));
   }
 
-  const from = new Date();
-  from.setHours(0, 0, 0, 0);
-  const to = new Date(from);
-  to.setDate(to.getDate() + days);
+  if (!timeZone) throw new Error('The island timezone is not known yet.');
+
+  // Island calendar days, midnight to midnight. These zones have no daylight saving, so 24 h steps
+  // land on consecutive dates.
+  const now = new Date();
+  const dayKeys = Array.from({ length: days }, (_, i) =>
+    dayKey(new Date(now.getTime() + i * 86_400_000), timeZone),
+  );
+  const from = zonedToUtc(dayKeys[0]!, '00:00', timeZone);
+  const to = new Date(from.getTime() + days * 86_400_000);
 
   const { data, error } = await supabase
     .from('availability_slots')
@@ -91,22 +101,51 @@ export async function loadAvailability(
    */
   const byDay = new Map<string, Slot[]>();
   for (const r of (data as unknown as SlotRow[]) ?? []) {
-    const starts = new Date(r.starts_at);
-    const iso = starts.toISOString().slice(0, 10);
-    const time = starts.toTimeString().slice(0, 5);
-    const list = byDay.get(iso) ?? [];
-    list.push({ id: r.id, time, capacity: r.capacity, sold: r.booked_count });
-    byDay.set(iso, list);
+    const key = dayKey(r.starts_at, timeZone);
+    const list = byDay.get(key) ?? [];
+    list.push({ id: r.id, time: timeLabel(r.starts_at, timeZone), capacity: r.capacity, sold: r.booked_count });
+    byDay.set(key, list);
   }
 
-  const out: Day[] = [];
-  for (let i = 0; i < days; i += 1) {
-    const d = new Date(from);
-    d.setDate(d.getDate() + i);
-    const iso = d.toISOString().slice(0, 10);
-    out.push({ iso, label: dayLabel(d), slots: byDay.get(iso) ?? [] });
+  return dayKeys.map((iso) => ({
+    iso,
+    label: dayLabel(zonedToUtc(iso, '12:00', timeZone), timeZone),
+    slots: byDay.get(iso) ?? [],
+  }));
+}
+
+/**
+ * Schedule a departure, optionally repeated daily. Live only: the demo calendar is generated, so
+ * there is nothing to add to, and a demo that appeared to accept a slot it then forgot would be a
+ * fake flow.
+ *
+ * `booked_count` is not sent: it starts at zero and only the booking functions move it
+ * (`guard_availability_booked_count`).
+ */
+export async function addSlots(
+  canManage: boolean,
+  input: Omit<NewSlotInput, 'now'>,
+): Promise<number> {
+  if (!canManage) throw new SlotInvalid(NO_LISTING_PERMISSION);
+  if (isDemoAvailability) throw new SlotInvalid('Adding departures is not available in the demo.');
+
+  let rows;
+  try {
+    rows = buildSlotRows({ ...input, now: new Date() });
+  } catch (e) {
+    if (e instanceof SlotInputInvalid) throw new SlotInvalid(e.message);
+    throw e;
   }
-  return out;
+
+  const { error } = await supabase.from('availability_slots').insert(rows);
+  if (error) {
+    // 23505: unique (experience_id, starts_at). Nothing was written, the insert is one statement.
+    if (error.code === '23505') {
+      throw new SlotInvalid('There is already a departure at one of those times. Nothing was added.');
+    }
+    throw new Error(error.message);
+  }
+  return rows.length;
 }
 
 export async function setSlotCapacity(
