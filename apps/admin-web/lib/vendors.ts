@@ -3,7 +3,13 @@
 import { DEMO_VENDORS } from '@cvip/demo';
 import type { VendorStatus } from '@cvip/types';
 import { supabase, isSupabaseConfigured } from './supabase';
-import { REVIEW_QUEUE_STATUSES, reviewDecision, type ReviewDecision } from './vendorReview';
+import {
+  REVIEW_QUEUE_STATUSES,
+  documentsGate,
+  reviewDecision,
+  type ReviewDecision,
+} from './vendorReview';
+import { loadDossier } from './vendorDossier';
 
 /**
  * Vendor review data access.
@@ -92,9 +98,21 @@ export async function decideVendor(
   vendor: ReviewableVendor,
   decision: ReviewDecision,
   reason: string,
+  /** Approve despite missing documents. Needs a reason and is written to the audit log. */
+  waiveDocuments = false,
 ): Promise<DecisionResult> {
   const checked = reviewDecision(vendor.status, decision, reason);
   if (!checked.ok) throw new Error(checked.problem);
+
+  // The documents are re-read here, not trusted from the page: what the card showed may be stale,
+  // and an approval is the one decision that makes a vendor public. Demo has no documents.
+  let waivedMissing: string[] = [];
+  if (isSupabaseConfigured && decision === 'approve') {
+    const dossier = await loadDossier(vendor.id);
+    const gate = documentsGate(decision, dossier.readiness, waiveDocuments, reason);
+    if (!gate.ok) throw new Error(gate.problem);
+    if (gate.waived) waivedMissing = dossier.readiness.blocking.map((b) => b.requirement.key);
+  }
 
   if (!isSupabaseConfigured) {
     demoStatus.set(vendor.id, checked.status);
@@ -122,7 +140,10 @@ export async function decideVendor(
     p_entity_type: 'vendor_organization',
     p_entity_id: vendor.id,
     p_before: { status: vendor.status },
-    p_after: { status: checked.status },
+    p_after:
+      waivedMissing.length > 0
+        ? { status: checked.status, documentsWaived: waivedMissing }
+        : { status: checked.status },
     p_reason: checked.reason,
   });
 

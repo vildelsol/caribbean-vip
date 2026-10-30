@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { isSupabaseConfigured } from '../lib/supabase';
 
 /**
  * Portal navigation.
@@ -17,6 +18,9 @@ const LINKS = [
   { href: '/earnings', label: 'Earnings' },
 ];
 
+/** Documents are collected in live accounts only; the demo has no storage to put them in. */
+const LIVE_LINKS = [{ href: '/documents', label: 'Documents' }];
+
 export function VendorNav() {
   const pathname = usePathname();
   // Onboarding and billing are a linear signup flow, not places to navigate around inside.
@@ -26,7 +30,7 @@ export function VendorNav() {
     <nav className="vnav" aria-label="Portal sections">
       <div className="vnav__inner">
         <div className="vnav__links">
-          {LINKS.map((l) => {
+          {(isSupabaseConfigured ? [...LINKS, ...LIVE_LINKS] : LINKS).map((l) => {
             const active = l.href === '/' ? pathname === '/' : pathname.startsWith(l.href);
             return (
               <Link
