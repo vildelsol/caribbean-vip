@@ -279,7 +279,7 @@ export default function VendorReviewPage() {
                             <strong style={{ color: semantic.brand, fontSize: 15, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                               {v.tradingName}
                             </strong>
-                            <StatusChip status={v.status} />
+                            <StatusChip status={v.status} flagged={why !== undefined} />
                           </span>
                           {why ? (
                             <span style={{ display: 'block', fontSize: 13, color: semantic.urgentText, marginTop: 2 }}>
@@ -406,7 +406,7 @@ function VendorCard({
     >
       <div style={{ display: 'flex', justifyContent: 'space-between', gap: spacing.md, alignItems: 'baseline' }}>
         <h2 style={{ color: semantic.brand, margin: 0, fontSize: 22 }}>{vendor.tradingName}</h2>
-        <StatusChip status={vendor.status} />
+        <StatusChip status={vendor.status} flagged={attention !== undefined} />
       </div>
 
       {vendor.description ? (
@@ -523,10 +523,22 @@ function VendorCard({
   );
 }
 
-function StatusChip({ status }: { status: VendorStatus }) {
+/**
+ * `flagged` is an approved vendor short of documents. Plain "approved" next to a red "needs
+ * attention" reads as a contradiction, so the chip says what is true: public, but short.
+ */
+function StatusChip({ status, flagged = false }: { status: VendorStatus; flagged?: boolean }) {
   return (
-    <span style={{ color: semantic.premiumText, fontSize: 13, whiteSpace: 'nowrap', flexShrink: 0 }}>
-      {status.replace('_', ' ')}
+    <span
+      style={{
+        color: flagged ? semantic.urgentText : semantic.premiumText,
+        fontSize: 13,
+        fontWeight: flagged ? 600 : 400,
+        whiteSpace: 'nowrap',
+        flexShrink: 0,
+      }}
+    >
+      {flagged ? 'public · documents short' : status.replace('_', ' ')}
     </span>
   );
 }
