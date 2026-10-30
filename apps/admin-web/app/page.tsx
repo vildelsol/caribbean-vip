@@ -26,7 +26,8 @@ const areas: Area[] = [
   },
   {
     name: 'Listing moderation',
-    milestone: 'M5',
+    milestone: 'Built',
+    href: '/listings',
     detail: 'Approve, reject, unpublish and edit platform-controlled metadata.',
   },
   {

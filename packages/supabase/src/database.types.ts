@@ -78,6 +78,8 @@ export type ExperienceRow = {
   from_amount_minor: number;
   currency: Currency;
   status: ListingStatus;
+  /** Set by an admin on review; the reviewer columns are stamped by `guard_listing_review_fields`. */
+  review_notes: string | null;
   /** Operating rule 9 — surfaced in the UI so demo content is never mistaken for live. */
   is_demo: boolean;
 }
