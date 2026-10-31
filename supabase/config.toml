@@ -24,3 +24,8 @@ verify_jwt = true
 
 [functions.claim-guest-bookings]
 verify_jwt = true
+
+# Called from the browser with the guest's token. The platform check stays on, and the function
+# still asks Auth who the token belongs to: `verify_jwt` alone accepts the public anon key.
+[functions.eligible-offer]
+verify_jwt = true
