@@ -84,6 +84,8 @@ PROBES = {
     "20261029000003_vendor_document_requirements": """
        case when exists (select 1 from information_schema.columns
               where table_name='vendor_documents' and column_name='expires_on') then 'applied' else 'missing' end""",
+    "20261031000001_guard_promotion_review_fields": """
+       case when exists (select 1 from pg_proc where proname='guard_promotion_review_fields') then 'applied' else 'missing' end""",
 }
 
 HEADER = """\
