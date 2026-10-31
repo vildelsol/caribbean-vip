@@ -34,7 +34,7 @@ MAP="supabase/functions/deno.json"
 
 echo "==> Deploying to $REF"
 
-for fn in resolve-slot booking-status checkout-session claim-guest-bookings; do
+for fn in resolve-slot booking-status checkout-session claim-guest-bookings eligible-offer; do
   echo "--> $fn"
   npx supabase functions deploy "$fn" --project-ref "$REF" --import-map "$MAP"
 done
