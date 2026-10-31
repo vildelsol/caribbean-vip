@@ -2,6 +2,7 @@
 
 import type { ApprovalState, VendorStatus } from '@cvip/types';
 import { supabase, isSupabaseConfigured } from './supabase';
+import { buildPromotion, type PromotionDraft } from './promotionDraft';
 import {
   PROMOTION_AUDIT_ENTITY,
   promotionDecision,
@@ -116,4 +117,65 @@ export async function decidePromotion(
   }
 
   return { state: checked.state };
+}
+
+export interface VendorChoice {
+  id: string;
+  name: string;
+  islandId: string;
+}
+
+/** Approved vendors only: an offer from a vendor tourists cannot see would never be shown. */
+export async function listVendorChoices(): Promise<VendorChoice[]> {
+  if (!isSupabaseConfigured) return [];
+  const { data, error } = await supabase
+    .from('vendor_organizations')
+    .select('id, trading_name, island_id')
+    .eq('status', 'approved')
+    .order('trading_name', { ascending: true });
+  if (error) throw new Error(error.message);
+  return (data ?? []).map((v) => ({ id: v.id, name: v.trading_name, islandId: v.island_id }));
+}
+
+/**
+ * Create a promotion and its geofence for a vendor. It starts `pending`, like a vendor's would:
+ * creating is not approving, so the offer still goes through the oversight queue and its audit row.
+ *
+ * Two inserts, not one transaction: if the geofence fails, the promotion is removed again, because
+ * an offer with no fence would sit in the queue looking real and never fire.
+ */
+export async function createPromotion(draft: PromotionDraft, vendors: VendorChoice[]): Promise<{ id: string }> {
+  if (!isSupabaseConfigured) throw new Error('There are no promotions in demo mode.');
+
+  const vendor = vendors.find((v) => v.id === draft.vendorId) ?? null;
+  const built = buildPromotion(draft, vendor?.islandId ?? null, new Date());
+  if (!built.ok) throw new Error(built.problems.join(' '));
+
+  const { data, error } = await supabase.from('promotions').insert({ ...built.promotion }).select('id').single();
+  if (error) throw new Error(error.message);
+  const id = (data as unknown as { id: string }).id;
+
+  const { error: fenceError } = await supabase.from('geofences').insert({ promotion_id: id, ...built.geofence });
+  if (fenceError) {
+    const { error: undoError } = await supabase.from('promotions').delete().eq('id', id);
+    throw new Error(
+      undoError
+        ? `The geofence failed (${fenceError.message}) and the promotion ${id} could not be removed: ${undoError.message}`
+        : `The geofence failed, so the promotion was not created: ${fenceError.message}`,
+    );
+  }
+
+  const { error: auditError } = await supabase.rpc('write_audit_log', {
+    p_action: 'promotion.create',
+    p_entity_type: PROMOTION_AUDIT_ENTITY,
+    p_entity_id: id,
+    p_before: null,
+    p_after: { approval_state: 'pending', vendor_org_id: draft.vendorId, is_demo: built.promotion.is_demo },
+    p_reason: null,
+  });
+  if (auditError) {
+    throw new Error(`The promotion was created (${id}), but the audit entry failed to write: ${auditError.message}`);
+  }
+
+  return { id };
 }
