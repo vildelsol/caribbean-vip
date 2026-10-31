@@ -43,8 +43,9 @@ const areas: Area[] = [
   },
   {
     name: 'Promotion oversight',
-    milestone: 'M6',
-    detail: 'Approve or disable offers; investigate suspicious redemption patterns.',
+    milestone: 'Built',
+    href: '/promotions',
+    detail: 'Approve, reject or disable offers; investigate suspicious redemption patterns.',
   },
   {
     name: 'Audit log',
