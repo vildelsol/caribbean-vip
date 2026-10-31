@@ -11,6 +11,7 @@
   },
   "dependencies": {
     "@cvip/demo": "workspace:^",
+    "@cvip/offers": "workspace:*",
     "@cvip/types": "workspace:*",
     "@cvip/ui": "workspace:*",
     "@supabase/supabase-js": "^2.47.2",

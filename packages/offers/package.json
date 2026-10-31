@@ -1,0 +1,22 @@
+{
+  "name": "@cvip/offers",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Geofenced offer rules: proximity, schedule, cooldown and who is eligible for which offer. Pure functions over plain data, no Deno, no network, no Supabase import, so the tourist app and the eligibility Edge Function cannot disagree.",
+  "type": "module",
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "exports": { ".": "./src/index.ts" },
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@cvip/types": "workspace:*"
+  },
+  "devDependencies": {
+    "@cvip/config": "workspace:*",
+    "typescript": "^5.7.2",
+    "vitest": "^2.1.8"
+  }
+}
