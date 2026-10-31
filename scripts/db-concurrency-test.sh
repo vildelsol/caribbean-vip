@@ -67,6 +67,52 @@ else
 fi
 
 # ---------------------------------------------------------------------------
+# Promotions — the last unit of inventory
+# ---------------------------------------------------------------------------
+
+echo "==> P-01: $WORKERS concurrent claims for a promotion with one unit left"
+
+PROMO_ID=$("${PSQL[@]}" -d "$DB_NAME" -c "
+  insert into promotions (vendor_org_id, island_id, title, terms, value_kind,
+                          starts_at, ends_at, inventory_limit, approval_state)
+  select o.id, o.island_id, 'Race promo', 'T', 'in_kind',
+         now() - interval '1 day', now() + interval '5 days', 1, 'approved'
+    from vendor_organizations o where o.trading_name = '[Demo] Negril Sunset Cruises'
+  returning id;
+")
+
+for i in $(seq 1 "$WORKERS"); do
+  U=$("${PSQL[@]}" -d "$DB_NAME" -c "insert into auth.users (email) values ('race-claim-$i@test.local') returning id;")
+  (
+    perl -e 'select undef, undef, undef, rand(0.01)'
+    # The transaction is held open for 0.3s after the claim. The function alone finishes in well
+    # under a millisecond, too fast for the workers to overlap, and a test that never overlaps
+    # passes against an implementation with no row lock at all.
+    psql --quiet --no-psqlrc -t -A -v ON_ERROR_STOP=1 -d "$DB_NAME" > "$TMP/claim.$i" 2>/dev/null <<SQL || echo "error" > "$TMP/claim.$i"
+begin;
+select outcome from claim_promotion_voucher('$PROMO_ID', '$U', 'race-claim-hash-$i', now() + interval '3 days');
+select pg_sleep(0.3);
+commit;
+SQL
+  ) &
+done
+wait
+
+CLAIMED=$(grep -lx "claimed" "$TMP"/claim.* 2>/dev/null | wc -l | tr -d ' ')
+SOLD_OUT=$(grep -lx "sold_out" "$TMP"/claim.* 2>/dev/null | wc -l | tr -d ' ')
+ISSUED=$("${PSQL[@]}" -d "$DB_NAME" -c "select issued_count from promotions where id = '$PROMO_ID';")
+VOUCHERS=$("${PSQL[@]}" -d "$DB_NAME" -c "select count(*) from vouchers where promotion_id = '$PROMO_ID';")
+
+# The table's own check would also stop an oversell, but by raising: the losers must be told
+# 'sold_out', which only happens if the row lock made them wait and re-read the count.
+if [[ "$CLAIMED" == "1" && "$SOLD_OUT" == "$((WORKERS - 1))" && "$ISSUED" == "1" && "$VOUCHERS" == "1" ]]; then
+  printf '    \033[32mPASS\033[0m  exactly 1 of %s claims won, the rest sold_out; issued_count = 1, 1 voucher\n' "$WORKERS"
+else
+  printf '    \033[31mFAIL\033[0m  %s winners, %s sold_out, issued_count = %s, vouchers = %s (expected 1, %s, 1, 1)\n' "$CLAIMED" "$SOLD_OUT" "$ISSUED" "$VOUCHERS" "$((WORKERS - 1))"
+  FAILED=1
+fi
+
+# ---------------------------------------------------------------------------
 # V-05 — simultaneous scans of one voucher
 # ---------------------------------------------------------------------------
 
