@@ -10,7 +10,7 @@ import {
   isScheduleActive,
   type Fence,
   type FenceState,
-} from './geofence';
+} from './geofence.ts';
 
 /**
  * The geofence is the part of the product that has to be right: an offer that fires in the wrong

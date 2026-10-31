@@ -135,14 +135,48 @@ function minutesOfDay(time: string): number | null {
  * at the wrong hour is the failure to avoid.
  */
 export function isScheduleActive(schedule: FenceSchedule | undefined, now: Date): boolean {
+  return isScheduleActiveAt(schedule, now.getDay(), now.getHours() * 60 + now.getMinutes());
+}
+
+/**
+ * The day (0 = Sunday) and minute of day at `now` on the wall clock of `timeZone` (an IANA name,
+ * as in `islands.timezone`), or null when the zone is not one the runtime knows. A schedule is a
+ * statement about the clock where the offer is, not the clock of whatever machine evaluates it.
+ */
+export function localDayAndMinute(now: Date, timeZone: string): { day: number; minute: number } | null {
+  try {
+    const parts = new Intl.DateTimeFormat('en-US', {
+      timeZone,
+      weekday: 'short',
+      hour: '2-digit',
+      minute: '2-digit',
+      hourCycle: 'h23',
+    }).formatToParts(now);
+    const get = (type: string) => parts.find((p) => p.type === type)?.value ?? '';
+    const day = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].indexOf(get('weekday'));
+    const hour = Number(get('hour'));
+    const minute = Number(get('minute'));
+    if (day < 0 || !Number.isInteger(hour) || !Number.isInteger(minute)) return null;
+    return { day, minute: hour * 60 + minute };
+  } catch {
+    return null;
+  }
+}
+
+/** `isScheduleActive` on the wall clock of `timeZone`. An unknown zone is inactive, never always-on. */
+export function isScheduleActiveInZone(schedule: FenceSchedule | undefined, now: Date, timeZone: string): boolean {
+  const local = localDayAndMinute(now, timeZone);
+  return local !== null && isScheduleActiveAt(schedule, local.day, local.minute);
+}
+
+/** The schedule rule itself, over an already-resolved day and minute of day. */
+export function isScheduleActiveAt(schedule: FenceSchedule | undefined, day: number, minute: number): boolean {
   if (!schedule) return true;
   const days = schedule.activeDays ?? [];
   const from = schedule.activeFromTime ? minutesOfDay(schedule.activeFromTime) : null;
   const to = schedule.activeToTime ? minutesOfDay(schedule.activeToTime) : null;
   if ((schedule.activeFromTime && from === null) || (schedule.activeToTime && to === null)) return false;
 
-  const day = now.getDay();
-  const minute = now.getHours() * 60 + now.getMinutes();
   const dayOk = (d: number) => days.length === 0 || days.includes(d);
 
   if (from === null && to === null) return dayOk(day);

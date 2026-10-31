@@ -20,7 +20,7 @@ import {
   type DemoExperience,
   allInFromMinor,
 } from '../data/catalogue';
-import { evaluateFences, type FenceState } from '../data/geofence';
+import { evaluateFences, type FenceState } from '@cvip/offers';
 import { useGuestPosition } from '../state/useGuestPosition';
 import { useNavigate } from 'react-router-dom';
 import { availabilityLabel, firstBookableDay, slotsFor } from '../data/availability';
