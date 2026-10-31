@@ -116,6 +116,9 @@ export default function PromotionOversightPage() {
           </p>
           <h1 style={{ color: semantic.brand, margin: `${spacing.xs}px 0 0` }}>Promotion oversight</h1>
         </div>
+        <Link href="/promotions/new" style={{ color: semantic.brand, fontWeight: 600, fontSize: 15 }}>
+          New promotion
+        </Link>
         <p style={{ color: semantic.textMuted, margin: 0, fontSize: 14, maxWidth: 420 }}>
           An offer is public only when it is approved, inside its dates and its vendor is approved. Every decision is recorded in the audit log.
         </p>

@@ -161,6 +161,7 @@ export interface Database {
       payments: UntypedTable;
       vouchers: UntypedTable;
       promotions: UntypedTable;
+      geofences: UntypedTable;
       availability_slots: UntypedTable;
       experience_options: UntypedTable;
       experience_media: UntypedTable;
