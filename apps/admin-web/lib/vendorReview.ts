@@ -12,6 +12,9 @@ import type { ApprovalReadiness, DocumentRecord, VendorStatus } from '@cvip/type
  * enters the marketplace.
  */
 
+/** `audit_logs.entity_type` for vendor decisions: the table name, matching the database trigger's rows. */
+export const VENDOR_AUDIT_ENTITY = 'vendor_organizations';
+
 export type ReviewDecision = 'approve' | 'reject' | 'request_changes' | 'suspend';
 
 /** The statuses an admin is expected to act on, in the order the queue should show them. */

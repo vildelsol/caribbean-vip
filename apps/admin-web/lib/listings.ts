@@ -3,7 +3,7 @@
 import { DEMO_EXPERIENCES, DEMO_VENDORS } from '@cvip/demo';
 import type { ListingStatus, VendorStatus } from '@cvip/types';
 import { supabase, isSupabaseConfigured } from './supabase';
-import { listingDecision, listingLane, type ListingDecision } from './listingReview';
+import { LISTING_AUDIT_ENTITY, listingDecision, listingLane, type ListingDecision } from './listingReview';
 
 /**
  * Listing moderation data access.
@@ -113,7 +113,7 @@ export async function decideListing(
   // Surfaced, not swallowed: an unrecorded moderation is worse than a visibly failed one.
   const { error: auditError } = await supabase.rpc('write_audit_log', {
     p_action: `listing.${decision}`,
-    p_entity_type: 'experience',
+    p_entity_type: LISTING_AUDIT_ENTITY,
     p_entity_id: listing.id,
     p_before: { status: listing.status },
     p_after: { status: checked.status },
