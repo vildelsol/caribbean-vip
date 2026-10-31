@@ -5,6 +5,7 @@ import type { VendorStatus } from '@cvip/types';
 import { supabase, isSupabaseConfigured } from './supabase';
 import {
   REVIEW_QUEUE_STATUSES,
+  VENDOR_AUDIT_ENTITY,
   documentsGate,
   reviewDecision,
   type ReviewDecision,
@@ -137,7 +138,7 @@ export async function decideVendor(
   // than swallowed: an unrecorded approval is worse than a visibly failed one.
   const { error: auditError } = await supabase.rpc('write_audit_log', {
     p_action: `vendor.${decision}`,
-    p_entity_type: 'vendor_organization',
+    p_entity_type: VENDOR_AUDIT_ENTITY,
     p_entity_id: vendor.id,
     p_before: { status: vendor.status },
     p_after:

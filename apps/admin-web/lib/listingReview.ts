@@ -10,6 +10,13 @@ import type { ListingStatus } from '@cvip/types';
  * tests cannot disagree.
  */
 
+/**
+ * `audit_logs.entity_type` for listing decisions. It is the table name, because the database trigger
+ * `audit_status_change()` writes its own row for the same change under the table name, and one
+ * entity must not be filed under two spellings.
+ */
+export const LISTING_AUDIT_ENTITY = 'experiences';
+
 export type ListingDecision = 'approve' | 'reject' | 'unpublish';
 
 const TRANSITIONS: Record<ListingDecision, { from: readonly ListingStatus[]; to: ListingStatus }> = {
