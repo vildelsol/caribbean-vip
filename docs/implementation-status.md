@@ -18,7 +18,7 @@ Per operating rule 6: no requirement is silently omitted. Every requirement is m
 | M3 — Booking, Stripe, redemption | **staging verified end to end (payment and refund), 2026-10-26** | Edge Functions (`checkout-session`, `stripe-webhook`, `booking-status`, `resolve-slot`) are ACTIVE on `fsnkzpxgrckfifmhwsff`. A test-card payment and a full refund were run against it on 2026-10-26. The tourist app at `https://caribbean-vip-tourist-web.vercel.app` has not been repointed to it. See HANDOVER §5. |
 | M4 — Vendor portal | **complete in demo mode** | `apps/vendor-web`: onboarding, listings (edit/publish/new), availability (editable slots), earnings, billing, scan. Write path runs in local state. |
 | M5 — Admin console | **complete in demo mode** | `apps/admin-web`: vendor and listing review, audit log. |
-| M6 — Geofenced offers | **wired (2026-09-22)** | Real GPS triggers offer on 250 m entry; 400 m hysteresis; demo timer fallback for simulated/no-consent positions. `data/geofence.ts` pure, needs unit tests. |
+| M6 — Geofenced offers | **wired (2026-09-22)** | Real GPS triggers offer on 250 m entry; 400 m hysteresis; demo timer fallback for simulated/no-consent positions. Rules now in `packages/offers/src/geofence.ts` with hysteresis tests (#45). |
 | M7 — Irie AI | **complete in demo mode** | `Irie.tsx` itinerary builder, 680 lines. Irie rule-matcher and greeting retypeset. Real model not wired (open decision). |
 | M8 — Hardening | **in progress** | 289 tests; a11y pass (checkout live region, touch-action, LCP priority, reduced-motion); token contrast enforced via `tokens.test.ts`. |
 
@@ -76,6 +76,5 @@ Per operating rule 6: no requirement is silently omitted. Every requirement is m
 
 ## Known gaps before M3 can be marked complete
 
-1. **First live Stripe payment** — test with card `4242 4242 4242 4242` on the Vercel URL.
-2. **`data/geofence.ts` unit tests** — 250 m / 400 m hysteresis logic needs guard tests.
-3. **Reseed drift** — `packages/demo/src/dataset.ts` dropped `[Demo]` prefix; `supabase/seed/seed.sql` still carries it.
+1. **Authenticated offer test** — `eligible-offer` and `claim-offer` are deployed to staging but have never run signed in. The tourist app at the Vercel URL is demo-only (no `supabase.co`), so this needs a staging-pointed deploy or a local run.
+2. **Reseed drift** — `packages/demo/src/dataset.ts` dropped `[Demo]` prefix; `supabase/seed/seed.sql` still carries it.
