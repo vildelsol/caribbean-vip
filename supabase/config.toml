@@ -29,3 +29,8 @@ verify_jwt = true
 # still asks Auth who the token belongs to: `verify_jwt` alone accepts the public anon key.
 [functions.eligible-offer]
 verify_jwt = true
+
+# Called from the browser with the guest's token, like eligible-offer, and for the same reason the
+# function still asks Auth who the token belongs to.
+[functions.claim-offer]
+verify_jwt = true

@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #
-# Deploy the five Edge Functions.
+# Deploy the Edge Functions.
 #
 # Two flags here are not optional and are not discoverable from the error messages:
 #
@@ -34,7 +34,7 @@ MAP="supabase/functions/deno.json"
 
 echo "==> Deploying to $REF"
 
-for fn in resolve-slot booking-status checkout-session claim-guest-bookings eligible-offer; do
+for fn in resolve-slot booking-status checkout-session claim-guest-bookings eligible-offer claim-offer; do
   echo "--> $fn"
   npx supabase functions deploy "$fn" --project-ref "$REF" --import-map "$MAP"
 done
