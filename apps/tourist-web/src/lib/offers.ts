@@ -2,8 +2,9 @@
  * Live offers: asking `eligible-offer` whether the guest may be shown one here, and asking
  * `claim-offer` to turn a shown offer into a voucher.
  *
- * Nothing renders this yet. Where the consent prompt goes, and so when these are first called, is
- * undecided, so no screen imports this file and demo output cannot change.
+ * Nothing renders this yet, so no screen imports this file and demo output cannot change. The two
+ * consents the server requires are recorded by `./consent` (location from `LocationBar`, the offer
+ * opt-in from the Profile switch); when these are first called is the next step.
  *
  * Both functions identify the caller from the guest's own access token, not the anon key that the
  * checkout path sends: with only the anon key they answer 401. The token is passed in rather than

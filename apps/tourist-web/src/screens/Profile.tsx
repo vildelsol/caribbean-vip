@@ -12,6 +12,7 @@ import { useStore } from '../state/store';
 import { Badge, Card, EmptyState, Photo, SecondaryButton, formatUsd } from '../components/kit';
 import { Icon } from '../components/Icon';
 import { AccountCard } from '../components/AccountCard';
+import { OfferConsentCard } from '../components/OfferConsentCard';
 import { isLiveMode } from '../lib/supabase';
 import './Profile.css';
 
@@ -78,6 +79,9 @@ export function Profile() {
 
       {/* Live mode only: add an email so bookings survive a lost phone. Nothing in demo. */}
       {isLiveMode ? <AccountCard /> : null}
+
+      {/* Live mode only: the offer opt-in. Nothing in demo. */}
+      {isLiveMode ? <OfferConsentCard /> : null}
 
       {/* --- Island switching --- */}
       <section className="pad profile__block">

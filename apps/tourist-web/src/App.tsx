@@ -3,6 +3,7 @@ import { useEffect } from 'react';
 import { BottomNav } from './components/BottomNav';
 import { useStore } from './state/store';
 import { useLiveSync } from './state/useLiveSync';
+import { useLocationConsentSync } from './state/useConsent';
 import { Welcome } from './screens/Welcome';
 import { Explore } from './screens/Explore';
 import { Nearby } from './screens/Nearby';
@@ -43,6 +44,9 @@ export function App() {
   // Live mode only: recover the guest's bookings from the server. A no-op in demo. Above the
   // early return for the same hook-order reason as the effect above.
   useLiveSync();
+
+  // Live mode only: record the location answer where the server reads it. A no-op in demo.
+  useLocationConsentSync();
 
   if (!state.onboarded) return <Welcome />;
 
