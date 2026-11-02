@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { CONSENT_TEXT } from '../lib/consent';
 import { useStore } from '../state/store';
 import { useOfferConsent } from '../state/useConsent';
 import './OfferConsentCard.css';
@@ -34,8 +35,7 @@ export function OfferConsentCard() {
     <section className="pad profile__block offer-consent">
       <h2 className="t-section">Nearby offers</h2>
       <p className="t-caption c-muted profile__hint">
-        Get an offer from a local vendor when you are close to them. Offers need your location as
-        well; it is a separate switch on the Explore screen.
+        {CONSENT_TEXT.offers}
       </p>
       <button
         type="button"

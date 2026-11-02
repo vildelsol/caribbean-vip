@@ -16,13 +16,14 @@ exists yet. `erasure` is what a deletion request would do today.
 
 | table | personal | data held | purpose | basis (proposed) | retention | erasure |
 |---|---|---|---|---|---|---|
-| `profiles` | yes | display name, interests, party size, locale, currency, role, three consent flags | account, personalisation, consent record | contract; consent for the three flags | none defined | no path; deleting the row cascades to dependent tables |
+| `profiles` | yes | display name, interests, party size, locale, currency, role, three consent flags | account, personalisation, current consent state | contract; consent for the three flags | none defined | no path; deleting the row cascades to dependent tables |
 | `bookings` | yes | who booked what, amounts, status, cancellation reason | contract, accounting | contract; legal obligation | none defined; accounting period set by counsel | anonymise, not delete, while a legal retention period runs; no path |
 | `booking_guests` | yes | attendee names | contract | contract | follows its booking | anonymise with the booking |
 | `payments` | yes | Stripe ids, amounts, refunds, failure text; no card data | accounting, refunds | contract; legal obligation | none defined | retained for accounting; no path |
 | `vouchers` | yes | voucher state tied to a user, token hash only | redeeming an offer or booking | contract; consent for offers | none defined | cascades with the profile |
 | `voucher_redemptions` | yes | scanner user, result, device metadata | fraud control, audit | legitimate interest | none defined; append-only | pseudonymise the scanner and device fields; no path |
 | `promotion_impressions` | yes | which offer a guest was shown and when, which implies they were near the vendor | offer cooldown | consent (offer and location) | none defined; only recent rows are needed for the cooldown | cascades with the profile |
+| `consent_events` | yes | user, purpose (location, offers, notifications), granted or withdrawn, wording version, time | proof of consent (Art 7(1)) | legal obligation; legitimate interest (demonstrating consent) | none defined; append-only | cascades with the profile; whether proof must outlive an erased account is a question for counsel |
 | `ai_conversations` | yes | free-text chat history | Irie assistant | consent | `expires_at` defaults to 30 days; no purge job found in the repository | cascades with the profile; PRD requires a clear-history control, not built |
 | `notifications` | yes | messages to a user | service messages | contract; consent for marketing | none defined | cascades with the profile |
 | `saved_items` | yes | listings a guest saved | personalisation | contract | none defined | cascades with the profile |
@@ -57,8 +58,11 @@ exists yet. `erasure` is what a deletion request would do today.
 
 ## Gaps, ranked by consequence (as of 2026-11-02)
 
-1. **No proof of consent (Art 7(1)).** Consent is a bare boolean: no timestamp, no wording version, no
-   history of withdrawal. A regulator can ask when a guest agreed and to what text; the system cannot say.
+1. **Consent proof: closed 2026-11-02 for location and offers** (`consent_events`, `record_consent()`).
+   Every change records purpose, answer, time and a wording version that is a hash of the displayed
+   text. A direct update of a consent flag is refused. Not covered: `notification_consent` has no
+   screen yet; service-role writes leave no event; the text behind an old version is recovered from
+   git history, not stored.
 2. **No erasure or export path (Art 17, 20).** Nothing lets a guest delete their account or download
    their data, and nothing defines what is erased versus retained for accounting.
 3. **No retention enforced.** `ai_conversations` has an expiry column and no job that uses it; every

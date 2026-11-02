@@ -52,7 +52,7 @@ export function useLocationConsentSync(): void {
     if (!supabase) return;
     let active = true;
     void (async () => {
-      const result = await writeConsent({ location_consent: consented });
+      const result = await writeConsent({ purpose: 'location', granted: consented });
       if (active && !result.ok && result.reason === 'signed-out' && consented) await ensureLiveUser();
     })();
     return () => {
@@ -99,10 +99,10 @@ export function useOfferConsent(): OfferConsent {
 
   const setOfferConsent = useCallback(async (next: boolean): Promise<boolean> => {
     if (!supabase) return false;
-    let result = await writeConsent({ offer_consent: next });
+    let result = await writeConsent({ purpose: 'offers', granted: next });
     if (!result.ok && result.reason === 'signed-out' && next) {
       // Opting in is the first thing this guest has done that needs a row.
-      if (await ensureLiveUser()) result = await writeConsent({ offer_consent: next });
+      if (await ensureLiveUser()) result = await writeConsent({ purpose: 'offers', granted: next });
     }
     if (result.ok && live.current) setValue(next);
     return result.ok;

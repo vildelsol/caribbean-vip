@@ -90,6 +90,8 @@ PROBES = {
        case when exists (select 1 from pg_proc where proname='audit_promotion_approval') then 'applied' else 'missing' end""",
     "20261031000003_claim_promotion_voucher": """
        case when exists (select 1 from pg_proc where proname='claim_promotion_voucher') then 'applied' else 'missing' end""",
+    "20261102000001_consent_events": """
+       case when exists (select 1 from pg_proc where proname='record_consent') then 'applied' else 'missing' end""",
 }
 
 HEADER = """\
