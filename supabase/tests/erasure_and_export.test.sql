@@ -63,6 +63,8 @@ begin
   perform test.eq(jsonb_array_length(doc -> 'bookings'), 1, 'export includes the booking');
   perform test.eq(doc #>> '{bookings,0,guests,0,guest_name}', 'Ada Guest', 'export includes attendee names');
   perform test.ok(doc::text not like '%Bea Other%', 'export holds nothing of another guest');
+  perform test.eq((select count(*) from privacy_requests where subject_id = a and request_type = 'export')::integer, 1,
+    'an export leaves a request record');
 end
 $$;
 
@@ -127,6 +129,29 @@ begin
   perform erase_my_data();
   select count(*) into n from consent_events where user_id = a and wording_version = 'erasure';
   perform test.eq(n, 2, 'erasing twice writes no further withdrawals');
+  select count(*) into n from privacy_requests where subject_id = a and request_type = 'erasure';
+  perform test.eq(n, 2, 'each erasure request is recorded, including the repeat');
+  perform test.eq((select outcome ->> 'bookings_retained' from privacy_requests
+                    where subject_id = a and request_type = 'erasure' limit 1), '1',
+    'the record states what was retained, as a count');
+end
+$$;
+
+-- The request record: private to its subject, not writable or editable by a guest.
+do $$
+declare a uuid := (select v from fixture where k = 'a'); b uuid := (select v from fixture where k = 'b'); n integer;
+begin
+  perform test.become(b);
+  select count(*) into n from privacy_requests;
+  perform test.eq(n, 0, 'another guest sees none of a''s requests');
+  perform test.become(a);
+  select count(*) into n from privacy_requests;
+  perform test.eq(n, 3, 'a sees their own three requests');
+  perform test.raises(format($q$ insert into privacy_requests (subject_id, request_type) values (%L, 'erasure') $q$, a),
+    'a guest cannot write a request record directly');
+  update privacy_requests set outcome = '{}' where subject_id = a;
+  get diagnostics n = row_count;
+  perform test.eq(n, 0, 'a guest cannot edit a request record');
 end
 $$;
 
@@ -175,6 +200,19 @@ declare c uuid := (select v from fixture where k = 'c');
 begin
   perform test.become(c);
   perform test.eq((erase_my_data() ->> 'account_removable')::boolean, true, 'a guest with no booking is removable');
+end
+$$;
+
+-- The record outlives the account: no foreign key to profiles, so removing the sign-in keeps it.
+set local role service_role;
+do $$
+declare c uuid := (select v from fixture where k = 'c'); n integer;
+begin
+  delete from auth.users where id = c;
+  select count(*) into n from profiles where id = c;
+  perform test.eq(n, 0, 'fixture: the guest account is gone');
+  select count(*) into n from privacy_requests where subject_id = c and request_type = 'erasure';
+  perform test.eq(n, 1, 'the erasure record survives removal of the account');
 end
 $$;
 

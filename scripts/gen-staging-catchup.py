@@ -94,6 +94,8 @@ PROBES = {
        case when exists (select 1 from pg_proc where proname='record_consent') then 'applied' else 'missing' end""",
     "20261103000001_erasure_and_export": """
        case when exists (select 1 from pg_proc where proname='erase_my_data') then 'applied' else 'missing' end""",
+    "20261103000002_privacy_requests": """
+       case when exists (select 1 from information_schema.tables where table_name='privacy_requests') then 'applied' else 'missing' end""",
 }
 
 HEADER = """\
