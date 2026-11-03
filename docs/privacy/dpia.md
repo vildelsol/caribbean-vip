@@ -12,8 +12,10 @@ Systematic location tracking of visitors is a typical trigger for an impact asse
 4. A shown offer is logged in `promotion_impressions` (user, offer, time).
 5. Claiming needs the offer to have been shown in the last 30 minutes (`claim-offer`).
 
-Does the position get stored? **[UNKNOWN: confirm in `eligible-offer` that the raw position is not
-logged or persisted.]** The impression row implies proximity to a vendor but holds no coordinates.
+Does the position get stored? No. `eligible-offer` uses `lat`/`lng` in memory only; the one write is
+`promotion_impressions` (promotion, geofence, user). The error log prints the message only. The
+impression row implies proximity to a vendor but holds no coordinates. Hosting request logs
+(Vercel, Supabase) may still hold request metadata **[UNKNOWN: confirm the POST body is not logged]**.
 
 ## 2. Data and people
 Visiting tourists, Jamaica, Barbados, Cayman, plus EU/UK residents. Adults. No special-category data
