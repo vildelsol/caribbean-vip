@@ -20,6 +20,7 @@ onboarding real vendors.
 | OD-07 | Does a geofenced offer voucher require a paid booking, or can it stand alone? | PRD §9 implies both (T-08 saves without booking; Journey B step 6 links to a booking). Modelled as a `promotions.requires_booking` flag so both exist. | None — already configurable |
 | OD-08 | Refund authority: vendor, admin, or both? | Admin only at MVP (PRD §7 puts refund state in admin booking operations; §6 does not give vendors refunds). | Small — a vendor-web screen and a policy change |
 | OD-09 | Currency display vs settlement currency | **RESOLVED 2026-08-02: display localized, settle in USD.** Prices may be shown in the island's currency as an informational conversion, clearly labelled; every booking, payment and payout is denominated in USD. | Was significant; now locked before M3, which is the point at which it becomes expensive |
+| OD-10 | What counts as a redemption anomaly on the admin dashboard? | PRD §7 lists the tile; nothing defines it, so the dashboard shows none rather than a guessed rule. **Proposal:** `docs/redemption-anomalies.md`. | Dashboard tile stays hidden; every scan is already logged in `voucher_redemptions` | Before real vendors scan |
 
 ## Resolved
 
