@@ -8,8 +8,9 @@ import { loadDashboard, type DashboardData } from '../../lib/dashboard';
 
 /**
  * Admin dashboard — PRD §7. The top row is what needs a person (it links to the queue that clears
- * it); below is how the marketplace is doing. Redemption anomalies are not shown: nothing defines
- * an anomaly yet, and a tile with a guessed rule would look like a check that is not running.
+ * it); below is how the marketplace is doing. Redemption anomalies (OD-10) come from
+ * `redemption_anomalies()`. If that check cannot run the tile says so: a failed check must never
+ * look like zero flags.
  */
 
 export default function DashboardPage() {
@@ -62,6 +63,25 @@ export default function DashboardPage() {
               <Tile key={t.label} label={t.label} value={t.n} href={t.href} urgent={(t.n ?? 0) > 0} />
             ))}
           </div>
+
+          <h2 style={h2}>Redemption anomalies</h2>
+          {!data.live ? (
+            <p style={{ color: semantic.textMuted, fontSize: 15 }}>No scans in demo.</p>
+          ) : data.redemptionFlagsError !== null || data.redemptionFlags === null ? (
+            <p style={{ color: semantic.urgentText, fontSize: 15 }} role="alert">
+              The redemption check did not run{data.redemptionFlagsError ? `: ${data.redemptionFlagsError}` : ''}. Do not read this as no flags.
+            </p>
+          ) : (
+            <div style={grid}>
+              <Tile label="Open flags, last 7 days" value={data.redemptionFlags.count} urgent={data.redemptionFlags.count > 0} />
+              {Object.entries(data.redemptionFlags.byPattern).map(([pattern, n]) => (
+                <article key={pattern} style={card}>
+                  <p style={tileLabel}>{pattern.replace(/_/g, ' ')}</p>
+                  <p style={{ ...tileValue, fontSize: 22 }}>{n}</p>
+                </article>
+              ))}
+            </div>
+          )}
 
           <h2 style={h2}>Marketplace</h2>
           <div style={grid}>

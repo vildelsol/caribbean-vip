@@ -66,3 +66,20 @@ export function countActivePromotions(rows: readonly PromotionRow[], now: Date):
     (p) => p.approval_state === 'approved' && Date.parse(p.starts_at) <= t && t < Date.parse(p.ends_at),
   ).length;
 }
+
+/** One open flag from `redemption_anomalies()`. */
+export interface AnomalyRow {
+  pattern: string;
+}
+
+export interface AnomalySummary {
+  count: number;
+  byPattern: Record<string, number>;
+}
+
+/** The tile's numbers. Pure, so a row with an unexpected shape cannot quietly read as zero flags. */
+export function summariseAnomalies(rows: readonly AnomalyRow[]): AnomalySummary {
+  const byPattern: Record<string, number> = {};
+  for (const r of rows) byPattern[r.pattern] = (byPattern[r.pattern] ?? 0) + 1;
+  return { count: rows.length, byPattern };
+}
