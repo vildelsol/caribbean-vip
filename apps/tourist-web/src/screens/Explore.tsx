@@ -27,6 +27,8 @@ import { availabilityLabel, firstBookableDay, slotsFor } from '../data/availabil
 import { useStore } from '../state/store';
 import { Icon, type IconName } from '../components/Icon';
 import { Badge, Card, formatUsd, Photo, plural, Price, Rating, RoundButton, SectionHeader } from '../components/kit';
+import { LiveOfferCard } from '../components/LiveOfferCard';
+import { isLiveMode } from '../lib/supabase';
 import './Explore.css';
 
 /**
@@ -330,6 +332,9 @@ export function Explore() {
           <p className="t-caption-strong ex-hero__sub">What kind of day are you in the mood for?</p>
         </div>
       </header>
+
+      {/* Live mode only: the server's offer for where the guest is. Nothing in demo. */}
+      {isLiveMode ? <LiveOfferCard /> : null}
 
       {/* ---------------- Search ---------------- */}
       <div className="pad">
