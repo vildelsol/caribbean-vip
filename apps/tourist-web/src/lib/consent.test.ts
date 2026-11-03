@@ -8,16 +8,23 @@ import { describe, expect, it, vi } from 'vitest';
 // Pin demo mode: a shell with VITE_SUPABASE_* set must not hand these tests a real client.
 vi.mock('./supabase', () => ({ supabase: null, isLiveMode: false }));
 
-import { readOfferConsent, writeConsent, type ConsentClient, type ConsentPatch } from './consent';
+import {
+  CONSENT_TEXT,
+  readOfferConsent,
+  wordingVersion,
+  writeConsent,
+  type ConsentClient,
+  type ConsentPurpose,
+} from './consent';
 
 function fakeClient(over: {
   userId?: string | null;
-  updateError?: unknown;
+  rpcError?: unknown;
   row?: { offer_consent: boolean } | null;
   selectError?: unknown;
   throws?: boolean;
 } = {}) {
-  const updates: { patch: ConsentPatch; id: string }[] = [];
+  const calls: { purpose: ConsentPurpose; granted: boolean; version: string }[] = [];
   const client: ConsentClient = {
     auth: {
       async getSession() {
@@ -26,13 +33,11 @@ function fakeClient(over: {
         return { data: { session: id ? { user: { id } } : null } };
       },
     },
+    async rpc(_fn, args) {
+      calls.push({ purpose: args.p_purpose, granted: args.p_granted, version: args.p_wording_version });
+      return { error: over.rpcError ?? null };
+    },
     from: () => ({
-      update: (patch) => ({
-        eq: async (_column, id) => {
-          updates.push({ patch, id });
-          return { error: over.updateError ?? null };
-        },
-      }),
       select: () => ({
         eq: () => ({
           maybeSingle: async () => ({
@@ -43,34 +48,62 @@ function fakeClient(over: {
       }),
     }),
   };
-  return { client, updates };
+  return { client, calls };
 }
 
 describe('writeConsent', () => {
   it('does nothing in demo mode: no client, no throw', async () => {
-    expect(await writeConsent({ location_consent: true }, null)).toEqual({ ok: false, reason: 'demo' });
+    expect(await writeConsent({ purpose: 'location', granted: true }, null)).toEqual({ ok: false, reason: 'demo' });
   });
 
-  it('positive control: writes the flag to the signed-in guest own row', async () => {
-    const { client, updates } = fakeClient();
-    expect(await writeConsent({ offer_consent: true }, client)).toEqual({ ok: true });
-    expect(updates).toEqual([{ patch: { offer_consent: true }, id: 'user-1' }]);
+  it('positive control: records the answer with the wording it was given to', async () => {
+    const { client, calls } = fakeClient();
+    expect(await writeConsent({ purpose: 'offers', granted: true }, client)).toEqual({ ok: true });
+    expect(calls).toEqual([{ purpose: 'offers', granted: true, version: wordingVersion('offers') }]);
+  });
+
+  it('records a withdrawal as an answer, not as silence', async () => {
+    const { client, calls } = fakeClient();
+    await writeConsent({ purpose: 'location', granted: false }, client);
+    expect(calls).toEqual([{ purpose: 'location', granted: false, version: wordingVersion('location') }]);
   });
 
   it('writes nothing without a session', async () => {
-    const { client, updates } = fakeClient({ userId: null });
-    expect(await writeConsent({ location_consent: true }, client)).toEqual({ ok: false, reason: 'signed-out' });
-    expect(updates).toEqual([]);
+    const { client, calls } = fakeClient({ userId: null });
+    expect(await writeConsent({ purpose: 'location', granted: true }, client)).toEqual({ ok: false, reason: 'signed-out' });
+    expect(calls).toEqual([]);
   });
 
   it('reports a rejected write as failed, never as success', async () => {
-    const { client } = fakeClient({ updateError: { code: '42501' } });
-    expect(await writeConsent({ location_consent: false }, client)).toEqual({ ok: false, reason: 'failed' });
+    const { client } = fakeClient({ rpcError: { code: '42501' } });
+    expect(await writeConsent({ purpose: 'location', granted: false }, client)).toEqual({ ok: false, reason: 'failed' });
   });
 
   it('reports a thrown network error as failed', async () => {
     const { client } = fakeClient({ throws: true });
-    expect(await writeConsent({ location_consent: true }, client)).toEqual({ ok: false, reason: 'failed' });
+    expect(await writeConsent({ purpose: 'location', granted: true }, client)).toEqual({ ok: false, reason: 'failed' });
+  });
+});
+
+describe('wordingVersion', () => {
+  it('is stable for the same text and fits the database limit', () => {
+    expect(wordingVersion('offers')).toBe(wordingVersion('offers'));
+    expect(wordingVersion('offers').length).toBeLessThanOrEqual(64);
+  });
+
+  it('differs by purpose', () => {
+    expect(wordingVersion('offers')).not.toBe(wordingVersion('location'));
+  });
+
+  it('changes when the text changes, so an edit cannot keep an old version', () => {
+    const before = wordingVersion('offers');
+    const original = CONSENT_TEXT.offers;
+    CONSENT_TEXT.offers = `${original} `;
+    try {
+      expect(wordingVersion('offers')).not.toBe(before);
+    } finally {
+      CONSENT_TEXT.offers = original;
+    }
   });
 });
 

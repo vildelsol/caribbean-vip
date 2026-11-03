@@ -1,4 +1,5 @@
 import { Icon } from './Icon';
+import { CONSENT_TEXT } from '../lib/consent';
 import { formatAccuracy, formatKmish } from '../data/positionFormat';
 import type { GuestPosition } from '../state/useGuestPosition';
 import './LocationBar.css';
@@ -61,7 +62,7 @@ export function LocationBar({
       <span className="grow t-micro">{body}</span>
       {available ? (
         <button type="button" className="locbar__btn t-micro-strong" onClick={() => void enable()}>
-          {position.reason === 'no-fix' ? 'Try again' : 'Use my location'}
+          {position.reason === 'no-fix' ? 'Try again' : CONSENT_TEXT.location}
         </button>
       ) : null}
     </div>

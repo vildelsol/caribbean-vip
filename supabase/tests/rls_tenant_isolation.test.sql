@@ -152,10 +152,10 @@ declare
   saved boolean;
 begin
   perform test.become((select v from fixture where k = 'tourist_b'));
-  update profiles set offer_consent = true, locale = 'en-JM' where id = auth.uid();
+  update profiles set locale = 'en-JM' where id = auth.uid();
 
-  select offer_consent into saved from profiles where id = auth.uid();
-  perform test.eq(saved, true, 'a tourist can still update their own consents and preferences');
+  select locale = 'en-JM' into saved from profiles where id = auth.uid();
+  perform test.eq(saved, true, 'a tourist can still update their own preferences');
 end
 $$;
 
