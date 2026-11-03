@@ -13,6 +13,7 @@ import { Badge, Card, EmptyState, Photo, SecondaryButton, formatUsd } from '../c
 import { Icon } from '../components/Icon';
 import { AccountCard } from '../components/AccountCard';
 import { OfferConsentCard } from '../components/OfferConsentCard';
+import { PrivacyCard } from '../components/PrivacyCard';
 import { isLiveMode } from '../lib/supabase';
 import './Profile.css';
 
@@ -82,6 +83,9 @@ export function Profile() {
 
       {/* Live mode only: the offer opt-in. Nothing in demo. */}
       {isLiveMode ? <OfferConsentCard /> : null}
+
+      {/* Live mode only: withdraw consent, download or erase personal data. Nothing in demo. */}
+      {isLiveMode ? <PrivacyCard /> : null}
 
       {/* --- Island switching --- */}
       <section className="pad profile__block">

@@ -1,0 +1,25 @@
+/* Privacy & data. Reuses the switch pill from OfferConsentCard.css. */
+
+.privacy-card {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.privacy-card__sub {
+  margin-top: 16px;
+}
+
+.privacy-card__confirm {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 14px;
+  border-radius: var(--r-md, 12px);
+  background: var(--ivory-raised);
+  border: 1px solid var(--border-cool);
+}
+
+.privacy-card__actions {
+  gap: 8px;
+}
