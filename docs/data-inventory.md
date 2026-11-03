@@ -16,20 +16,20 @@ exists yet. `erasure` is what a deletion request would do today.
 
 | table | personal | data held | purpose | basis (proposed) | retention | erasure |
 |---|---|---|---|---|---|---|
-| `profiles` | yes | display name, interests, party size, locale, currency, role, three consent flags | account, personalisation, current consent state | contract; consent for the three flags | none defined | no path; deleting the row cascades to dependent tables |
-| `bookings` | yes | who booked what, amounts, status, cancellation reason | contract, accounting | contract; legal obligation | none defined; accounting period set by counsel | anonymise, not delete, while a legal retention period runs; no path |
-| `booking_guests` | yes | attendee names | contract | contract | follows its booking | anonymise with the booking |
+| `profiles` | yes | display name, interests, party size, locale, currency, role, three consent flags | account, personalisation, current consent state | contract; consent for the three flags | none defined | `erase_my_data()` scrubs name, interests, party size, island and consents; the shell stays until an Edge Function removes the sign-in (not built) |
+| `bookings` | yes | who booked what, amounts, status, cancellation reason | contract, accounting | contract; legal obligation | none defined; accounting period set by counsel | `erase_my_data()` scrubs the cancellation reason and keeps the row for accounting |
+| `booking_guests` | yes | attendee names | contract | contract | follows its booking | `erase_my_data()` clears attendee names |
 | `payments` | yes | Stripe ids, amounts, refunds, failure text; no card data | accounting, refunds | contract; legal obligation | none defined | retained for accounting; no path |
-| `vouchers` | yes | voucher state tied to a user, token hash only | redeeming an offer or booking | contract; consent for offers | none defined | cascades with the profile |
+| `vouchers` | yes | voucher state tied to a user, token hash only | redeeming an offer or booking | contract; consent for offers | none defined | `erase_my_data()` detaches offer vouchers from the user; booking vouchers stay with the booking |
 | `voucher_redemptions` | yes | scanner user, result, device metadata | fraud control, audit | legitimate interest | none defined; append-only | pseudonymise the scanner and device fields; no path |
-| `promotion_impressions` | yes | which offer a guest was shown and when, which implies they were near the vendor | offer cooldown | consent (offer and location) | none defined; only recent rows are needed for the cooldown | cascades with the profile |
+| `promotion_impressions` | yes | which offer a guest was shown and when, which implies they were near the vendor | offer cooldown | consent (offer and location) | none defined; only recent rows are needed for the cooldown | `erase_my_data()` deletes the rows |
 | `consent_events` | yes | user, purpose (location, offers, notifications), granted or withdrawn, wording version, time | proof of consent (Art 7(1)) | legal obligation; legitimate interest (demonstrating consent) | none defined; append-only | cascades with the profile; whether proof must outlive an erased account is a question for counsel |
-| `ai_conversations` | yes | free-text chat history | Irie assistant | consent | `expires_at` defaults to 30 days; no purge job found in the repository | cascades with the profile; PRD requires a clear-history control, not built |
-| `notifications` | yes | messages to a user | service messages | contract; consent for marketing | none defined | cascades with the profile |
-| `saved_items` | yes | listings a guest saved | personalisation | contract | none defined | cascades with the profile |
-| `trips` | yes | a guest's trip title and dates | personalisation | contract | none defined | cascades with the profile |
-| `trip_items` | yes | items on a guest's trip | personalisation | contract | follows its trip | cascades with the trip |
-| `reviews` | yes | a guest's rating and text | public reviews | legitimate interest | none defined | no path; text may need removal rather than deletion |
+| `ai_conversations` | yes | free-text chat history | Irie assistant | consent | `expires_at` defaults to 30 days; no purge job found in the repository | `erase_my_data()` deletes the rows; the PRD clear-history control is not built |
+| `notifications` | yes | messages to a user | service messages | contract; consent for marketing | none defined | `erase_my_data()` deletes the rows |
+| `saved_items` | yes | listings a guest saved | personalisation | contract | none defined | `erase_my_data()` deletes the rows |
+| `trips` | yes | a guest's trip title and dates | personalisation | contract | none defined | `erase_my_data()` deletes the rows |
+| `trip_items` | yes | items on a guest's trip | personalisation | contract | follows its trip | `erase_my_data()` deletes the rows with their trip |
+| `reviews` | yes | a guest's rating and text | public reviews | legitimate interest | none defined | `erase_my_data()` deletes the rows |
 | `rate_limit_events` | yes | actor key and action, for throttling | abuse prevention | legitimate interest | none defined; should be hours or days | no path |
 | `audit_logs` | yes | acting admin, before and after snapshots which may contain personal data | accountability | legal obligation; legitimate interest | none defined; append-only | conflicts with append-only: needs a documented rule |
 | `vendor_members` | yes | link between a user and a vendor organisation | access control | contract | none defined | removed when the membership ends; no path |
@@ -63,8 +63,12 @@ exists yet. `erasure` is what a deletion request would do today.
    text. A direct update of a consent flag is refused. Not covered: `notification_consent` has no
    screen yet; service-role writes leave no event; the text behind an old version is recovered from
    git history, not stored.
-2. **No erasure or export path (Art 17, 20).** Nothing lets a guest delete their account or download
-   their data, and nothing defines what is erased versus retained for accounting.
+2. **Erasure and export: database side built 2026-11-03** (`export_my_data()`, `erase_my_data()`).
+   Erasure deletes or scrubs everything outside a legal retention duty and keeps bookings, payments
+   and consent proof; it tells the guest what stayed. Not built: the Profile buttons, and removal of
+   the sign-in itself (needs the Auth admin API from an Edge Function). A guest with bookings cannot
+   be fully deleted, by design (`bookings.user_id` is `ON DELETE RESTRICT`). Staff accounts are
+   refused. `rate_limit_events` is keyed by an opaque actor string and is not reached.
 3. **No retention enforced.** `ai_conversations` has an expiry column and no job that uses it; every
    other personal table keeps rows indefinitely, including `promotion_impressions`, which records where
    a guest was.
