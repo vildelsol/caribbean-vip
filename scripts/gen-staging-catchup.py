@@ -116,6 +116,8 @@ PROBES = {
        case when exists (select 1 from pg_extension where extname='pg_cron') then 'applied' else 'missing' end""",
     "20261104000006_scanner_identity_scrub": """
        case when exists (select 1 from pg_proc where proname='voucher_redemptions_guard') then 'applied' else 'missing' end""",
+    "20261104000007_vendor_retention": """
+       case when exists (select 1 from information_schema.columns where table_name='vendor_organizations' and column_name='closed_at') then 'applied' else 'missing' end""",
 }
 
 HEADER = """\
