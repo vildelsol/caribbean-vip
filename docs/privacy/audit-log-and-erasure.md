@@ -24,8 +24,7 @@ Staff appear as `actor_user_id`.
 
 ## Trap to know
 The trigger is `before update or delete`, and `actor_user_id` is `ON DELETE SET NULL`. Setting it to
-null is an update, so **deleting an admin's account fails** while they have log rows. Staff removal
-needs the retention job or a documented exception **[COUNSEL]**. Tourist removal is not affected
+null is an update, so **deleting an admin's account fails** while they have log rows. Fixed in migration `20261104000008`: the guard now lets the foreign key null the actor, and `purge_expired_records()` deletes rows past 7 years. Tourist removal is not affected
 unless a tourist acted as an actor.
 
 ## Decisions for counsel

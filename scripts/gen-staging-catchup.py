@@ -118,6 +118,8 @@ PROBES = {
        case when exists (select 1 from pg_proc where proname='voucher_redemptions_guard') then 'applied' else 'missing' end""",
     "20261104000007_vendor_retention": """
        case when exists (select 1 from information_schema.columns where table_name='vendor_organizations' and column_name='closed_at') then 'applied' else 'missing' end""",
+    "20261104000008_audit_log_retention": """
+       case when exists (select 1 from pg_proc where proname='audit_logs_guard') then 'applied' else 'missing' end""",
 }
 
 HEADER = """\
