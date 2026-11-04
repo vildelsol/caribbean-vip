@@ -104,6 +104,8 @@ PROBES = {
        case when exists (select 1 from information_schema.tables where table_name='redemption_anomaly_reviews') then 'applied' else 'missing' end""",
     "20261103000006_account_removal_gate": """
        case when exists (select 1 from pg_proc where proname='begin_account_removal') then 'applied' else 'missing' end""",
+    "20261104000001_retention_floor": """
+       case when exists (select 1 from pg_proc where proname='enforce_retention_floor') then 'applied' else 'missing' end""",
 }
 
 HEADER = """\
