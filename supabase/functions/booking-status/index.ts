@@ -19,7 +19,7 @@ import { bearerToken } from '../_shared/callerIdentity.ts';
 
 const CORS = {
   'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, content-type',
+  'Access-Control-Allow-Headers': 'authorization, content-type, apikey',
   'Access-Control-Allow-Methods': 'GET, OPTIONS',
 };
 
