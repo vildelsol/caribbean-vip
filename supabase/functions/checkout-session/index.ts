@@ -17,6 +17,7 @@ import { createClient } from 'npm:@supabase/supabase-js@^2';
 import { makeDeps } from '../_shared/deps.ts';
 import { bearerToken, resolveCheckoutUser } from '../_shared/callerIdentity.ts';
 import { cancelUrl, successUrl } from '../_shared/returnUrls.ts';
+import { enforceRateLimit, tooManyRequests, type RateRpc } from '../_shared/rateLimit.ts';
 
 const CORS = {
   'Access-Control-Allow-Origin': '*',
@@ -55,6 +56,17 @@ Deno.serve(async (req) => {
     return who.status === 401
       ? json({ ok: false, code: 'UNAUTHENTICATED', message: 'Sign in required' }, 401)
       : json({ ok: false, code: 'FORBIDDEN', message: 'Cannot check out for another user' }, 403);
+  }
+
+  const limited = await enforceRateLimit(authClient.rpc.bind(authClient) as unknown as RateRpc, 'checkout', {
+    userId: who.userId,
+    forwardedFor: req.headers.get('x-forwarded-for'),
+    now: new Date(),
+  });
+  if (!limited.ok) {
+    return tooManyRequests(limited.retryAfterSeconds, CORS, {
+      ok: false, code: 'RATE_LIMITED', message: 'Too many attempts. Please wait a moment and try again.',
+    });
   }
 
   const experienceId = (body as { experienceId?: string }).experienceId ?? '';
