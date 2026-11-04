@@ -114,6 +114,8 @@ PROBES = {
        case when exists (select 1 from pg_proc where proname='purge_short_lived_records') then 'applied' else 'missing' end""",
     "20261104000005_schedule_purges": """
        case when exists (select 1 from pg_extension where extname='pg_cron') then 'applied' else 'missing' end""",
+    "20261104000006_scanner_identity_scrub": """
+       case when exists (select 1 from pg_proc where proname='voucher_redemptions_guard') then 'applied' else 'missing' end""",
 }
 
 HEADER = """\

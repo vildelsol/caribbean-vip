@@ -31,4 +31,4 @@ unless a tourist acted as an actor.
 ## Decisions for counsel
 - Retention period for admin audit rows.
 - Whether a legal-obligation basis covers keeping staff names in snapshots for that period.
-- Whether the same rule applies to `voucher_redemptions` (scanner ids), which is also append-only.
+- Whether the same rule applies to `voucher_redemptions` (scanner ids). Built: a scanner's id and device fields can be nulled or emptied (never other columns), by the foreign key and by a 2-year scrub in `purge_expired_records()`. Counsel to confirm the 2 years.
