@@ -10,7 +10,7 @@ anything here is relied on. Jamaica (Data Protection Act 2020) was not researche
 |---|---|---|
 | In force | 31 March 2021, **except** sections 50, 51, 52, 55, 56, 57 (registration of controllers and processors, and the registers). No later commencement order found. **[VERIFY]** | Treat registration as coming. Ask counsel whether it is in force now. |
 | Regulator | A Data Protection Commissioner. One source says appointed from 15 July 2021, a 2023 note says not yet appointed. A Nov 2025 news article says the office is moving from education to enforcement. **[VERIFY]** | Assume it is active. |
-| Breach | Notify the Commissioner without delay and, where feasible, within **72 hours** of becoming aware (s.63). Processors must alert the controller. Failure may be an offence. | We need a breach runbook (none exists). Our processors must tell us fast. |
+| Breach | Notify the Commissioner without delay and, where feasible, within **72 hours** of becoming aware (s.63). Processors must alert the controller. Failure may be an offence. | Runbook: `breach-runbook.md`. Our processors must tell us fast. |
 | Consent | Opt-in is described, but no detailed standard was found. A child's consent must come from a parent or guardian, with reasonable efforts to verify. | Our consent records (wording version, time) fit. Confirm the child rule for attendee names. |
 | Transfers abroad | The Act restricts them. Our data is in the US (Supabase `us-east-1`, Stripe, Vercel). | Need a lawful basis per processor: contract terms or consent **[COUNSEL]**. |
 | Impact assessment | One vendor summary mentions one for high-risk processing; not checked against the statute. **[VERIFY]** | `dpia.md` already covers geofenced offers. |
@@ -26,7 +26,7 @@ anything here is relied on. Jamaica (Data Protection Act 2020) was not researche
 | Transfers abroad | Not banned. Allowed when the destination gives adequate protection, by contract, or with consent. | Same US-processor question as Barbados **[COUNSEL]**. |
 
 ## What this changes for the build
-1. **Breach runbook.** Missing. Draft one: detect, decide, notify regulator within 72 hours, notify
+1. **Breach runbook.** Drafted in `breach-runbook.md`: detect, decide, notify regulator within 72 hours, notify
    guests, record. Needs processor contract terms that oblige them to tell us promptly.
 2. **Transfer basis.** One row per processor in `processor-record.md`, with the basis chosen.
 3. **Registration and representative.** Ask counsel which registrations and local representatives

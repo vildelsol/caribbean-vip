@@ -13,6 +13,8 @@ decision this repo cannot make. Anything marked **[UNKNOWN]** is a fact Ro must 
 | `integrations.md` | How any outside tool or database plugs in without new privacy plumbing |
 | `audit-log-and-erasure.md` | How an append-only audit log and the right to erasure fit together |
 | `backup-restore-runbook.md` | Restoring a backup without bringing erased people back |
+| `breach-runbook.md` | What to do in the first 72 hours of a personal data breach |
+| `breach-register.md` | Log of every breach and near miss |
 | `vendor-data-clause.md` | Draft clause for the vendor agreement |
 
 When the system changes, update these in the same PR. The table list in `data-inventory.md` is the
