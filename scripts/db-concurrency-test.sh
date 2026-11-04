@@ -165,6 +165,36 @@ else
   FAILED=1
 fi
 
+# ---------------------------------------------------------------------------
+# R-01 — the rate limiter under a burst
+# ---------------------------------------------------------------------------
+
+echo "==> R-01: $WORKERS concurrent calls against a limit of 5"
+
+for i in $(seq 1 "$WORKERS"); do
+  (
+    perl -e 'select undef, undef, undef, rand(0.01)'
+    # Held open for 0.3s after the check, so the workers overlap. Without the per-actor lock every
+    # worker reads "0 of 5" and all of them pass.
+    psql --quiet --no-psqlrc -t -A -v ON_ERROR_STOP=1 -d "$DB_NAME" > "$TMP/rl.$i" 2>/dev/null <<SQL || echo "error" > "$TMP/rl.$i"
+begin;
+select (check_rate_limit('user:race', 'checkout', 5, 600)->>'allowed');
+select pg_sleep(0.3);
+commit;
+SQL
+  ) &
+done
+wait
+
+ALLOWED=$({ grep -lx "true" "$TMP"/rl.* 2>/dev/null || true; } | wc -l | tr -d ' ')
+REFUSED=$({ grep -lx "false" "$TMP"/rl.* 2>/dev/null || true; } | wc -l | tr -d ' ')
+if [[ "$ALLOWED" == "5" && "$REFUSED" == "$((WORKERS - 5))" ]]; then
+  printf '    \033[32mPASS\033[0m  exactly 5 of %s allowed, the rest refused\n' "$WORKERS"
+else
+  printf '    \033[31mFAIL\033[0m  %s allowed (expected 5), %s refused (expected %s)\n' "$ALLOWED" "$REFUSED" "$((WORKERS - 5))"
+  FAILED=1
+fi
+
 dropdb --if-exists "$DB_NAME"
 
 if [[ $FAILED -ne 0 ]]; then

@@ -16,6 +16,7 @@
 import { createClient } from 'npm:@supabase/supabase-js@^2';
 import { bearerToken } from '../_shared/callerIdentity.ts';
 import { decideClaim, guestTokenFromBody } from '../_shared/claimGuest.ts';
+import { enforceRateLimit, tooManyRequests, type RateRpc } from '../_shared/rateLimit.ts';
 
 const CORS = {
   'Access-Control-Allow-Origin': '*',
@@ -48,6 +49,15 @@ Deno.serve(async (req) => {
   const decision = decideClaim(account.user?.id ?? null, guest.user?.id ?? null);
   if (!decision.ok) {
     return json({ error: decision.status === 401 ? 'Sign in required' : 'Guest session required' }, decision.status);
+  }
+
+  const limited = await enforceRateLimit(supabase.rpc.bind(supabase) as unknown as RateRpc, 'claim_guest', {
+    userId: decision.toUserId,
+    forwardedFor: req.headers.get('x-forwarded-for'),
+    now: new Date(),
+  });
+  if (!limited.ok) {
+    return tooManyRequests(limited.retryAfterSeconds, CORS, { error: 'Too many attempts. Please wait a moment and try again.' });
   }
 
   const { data, error } = await supabase.rpc('transfer_guest_bookings', {

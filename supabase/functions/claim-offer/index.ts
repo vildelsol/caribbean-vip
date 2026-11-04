@@ -22,6 +22,7 @@
 import { generateVoucherId, hashVoucherToken, signVoucherToken, VOUCHER_TOKEN_VERSION } from '@cvip/types';
 import { createClient } from 'npm:@supabase/supabase-js@^2';
 import { bearerToken } from '../_shared/callerIdentity.ts';
+import { enforceRateLimit, tooManyRequests, type RateRpc } from '../_shared/rateLimit.ts';
 import {
   isClaimOutcome,
   parseClaimRequest,
@@ -56,6 +57,17 @@ Deno.serve(async (req) => {
   const { data: caller } = token ? await supabase.auth.getUser(token) : { data: { user: null } };
   const userId = caller.user?.id ?? null;
   if (!userId) return json({ ok: false, message: 'Sign in required' }, 401);
+
+  const limited = await enforceRateLimit(supabase.rpc.bind(supabase) as unknown as RateRpc, 'claim_offer', {
+    userId,
+    forwardedFor: req.headers.get('x-forwarded-for'),
+    now: new Date(),
+  });
+  if (!limited.ok) {
+    return tooManyRequests(limited.retryAfterSeconds, CORS, {
+      ok: false, message: 'Too many attempts. Please wait a moment and try again.',
+    });
+  }
 
   let body: unknown = null;
   try {
