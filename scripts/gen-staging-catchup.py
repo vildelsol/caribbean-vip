@@ -108,6 +108,8 @@ PROBES = {
        case when exists (select 1 from pg_proc where proname='enforce_retention_floor') then 'applied' else 'missing' end""",
     "20261104000002_retention_purge": """
        case when exists (select 1 from pg_proc where proname='purge_expired_records') then 'applied' else 'missing' end""",
+    "20261104000003_erasure_reports_retention": """
+       case when exists (select 1 from pg_proc where proname='erase_my_data' and prosrc like '%retained_until%') then 'applied' else 'missing' end""",
 }
 
 HEADER = """\

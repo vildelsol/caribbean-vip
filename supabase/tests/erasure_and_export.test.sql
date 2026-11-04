@@ -79,6 +79,9 @@ begin
   res := erase_my_data();
   perform test.eq((res ->> 'bookings_retained')::integer, 1, 'reports the booking it kept');
   perform test.eq((res ->> 'account_removable')::boolean, false, 'a guest with a booking is not removable');
+  perform test.ok((res ->> 'retained_until')::timestamptz between now() + interval '7 years' - interval '1 minute'
+                                                              and now() + interval '7 years' + interval '1 minute',
+    'tells the guest the kept booking is held 7 years');
 
   select count(*) into n from saved_items where user_id = a;
   perform test.eq(n, 0, 'saved items are gone');
@@ -134,6 +137,9 @@ begin
   perform test.eq((select outcome ->> 'bookings_retained' from privacy_requests
                     where subject_id = a and request_type = 'erasure' limit 1), '1',
     'the record states what was retained, as a count');
+  perform test.ok((select outcome ->> 'retained_until' from privacy_requests
+                     where subject_id = a and request_type = 'erasure' limit 1) is not null,
+    'the record states until when it is retained');
 end
 $$;
 

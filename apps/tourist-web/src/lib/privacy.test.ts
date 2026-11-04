@@ -8,7 +8,7 @@ import { describe, expect, it, vi } from 'vitest';
 // Pin demo mode: a shell with VITE_SUPABASE_* set must not hand these tests a real client.
 vi.mock('./supabase', () => ({ supabase: null, isLiveMode: false }));
 
-import { eraseMyData, exportFilename, exportMyData, parseErasure, removeMyAccount, type PrivacyClient } from './privacy';
+import { eraseMyData, exportFilename, exportMyData, parseErasure, removeMyAccount, retainedUntilText, type PrivacyClient } from './privacy';
 import type { OffersClient } from './offers';
 
 function fakeClient(over: { userId?: string | null; data?: unknown; error?: unknown; throws?: boolean } = {}) {
@@ -70,8 +70,8 @@ describe('eraseMyData', () => {
   });
 
   it('positive control: reports what stays', async () => {
-    const { client, calls } = fakeClient({ data: { erased: true, bookings_retained: 2, account_removable: false } });
-    expect(await eraseMyData(client)).toEqual({ ok: true, bookingsRetained: 2, accountRemovable: false });
+    const { client, calls } = fakeClient({ data: { erased: true, bookings_retained: 2, retained_until: '2033-11-04T10:00:00Z', account_removable: false } });
+    expect(await eraseMyData(client)).toEqual({ ok: true, bookingsRetained: 2, retainedUntil: '2033-11-04T10:00:00Z', accountRemovable: false });
     expect(calls).toEqual(['erase_my_data']);
   });
 
@@ -85,12 +85,19 @@ describe('eraseMyData', () => {
 });
 
 describe('helpers', () => {
+  it('reads the retention date, and drops one it cannot read', () => {
+    expect(parseErasure({ erased: true, bookings_retained: 1, retained_until: '2033-11-04T10:00:00Z' })?.retainedUntil).toBe('2033-11-04T10:00:00Z');
+    expect(parseErasure({ erased: true, bookings_retained: 1, retained_until: 'soon' })?.retainedUntil).toBeNull();
+    expect(retainedUntilText('2033-11-04T23:30:00Z')).toBe('4 November 2033');
+  });
+
   it('parseErasure rejects malformed reports', () => {
     expect(parseErasure(null)).toBeNull();
     expect(parseErasure({ erased: true })).toBeNull();
     expect(parseErasure({ erased: true, bookings_retained: -1 })).toBeNull();
     expect(parseErasure({ erased: true, bookings_retained: 0, account_removable: true })).toEqual({
       bookingsRetained: 0,
+      retainedUntil: null,
       accountRemovable: true,
     });
   });
