@@ -20,6 +20,7 @@ export function tablesCreatedBy(sql: string): string[] {
 export interface InventoryRow {
   table: string;
   personal: string;
+  basis: string;
   retention: string;
   erasure: string;
 }
@@ -31,7 +32,7 @@ export function parseInventory(markdown: string): InventoryRow[] {
     const cells = line.split('|').map((c) => c.trim());
     const name = /^`([a-z_][a-z0-9_]*)`$/.exec(cells[1] ?? '');
     if (!name || cells.length < 9) continue;
-    rows.push({ table: name[1]!, personal: cells[2]!, retention: cells[6]!, erasure: cells[7]! });
+    rows.push({ table: name[1]!, personal: cells[2]!, basis: cells[5]!, retention: cells[6]!, erasure: cells[7]! });
   }
   return rows;
 }
@@ -66,6 +67,15 @@ describe('data inventory', () => {
       .filter((r) => r.personal !== 'no' && (r.retention === '' || r.erasure === ''))
       .map((r) => r.table);
     expect(blank).toEqual([]);
+  });
+
+  // A legal-obligation basis is the Art 17(3)(b) reason for keeping data through an erasure request.
+  // A period of "none defined" there means we cannot say how long, or when to delete.
+  it('gives every legal-obligation table a stated retention period', () => {
+    const undefinedPeriod = inventory
+      .filter((r) => /legal obligation/i.test(r.basis) && /^none defined/i.test(r.retention))
+      .map((r) => r.table);
+    expect(undefinedPeriod).toEqual([]);
   });
 });
 
