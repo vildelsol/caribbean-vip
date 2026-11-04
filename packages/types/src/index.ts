@@ -17,3 +17,4 @@ export * from './providers.ts';
 export * from './env.ts';
 export * from './vendor.ts';
 export * from './vendorDocuments.ts';
+export * from './processorPorts.ts';
