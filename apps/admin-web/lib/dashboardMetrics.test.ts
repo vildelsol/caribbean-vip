@@ -72,10 +72,21 @@ describe('summariseAnomalies', () => {
   it('counts flags and groups them by pattern (positive control)', () => {
     expect(summariseAnomalies([{ pattern: 'scan_rate' }, { pattern: 'scan_rate' }, { pattern: 'voucher_rescanned' }])).toEqual({
       count: 3,
+      reviewed: 0,
       byPattern: { scan_rate: 2, voucher_rescanned: 1 },
     });
   });
   it('is zero only for an empty list', () => {
-    expect(summariseAnomalies([])).toEqual({ count: 0, byPattern: {} });
+    expect(summariseAnomalies([])).toEqual({ count: 0, reviewed: 0, byPattern: {} });
+  });
+});
+
+describe('summariseAnomalies and review', () => {
+  it('counts a reviewed flag as reviewed, not open, and still counts it (never hidden)', () => {
+    const s = summariseAnomalies([
+      { pattern: 'scan_rate', reviewed_at: '2026-11-03T10:00:00Z' },
+      { pattern: 'scan_rate', reviewed_at: null },
+    ]);
+    expect(s).toEqual({ count: 1, reviewed: 1, byPattern: { scan_rate: 1 } });
   });
 });

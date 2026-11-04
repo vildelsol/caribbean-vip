@@ -4,7 +4,8 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { semantic, spacing, radius } from '@cvip/ui';
 import { formatMoney, type Currency } from '@cvip/types';
-import { loadDashboard, type DashboardData } from '../../lib/dashboard';
+import { loadDashboard, reviewAnomaly, type DashboardData } from '../../lib/dashboard';
+import type { AnomalyRow } from '../../lib/dashboardMetrics';
 
 /**
  * Admin dashboard — PRD §7. The top row is what needs a person (it links to the queue that clears
@@ -16,12 +17,23 @@ import { loadDashboard, type DashboardData } from '../../lib/dashboard';
 export default function DashboardPage() {
   const [data, setData] = useState<DashboardData | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [reviewError, setReviewError] = useState<string | null>(null);
 
   useEffect(() => {
     loadDashboard()
       .then(setData)
       .catch((e: unknown) => setError(e instanceof Error ? e.message : String(e)));
   }, []);
+
+  const review = async (row: AnomalyRow) => {
+    setReviewError(null);
+    try {
+      await reviewAnomaly(row, null);
+      setData(await loadDashboard());
+    } catch (e: unknown) {
+      setReviewError(e instanceof Error ? e.message : String(e));
+    }
+  };
 
   const todo = data
     ? [
@@ -74,6 +86,7 @@ export default function DashboardPage() {
           ) : (
             <div style={grid}>
               <Tile label="Open flags, last 7 days" value={data.redemptionFlags.count} urgent={data.redemptionFlags.count > 0} />
+              <Tile label="Reviewed, still in window" value={data.redemptionFlags.reviewed} />
               {Object.entries(data.redemptionFlags.byPattern).map(([pattern, n]) => (
                 <article key={pattern} style={card}>
                   <p style={tileLabel}>{pattern.replace(/_/g, ' ')}</p>
@@ -82,6 +95,31 @@ export default function DashboardPage() {
               ))}
             </div>
           )}
+          {data.redemptionFlagRows.length > 0 ? (
+            <ul style={{ listStyle: 'none', padding: 0, margin: `${spacing.sm}px 0 0`, display: 'grid', gap: spacing.xs }}>
+              {data.redemptionFlagRows.map((r) => {
+                const key = `${r.pattern}:${r.scanner_user_id ?? ''}:${r.voucher_id ?? ''}`;
+                return (
+                  <li key={key} style={{ ...card, display: 'flex', gap: spacing.sm, alignItems: 'center', justifyContent: 'space-between' }}>
+                    <span style={{ fontSize: 14 }}>
+                      {r.pattern.replace(/_/g, ' ')} · {r.scan_count} scans · last {r.last_at ? new Date(r.last_at).toLocaleString() : ''}
+                      {r.reviewed_at ? ` · reviewed ${new Date(r.reviewed_at).toLocaleString()}` : ' · open'}
+                    </span>
+                    {r.reviewed_at ? null : (
+                      <button type="button" onClick={() => void review(r)}>
+                        Mark reviewed
+                      </button>
+                    )}
+                  </li>
+                );
+              })}
+            </ul>
+          ) : null}
+          {reviewError ? (
+            <p style={{ color: semantic.urgentText, fontSize: 14 }} role="alert">
+              Could not mark that reviewed: {reviewError}
+            </p>
+          ) : null}
 
           <h2 style={h2}>Marketplace</h2>
           <div style={grid}>
