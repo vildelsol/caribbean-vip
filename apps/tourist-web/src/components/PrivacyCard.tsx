@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { accountStatusOf, type AccountStatus } from '../lib/account';
 import { CONSENT_TEXT } from '../lib/consent';
-import { eraseMyData, exportMyData, removeMyAccount, type EraseResult } from '../lib/privacy';
+import { eraseMyData, exportMyData, removeMyAccount, retainedUntilText, type EraseResult } from '../lib/privacy';
 import { supabase } from '../lib/supabase';
 import { useStore } from '../state/store';
 import { useOfferConsent } from '../state/useConsent';
@@ -165,7 +165,7 @@ export function PrivacyCard() {
         <p className="t-caption" role="status">
           Your data is erased.{' '}
           {erased.bookingsRetained > 0
-            ? `We kept ${erased.bookingsRetained} booking${erased.bookingsRetained === 1 ? '' : 's'} and their payment records, because the law requires it.`
+            ? `We kept ${erased.bookingsRetained} booking${erased.bookingsRetained === 1 ? '' : 's'} and their payment records, because the law requires it${erased.retainedUntil ? `, until ${retainedUntilText(erased.retainedUntil)}` : ''}.`
             : 'No bookings were held, so nothing was kept.'}
         </p>
       ) : null}

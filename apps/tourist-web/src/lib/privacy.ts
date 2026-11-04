@@ -27,6 +27,8 @@ export type ExportResult = { ok: true; json: string; filename: string } | { ok: 
 /** What `erase_my_data()` reports: how many bookings stay, and whether the account can go. */
 export interface ErasureOutcome {
   bookingsRetained: number;
+  /** ISO time the last kept record can go (7 years on), or null when nothing was kept. */
+  retainedUntil: string | null;
   accountRemovable: boolean;
 }
 
@@ -48,7 +50,9 @@ export function parseErasure(data: unknown): ErasureOutcome | null {
   if (d.erased !== true) return null;
   const retained = d.bookings_retained;
   if (typeof retained !== 'number' || !Number.isInteger(retained) || retained < 0) return null;
-  return { bookingsRetained: retained, accountRemovable: d.account_removable === true };
+  // A date we cannot read becomes null, never a made-up one.
+  const until = typeof d.retained_until === 'string' && !Number.isNaN(Date.parse(d.retained_until)) ? d.retained_until : null;
+  return { bookingsRetained: retained, retainedUntil: until, accountRemovable: d.account_removable === true };
 }
 
 async function signedIn(client: PrivacyClient): Promise<boolean> {
@@ -116,4 +120,9 @@ export async function removeMyAccount(client: OffersClient | null = appOffersCli
   } catch {
     return { ok: false, reason: 'network' };
   }
+}
+
+/** "4 November 2033", in UTC so the day does not move with the reader's timezone. */
+export function retainedUntilText(iso: string): string {
+  return new Date(iso).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC' });
 }
