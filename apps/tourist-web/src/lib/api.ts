@@ -83,18 +83,32 @@ export async function callCheckout(body: {
   const { data: { session } } = await supabase.auth.getSession();
   const token = session?.access_token;
 
-  const res = await fetch(`${FUNCTIONS_BASE}/checkout-session`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      ...anonHeaders(),
-      // A signed-in guest's own token supersedes the anon key when there is one.
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
-    },
-    body: JSON.stringify(body),
-  });
-
-  return res.json() as Promise<CheckoutResponse | CheckoutErrorResponse>;
+  // A network or CORS failure makes fetch throw, and an upstream error page is not JSON. Both must
+  // reach the guest as a stated failure: an uncaught throw left the Pay button on "Redirecting…" for good.
+  const unreachable: CheckoutErrorResponse = {
+    ok: false,
+    code: 'unreachable',
+    message: 'We could not reach the payment service. Nothing was charged. Check your connection and try again.',
+  };
+  try {
+    const res = await fetch(`${FUNCTIONS_BASE}/checkout-session`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        ...anonHeaders(),
+        // A signed-in guest's own token supersedes the anon key when there is one.
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      },
+      body: JSON.stringify(body),
+    });
+    const json = (await res.json().catch(() => null)) as CheckoutResponse | CheckoutErrorResponse | null;
+    // Only a well-formed success may send a guest to a payment page.
+    if (json && json.ok === true && typeof json.checkoutUrl === 'string' && json.checkoutUrl.startsWith('https://')) return json;
+    if (json && json.ok === false && typeof json.message === 'string') return json;
+    return unreachable;
+  } catch {
+    return unreachable;
+  }
 }
 
 export interface ResolvedSlot {
@@ -114,12 +128,17 @@ export async function resolveSlot(params: {
     date: params.dateISO,
     time: params.time,
   });
-  const res = await fetch(`${FUNCTIONS_BASE}/resolve-slot?${qs}`, {
-    method: 'GET',
-    headers: anonHeaders(),
-  });
-  if (!res.ok) return null;
-  return res.json() as Promise<ResolvedSlot>;
+  try {
+    const res = await fetch(`${FUNCTIONS_BASE}/resolve-slot?${qs}`, {
+      method: 'GET',
+      headers: anonHeaders(),
+    });
+    if (!res.ok) return null;
+    return (await res.json()) as ResolvedSlot;
+  } catch {
+    // Unreachable counts as "not found": the caller already tells the guest to try again.
+    return null;
+  }
 }
 
 /**
