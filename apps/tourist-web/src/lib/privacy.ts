@@ -9,6 +9,7 @@
  * null and each returns `{ ok: false, reason: 'demo' }` with no network and no throw.
  */
 
+import { appOffersClient, type OffersClient } from './offers';
 import { supabase } from './supabase';
 
 /** The slice of the Supabase client this module uses, narrow so a test can hand in a fake. */
@@ -79,5 +80,40 @@ export async function eraseMyData(client: PrivacyClient | null = appClient): Pro
     return outcome ? { ok: true, ...outcome } : { ok: false, reason: 'failed' };
   } catch {
     return { ok: false, reason: 'failed' };
+  }
+}
+
+export type RemoveResult =
+  | { ok: true }
+  | { ok: false; reason: 'demo' | 'signed-out' | 'network' }
+  | { ok: false; reason: 'refused'; status: number; message: string };
+
+/**
+ * Remove the guest's sign-in after they have erased their data. Asks the `delete-my-account` Edge
+ * Function, which decides (switch, recent erasure, no bookings) and deletes the Auth user. Nothing
+ * here names a user: the function takes the caller from the token. Demo mode has no client and does
+ * nothing.
+ */
+export async function removeMyAccount(client: OffersClient | null = appOffersClient()): Promise<RemoveResult> {
+  if (!client) return { ok: false, reason: 'demo' };
+  const token = await client.getAccessToken();
+  if (!token) return { ok: false, reason: 'signed-out' };
+  try {
+    const res = await client.fetch(`${client.functionsBase}/delete-my-account`, {
+      method: 'POST',
+      headers: { apikey: client.anonKey, Authorization: `Bearer ${token}` },
+    });
+    const json: unknown = await res.json().catch(() => null);
+    const j = json as { ok?: unknown; message?: unknown } | null;
+    if (res.status === 200 && j?.ok === true) return { ok: true };
+    if (res.status === 401) return { ok: false, reason: 'signed-out' };
+    return {
+      ok: false,
+      reason: 'refused',
+      status: res.status,
+      message: typeof j?.message === 'string' ? j.message : 'Could not remove your sign-in right now.',
+    };
+  } catch {
+    return { ok: false, reason: 'network' };
   }
 }
