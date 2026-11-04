@@ -112,6 +112,8 @@ PROBES = {
        case when exists (select 1 from pg_proc where proname='erase_my_data' and prosrc like '%retained_until%') then 'applied' else 'missing' end""",
     "20261104000004_purge_short_lived": """
        case when exists (select 1 from pg_proc where proname='purge_short_lived_records') then 'applied' else 'missing' end""",
+    "20261104000005_schedule_purges": """
+       case when exists (select 1 from pg_extension where extname='pg_cron') then 'applied' else 'missing' end""",
 }
 
 HEADER = """\
