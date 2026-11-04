@@ -75,7 +75,7 @@ exists yet. `erasure` is what a deletion request would do today.
    be fully deleted, by design (`bookings.user_id` is `ON DELETE RESTRICT`). Staff accounts are
    refused. Every request is recorded in `privacy_requests` (no link to the profile, so it survives
    erasure). `rate_limit_events` is keyed by an opaque actor string and is not reached.
-3. **No retention enforced.** 7 years is decided for financial and accountability tables (2026-11-04) but no job applies it. `ai_conversations` has an expiry column and no job that uses it; every
+3. **No retention enforced.** 7 years is decided for financial and accountability tables (2026-11-04) but no job applies it. A floor is enforced: a trigger refuses to delete a `bookings` or `payments` row under 7 years old (migration `20261104000001`); only the future job, setting `cvip.retention_purge`, can purge older rows. `ai_conversations` has an expiry column and no job that uses it; every
    other personal table keeps rows indefinitely, including `promotion_impressions`, which records where
    a guest was.
 4. **No processor record.** Supabase, Stripe, Vercel, any email sender, and the Irie model
