@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { countActivePromotions, summariseBookings, summariseFailedPayments } from './dashboardMetrics';
+import { countActivePromotions, summariseAnomalies, summariseBookings, summariseFailedPayments } from './dashboardMetrics';
 
 const now = new Date('2026-10-30T12:00:00Z');
 const day = (n: number) => new Date(now.getTime() - n * 86_400_000).toISOString();
@@ -65,5 +65,17 @@ describe('dashboard metrics', () => {
     expect(
       countActivePromotions([p('approved', 1, -1), p('approved', 5, 2), p('approved', -1, -5), p('pending', 1, -1), p('disabled', 1, -1)], now),
     ).toBe(1);
+  });
+});
+
+describe('summariseAnomalies', () => {
+  it('counts flags and groups them by pattern (positive control)', () => {
+    expect(summariseAnomalies([{ pattern: 'scan_rate' }, { pattern: 'scan_rate' }, { pattern: 'voucher_rescanned' }])).toEqual({
+      count: 3,
+      byPattern: { scan_rate: 2, voucher_rescanned: 1 },
+    });
+  });
+  it('is zero only for an empty list', () => {
+    expect(summariseAnomalies([])).toEqual({ count: 0, byPattern: {} });
   });
 });

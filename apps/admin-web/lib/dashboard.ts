@@ -7,7 +7,10 @@ import { loadDossiers } from './vendorDossier';
 import {
   countActivePromotions,
   summariseBookings,
+  summariseAnomalies,
   summariseFailedPayments,
+  type AnomalyRow,
+  type AnomalySummary,
   WINDOW_DAYS,
   type BookingRow,
   type PaymentRow,
@@ -34,6 +37,10 @@ export interface DashboardData {
   promotionsActive: number | null;
   bookings: ReturnType<typeof summariseBookings> | null;
   failedPayments: ReturnType<typeof summariseFailedPayments> | null;
+  /** Open redemption flags. Null in demo (no scans) and when the check failed: see `redemptionFlagsError`. */
+  redemptionFlags: AnomalySummary | null;
+  /** Set when the check could not run. The page says so; a failed check must never read as zero flags. */
+  redemptionFlagsError: string | null;
   windowDays: number;
 }
 
@@ -50,17 +57,21 @@ export async function loadDashboard(now = new Date()): Promise<DashboardData> {
       promotionsActive: null,
       bookings: null,
       failedPayments: null,
+      redemptionFlags: null,
+      redemptionFlagsError: null,
       windowDays: WINDOW_DAYS,
     };
   }
 
   const since = new Date(now.getTime() - WINDOW_DAYS * 86_400_000).toISOString();
-  const [orgs, listings, promos, bookings, payments] = await Promise.all([
+  const [orgs, listings, promos, bookings, payments, anomalies] = await Promise.all([
     supabase.from('vendor_organizations').select('id, status'),
     supabase.from('experiences').select('status'),
     supabase.from('promotions').select('approval_state, starts_at, ends_at'),
     supabase.from('bookings').select('status, currency, total_minor, created_at').gte('created_at', since),
     supabase.from('payments').select('status, currency, amount_minor, failure_message, created_at').gte('created_at', since),
+    // Not in the hand-written generated types, so called through a cast.
+    (supabase as unknown as { rpc(fn: string): PromiseLike<{ data: unknown; error: { message: string } | null }> }).rpc('redemption_anomalies'),
   ]);
   for (const r of [orgs, listings, promos, bookings, payments]) if (r.error) throw new Error(r.error.message);
 
@@ -82,6 +93,8 @@ export async function loadDashboard(now = new Date()): Promise<DashboardData> {
     promotionsActive: countActivePromotions(promoRows, now),
     bookings: summariseBookings((bookings.data ?? []) as unknown as BookingRow[], now),
     failedPayments: summariseFailedPayments((payments.data ?? []) as unknown as PaymentRow[], now),
+    redemptionFlags: anomalies.error || !Array.isArray(anomalies.data) ? null : summariseAnomalies(anomalies.data as AnomalyRow[]),
+    redemptionFlagsError: anomalies.error ? anomalies.error.message : Array.isArray(anomalies.data) ? null : 'Unexpected answer from the check.',
     windowDays: WINDOW_DAYS,
   };
 }

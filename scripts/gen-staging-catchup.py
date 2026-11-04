@@ -98,6 +98,8 @@ PROBES = {
        case when exists (select 1 from information_schema.tables where table_name='privacy_requests') then 'applied' else 'missing' end""",
     "20261103000003_activate_standalone_offer_vouchers": """
        case when exists (select 1 from pg_proc where proname='claim_promotion_voucher' and prosrc like '%requires_booking%') then 'applied' else 'missing' end""",
+    "20261103000004_redemption_anomalies": """
+       case when exists (select 1 from pg_proc where proname='redemption_anomalies') then 'applied' else 'missing' end""",
 }
 
 HEADER = """\
