@@ -12,7 +12,7 @@
     "test": "vitest run"
   },
   "dependencies": {
-    "@babel/runtime": "^7.26.0",
+    "@babel/runtime": "^8.0.10",
     "@cvip/payments": "workspace:*",
     "@cvip/types": "workspace:*"
   },
