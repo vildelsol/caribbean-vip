@@ -14,3 +14,6 @@ decision this repo cannot make. Anything marked **[UNKNOWN]** is a fact Ro must 
 
 When the system changes, update these in the same PR. The table list in `data-inventory.md` is the
 source of truth for what is held; these files must not contradict it.
+| `audit-log-and-erasure.md` | How an append-only audit log and the right to erasure fit together |
+| `backup-restore-runbook.md` | Restoring a backup without bringing erased people back |
+| `vendor-data-clause.md` | Draft clause for the vendor agreement |
