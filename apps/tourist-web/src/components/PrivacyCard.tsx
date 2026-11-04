@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { accountStatusOf, type AccountStatus } from '../lib/account';
 import { CONSENT_TEXT } from '../lib/consent';
-import { eraseMyData, exportMyData, removeMyAccount, retainedUntilText, type EraseResult } from '../lib/privacy';
+import { eraseMyData, eraseOutsideTools, exportMyData, removeMyAccount, retainedUntilText, type EraseResult } from '../lib/privacy';
 import { supabase } from '../lib/supabase';
 import { useStore } from '../state/store';
 import { useOfferConsent } from '../state/useConsent';
@@ -91,6 +91,11 @@ export function PrivacyCard() {
       // The server has withdrawn every consent; bring this device's copy in line.
       dispatch({ type: 'setLocationConsent', granted: false });
       setErased(result);
+      // Outside tools next. Say so plainly if one did not finish; never imply it did.
+      const outside = await eraseOutsideTools();
+      if (outside.ok ? !outside.complete : outside.reason === 'failed') {
+        setFailed('Your data here is erased, but we could not reach our payment provider. Reload this page and erase again later to finish.');
+      }
     } else {
       setFailed('Could not erase your data. Nothing was changed. Try again.');
     }

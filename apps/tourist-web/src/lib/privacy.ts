@@ -122,6 +122,40 @@ export async function removeMyAccount(client: OffersClient | null = appOffersCli
   }
 }
 
+export type ProcessorEraseResult =
+  | { ok: true; complete: boolean; incomplete: string[] }
+  | { ok: false; reason: 'demo' | 'signed-out' | 'failed' };
+
+/** Read the function's report defensively: anything unreadable counts as not finished, never as done. */
+export function parseProcessorReport(json: unknown): ProcessorEraseResult {
+  const j = json as { ok?: unknown; complete?: unknown; incomplete?: unknown } | null;
+  if (j?.ok !== true || typeof j.complete !== 'boolean' || !Array.isArray(j.incomplete)) return { ok: false, reason: 'failed' };
+  const incomplete = j.incomplete.filter((x): x is string => typeof x === 'string');
+  // `complete` claimed while tools are listed as unfinished: believe the list.
+  return { ok: true, complete: j.complete && incomplete.length === 0, incomplete };
+}
+
+/**
+ * Ask the outside tools (Stripe today) to erase this guest too. Calls `erase-processors`, which takes
+ * the caller from the token. Demo mode has no client and does nothing.
+ */
+export async function eraseOutsideTools(client: OffersClient | null = appOffersClient()): Promise<ProcessorEraseResult> {
+  if (!client) return { ok: false, reason: 'demo' };
+  const token = await client.getAccessToken();
+  if (!token) return { ok: false, reason: 'signed-out' };
+  try {
+    const res = await client.fetch(`${client.functionsBase}/erase-processors`, {
+      method: 'POST',
+      headers: { apikey: client.anonKey, Authorization: `Bearer ${token}` },
+    });
+    if (res.status === 401) return { ok: false, reason: 'signed-out' };
+    if (res.status !== 200) return { ok: false, reason: 'failed' };
+    return parseProcessorReport(await res.json().catch(() => null));
+  } catch {
+    return { ok: false, reason: 'failed' };
+  }
+}
+
 /** "4 November 2033", in UTC so the day does not move with the reader's timezone. */
 export function retainedUntilText(iso: string): string {
   return new Date(iso).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC' });
