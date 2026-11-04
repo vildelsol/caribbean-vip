@@ -43,6 +43,14 @@ jobs:
             exit 1
           fi
 
+      - name: Scan tracked files for secret-shaped strings
+        run: ./scripts/scan-secrets.sh --self-test && ./scripts/scan-secrets.sh
+
+      # Fails on any high or critical advisory in production dependencies. The one ignored advisory
+      # (zod, GHSA-mrhx-c7xc-m3w5) needs a zod 3 to 4 major upgrade; see docs/security-headers-and-scans.md.
+      - name: Audit production dependencies
+        run: pnpm audit --prod --audit-level=high
+
   database:
     runs-on: ubuntu-latest
 
