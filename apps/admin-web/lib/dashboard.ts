@@ -39,6 +39,8 @@ export interface DashboardData {
   failedPayments: ReturnType<typeof summariseFailedPayments> | null;
   /** Open redemption flags. Null in demo (no scans) and when the check failed: see `redemptionFlagsError`. */
   redemptionFlags: AnomalySummary | null;
+  /** Every flag in the window, open or reviewed, for the list under the tile. */
+  redemptionFlagRows: AnomalyRow[];
   /** Set when the check could not run. The page says so; a failed check must never read as zero flags. */
   redemptionFlagsError: string | null;
   windowDays: number;
@@ -58,6 +60,7 @@ export async function loadDashboard(now = new Date()): Promise<DashboardData> {
       bookings: null,
       failedPayments: null,
       redemptionFlags: null,
+      redemptionFlagRows: [],
       redemptionFlagsError: null,
       windowDays: WINDOW_DAYS,
     };
@@ -93,8 +96,24 @@ export async function loadDashboard(now = new Date()): Promise<DashboardData> {
     promotionsActive: countActivePromotions(promoRows, now),
     bookings: summariseBookings((bookings.data ?? []) as unknown as BookingRow[], now),
     failedPayments: summariseFailedPayments((payments.data ?? []) as unknown as PaymentRow[], now),
+    redemptionFlagRows: !anomalies.error && Array.isArray(anomalies.data) ? (anomalies.data as AnomalyRow[]) : [],
     redemptionFlags: anomalies.error || !Array.isArray(anomalies.data) ? null : summariseAnomalies(anomalies.data as AnomalyRow[]),
     redemptionFlagsError: anomalies.error ? anomalies.error.message : Array.isArray(anomalies.data) ? null : 'Unexpected answer from the check.',
     windowDays: WINDOW_DAYS,
   };
+}
+
+/** Mark one flag reviewed. The server records the reviewer and refuses a flag that is not open now. */
+export async function reviewAnomaly(row: AnomalyRow, note: string | null): Promise<void> {
+  if (!isSupabaseConfigured) throw new Error('Nothing to review in demo.');
+  const client = supabase as unknown as {
+    rpc(fn: string, args: Record<string, unknown>): PromiseLike<{ error: { message: string } | null }>;
+  };
+  const { error } = await client.rpc('review_redemption_anomaly', {
+    p_pattern: row.pattern,
+    p_scanner_user_id: row.scanner_user_id ?? null,
+    p_voucher_id: row.voucher_id ?? null,
+    p_note: note,
+  });
+  if (error) throw new Error(error.message);
 }

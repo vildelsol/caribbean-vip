@@ -43,8 +43,16 @@ Each is proven by deleting it and watching a test fail.
 - **A failed check never reads as zero.** The dashboard shows "did not run" with the error, not 0.
 - **Rolling windows, not totals.** Ten unknown tokens over ten hours do not flag; ten inside an hour do.
 
-## Not built
-Marking a flag reviewed. It needs a table (and a `data-inventory.md` row), so it is a separate change. Until then flags close by themselves after 7 days with no new scans.
+## Reviewing a flag
+An admin marks a flag reviewed on the dashboard. `review_redemption_anomaly()` records who and when in `redemption_anomaly_reviews` (append-only, no foreign keys, note capped at 500 characters).
+
+- **Never silent.** A reviewed flag stays in the list with its reviewer and time.
+- **Reopens on a newer scan.** A review covers the flag only until a later scan feeds it.
+- **Cannot be pre-written.** Only a flag that exists now can be reviewed, and the review stores that flag's own latest scan time. No insert policy exists.
+- **Admin only,** reviewer taken from `auth.uid()`, never a parameter.
+- Each guard proven by removing it (`supabase/tests/anomaly_reviews.test.sql`).
+
+Flags with no new scans for 7 days fall out of the window by themselves.
 
 ## Decisions settled
 Reviewer: admin only, as with refunds in OD-08. Thresholds: A 10 per hour, B 3 per day, C 2 per voucher, D 20 per minute.

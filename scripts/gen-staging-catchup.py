@@ -100,6 +100,8 @@ PROBES = {
        case when exists (select 1 from pg_proc where proname='claim_promotion_voucher' and prosrc like '%requires_booking%') then 'applied' else 'missing' end""",
     "20261103000004_redemption_anomalies": """
        case when exists (select 1 from pg_proc where proname='redemption_anomalies') then 'applied' else 'missing' end""",
+    "20261103000005_anomaly_reviews": """
+       case when exists (select 1 from information_schema.tables where table_name='redemption_anomaly_reviews') then 'applied' else 'missing' end""",
 }
 
 HEADER = """\

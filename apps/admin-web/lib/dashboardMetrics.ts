@@ -67,19 +67,36 @@ export function countActivePromotions(rows: readonly PromotionRow[], now: Date):
   ).length;
 }
 
-/** One open flag from `redemption_anomalies()`. */
+/** One flag from `redemption_anomalies()`, open or reviewed. */
 export interface AnomalyRow {
   pattern: string;
+  scanner_user_id?: string | null;
+  voucher_id?: string | null;
+  vendor_org_id?: string | null;
+  scan_count?: number;
+  first_at?: string;
+  last_at?: string;
+  /** Null while open, including after a newer scan reopens a reviewed flag. */
+  reviewed_at?: string | null;
 }
 
 export interface AnomalySummary {
+  /** Flags nobody has reviewed. The number the tile leads with. */
   count: number;
+  /** Reviewed flags still inside the 7-day window. Listed, never hidden. */
+  reviewed: number;
   byPattern: Record<string, number>;
 }
 
 /** The tile's numbers. Pure, so a row with an unexpected shape cannot quietly read as zero flags. */
 export function summariseAnomalies(rows: readonly AnomalyRow[]): AnomalySummary {
   const byPattern: Record<string, number> = {};
-  for (const r of rows) byPattern[r.pattern] = (byPattern[r.pattern] ?? 0) + 1;
-  return { count: rows.length, byPattern };
+  let open = 0;
+  for (const r of rows) {
+    if (r.reviewed_at == null) {
+      open++;
+      byPattern[r.pattern] = (byPattern[r.pattern] ?? 0) + 1;
+    }
+  }
+  return { count: open, reviewed: rows.length - open, byPattern };
 }
