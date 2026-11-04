@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { accountStatusOf, type AccountStatus } from '../lib/account';
 import { CONSENT_TEXT } from '../lib/consent';
-import { eraseMyData, exportMyData, type EraseResult } from '../lib/privacy';
+import { eraseMyData, exportMyData, removeMyAccount, type EraseResult } from '../lib/privacy';
 import { supabase } from '../lib/supabase';
 import { useStore } from '../state/store';
 import { useOfferConsent } from '../state/useConsent';
@@ -52,10 +52,11 @@ function saveFile(filename: string, json: string): void {
 }
 
 export function PrivacyCard() {
-  const { state, dispatch } = useStore();
+  const { state, dispatch, reset } = useStore();
   const { offerConsent, setOfferConsent } = useOfferConsent();
   const status = useAccountStatus();
-  const [busy, setBusy] = useState<'offers' | 'export' | 'erase' | null>(null);
+  const [busy, setBusy] = useState<'offers' | 'export' | 'erase' | 'remove' | null>(null);
+  const [removeConfirm, setRemoveConfirm] = useState(false);
   const [failed, setFailed] = useState<string | null>(null);
   const [confirming, setConfirming] = useState(false);
   const [erased, setErased] = useState<Extract<EraseResult, { ok: true }> | null>(null);
@@ -92,6 +93,20 @@ export function PrivacyCard() {
       setErased(result);
     } else {
       setFailed('Could not erase your data. Nothing was changed. Try again.');
+    }
+  };
+
+  const removeSignIn = async () => {
+    setBusy('remove');
+    setFailed(null);
+    const result = await removeMyAccount();
+    setBusy(null);
+    setRemoveConfirm(false);
+    if (result.ok) {
+      // The sign-in is gone; put this device back to a fresh start.
+      reset();
+    } else {
+      setFailed(result.reason === 'refused' ? result.message : 'Could not remove your sign-in. Nothing was changed. Try again.');
     }
   };
 
@@ -153,7 +168,33 @@ export function PrivacyCard() {
             ? `We kept ${erased.bookingsRetained} booking${erased.bookingsRetained === 1 ? '' : 's'} and their payment records, because the law requires it.`
             : 'No bookings were held, so nothing was kept.'}
         </p>
-      ) : confirming ? (
+      ) : null}
+      {erased && erased.accountRemovable ? (
+        removeConfirm ? (
+          <div className="privacy-card__confirm" role="alertdialog" aria-labelledby="remove-title">
+            <p className="t-caption-strong" id="remove-title">
+              Remove your sign-in?
+            </p>
+            <p className="t-caption">
+              This deletes your login for good. You will be signed out on this device and cannot sign back in to this
+              account. This cannot be undone.
+            </p>
+            <div className="row privacy-card__actions">
+              <SecondaryButton onClick={() => setRemoveConfirm(false)} disabled={busy !== null}>
+                Keep my sign-in
+              </SecondaryButton>
+              <SecondaryButton onClick={() => void removeSignIn()} disabled={busy !== null}>
+                {busy === 'remove' ? 'Removing…' : 'Yes, remove it'}
+              </SecondaryButton>
+            </div>
+          </div>
+        ) : (
+          <SecondaryButton onClick={() => setRemoveConfirm(true)} disabled={busy !== null}>
+            Also remove my sign-in
+          </SecondaryButton>
+        )
+      ) : null}
+      {erased ? null : confirming ? (
         <div className="privacy-card__confirm" role="alertdialog" aria-labelledby="erase-title">
           <p className="t-caption-strong" id="erase-title">
             Erase your data?

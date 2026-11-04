@@ -34,3 +34,8 @@ verify_jwt = true
 # function still asks Auth who the token belongs to.
 [functions.claim-offer]
 verify_jwt = true
+
+# Removes the caller's own sign-in after erasure. Identity comes from auth.getUser(token); the
+# decision comes from begin_account_removal().
+[functions.delete-my-account]
+verify_jwt = true

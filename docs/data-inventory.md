@@ -24,7 +24,7 @@ exists yet. `erasure` is what a deletion request would do today.
 | `voucher_redemptions` | yes | scanner user, result, device metadata | fraud control, audit | legitimate interest | none defined; append-only | pseudonymise the scanner and device fields; no path |
 | `promotion_impressions` | yes | which offer a guest was shown and when, which implies they were near the vendor | offer cooldown | consent (offer and location) | none defined; only recent rows are needed for the cooldown | `erase_my_data()` deletes the rows |
 | `consent_events` | yes | user, purpose (location, offers, notifications), granted or withdrawn, wording version, time | proof of consent (Art 7(1)) | legal obligation; legitimate interest (demonstrating consent) | none defined; append-only | cascades with the profile; whether proof must outlive an erased account is a question for counsel |
-| `privacy_requests` | yes | pseudonymous subject id, kind of request (export or erasure), time, counts-only outcome; no names or content | accountability: showing a request was honoured (Art 5(2)) | legal obligation | none defined; append-only; period set by counsel | kept by design after erasure, with no link to the profile; no free text |
+| `privacy_requests` | yes | pseudonymous subject id, kind of request (export, erasure or account removal), time, counts-only outcome; no names or content | accountability: showing a request was honoured (Art 5(2)) | legal obligation | none defined; append-only; period set by counsel | kept by design after erasure, with no link to the profile; no free text |
 | `redemption_anomaly_reviews` | yes | which flag an admin reviewed (pattern, scanner or voucher id), the admin's id, a short note (500 characters), time; ids carry no link to profiles | accountability: showing a flagged scan pattern was looked at | legitimate interest (fraud control) | none defined; append-only; follows `voucher_redemptions` **[COUNSEL]** | none: ids are pseudonymous and unlinked by design so the erasure cascade is not blocked; whether a scanner's id here must be scrubbed on erasure is a question for counsel |
 | `ai_conversations` | yes | free-text chat history | Irie assistant | consent | `expires_at` defaults to 30 days; no purge job found in the repository | `erase_my_data()` deletes the rows; the PRD clear-history control is not built |
 | `notifications` | yes | messages to a user | service messages | contract; consent for marketing | none defined | `erase_my_data()` deletes the rows |
@@ -67,8 +67,11 @@ exists yet. `erasure` is what a deletion request would do today.
    git history, not stored.
 2. **Erasure and export: database side built 2026-11-03** (`export_my_data()`, `erase_my_data()`).
    Erasure deletes or scrubs everything outside a legal retention duty and keeps bookings, payments
-   and consent proof; it tells the guest what stayed. Not built: the Profile buttons, and removal of
-   the sign-in itself (needs the Auth admin API from an Edge Function). A guest with bookings cannot
+   and consent proof; it tells the guest what stayed. Profile buttons built 2026-11-03. Removal of
+   the sign-in is built but **switched off** (`privacy.account_removal_enabled` is `false`): the
+   `delete-my-account` Edge Function calls the Auth admin API only after `begin_account_removal()`
+   agrees (switch on, erasure in the last hour, no bookings, tourist only). It stays off until counsel
+   rules on consent proof, because deleting the Auth user cascades `consent_events`. A guest with bookings cannot
    be fully deleted, by design (`bookings.user_id` is `ON DELETE RESTRICT`). Staff accounts are
    refused. Every request is recorded in `privacy_requests` (no link to the profile, so it survives
    erasure). `rate_limit_events` is keyed by an opaque actor string and is not reached.

@@ -8,7 +8,8 @@ import { describe, expect, it, vi } from 'vitest';
 // Pin demo mode: a shell with VITE_SUPABASE_* set must not hand these tests a real client.
 vi.mock('./supabase', () => ({ supabase: null, isLiveMode: false }));
 
-import { eraseMyData, exportFilename, exportMyData, parseErasure, type PrivacyClient } from './privacy';
+import { eraseMyData, exportFilename, exportMyData, parseErasure, removeMyAccount, type PrivacyClient } from './privacy';
+import type { OffersClient } from './offers';
 
 function fakeClient(over: { userId?: string | null; data?: unknown; error?: unknown; throws?: boolean } = {}) {
   const calls: string[] = [];
@@ -96,5 +97,45 @@ describe('helpers', () => {
 
   it('exportFilename uses the given day', () => {
     expect(exportFilename(new Date('2026-11-03T10:00:00Z'))).toBe('caribbean-vip-my-data-2026-11-03.json');
+  });
+});
+
+describe('removeMyAccount', () => {
+  const client = (status: number, body: unknown, token: string | null = 'tok', calls: { url: string; init: RequestInit }[] = []): OffersClient => ({
+    functionsBase: 'https://x.supabase.co/functions/v1',
+    anonKey: 'anon',
+    getAccessToken: async () => token,
+    fetch: (async (url: string, init: RequestInit) => {
+      calls.push({ url, init });
+      return { status, json: async () => body } as Response;
+    }) as unknown as typeof fetch,
+  });
+
+  it('does nothing in demo mode: no client, no throw', async () => {
+    expect(await removeMyAccount(null)).toEqual({ ok: false, reason: 'demo' });
+  });
+
+  it('sends nothing without a session', async () => {
+    const calls: { url: string; init: RequestInit }[] = [];
+    expect(await removeMyAccount(client(200, { ok: true }, null, calls))).toEqual({ ok: false, reason: 'signed-out' });
+    expect(calls).toEqual([]);
+  });
+
+  it('positive control: posts to the function with the guest token and no body', async () => {
+    const calls: { url: string; init: RequestInit }[] = [];
+    expect(await removeMyAccount(client(200, { ok: true }, 'tok', calls))).toEqual({ ok: true });
+    expect(calls[0]?.url).toBe('https://x.supabase.co/functions/v1/delete-my-account');
+    expect((calls[0]?.init.headers as Record<string, string>).Authorization).toBe('Bearer tok');
+    expect(calls[0]?.init.body).toBeUndefined();
+  });
+
+  it('shows a refusal in the server words, and never reports success for it', async () => {
+    const r = await removeMyAccount(client(409, { ok: false, message: 'Erase your data first, then remove your sign-in.' }));
+    expect(r).toEqual({ ok: false, reason: 'refused', status: 409, message: 'Erase your data first, then remove your sign-in.' });
+  });
+
+  it('does not count a 200 without ok:true as success', async () => {
+    const r = await removeMyAccount(client(200, {}));
+    expect(r.ok).toBe(false);
   });
 });
