@@ -39,3 +39,7 @@ verify_jwt = true
 # decision comes from begin_account_removal().
 [functions.delete-my-account]
 verify_jwt = true
+
+# Asks outside tools (Stripe) to erase the caller's data. Identity comes from auth.getUser(token).
+[functions.erase-processors]
+verify_jwt = true

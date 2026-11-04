@@ -8,7 +8,7 @@ import { describe, expect, it, vi } from 'vitest';
 // Pin demo mode: a shell with VITE_SUPABASE_* set must not hand these tests a real client.
 vi.mock('./supabase', () => ({ supabase: null, isLiveMode: false }));
 
-import { eraseMyData, exportFilename, exportMyData, parseErasure, removeMyAccount, retainedUntilText, type PrivacyClient } from './privacy';
+import { eraseMyData, eraseOutsideTools, parseProcessorReport, exportFilename, exportMyData, parseErasure, removeMyAccount, retainedUntilText, type PrivacyClient } from './privacy';
 import type { OffersClient } from './offers';
 
 function fakeClient(over: { userId?: string | null; data?: unknown; error?: unknown; throws?: boolean } = {}) {
@@ -144,5 +144,48 @@ describe('removeMyAccount', () => {
   it('does not count a 200 without ok:true as success', async () => {
     const r = await removeMyAccount(client(200, {}));
     expect(r.ok).toBe(false);
+  });
+});
+
+describe('eraseOutsideTools', () => {
+  const client = (status: number, body: unknown, token: string | null = 'tok', calls: { url: string; init: RequestInit }[] = []): OffersClient => ({
+    functionsBase: 'https://x.supabase.co/functions/v1',
+    anonKey: 'anon',
+    getAccessToken: async () => token,
+    fetch: (async (url: string, init: RequestInit) => {
+      calls.push({ url, init });
+      return { status, json: async () => body } as Response;
+    }) as unknown as typeof fetch,
+  });
+
+  it('does nothing in demo mode, and sends nothing without a session', async () => {
+    expect(await eraseOutsideTools(null)).toEqual({ ok: false, reason: 'demo' });
+    const calls: { url: string; init: RequestInit }[] = [];
+    expect(await eraseOutsideTools(client(200, {}, null, calls))).toEqual({ ok: false, reason: 'signed-out' });
+    expect(calls).toEqual([]);
+  });
+
+  it('positive control: posts to erase-processors with the token and no body', async () => {
+    const calls: { url: string; init: RequestInit }[] = [];
+    const r = await eraseOutsideTools(client(200, { ok: true, complete: true, incomplete: [] }, 'tok', calls));
+    expect(r).toEqual({ ok: true, complete: true, incomplete: [] });
+    expect(calls[0]!.url).toBe('https://x.supabase.co/functions/v1/erase-processors');
+    expect(calls[0]!.init.body).toBeUndefined();
+  });
+
+  it('reports a tool that did not finish', async () => {
+    expect(await eraseOutsideTools(client(200, { ok: true, complete: false, incomplete: ['stripe'] }))).toEqual({ ok: true, complete: false, incomplete: ['stripe'] });
+  });
+
+  it('a server error or network failure is failed, never complete', async () => {
+    expect(await eraseOutsideTools(client(500, { ok: false }))).toEqual({ ok: false, reason: 'failed' });
+    const broken = { ...client(200, {}), fetch: (async () => { throw new Error('net'); }) as unknown as typeof fetch };
+    expect(await eraseOutsideTools(broken)).toEqual({ ok: false, reason: 'failed' });
+  });
+
+  it('never believes complete:true while tools are listed unfinished, or a malformed report', () => {
+    expect(parseProcessorReport({ ok: true, complete: true, incomplete: ['stripe'] })).toMatchObject({ complete: false });
+    expect(parseProcessorReport({ ok: true })).toEqual({ ok: false, reason: 'failed' });
+    expect(parseProcessorReport(null)).toEqual({ ok: false, reason: 'failed' });
   });
 });
