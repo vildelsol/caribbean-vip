@@ -19,7 +19,7 @@
  *    a ticket. Outcomes change when the catalogue does; these should not.
  */
 
-import { describe, expect, it, vi } from 'vitest';
+import { afterAll, describe, expect, it, vi } from 'vitest';
 
 // ../state/store imports the Supabase client; pin demo mode whatever VITE_SUPABASE_* says.
 vi.mock('../lib/supabase', () => ({ supabase: null, isLiveMode: false }));
@@ -428,6 +428,18 @@ function runJourney(n: number, rng: () => number, findings: Finding[], cov: Cove
     }
   }
 }
+
+// The demo availability code reads the wall clock: today's departures inside the next 90 minutes
+// cannot be booked, and which day is "today" follows the machine's timezone. Unpinned, this test
+// passed in Jamaica in the morning and failed in CI (UTC) in the afternoon, with the same seed.
+// Pinned to a fixed local morning, so the same five hundred customers meet the same slots in every
+// timezone and at every hour the suite runs. At module level, not in `beforeAll`: the journeys are
+// run while the file is collected, before any hook.
+vi.useFakeTimers({ toFake: ['Date'] });
+vi.setSystemTime(new Date(2026, 9, 15, 6, 0, 0));
+afterAll(() => {
+  vi.useRealTimers();
+});
 
 describe(`${JOURNEYS} customer journeys`, () => {
   const findings: Finding[] = [];
