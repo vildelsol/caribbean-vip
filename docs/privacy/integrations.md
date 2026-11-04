@@ -31,6 +31,6 @@ object, not different screens.
 - No adapter exists. Nothing registers Stripe, Supabase Auth or email yet, so the registry is empty
   and `eraseEverywhere([])` reports complete. The erasure flow does not call it yet. Wiring it in
   (the Edge Function that runs `erase_my_data()` then the registry, recording the report in
-  `privacy_requests.outcome`) is the next step, and should add a test that fails if a processor row
-  in `processor-record.md` has no registered port.
+  `privacy_requests.outcome`) is the next step, and is the next step. `packages/types/src/processorCoverage.test.ts` now fails if a row in
+  `processor-record.md` is neither built nor listed as pending in `processorCoverage.ts`.
 - Data portability formats per tool are left to each adapter.
