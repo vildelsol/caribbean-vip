@@ -5,6 +5,7 @@ export default defineConfig({
     // `apps/tourist-web/src` is included for the *pure* modules only — the CSS/TS token parity
     // check. Anything that renders a component belongs in a screen, not in a unit test here.
     include: [
+      'config/**/*.test.ts',
       'packages/**/*.test.ts',
       'supabase/functions/**/*.test.ts',
       'apps/tourist-web/src/**/*.test.ts',
