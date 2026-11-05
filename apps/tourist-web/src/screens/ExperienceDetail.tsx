@@ -149,9 +149,8 @@ export function ExperienceDetail() {
   const facts = [
     { label: 'Duration', value: listingDuration(experience.durationMinutes) },
     { label: 'Hotel pickup', value: experience.pickupInfo ? 'Included' : 'Not included' },
-    experience.minAge
-      ? { label: 'Families', value: `Ages ${experience.minAge} and up` }
-      : { label: 'Group', value: 'Small group' },
+    // Only a stated minimum age. "Small group" used to fill the gap and no field backs it.
+    ...(experience.minAge ? [{ label: 'Families', value: `Ages ${experience.minAge} and up` }] : []),
     {
       label: 'Cancellation',
       value: experience.cancellationHours > 0 ? `Free until ${experience.cancellationHours} hrs before` : 'Set by the operator',

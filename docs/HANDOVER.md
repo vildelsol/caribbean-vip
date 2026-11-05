@@ -313,7 +313,7 @@ Unchanged from the fourth session. Current state:
 2. **First live Stripe payment never executed.** Card `4242 4242 4242 4242` on the Vercel URL. Claude cannot enter card numbers. M3 incomplete until run.
 3. **Geofence hysteresis unit tests.** 250m/400m thresholds, pure function, ~30 min. Carried seven sessions.
 4. **Background geofencing needs a native shell (M6).** Capacitor or thin RN wrapper; decision logic is port-isolated and ready.
-5. **"Cruise-Friendly" badge is fabricated.** No field backs it. Add `cruiseFriendly: boolean` or delete.
+5. **"Cruise-Friendly" badge** — deleted 2026-11-04 (no field backed it). Re-add only with a real `cruiseFriendly` field and the operator's confirmation.
 6. **Social proof: 5 of 42 listings have reviews.** Write the rest or hide the section until reviews are real.
 7. **Ticket can print "Guest"** as name when guest skips onboarding. Worth ~20 min to hide the name row when there is none.
 8. **Single-stop "Book now" from Irie / basket.** `/checkout/:id` charges one experience; a multi-stop basket is a real feature decision.
