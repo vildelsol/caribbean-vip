@@ -32,7 +32,10 @@ import { dataMode, hugeExperiences, worstCaseExperiences, worstCaseVendor } from
 
 export type { DemoDestination, DemoExperience, DemoIsland, DemoVendor };
 
-export const PRICING_CONFIG = DEMO_PRICING_CONFIG;
+/** The rates quotes use: the server's, in live mode; the demo constants otherwise. */
+export function pricingConfig(): { taxRate: number; serviceFeeRate: number; commissionRate: number } {
+  return currentCatalogue().pricing ?? DEMO_PRICING_CONFIG;
+}
 export const PROMOTION = DEMO_PROMOTION;
 
 /** Live islands only. The inactive fixture (Antigua) is filtered here, as the RLS policy would. */
@@ -239,7 +242,7 @@ export function priceFor(
     // not what they pay. Modelling it as money off would quietly alter the total the vendor is
     // owed, and the offer's own terms say it is not redeemable for cash.
     discounts: [],
-    config: PRICING_CONFIG,
+    config: pricingConfig(),
     capacityRemaining,
   });
 

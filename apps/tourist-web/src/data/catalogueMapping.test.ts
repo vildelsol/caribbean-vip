@@ -29,6 +29,7 @@ function rows(over: Partial<CatalogueRows> = {}): CatalogueRows {
     ],
     ratings: [],
     slots: [],
+    pricing: null,
     ...over,
   };
 }
