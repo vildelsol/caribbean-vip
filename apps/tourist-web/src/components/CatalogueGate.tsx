@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState, type ReactNode } from 'react';
-import { loadLiveCatalogue } from '../data/liveCatalogue';
+import { loadLiveCatalogue, refreshSlots } from '../data/liveCatalogue';
 import { supabase } from '../lib/supabase';
 
 /**
@@ -21,6 +21,17 @@ export function CatalogueGate({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (live) void load();
   }, [live, load]);
+
+  // Keep seat counts fresh while the app is open: every two minutes, and when the tab comes back.
+  useEffect(() => {
+    if (!live || state !== 'ready' || !supabase) return;
+    const client = supabase;
+    const tick = () => void refreshSlots(client);
+    const id = window.setInterval(tick, 120_000);
+    const onVisible = () => { if (document.visibilityState === 'visible') tick(); };
+    document.addEventListener('visibilitychange', onVisible);
+    return () => { window.clearInterval(id); document.removeEventListener('visibilitychange', onVisible); };
+  }, [live, state]);
 
   if (state === 'ready') return <>{children}</>;
   return (

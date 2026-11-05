@@ -25,6 +25,14 @@ import {
  * Not yet in the snapshot: pricing config and the promotion. They stay demo-derived until a
  * Supabase adapter reads `platform_settings` and `promotions`.
  */
+/** One open departure, in the UTC-wall-clock convention `resolve-slot` uses to find it again. */
+export interface LiveSlot {
+  dateISO: string;
+  /** "09:00", 24-hour. */
+  time: string;
+  capacityRemaining: number;
+}
+
 export interface CatalogueSnapshot {
   islands: DemoIsland[];
   destinations: DemoDestination[];
@@ -35,6 +43,12 @@ export interface CatalogueSnapshot {
   optionsFor: (experience: DemoExperience) => ReturnType<typeof demoOptionsFor>;
   /** Credit lines by media key. Empty for a source whose photos need no attribution. */
   mediaCredits: typeof DEMO_MEDIA_CREDITS;
+  /**
+   * Real departures by listing id, from `availability_slots`. Absent in demo mode, where the
+   * deterministic generator in `availability.ts` stands in. When present it is the ONLY source:
+   * a listing with no entry has no departures, never generated ones.
+   */
+  slots?: Map<string, LiveSlot[]>;
 }
 
 export function demoSnapshot(): CatalogueSnapshot {
@@ -58,6 +72,11 @@ export function currentCatalogue(): CatalogueSnapshot {
 export function installCatalogue(snapshot: CatalogueSnapshot): void {
   current = snapshot;
   for (const listener of listeners) listener();
+}
+
+/** Live mode: replace only the departures, keeping everything else. Safe to call repeatedly. */
+export function installSlots(slots: Map<string, LiveSlot[]>): void {
+  current = { ...current, slots };
 }
 
 /** Tests only: back to the bundled dataset. */

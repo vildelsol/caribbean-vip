@@ -548,8 +548,10 @@ export function Checkout() {
             </dl>
             {dateISO && activeTime ? (
               <p className="t-micro c-faint checkout__policy">
-                {formatLongDate(dateISO)} · free cancellation until{' '}
-                {cancellationDeadline(experience, dateISO, activeTime)}
+                {formatLongDate(dateISO)} ·{' '}
+                {experience.cancellationHours > 0
+                  ? `free cancellation until ${cancellationDeadline(experience, dateISO, activeTime)}`
+                  : 'cancellation terms are set by the operator'}
               </p>
             ) : null}
           </>

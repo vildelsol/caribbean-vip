@@ -28,6 +28,7 @@ function rows(over: Partial<CatalogueRows> = {}): CatalogueRows {
       { id: 'o-off', experience_id: 'e1', kind: 'addon', label: 'Old add-on', unit_amount_minor: 500, occupies_capacity: false, sort_order: 2, is_active: false },
     ],
     ratings: [],
+    slots: [],
     ...over,
   };
 }

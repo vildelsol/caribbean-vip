@@ -6,7 +6,7 @@ import type {
   DemoOption,
   DemoVendor,
 } from '@cvip/demo';
-import { demoSnapshot, type CatalogueSnapshot } from './catalogueSource';
+import { demoSnapshot, type CatalogueSnapshot, type LiveSlot } from './catalogueSource';
 
 /**
  * Database rows to a `CatalogueSnapshot`. Pure: the fetcher in `supabaseCatalogue.ts` only gets
@@ -42,6 +42,9 @@ export interface OptionRow {
 /** One row of the `experience_ratings` view: published reviews only. */
 export interface RatingRow { experience_id: string; average_rating: number | string; review_count: number | string }
 
+/** One row of `availability_slots`. */
+export interface SlotRow { experience_id: string; starts_at: string; capacity: number | string; booked_count: number | string; status: string }
+
 export interface CatalogueRows {
   islands: IslandRow[];
   destinations: DestinationRow[];
@@ -51,6 +54,7 @@ export interface CatalogueRows {
   media: MediaRow[];
   options: OptionRow[];
   ratings: RatingRow[];
+  slots: SlotRow[];
 }
 
 const CURRENCIES = ['USD', 'JMD', 'KYD', 'BBD'] as const;
@@ -61,6 +65,32 @@ const finite = (n: unknown): number | null => {
   const v = typeof n === 'string' ? Number(n) : n;
   return typeof v === 'number' && Number.isFinite(v) ? v : null;
 };
+
+/**
+ * Open departures with seats left, grouped by listing and sorted. The start time is read as UTC
+ * wall-clock, the convention `slotStartsAt` and `resolve-slot` share, so what the guest picks is
+ * exactly what the lookup finds. A closed or cancelled slot, a full one, an unparseable time, or a
+ * negative count never reaches the picker.
+ */
+export function mapSlots(rows: SlotRow[]): Map<string, LiveSlot[]> {
+  const out = new Map<string, LiveSlot[]>();
+  for (const r of rows) {
+    if (r.status !== 'open') continue;
+    const capacity = finite(r.capacity);
+    const booked = finite(r.booked_count);
+    const t = new Date(r.starts_at);
+    if (capacity === null || booked === null || Number.isNaN(t.getTime())) continue;
+    const remaining = Math.floor(capacity - booked);
+    if (remaining < 1) continue;
+    const iso = t.toISOString();
+    out.set(r.experience_id, [
+      ...(out.get(r.experience_id) ?? []),
+      { dateISO: iso.slice(0, 10), time: iso.slice(11, 16), capacityRemaining: remaining },
+    ]);
+  }
+  for (const list of out.values()) list.sort((a, b) => (a.dateISO + a.time).localeCompare(b.dateISO + b.time));
+  return out;
+}
 
 /** Hours of free cancellation the operator set, else 0. Never a default that promises a refund. */
 export function cancellationHours(policy: unknown): number {
@@ -179,5 +209,6 @@ export function buildSnapshot(rows: CatalogueRows, publicMediaBase: string): Cat
     islands, destinations, vendors, experiences,
     optionsFor: (experience) => optionsBy.get(experience.id) ?? [],
     mediaCredits: demoSnapshot().mediaCredits,
+    slots: mapSlots(rows.slots),
   };
 }

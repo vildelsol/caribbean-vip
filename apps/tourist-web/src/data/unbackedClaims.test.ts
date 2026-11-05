@@ -19,3 +19,10 @@ describe('screens make no claim the data cannot back', () => {
     for (const claim of UNBACKED) expect(src, `${screen} says "${claim}"`).not.toContain(claim);
   });
 });
+
+describe('the cancellation promise follows the data', () => {
+  it('checkout says "free cancellation" only when the listing sets a window', () => {
+    const src = readFileSync(join(__dirname, '../screens/Checkout.tsx'), 'utf8');
+    expect(src).toMatch(/experience\.cancellationHours > 0\s*\?\s*`free cancellation until/);
+  });
+});
