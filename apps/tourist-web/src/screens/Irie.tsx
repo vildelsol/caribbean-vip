@@ -441,10 +441,12 @@ export function Irie() {
                     <span className="pop-card__price">
                       {formatUsd(allInFromMinor(experience))}
                     </span>
-                    <span className="pop-card__rating">
-                      <Icon name="star" size={11} color="var(--gold-light)" />
-                      {experience.ratingAverage.toFixed(1)}
-                    </span>
+                    {experience.ratingAverage > 0 ? (
+                      <span className="pop-card__rating">
+                        <Icon name="star" size={11} color="var(--gold-light)" />
+                        {experience.ratingAverage.toFixed(1)}
+                      </span>
+                    ) : null}
                   </span>
                 </span>
               </button>

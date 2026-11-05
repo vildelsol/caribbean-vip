@@ -152,7 +152,10 @@ export function ExperienceDetail() {
     experience.minAge
       ? { label: 'Families', value: `Ages ${experience.minAge} and up` }
       : { label: 'Group', value: 'Small group' },
-    { label: 'Cancellation', value: `Free until ${experience.cancellationHours} hrs before` },
+    {
+      label: 'Cancellation',
+      value: experience.cancellationHours > 0 ? `Free until ${experience.cancellationHours} hrs before` : 'Set by the operator',
+    },
   ];
 
   return (
@@ -338,18 +341,24 @@ export function ExperienceDetail() {
           departure that is actually empty.
         */}
         <section className="detail__proof">
-          <div className="detail__proof-head">
-            <p className="detail__proof-score t-display-sm">{experience.ratingAverage.toFixed(1)}</p>
-            <div className="grow">
-              <StarRow />
-              <p className="t-caption-strong detail__proof-claim">
-                {ratingClaim(experience.ratingAverage, experience.ratingCount)}
-              </p>
-              <p className="t-micro c-faint">
-                from {plural(experience.ratingCount, 'guest rating')}
-              </p>
+          {/* A listing with no ratings (every live listing until reviews are aggregated) shows no
+              score and no stars: "0.0" over five gold stars would read as a verdict. */}
+          {experience.ratingCount > 0 ? (
+            <div className="detail__proof-head">
+              <p className="detail__proof-score t-display-sm">{experience.ratingAverage.toFixed(1)}</p>
+              <div className="grow">
+                <StarRow />
+                <p className="t-caption-strong detail__proof-claim">
+                  {ratingClaim(experience.ratingAverage, experience.ratingCount)}
+                </p>
+                <p className="t-micro c-faint">
+                  from {plural(experience.ratingCount, 'guest rating')}
+                </p>
+              </div>
             </div>
-          </div>
+          ) : (
+            <p className="t-caption-strong detail__proof-claim">Not yet rated</p>
+          )}
 
           {/* The same threshold the sticky bar uses for "Nearly full". Two different urgencies
               for one number, six feet apart on the same screen, is worse than neither. */}

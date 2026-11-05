@@ -253,10 +253,12 @@ export function Nearby() {
                         * screen sorted by *distance* it is the only thing
                         * telling you whether the nearest is also worth the walk.
                         */}
-                      <span className="near-row__rating t-micro-strong">
-                        <Icon name="star" size={12} color="var(--gold)" />
-                        {experience.ratingAverage.toFixed(1)}
-                      </span>
+                      {experience.ratingAverage > 0 ? (
+                        <span className="near-row__rating t-micro-strong">
+                          <Icon name="star" size={12} color="var(--gold)" />
+                          {experience.ratingAverage.toFixed(1)}
+                        </span>
+                      ) : null}
                       {/*
                         * A "View" badge used to sit here. The whole card is the
                         * target, so it was a button-shaped thing that was not a
