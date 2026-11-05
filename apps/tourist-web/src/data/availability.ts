@@ -1,4 +1,5 @@
 import type { DemoExperience } from './catalogue';
+import { currentCatalogue } from './catalogueSource';
 
 /**
  * Simulated availability.
@@ -85,6 +86,10 @@ export function daysFor(experience: DemoExperience, count = 14): Day[] {
 
 /** The departures offered on one day, with the capacity each has left. */
 export function slotsFor(experience: DemoExperience, dateISO: string): Slot[] {
+  // Live mode: the departures are the database's, and a listing with none has none.
+  const live = currentCatalogue().slots;
+  if (live) return liveSlotsFor(live.get(experience.id) ?? [], dateISO);
+
   // A half-day experience runs more often than a full-day one. Derived from the real duration so
   // the times a listing offers are consistent with what the listing says it is.
   const times =
@@ -121,6 +126,27 @@ export function slotsFor(experience: DemoExperience, dateISO: string): Slot[] {
       };
     })
     .filter((s): s is Slot => s !== null);
+}
+
+function liveSlotsFor(all: { dateISO: string; time: string; capacityRemaining: number }[], dateISO: string): Slot[] {
+  const today = isoDate(startOfToday());
+  const nowMinutes = new Date().getHours() * 60 + new Date().getMinutes();
+  return all
+    .filter((s) => s.dateISO === dateISO)
+    // The same notice rule as the generator: a departure inside 90 minutes cannot be booked.
+    .filter((s) => dateISO !== today || minutesOf(s.time) - nowMinutes >= 90)
+    .map((s) => ({ time: s.time, label: clockLabel(s.time), capacityRemaining: s.capacityRemaining }));
+}
+
+function minutesOf(time: string): number {
+  const [h, m] = time.split(':').map(Number);
+  return (h ?? 0) * 60 + (m ?? 0);
+}
+
+function clockLabel(time: string): string {
+  const [h, m] = time.split(':').map(Number);
+  const hour12 = ((h ?? 0) % 12) || 12;
+  return `${hour12}:${String(m ?? 0).padStart(2, '0')} ${(h ?? 0) < 12 ? 'AM' : 'PM'}`;
 }
 
 export function slotOn(experience: DemoExperience, dateISO: string, time: string): Slot | undefined {
