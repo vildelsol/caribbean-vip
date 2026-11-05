@@ -124,6 +124,8 @@ PROBES = {
        case when exists (select 1 from pg_proc where proname='write_audit_log' and prosrc like '%audit_write_denied%') then 'applied' else 'missing' end""",
     "20261104000010_check_rate_limit": """
        case when exists (select 1 from pg_proc where proname='check_rate_limit') then 'applied' else 'missing' end""",
+    "20261104000011_review_integrity": """
+       case when exists (select 1 from pg_proc where proname='guard_review_fields') then 'applied' else 'missing' end""",
 }
 
 HEADER = """\

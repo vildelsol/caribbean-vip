@@ -13,8 +13,9 @@ import { demoSnapshot, type CatalogueSnapshot } from './catalogueSource';
  * the rows; every decision about what a row means lives here, where it is tested.
  *
  * What the rows do NOT carry, and what this does instead of inventing it:
- *  - **Ratings.** There is no rating column; a real one is an aggregate over `reviews`. Listings
- *    arrive with rating 0 / count 0 and the screens hide a zero rating (see `Rating`).
+ *  - **Ratings.** There is no rating column. A rating comes from the `experience_ratings` view
+ *    (published reviews only). A listing with no row, or a row that is not a count above zero and
+ *    an average from 1 to 5, gets 0 / 0 and the screens hide it (see `Rating`).
  *  - **Cancellation.** `experiences.cancellation_policy` is free-form jsonb with no defined shape.
  *    This reads `free_until_hours` (a non-negative number) and otherwise 0, which the detail
  *    screen shows as "set by the operator" rather than promising a refund window nobody set.
@@ -38,6 +39,9 @@ export interface OptionRow {
   occupies_capacity: boolean; sort_order: number; is_active: boolean;
 }
 
+/** One row of the `experience_ratings` view: published reviews only. */
+export interface RatingRow { experience_id: string; average_rating: number | string; review_count: number | string }
+
 export interface CatalogueRows {
   islands: IslandRow[];
   destinations: DestinationRow[];
@@ -46,6 +50,7 @@ export interface CatalogueRows {
   experiences: ExperienceRow[];
   media: MediaRow[];
   options: OptionRow[];
+  ratings: RatingRow[];
 }
 
 const CURRENCIES = ['USD', 'JMD', 'KYD', 'BBD'] as const;
@@ -113,6 +118,14 @@ export function buildSnapshot(rows: CatalogueRows, publicMediaBase: string): Cat
     });
   }
 
+  const ratingBy = new Map<string, { avg: number; count: number }>();
+  for (const r of rows.ratings) {
+    const avg = finite(r.average_rating);
+    const count = finite(r.review_count);
+    if (avg === null || count === null || count < 1 || avg < 1 || avg > 5) continue;
+    ratingBy.set(r.experience_id, { avg: Math.round(avg * 10) / 10, count: Math.floor(count) });
+  }
+
   const mediaBy = new Map<string, MediaRow[]>();
   for (const m of rows.media) mediaBy.set(m.experience_id, [...(mediaBy.get(m.experience_id) ?? []), m]);
 
@@ -142,8 +155,8 @@ export function buildSnapshot(rows: CatalogueRows, publicMediaBase: string): Cat
       status: e.status === 'approved' ? 'approved' : 'draft',
       cancellationHours: cancellationHours(e.cancellation_policy),
       media,
-      ratingAverage: 0,
-      ratingCount: 0,
+      ratingAverage: ratingBy.get(e.id)?.avg ?? 0,
+      ratingCount: ratingBy.get(e.id)?.count ?? 0,
     });
   }
 
