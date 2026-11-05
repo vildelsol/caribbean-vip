@@ -35,7 +35,9 @@ begin
      and pg_get_function_result(p.oid) <> 'trigger'
      and not (p.provolatile = 's' and p.proname in
               ('is_admin', 'is_super_admin', 'is_vendor_member', 'is_vendor_owner',
-               'is_vendor_listing_manager', 'can_scan_for_vendor'));
+               'is_vendor_listing_manager', 'can_scan_for_vendor'))
+     -- Deliberate exception: two non-secret rates, no arguments (see public_pricing.test.sql).
+     and p.proname <> 'public_pricing';
   perform test.ok(bad is null, 'no anon-callable definer function beyond the read-only predicates' || coalesce(' (found: ' || bad || ')', ''));
 end $$;
 

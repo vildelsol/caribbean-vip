@@ -126,6 +126,8 @@ PROBES = {
        case when exists (select 1 from pg_proc where proname='check_rate_limit') then 'applied' else 'missing' end""",
     "20261104000011_review_integrity": """
        case when exists (select 1 from pg_proc where proname='guard_review_fields') then 'applied' else 'missing' end""",
+    "20261104000012_public_pricing": """
+       case when exists (select 1 from pg_proc where proname='public_pricing') then 'applied' else 'missing' end""",
 }
 
 HEADER = """\

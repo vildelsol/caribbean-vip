@@ -33,6 +33,12 @@ export interface LiveSlot {
   capacityRemaining: number;
 }
 
+export interface PricingRates {
+  taxRate: number;
+  serviceFeeRate: number;
+  commissionRate: number;
+}
+
 export interface CatalogueSnapshot {
   islands: DemoIsland[];
   destinations: DemoDestination[];
@@ -49,6 +55,12 @@ export interface CatalogueSnapshot {
    * a listing with no entry has no departures, never generated ones.
    */
   slots?: Map<string, LiveSlot[]>;
+  /**
+   * The rates the server will charge with. Absent in demo mode (the demo constants apply). The
+   * commission rate is vendor-side, is not readable by guests, and does not change what they pay,
+   * so it stays at the demo value.
+   */
+  pricing?: PricingRates;
 }
 
 export function demoSnapshot(): CatalogueSnapshot {

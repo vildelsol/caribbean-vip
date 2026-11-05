@@ -6,7 +6,7 @@ import type {
   DemoOption,
   DemoVendor,
 } from '@cvip/demo';
-import { demoSnapshot, type CatalogueSnapshot, type LiveSlot } from './catalogueSource';
+import { demoSnapshot, type CatalogueSnapshot, type LiveSlot, type PricingRates } from './catalogueSource';
 
 /**
  * Database rows to a `CatalogueSnapshot`. Pure: the fetcher in `supabaseCatalogue.ts` only gets
@@ -45,6 +45,9 @@ export interface RatingRow { experience_id: string; average_rating: number | str
 /** One row of `availability_slots`. */
 export interface SlotRow { experience_id: string; starts_at: string; capacity: number | string; booked_count: number | string; status: string }
 
+/** What `public_pricing()` returns. */
+export type PricingRow = { tax_rate?: unknown; service_fee_rate?: unknown } | null;
+
 export interface CatalogueRows {
   islands: IslandRow[];
   destinations: DestinationRow[];
@@ -55,6 +58,7 @@ export interface CatalogueRows {
   options: OptionRow[];
   ratings: RatingRow[];
   slots: SlotRow[];
+  pricing: PricingRow;
 }
 
 const CURRENCIES = ['USD', 'JMD', 'KYD', 'BBD'] as const;
@@ -90,6 +94,26 @@ export function mapSlots(rows: SlotRow[]): Map<string, LiveSlot[]> {
   }
   for (const list of out.values()) list.sort((a, b) => (a.dateISO + a.time).localeCompare(b.dateISO + b.time));
   return out;
+}
+
+/**
+ * The rates to quote with. A rate that is missing falls back to the same default the checkout
+ * function uses (`getPricingConfig`), so the screen and the charge agree even before the setting
+ * exists. A rate that is present but not a number from 0 to 1 THROWS: quoting a total the server
+ * will not charge is worse than not loading, and the gate turns a throw into a retry screen.
+ */
+export function mapPricing(row: PricingRow): PricingRates {
+  const rate = (raw: unknown, fallback: number, name: string): number => {
+    if (raw === undefined || raw === null) return fallback;
+    const v = finite(raw);
+    if (v === null || v < 0 || v > 1) throw new Error(`pricing: ${name} is not a rate between 0 and 1`);
+    return v;
+  };
+  return {
+    taxRate: rate(row?.tax_rate, 0.15, 'tax_rate'),
+    serviceFeeRate: rate(row?.service_fee_rate, 0.05, 'service_fee_rate'),
+    commissionRate: 0.12,
+  };
 }
 
 /** Hours of free cancellation the operator set, else 0. Never a default that promises a refund. */
@@ -210,5 +234,6 @@ export function buildSnapshot(rows: CatalogueRows, publicMediaBase: string): Cat
     optionsFor: (experience) => optionsBy.get(experience.id) ?? [],
     mediaCredits: demoSnapshot().mediaCredits,
     slots: mapSlots(rows.slots),
+    pricing: mapPricing(rows.pricing),
   };
 }
