@@ -575,7 +575,6 @@ function FeatureCard({ experience }: { experience: DemoExperience }) {
       <div className="feature__body">
         <div className="feature__flags">
           {availability ? <Badge tone="brand">{availability}</Badge> : null}
-          <Badge tone="plain">Cruise-Friendly</Badge>
         </div>
         <h3 className="t-display-sm">{experience.title}</h3>
         <p className="t-micro c-locator feature__meta">
