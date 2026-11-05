@@ -14,7 +14,7 @@ export async function fetchCatalogue(client: SupabaseClient, publicMediaBase: st
     if (error) throw new Error(`catalogue: ${table}: ${error.message}`);
     return (data ?? []) as T[];
   };
-  const [islands, destinations, vendors, locations, experiences, media, options] = await Promise.all([
+  const [islands, destinations, vendors, locations, experiences, media, options, ratings] = await Promise.all([
     read<CatalogueRows['islands'][number]>('islands', 'id, code, name, in_app_brand, greeting, currency, timezone, hero_media_path, is_active'),
     read<CatalogueRows['destinations'][number]>('destinations', 'id, island_id, name, slug, centre_lat, centre_lng, editorial_content, sort_order, is_active'),
     read<CatalogueRows['vendors'][number]>('vendor_organizations', 'id, island_id, trading_name, status, description'),
@@ -22,6 +22,7 @@ export async function fetchCatalogue(client: SupabaseClient, publicMediaBase: st
     read<CatalogueRows['experiences'][number]>('experiences', 'id, vendor_org_id, island_id, destination_id, category, title, summary, description, duration_minutes, inclusions, pickup_info, cancellation_policy, from_amount_minor, status'),
     read<CatalogueRows['media'][number]>('experience_media', 'experience_id, storage_path, sort_order'),
     read<CatalogueRows['options'][number]>('experience_options', 'id, experience_id, kind, label, unit_amount_minor, occupies_capacity, sort_order, is_active'),
+    read<CatalogueRows['ratings'][number]>('experience_ratings', 'experience_id, average_rating, review_count'),
   ]);
-  return buildSnapshot({ islands, destinations, vendors, locations, experiences, media, options }, publicMediaBase);
+  return buildSnapshot({ islands, destinations, vendors, locations, experiences, media, options, ratings }, publicMediaBase);
 }

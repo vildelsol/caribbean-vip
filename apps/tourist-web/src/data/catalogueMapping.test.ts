@@ -27,6 +27,7 @@ function rows(over: Partial<CatalogueRows> = {}): CatalogueRows {
       { id: 'o-inf', experience_id: 'e1', kind: 'infant', label: 'Infant', unit_amount_minor: 0, occupies_capacity: true, sort_order: 1, is_active: true },
       { id: 'o-off', experience_id: 'e1', kind: 'addon', label: 'Old add-on', unit_amount_minor: 500, occupies_capacity: false, sort_order: 2, is_active: false },
     ],
+    ratings: [],
     ...over,
   };
 }
@@ -39,7 +40,7 @@ describe('buildSnapshot', () => {
     expect(e).toMatchObject({ id: 'e1', destinationSlug: 'negril', fromAmountMinor: 7800, inclusions: [], status: 'approved', vendorId: 'v1' });
   });
 
-  it('never invents a rating or a refund window', () => {
+  it('never invents a rating or a refund window when there are no reviews', () => {
     const e = snap.experiences[0]!;
     expect([e.ratingAverage, e.ratingCount, e.cancellationHours]).toEqual([0, 0, 0]);
   });
@@ -89,6 +90,25 @@ describe('buildSnapshot', () => {
     installCatalogue(snap);
     expect(experienceById('e1')?.title).toBe('Reef Snorkel');
     expect(mediaUrl(`${BASE}/v1/e1/b.jpg`)).toBe(`${BASE}/v1/e1/b.jpg`);
+  });
+});
+
+describe('ratings', () => {
+  const ratedRows = (r: CatalogueRows['ratings']) => buildSnapshot(rows({ ratings: r }), BASE).experiences[0]!;
+
+  it('takes the average and count from the published-review aggregate, coercing numeric strings', () => {
+    expect(ratedRows([{ experience_id: 'e1', average_rating: '4.67', review_count: '12' }])).toMatchObject({ ratingAverage: 4.7, ratingCount: 12 });
+  });
+
+  it('ignores a row for another listing', () => {
+    expect(ratedRows([{ experience_id: 'zzz', average_rating: 5, review_count: 9 }])).toMatchObject({ ratingAverage: 0, ratingCount: 0 });
+  });
+
+  it.each([
+    [{ average_rating: 0, review_count: 5 }], [{ average_rating: 6, review_count: 5 }], [{ average_rating: 4.5, review_count: 0 }],
+    [{ average_rating: 'NaN', review_count: 3 }], [{ average_rating: 4.5, review_count: -2 }],
+  ])('treats an impossible aggregate %j as no rating, not as a score', (r) => {
+    expect(ratedRows([{ experience_id: 'e1', ...r }])).toMatchObject({ ratingAverage: 0, ratingCount: 0 });
   });
 });
 
