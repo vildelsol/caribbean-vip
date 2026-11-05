@@ -2,6 +2,7 @@ import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import { HashRouter } from 'react-router-dom';
 import { App } from './App';
+import { CatalogueGate } from './components/CatalogueGate';
 import { StoreProvider } from './state/store';
 import './design/global.css';
 
@@ -20,10 +21,12 @@ if (!root) throw new Error('#root is missing from index.html');
 
 createRoot(root).render(
   <StrictMode>
-    <StoreProvider>
-      <HashRouter>
-        <App />
-      </HashRouter>
-    </StoreProvider>
+    <CatalogueGate>
+      <StoreProvider>
+        <HashRouter>
+          <App />
+        </HashRouter>
+      </StoreProvider>
+    </CatalogueGate>
   </StrictMode>,
 );
