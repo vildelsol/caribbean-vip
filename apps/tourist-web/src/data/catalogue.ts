@@ -130,6 +130,8 @@ export function experienceById(id: string): DemoExperience | undefined {
  */
 export function mediaUrl(key: string | undefined): string {
   if (!key) return `${import.meta.env.BASE_URL}demo/jm-hero.jpg`;
+  // A Storage object arrives as its full public URL (see `mediaKeyFor`); a bare key is a bundled photo.
+  if (key.startsWith('https://')) return key;
   return `${import.meta.env.BASE_URL}demo/${key}.jpg`;
 }
 

@@ -226,6 +226,8 @@ export function Badge({ children, tone = 'plain' }: { children: ReactNode; tone?
 
 /** "★ 4.8 · 1,240 reviews". Star and score both gold — the score is the thing being rated. */
 export function Rating({ average, count, compact = false }: { average: number; count?: number; compact?: boolean }) {
+  // Ratings run 1 to 5, so 0 means "not rated yet": show nothing rather than "0.0".
+  if (!(average > 0)) return null;
   return (
     <span
       className="rating"
