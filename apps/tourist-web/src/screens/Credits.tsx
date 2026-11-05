@@ -1,5 +1,5 @@
 import { useNavigate } from 'react-router-dom';
-import { DEMO_MEDIA_CREDITS } from '@cvip/demo';
+import { currentCatalogue } from '../data/catalogueSource';
 import { Icon } from '../components/Icon';
 import './Credits.css';
 
@@ -23,7 +23,7 @@ import './Credits.css';
  */
 export function Credits() {
   const navigate = useNavigate();
-  const entries = Object.entries(DEMO_MEDIA_CREDITS).sort((a, b) =>
+  const entries = Object.entries(currentCatalogue().mediaCredits).sort((a, b) =>
     a[1].author.localeCompare(b[1].author),
   );
 

@@ -1,19 +1,13 @@
 import {
-  DEMO_DESTINATIONS,
-  DEMO_EXPERIENCES,
-  DEMO_ISLANDS,
-  DEMO_MEDIA_CREDITS,
   DEMO_PRICING_CONFIG,
   DEMO_PROMOTION,
-  DEMO_VENDORS,
-  demoOptionsFor,
-  isPubliclyVisibleDemo,
   type DemoDestination,
   type DemoExperience,
   type DemoIsland,
   type DemoVendor,
 } from '@cvip/demo';
 import { calculateBookingTotal, distanceMetres, type PriceBreakdown } from '@cvip/types';
+import { currentCatalogue, onCatalogueInstalled } from './catalogueSource';
 import { dataMode, hugeExperiences, worstCaseExperiences, worstCaseVendor } from './__fixtures__/worstCase';
 
 /**
@@ -42,31 +36,54 @@ export const PRICING_CONFIG = DEMO_PRICING_CONFIG;
 export const PROMOTION = DEMO_PROMOTION;
 
 /** Live islands only. The inactive fixture (Antigua) is filtered here, as the RLS policy would. */
-export const ISLANDS: DemoIsland[] = DEMO_ISLANDS.filter((i) => i.is_active);
+export const ISLANDS: DemoIsland[] = [];
+
+/*
+ * `ISLANDS` stays one array object that is refilled in place when a live catalogue is installed,
+ * so the screens and tests that import it keep working unchanged. The app renders only after the
+ * catalogue is installed, so nothing reads it half-filled.
+ */
+function refreshIslands(): void {
+  ISLANDS.splice(0, ISLANDS.length, ...currentCatalogue().islands.filter((i) => i.is_active));
+}
+refreshIslands();
+onCatalogueInstalled(refreshIslands);
 
 export function islandById(id: string): DemoIsland | undefined {
   return ISLANDS.find((i) => i.id === id);
 }
 
 export function destinationsFor(islandId: string): DemoDestination[] {
-  return DEMO_DESTINATIONS.filter((d) => d.island_id === islandId && d.is_active).sort(
+  return currentCatalogue().destinations.filter((d) => d.island_id === islandId && d.is_active).sort(
     (a, b) => a.sort_order - b.sort_order,
   );
 }
 
 export function destinationBySlug(slug: string): DemoDestination | undefined {
-  return DEMO_DESTINATIONS.find((d) => d.slug === slug);
+  return currentCatalogue().destinations.find((d) => d.slug === slug);
 }
 
 export function vendorFor(experience: DemoExperience): DemoVendor | undefined {
-  const vendor = DEMO_VENDORS.find((v) => v.id === experience.vendorId);
+  const vendor = currentCatalogue().vendors.find((v) => v.id === experience.vendorId);
   if (vendor && dataMode() === 'worst') return worstCaseVendor(vendor);
   return vendor;
 }
 
+/**
+ * The `experiences_public_read` rule, applied to the installed catalogue: the listing is approved
+ * AND its vendor is approved. It must look the vendor up in the SNAPSHOT: `isPubliclyVisibleDemo`
+ * in @cvip/demo searches the bundled vendors, so a live listing would never find its vendor and
+ * the whole live catalogue would read as hidden.
+ */
+function isPubliclyVisible(): DemoExperience[] {
+  const { experiences, vendors } = currentCatalogue();
+  const approved = new Set(vendors.filter((v) => v.status === 'approved').map((v) => v.id));
+  return experiences.filter((e) => e.status === 'approved' && approved.has(e.vendorId));
+}
+
 /** Every listing the public may see. The single place the visibility rule is applied. */
 export function visibleExperiences(): DemoExperience[] {
-  const live = DEMO_EXPERIENCES.filter(isPubliclyVisibleDemo);
+  const live = isPubliclyVisible();
   /*
    * The one seam the dev-only worst-case fixture enters through. Please leave it here.
    *
@@ -129,7 +146,7 @@ export function heroUrl(experience: DemoExperience): string {
  * representative photograph of the right island rather than of that exact operator.
  */
 export function creditFor(key: string | undefined) {
-  return key ? DEMO_MEDIA_CREDITS[key] : undefined;
+  return key ? currentCatalogue().mediaCredits[key] : undefined;
 }
 
 // ---------------------------------------------------------------------------
@@ -176,7 +193,7 @@ export function priceFor(
   capacityRemaining: number,
   opts: { rumPunch?: boolean } = {},
 ): { ok: true; breakdown: PriceBreakdown } | { ok: false; code: QuoteFailure; message: string } {
-  const options = demoOptionsFor(experience);
+  const options = currentCatalogue().optionsFor(experience);
   const adult = options.find((o) => o.kind === 'adult');
   const child = options.find((o) => o.kind === 'child');
   const addon = options.find((o) => o.kind === 'addon');
