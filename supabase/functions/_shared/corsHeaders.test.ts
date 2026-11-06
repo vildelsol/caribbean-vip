@@ -7,8 +7,9 @@ import { describe, expect, it } from 'vitest';
 // before the function runs. checkout-session lacked `apikey`, so on staging no guest could pay and the
 // Pay button stuck on "Redirecting…". Every browser-called function must allow all three.
 const dir = join(__dirname, '..');
-// Server-to-server only: Stripe calls it, no browser preflight exists.
-const NOT_BROWSER_CALLED = new Set(['stripe-webhook']);
+// Server-to-server only: Stripe calls the webhook, the scheduler calls the removal job. No browser
+// preflight exists for either, and neither answers OPTIONS.
+const NOT_BROWSER_CALLED = new Set(['stripe-webhook', 'remove-vendor-documents']);
 
 const functions = readdirSync(dir, { withFileTypes: true })
   .filter((d) => d.isDirectory() && !d.name.startsWith('_') && d.name !== 'node_modules')

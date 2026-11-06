@@ -43,3 +43,6 @@ verify_jwt = true
 # Asks outside tools (Stripe) to erase the caller's data. Identity comes from auth.getUser(token).
 [functions.erase-processors]
 verify_jwt = true
+
+[functions.remove-vendor-documents]
+verify_jwt = true
