@@ -18,6 +18,10 @@ Add a row, and a `data-inventory.md` entry if it stores data, before any of thes
   real provider receives whatever guests type.
 - Notification provider (OD-05).
 - Analytics or error tracking: none today.
+- Monitoring and alerting: none today. The adapter is `createNullMonitoringPort()`, which sends
+  nowhere. Alerts carry counts and opaque references only (`MonitoringPort` enforces this), so a
+  provider receives no personal data — but it still receives our operational pattern and needs a row
+  here, and a `region`, before it is wired up. Rules: `docs/production-provisioning.md` §8.
 
 ## Sub-processors and onward disclosure
 - Vendors receive the booking details needed to deliver the excursion: guest name, party size, slot.
