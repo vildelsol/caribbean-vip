@@ -16,6 +16,7 @@ import { Checkout } from './screens/Checkout';
 import { Confirmation } from './screens/Confirmation';
 import { Credits } from './screens/Credits';
 import { Ticket } from './screens/Ticket';
+import { WriteReview } from './screens/WriteReview';
 import { Offer } from './screens/Offer';
 import { Redeem } from './screens/Redeem';
 import { BookingReturn } from './screens/BookingReturn';
@@ -66,6 +67,7 @@ export function App() {
         {/* Where the photography's attribution lives now that it is off the images. See Credits. */}
         <Route path="/credits" element={<Credits />} />
         <Route path="/ticket/:bookingId" element={<Ticket />} />
+        <Route path="/review/:bookingId" element={<WriteReview />} />
         <Route path="/offer" element={<Offer />} />
         <Route path="/staff/redeem" element={<Redeem />} />
         <Route path="/booking-return" element={<BookingReturn />} />
