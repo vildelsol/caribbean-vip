@@ -18,3 +18,4 @@ export * from './env.ts';
 export * from './vendor.ts';
 export * from './vendorDocuments.ts';
 export * from './processorPorts.ts';
+export * from './monitoringPort.ts';

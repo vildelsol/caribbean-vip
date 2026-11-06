@@ -76,7 +76,20 @@ Tick each box only after you have seen the result, not after you have run the co
 
 ## 8. Monitoring
 
-- [ ] Alert on: failed Edge Function runs, `stripe-webhook` non-2xx, bookings stuck in
-      `pending_payment` over 30 minutes, missing `audit_logs where action like 'retention.%'` for 8 days.
-- [ ] Monitoring tool must sit behind a port (`packages/types`), like other outside tools, and be
-      listed in `docs/privacy/processor-record.md` before it receives any data.
+The rules live as data in `packages/types/src/monitoringPort.ts` (`ALERT_RULES`). A test fails if
+this list and that one disagree, so neither becomes the stale copy. Each line below is a rule id.
+
+- [ ] `edge-function-failures` — any non-2xx from a deployed function over 5 minutes. **page**
+- [ ] `stripe-webhook-errors` — `stripe-webhook` returns non-2xx; Stripe retries, then gives up and
+      the booking never confirms. **page**
+- [ ] `bookings-stuck-pending` — a booking in `pending_payment` over 30 minutes; the guest may have
+      been charged. **page**
+- [ ] `retention-purge-missed` — no `audit_logs where action like 'retention.%'` for 8 days, so the
+      weekly `pg_cron` job is dead or `pg_cron` was never enabled. **warn**
+
+- [ ] The monitoring tool sits behind `MonitoringPort`, like every other outside tool. Until one is
+      chosen the adapter is `createNullMonitoringPort()`, which sends nowhere.
+- [ ] Add its row to `docs/privacy/processor-record.md` **before** it receives anything, and set its
+      `region` on the port. **[Ro]**
+- [ ] Alerts carry counts and opaque references only; `emitAlert` refuses anything else. Do not add a
+      free-text field to get a guest's name into an alert — use the booking reference and the admin console.
