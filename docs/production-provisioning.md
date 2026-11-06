@@ -49,10 +49,17 @@ Tick each box only after you have seen the result, not after you have run the co
       `STRIPE_WEBHOOK_SECRET` (live endpoint), `VOUCHER_HMAC_SECRET` (new, random, 32 bytes or more),
       `APP_URL` (production tourist URL, `https` only).
 - [ ] `./scripts/deploy-functions.sh <production-ref>`. It sets `--import-map` and, for `stripe-webhook`
-      only, `--no-verify-jwt`. Confirm all nine functions show as deployed.
+      only, `--no-verify-jwt`. Confirm all 10 functions show as deployed.
 - [ ] Stripe → Developers → Webhooks: add the production `stripe-webhook` URL, event
       `checkout.session.completed`. **[Ro]**
 - [ ] CORS: confirm `apikey` is in Allow-Headers by calling a function from the production origin.
+- [ ] Schedule `remove-vendor-documents` **[Ro]**: a daily `POST` to
+      `https://<production-ref>.supabase.co/functions/v1/remove-vendor-documents` with
+      `Authorization: Bearer <service-role key>` (Supabase → Integrations → Cron, or `pg_cron` with
+      `pg_net`). It deletes the stored files of vendor documents whose vendor closed 7+ years ago, then
+      marks them so `purge_expired_records()` can drop the rows. Nothing is due before 2033, so a
+      missed schedule costs nothing now, but without it the files are kept for ever. Anything other
+      than the service-role key (including the anon key) gets 401.
 
 ## 5. Apps (Vercel)
 
