@@ -124,8 +124,10 @@ export function BookingReturn() {
   if (phase === 'error') {
     return (
       <main className="screen">
+        <h1 className="sr-only">Booking confirmation</h1>
         <EmptyState
           icon="calendar"
+          headingLevel={2}
           title="We couldn't confirm your booking"
           body="If your card was charged, your booking will appear in Trips within a minute. Contact support if it doesn't."
           action="Go to Trips"
@@ -140,7 +142,7 @@ export function BookingReturn() {
       <span className="booking-return__spinner">
         <Icon name="refresh" size={32} color="var(--brand)" />
       </span>
-      <p className="t-body-strong" style={{ textAlign: 'center' }}>Confirming your booking…</p>
+      <h1 className="t-body-strong" style={{ textAlign: 'center', margin: 0 }}>Confirming your booking…</h1>
       <p className="t-caption c-faint" style={{ textAlign: 'center' }}>
         {attempt < 4 ? 'Waiting for payment confirmation' : 'Still confirming — hang on'}
       </p>
