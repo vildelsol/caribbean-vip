@@ -18,7 +18,7 @@
   "devDependencies": {
     "@cvip/config": "workspace:*",
     "typescript": "^5.7.2",
-    "vitest": "^5.0.5"
+    "vitest": "^5.1.0"
   },
   "dependencies": {
     "@babel/runtime": "^8.0.10"
