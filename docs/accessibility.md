@@ -14,4 +14,6 @@ Routes checked: Welcome, Explore, Nearby, Search, Irie, Trips, Profile, Credits,
 Confirmation, Ticket, Review, Redeem, Booking return, catalogue load-failure screen.
 Fixed: unreadable load-failure screen (1.21:1), contrast on the gold badge, Nearby map labels and ticket hand-over text,
 missing `h1` on Nearby, Search, Booking return, a map `role="img"` containing buttons, `aria-label` on a role-less star row.
-Not checked: vendor-web and admin-web, keyboard-only walkthrough, screen-reader listening, text zoom to 200%, the live (non-demo) catalogue, the clash dialog.
+Vendor and admin apps (demo mode): every route checked. Fixed one contrast miss (earnings rate pill) and the demo banner outside any landmark.
+Tip: wait about 2 seconds after loading a Next route before running axe; run too early, the stylesheet is missing and it reports false contrast failures.
+Not checked: keyboard-only walkthrough, screen-reader listening, text zoom to 200%, the live (non-demo) catalogue, the clash dialog.
