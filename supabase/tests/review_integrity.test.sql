@@ -13,6 +13,7 @@ do $$
 declare
   guest uuid; other uuid; adm uuid; org uuid; e1 uuid; e2 uuid;
   past_slot uuid; future_slot uuid; b_past uuid; b_future uuid; b_pending uuid; slot3 uuid;
+  slot4 uuid; b_past2 uuid;
 begin
   insert into auth.users (email) values ('rv-guest@test.local') returning id into guest;
   insert into auth.users (email) values ('rv-other@test.local') returning id into other;
@@ -36,8 +37,15 @@ begin
   insert into bookings (user_id, vendor_org_id, experience_id, availability_slot_id, reference, status, currency, subtotal_minor, total_minor, seats)
   values (guest, org, e1, slot3,       'VIPJ-RV-0003', 'pending_payment', 'USD', 1000, 1000, 1) returning id into b_pending;
 
+  -- A second reviewable booking: the body-length test needs one that has no review yet, because
+  -- reviews.booking_id is unique.
+  insert into availability_slots (experience_id, starts_at, ends_at, capacity)
+  values (e1, now() - interval '7 days', now() - interval '7 days' + interval '2 hours', 5) returning id into slot4;
+  insert into bookings (user_id, vendor_org_id, experience_id, availability_slot_id, reference, status, currency, subtotal_minor, total_minor, seats)
+  values (guest, org, e1, slot4, 'VIPJ-RV-0004', 'completed', 'USD', 1000, 1000, 1) returning id into b_past2;
+
   insert into fx values ('guest', guest), ('other', other), ('admin', adm), ('e1', e1), ('e2', e2),
-    ('b_past', b_past), ('b_future', b_future), ('b_pending', b_pending);
+    ('b_past', b_past), ('b_future', b_future), ('b_pending', b_pending), ('b_past2', b_past2);
 end $$;
 
 set local role authenticated;
@@ -89,6 +97,42 @@ begin
   perform test.eq(mod, adm, 'the moderator is the admin who acted');
   select average_rating into avg from experience_ratings where experience_id = e1;
   perform test.eq(avg, 5.00::numeric, 'a published review is in the aggregate');
+
+  -- The database logs the moderation itself, so a decision made outside the console still leaves a
+  -- trace. The console adds its own row for the reason; this one cannot be forgotten.
+  perform test.eq(
+    (select count(*)::int from audit_logs
+      where entity_type = 'reviews'
+        and action = 'reviews.moderation_state_changed'
+        and entity_id = (select id from reviews where booking_id = b_past)
+        and before ->> 'moderation_state' = 'pending'
+        and after  ->> 'moderation_state' = 'published'),
+    1, 'publishing a review writes an audit row naming the transition');
+  perform test.eq(
+    (select actor_user_id from audit_logs
+      where entity_type = 'reviews' and entity_id = (select id from reviews where booking_id = b_past)),
+    adm, 'the audit row names the admin who acted');
+end $$;
+
+-- A review body is bounded. Unbounded `text` let anyone with the anon key and a token store
+-- whatever fit in a request body.
+set local role authenticated;
+do $$
+declare
+  guest uuid := (select v from fx where k='guest'); e1 uuid := (select v from fx where k='e1');
+  b2 uuid := (select v from fx where k='b_past2'); n int;
+begin
+  perform test.become(guest);
+  perform test.raises(
+    format($q$ insert into reviews (booking_id, experience_id, user_id, rating, body) values (%L,%L,%L,4,repeat('x',2001)) $q$, b2, e1, guest),
+    'a review body over 2000 characters is refused');
+
+  -- Positive control: the same insert at the limit succeeds, so the refusal above is the length
+  -- check and not some other rule rejecting the row.
+  insert into reviews (booking_id, experience_id, user_id, rating, body)
+  values (b2, e1, guest, 4, repeat('x', 2000));
+  get diagnostics n = row_count;
+  perform test.eq(n, 1, 'a review body at exactly 2000 characters is accepted');
 end $$;
 
 -- The public aggregate is readable by anon, and shows the published review but not its text.

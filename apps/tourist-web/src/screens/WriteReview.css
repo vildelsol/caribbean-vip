@@ -1,0 +1,172 @@
+.review-write {
+  padding-bottom: var(--s-xl);
+}
+
+.review-write__head {
+  display: flex;
+  align-items: center;
+  gap: var(--s-sm);
+  padding: var(--s-lg) var(--s-md) var(--s-xs);
+}
+
+.review-write__back {
+  width: 34px;
+  height: 34px;
+  flex: 0 0 auto;
+  border: none;
+  border-radius: var(--r-pill);
+  background: var(--sand);
+  color: var(--green-900);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+.review-write__eyebrow {
+  margin: 0;
+  font-size: 13px;
+  color: var(--ink-muted);
+}
+
+.review-write__title {
+  margin: 2px 0 0;
+  font-family: var(--font-display);
+  font-size: 22px;
+  line-height: 1.2;
+  color: var(--green-900);
+}
+
+.review-write__demo,
+.review-write__blocked,
+.review-write__done {
+  margin: var(--s-sm) var(--s-md) 0;
+  padding: var(--s-sm) var(--s-md);
+  border-radius: var(--r-md);
+  background: var(--ivory-raised);
+  border: 1px solid var(--sand-border);
+  color: var(--ink-muted);
+  font-size: 15px;
+}
+
+.review-write__done,
+.review-write__blocked {
+  display: grid;
+  gap: var(--s-sm);
+  justify-items: start;
+}
+
+.review-write__done p,
+.review-write__blocked p {
+  margin: 0;
+}
+
+.review-write__done-state {
+  font-family: var(--font-display);
+  font-size: 19px;
+  color: var(--green-900);
+}
+
+.review-write__stars {
+  margin: var(--s-md) var(--s-md) 0;
+  padding: 0;
+  border: none;
+}
+
+.review-write__stars legend {
+  padding: 0;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--green-900);
+}
+
+.review-write__star-row {
+  display: flex;
+  gap: 4px;
+  margin-top: var(--s-xs);
+}
+
+/* A 44px target, so a star is hittable on a phone without a precise tap. */
+.review-write__star {
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  border: none;
+  background: none;
+  font-size: 30px;
+  line-height: 1;
+  color: var(--gold-text);
+  cursor: pointer;
+}
+
+.review-write__star:focus-visible {
+  outline: 2px solid var(--green-900);
+  outline-offset: 2px;
+  border-radius: var(--r-sm);
+}
+
+.review-write__field {
+  display: grid;
+  gap: 6px;
+  margin: var(--s-md) var(--s-md) 0;
+}
+
+.review-write__label {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--green-900);
+}
+
+.review-write__field textarea {
+  width: 100%;
+  box-sizing: border-box;
+  padding: var(--s-sm);
+  font: inherit;
+  /* 16px, or iOS Safari zooms the page when the field takes focus. */
+  font-size: 16px;
+  color: var(--ink);
+  background: var(--ivory);
+  border: 1px solid var(--sand-border);
+  border-radius: var(--r-md);
+  resize: vertical;
+}
+
+.review-write__count {
+  min-height: 18px;
+  font-size: 13px;
+  color: var(--ink-faint);
+}
+
+.review-write__note {
+  margin: var(--s-sm) var(--s-md) 0;
+  font-size: 13px;
+  color: var(--ink-muted);
+}
+
+.review-write__problem {
+  margin: var(--s-sm) var(--s-md) 0;
+  padding: var(--s-sm) var(--s-md);
+  border-radius: var(--r-md);
+  border: 1px solid var(--coral);
+  color: var(--coral-text);
+  font-size: 14px;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .review-write__star {
+    transition: transform var(--dur-press) var(--ease-out);
+  }
+
+  .review-write__star:active {
+    transform: scale(0.9);
+  }
+}
+
+/*
+ * The submit matches the gutter every other block on this screen uses. PrimaryButton is
+ * full-width by default, which without this runs it edge to edge against a 16pt margin above it.
+ */
+.review-write > button {
+  width: calc(100% - 2 * var(--s-md));
+  margin: var(--s-md) var(--s-md) 0;
+}

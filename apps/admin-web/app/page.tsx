@@ -32,6 +32,12 @@ const areas: Area[] = [
     detail: 'Approve, reject, unpublish and edit platform-controlled metadata.',
   },
   {
+    name: 'Review moderation',
+    milestone: 'Built',
+    href: '/reviews',
+    detail: 'Publish, reject, unpublish or restore a guest review. Only a published one counts towards a rating.',
+  },
+  {
     name: 'Booking operations',
     milestone: 'M5',
     detail: 'Payment, customer, vendor, voucher, cancellation and refund state.',

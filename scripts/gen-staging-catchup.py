@@ -128,6 +128,12 @@ PROBES = {
        case when exists (select 1 from pg_proc where proname='guard_review_fields') then 'applied' else 'missing' end""",
     "20261104000012_public_pricing": """
        case when exists (select 1 from pg_proc where proname='public_pricing') then 'applied' else 'missing' end""",
+    # Both halves, because either can be present without the other: the trigger is what makes the
+    # function run, and the constraint is a separate statement in the same file.
+    "20261105000001_review_moderation_audit": """
+       case when exists (select 1 from pg_trigger where tgname='reviews_audit')
+             and exists (select 1 from pg_constraint where conname='reviews_body_length')
+            then 'applied' else 'missing' end""",
 }
 
 HEADER = """\

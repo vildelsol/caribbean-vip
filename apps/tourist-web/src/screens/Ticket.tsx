@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { experienceById, islandById, vendorFor } from '../data/catalogue';
 import { attendeeLabel } from '../data/bookingClash';
+import { canReviewBooking } from '../data/reviewEligibility';
 import { formatClock, formatLongDate } from '../data/availability';
 import { useStore, type VoucherState } from '../state/store';
 import { isLiveMode } from '../lib/supabase';
@@ -260,6 +261,22 @@ export function Ticket() {
               </SecondaryButton>
             </>
           )}
+        </section>
+      ) : null}
+
+      {/*
+        The way in to writing a review. Shown only once the trip has happened, because
+        `guard_review_fields` refuses a review before the slot starts — an always-visible button
+        would be one the database rejects. `canReviewBooking` is the same rule, so the two cannot
+        drift. Whether a review already exists is settled on the review screen itself, which reads
+        the guest's own rows; deciding it here would mean a read on every ticket view.
+      */}
+      {canReviewBooking(booking, new Date().toISOString()).ok ? (
+        <section className="ticket__review">
+          <SecondaryButton onClick={() => navigate(`/review/${booking.id}`)}>
+            <Icon name="star" size={15} strokeWidth={2.2} />
+            How was it?
+          </SecondaryButton>
         </section>
       ) : null}
     </main>
