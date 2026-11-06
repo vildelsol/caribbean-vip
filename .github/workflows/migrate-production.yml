@@ -1,0 +1,55 @@
+name: Migrate production
+
+# Applies supabase/migrations to the PRODUCTION project, and nothing else.
+#
+# - Manual only. No push, no pull_request, no schedule: a merge never touches production by itself.
+# - The `production` environment must have required reviewers, so a human approves every run.
+# - Never runs supabase/seed/seed.sql. The seed is demo content (is_demo = true, "[Demo]" vendors).
+# - Uses the Supabase CLI so applied migrations are recorded in a ledger. Run with dry_run first.
+#
+# Secret PRODUCTION_DB_URL lives in the `production` environment, not in repository secrets.
+# See docs/production-provisioning.md.
+
+on:
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: 'List the migrations that would apply, without applying them'
+        type: boolean
+        default: true
+
+concurrency:
+  group: migrate-production
+  cancel-in-progress: false
+
+jobs:
+  migrate:
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Migrations apply to a fresh database
+        run: |
+          sudo apt-get update && sudo apt-get install -y postgresql-client
+          docker run -d --name pg -e POSTGRES_PASSWORD=postgres -e POSTGRES_HOST_AUTH_METHOD=trust -p 5432:5432 postgres:17
+          sleep 8
+          PGHOST=localhost PGPORT=5432 PGUSER=postgres ./scripts/db-test.sh
+
+      - name: Dry run
+        if: ${{ inputs.dry_run }}
+        env:
+          SUPABASE_DB_URL: ${{ secrets.PRODUCTION_DB_URL }}
+        run: npx supabase@latest db push --db-url "$SUPABASE_DB_URL" --dry-run
+
+      - name: Apply
+        if: ${{ !inputs.dry_run }}
+        env:
+          SUPABASE_DB_URL: ${{ secrets.PRODUCTION_DB_URL }}
+        run: npx supabase@latest db push --db-url "$SUPABASE_DB_URL"
