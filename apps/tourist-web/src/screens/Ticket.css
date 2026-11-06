@@ -250,3 +250,7 @@
   color: rgba(255, 255, 255, 0.72);
   font-weight: 600;
 }
+
+.ticket__review {
+  padding: 0 var(--s-md) var(--s-md);
+}
