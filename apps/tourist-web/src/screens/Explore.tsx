@@ -2,11 +2,9 @@ import { useEffect, useMemo, useRef, useState, type CSSProperties } from 'react'
 import {
   ISLANDS,
   byDistanceFrom,
-  destinationBySlug,
   destinationsFor,
   experiencesFor,
   heroUrl,
-  islandById,
   mediaUrl,
   promotedExperienceNear,
   promotedExperiencesOn,
@@ -29,6 +27,7 @@ import { Icon, type IconName } from '../components/Icon';
 import { Badge, Card, formatUsd, Photo, plural, Price, Rating, RoundButton, SectionHeader } from '../components/kit';
 import { LiveOfferCard } from '../components/LiveOfferCard';
 import { isLiveMode } from '../lib/supabase';
+import { resolvePlace } from '../state/place';
 import './Explore.css';
 
 /**
@@ -102,9 +101,19 @@ export function Explore() {
   const [islandOpen, setIslandOpen] = useState(false);
   const [mood, setMood] = useState<string | null>(null);
 
-  const island = islandById(state.islandId);
-  const destination = destinationBySlug(state.destinationSlug);
-  const destinations = destinationsFor(state.islandId);
+  /*
+   * The island and town, resolved through `resolvePlace` rather than looked up directly.
+   *
+   * It corrects a stored id the catalogue no longer holds — a live snapshot's ids are database
+   * UUIDs and demo mode's are hand-written, so a device that has seen both had a stored island
+   * that matched nothing. This screen then had neither island nor destination and returned
+   * `null`: the app frame and the bottom nav with nothing between them, silently, on every
+   * visit. See `place.ts`.
+   */
+  const place = resolvePlace({ islandId: state.islandId, destinationSlug: state.destinationSlug });
+  const island = place.ok ? place.island : undefined;
+  const destination = place.ok ? place.destination : undefined;
+  const destinations = destinationsFor(island?.id ?? state.islandId);
 
   const experiences = useMemo(() => experiencesFor(state.islandId), [state.islandId]);
 
@@ -239,7 +248,25 @@ export function Explore() {
   const gems = ranked.slice(4, 7);
   const evening = ranked.find((e) => e.category === 'nightlife' || e.category === 'food');
 
-  if (!island || !destination) return null;
+  /*
+   * Nothing to show, said out loud.
+   *
+   * Reached only when the catalogue itself holds no island, or none with a destination — in live
+   * mode that is a real state, because a failed or empty load must never fall back to the demo
+   * listings. Returning `null` here was the bug: a blank frame is indistinguishable from a broken
+   * build and tells a guest nothing. The frame and nav render around this, so the other tabs work.
+   */
+  if (!place.ok || !island || !destination) {
+    return (
+      <main className="screen ex-unavailable" role="status">
+        <h1>Experiences are not available right now</h1>
+        <p>
+          We could not find anything to show for your island. Please try again in a few minutes —
+          your trips and vouchers are safe in the Trips tab.
+        </p>
+      </main>
+    );
+  }
 
   return (
     <main className="screen">

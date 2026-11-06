@@ -9,6 +9,7 @@ import {
 } from 'react';
 import { formatBookingReference, generateVoucherId } from '@cvip/types';
 import { ISLANDS, destinationsFor, type PartySelection } from '../data/catalogue';
+import { reconcilePlace } from './place';
 import { mergeBookings } from '../data/serverBooking';
 import { signOut } from '../lib/account';
 import { isLiveMode } from '../lib/supabase';
@@ -434,7 +435,12 @@ function load(): AppState {
     // losing a booking mid-presentation is the exact failure persistence exists to prevent. The
     // field is additive and `null` is the correct answer for every booking made before it existed.
     merged.bookings = merged.bookings.map((b) => ({ ...b, attendeeName: b.attendeeName ?? null }));
-    return merged;
+    // The stored island and destination name catalogue rows, so they are the one part of this
+    // state that the catalogue can invalidate from underneath. An id that is no longer there left
+    // Explore unable to resolve a place and rendering nothing at all — see `place.ts`. Corrected
+    // here, at the single point where stored place ids enter the app, rather than defended against
+    // in each screen that reads them.
+    return { ...merged, ...reconcilePlace({ islandId: merged.islandId, destinationSlug: merged.destinationSlug }) };
   } catch {
     // Corrupt or unreadable storage (private mode, quota, a half-written value) must not stop the
     // app from opening. Starting fresh is always recoverable; failing to render is not.
