@@ -14,7 +14,7 @@
     "test": "vitest run"
   },
   "dependencies": {
-    "@babel/runtime": "^7.26.0",
+    "@babel/runtime": "^8.0.10",
     "@cvip/types": "workspace:*",
     "@supabase/supabase-js": "^2.47.10"
   },
@@ -22,6 +22,6 @@
     "@cvip/config": "workspace:*",
     "@types/node": "^22.10.2",
     "typescript": "^5.7.2",
-    "vitest": "^2.1.8"
+    "vitest": "^5.0.5"
   }
 }
