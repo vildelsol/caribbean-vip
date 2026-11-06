@@ -795,3 +795,28 @@
   font-weight: 800;
   color: var(--green-900);
 }
+
+/*
+ * The "nothing to show" state. Reached when the catalogue holds no island at all, which in live
+ * mode is a legitimate outcome of an empty load: the screen says so rather than rendering nothing.
+ */
+.ex-unavailable {
+  display: grid;
+  align-content: center;
+  gap: 12px;
+  min-height: 70dvh;
+  padding: 24px;
+  text-align: center;
+}
+
+.ex-unavailable h1 {
+  font-size: 20px;
+  font-weight: 800;
+  color: var(--green-900);
+}
+
+.ex-unavailable p {
+  font-size: 14.5px;
+  line-height: 1.5;
+  color: var(--ink-muted);
+}
