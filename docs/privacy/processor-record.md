@@ -16,7 +16,7 @@ Add a row, and a `data-inventory.md` entry if it stores data, before any of thes
   the guest's position is a new disclosure of location data.
 - AI provider (`AI_PROVIDER` is `mock`; Anthropic planned). `ai_conversations` holds free text, so a
   real provider receives whatever guests type.
-- Notification provider (OD-05).
+- Notification provider (OD-05; `NOTIFICATIONS_PROVIDER` is `mock`). The adapter boundary is `NotificationPort` in `packages/types/src/notificationPort.ts`; today `createNullNotificationPort()` sends nowhere and keeps no address. A real provider receives the guest's email address or push token, a fixed message and an opaque reference, so it needs a row here with a `region`. Marketing messages are sent only with `notification_consent`; the port suppresses them otherwise.
 - Analytics or error tracking: none today.
 - Monitoring and alerting: none today. The adapter is `createNullMonitoringPort()`, which sends
   nowhere. Alerts carry counts and opaque references only (`MonitoringPort` enforces this), so a
