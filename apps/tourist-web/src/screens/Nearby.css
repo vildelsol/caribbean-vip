@@ -111,13 +111,13 @@
 
 .you__label {
   transform: translate(14px, 6px);
-  color: var(--teal-text);
+  color: #14595e; /* --teal-text measured 4.2:1 on the map wash; this is 5.7:1 */
   white-space: nowrap;
 }
 
 .ring__scale {
   transform: translate(-50%, -142px);
-  color: rgba(26, 110, 116, 0.85);
+  color: #14595e; /* the 0.85 alpha measured 3.7:1; solid teal is 6.5:1 */
   letter-spacing: 0.1em;
 }
 

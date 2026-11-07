@@ -29,6 +29,8 @@ export function AuthGate({ children }: { children: ReactNode }) {
     return (
       <>
         <p
+          role="region"
+          aria-label="Demo mode"
           style={{
             margin: 0,
             padding: spacing.xs,

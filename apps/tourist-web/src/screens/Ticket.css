@@ -217,6 +217,11 @@
   margin: 0;
 }
 
+/* Sits on the dark ground, where --ink-faint (the .c-faint colour) measured under 4.5:1. */
+.ticket__handoff .ticket__handoff-line {
+  color: rgba(255, 253, 247, 0.72);
+}
+
 .ticket__handoff-input {
   min-height: 46px;
   padding: 0 14px;

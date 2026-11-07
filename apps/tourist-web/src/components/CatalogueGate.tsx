@@ -34,14 +34,23 @@ export function CatalogueGate({ children }: { children: ReactNode }) {
   }, [live, state]);
 
   if (state === 'ready') return <>{children}</>;
+  // The body ground is dark green and its text colour is dark ink, so this screen, which renders
+  // outside the app's own surfaces, must set its own light text: unstyled it was 1.21:1 and unreadable.
   return (
-    <main role={state === 'error' ? 'alert' : 'status'} style={{ minHeight: '100dvh', display: 'grid', placeContent: 'center', gap: 16, padding: 24, textAlign: 'center' }}>
+    <main style={{ minHeight: '100dvh', display: 'grid', placeContent: 'center', gap: 16, padding: 24, textAlign: 'center', color: 'var(--on-dark)' }}>
+      <h1 style={{ fontSize: 20, margin: 0 }}>Caribbean VIP</h1>
       {state === 'loading' ? (
-        <p>Loading experiences…</p>
+        <p role="status">Loading experiences…</p>
       ) : (
         <>
-          <p>We could not load experiences right now. Check your connection and try again.</p>
-          <button type="button" onClick={() => void load()}>Try again</button>
+          <p role="alert">We could not load experiences right now. Check your connection and try again.</p>
+          <button
+            type="button"
+            onClick={() => void load()}
+            style={{ justifySelf: 'center', minHeight: 44, padding: '0 24px', border: 0, borderRadius: 999, background: 'var(--on-dark)', color: 'var(--green-980)', font: 'inherit', fontWeight: 600 }}
+          >
+            Try again
+          </button>
         </>
       )}
     </main>

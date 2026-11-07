@@ -245,7 +245,7 @@ export function Rating({ average, count, compact = false }: { average: number; c
 /** Five filled stars above a guest quote. Review blocks, not the inline score row. */
 export function StarRow({ count = 5 }: { count?: number }) {
   return (
-    <span className="star-row" aria-label={`${count} out of 5 stars`}>
+    <span className="star-row" role="img" aria-label={`${count} out of 5 stars`}>
       {Array.from({ length: count }, (_, i) => (
         <Icon key={i} name="star" size={14} color="var(--gold)" />
       ))}
@@ -424,19 +424,23 @@ export function EmptyState({
   body,
   action,
   onAction,
+  headingLevel = 3,
 }: {
   icon: IconName;
   title: string;
   body: string;
   action?: string;
   onAction?: () => void;
+  /** Heading level of the title. 3 suits a section inside a screen; pass 2 when the empty state is the whole screen under an h1. */
+  headingLevel?: 2 | 3;
 }) {
+  const Heading = headingLevel === 2 ? 'h2' : 'h3';
   return (
     <div className="empty">
       <span className="empty__icon">
         <Icon name={icon} size={22} color="var(--green-900)" />
       </span>
-      <h3 className="t-heading">{title}</h3>
+      <Heading className="t-heading">{title}</Heading>
       <p className="t-caption c-muted">{body}</p>
       {action ? <SecondaryButton full={false} onClick={onAction}>{action}</SecondaryButton> : null}
     </div>

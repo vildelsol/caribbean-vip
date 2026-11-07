@@ -125,6 +125,7 @@ export function Nearby() {
         so they share one row here and the collision cannot be reintroduced by a width,
         a longer word or a larger font.
       */}
+      <h1 className="sr-only">Nearby experiences</h1>
       <div className="nearby-header">
         <div className="nearby-filters-bar" role="group" aria-label="Filter experiences">
           {FILTERS.map((f) => (
@@ -160,7 +161,7 @@ export function Nearby() {
 
       {mapView ? (
         /* ---- Map view ---- */
-        <div className="nearby-map" role="img" aria-label={`Stylised map of ${destination.name} showing ${plural(results.length, 'experience')}`}>
+        <div className="nearby-map" role="group" aria-label={`Stylised map of ${destination.name} showing ${plural(results.length, 'experience')}`}>
           <span className="nearby-map__water" />
           <span className="nearby-map__land" />
           <span className="nearby-map__green" />

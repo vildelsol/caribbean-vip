@@ -166,6 +166,7 @@ export function Search() {
 
   return (
     <main className="screen search">
+      <h1 className="sr-only">Search experiences</h1>
       <header className="search__head">
         <button
           type="button"
@@ -307,7 +308,7 @@ export function Search() {
                         the guest chose, which is recommendation by default. Same fact, correct
                         weight.
                       */}
-                      <h3 className="t-caption-strong result-row__title">{experience.title}</h3>
+                      <h2 className="t-caption-strong result-row__title">{experience.title}</h2>
                       <div className="result-row__tags">
                         <Badge tone="muted">{listingDuration(experience.durationMinutes)}</Badge>
                         {travel && metres !== undefined ? (
