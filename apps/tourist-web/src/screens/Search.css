@@ -33,6 +33,12 @@
   border: 1px solid var(--border);
 }
 
+/* The input itself has no outline (it sits inside this pill), so the pill carries the focus ring. */
+.search__field:focus-within {
+  outline: 2.5px solid var(--teal);
+  outline-offset: 2px;
+}
+
 .search__input {
   flex: 1;
   min-width: 0;
