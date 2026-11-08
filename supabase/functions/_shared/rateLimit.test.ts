@@ -1,7 +1,7 @@
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { RATE_POLICIES, addressKey, clientAddress, enforceRateLimit, type RateRpc } from './rateLimit';
+import { RATE_POLICIES, addressKey, clientAddress, enforceRateLimit, type RatePolicy, type RateRpc } from './rateLimit';
 
 const NOW = new Date('2026-11-04T12:00:00Z');
 
@@ -50,8 +50,45 @@ describe('enforceRateLimit', () => {
     expect(await enforceRateLimit(rpc, 'checkout', { userId: 'u1', forwardedFor: null, now: NOW })).toEqual({ ok: true });
   });
 
-  it('keeps the per-user limit tighter than the per-address limit for every action', () => {
-    for (const p of Object.values(RATE_POLICIES)) expect(p.user.limit).toBeLessThan(p.address.limit);
+  it('keeps the per-user limit tighter than the per-address limit for every action that has one', () => {
+    for (const p of Object.values(RATE_POLICIES) as RatePolicy[]) {
+      if (p.user) expect(p.user.limit).toBeLessThan(p.address.limit);
+    }
+  });
+
+  it('defines loose read-path policies, within the database ceiling of 1000 per window', () => {
+    const p = RATE_POLICIES as Record<string, RatePolicy>;
+    // Well above what a guest does in ten minutes, so a real person is never refused.
+    expect(p.resolve_slot?.address.limit).toBeGreaterThanOrEqual(300);
+    expect(p.eligible_offer?.user?.limit).toBeGreaterThanOrEqual(60);
+    expect(p.eligible_offer?.address.limit).toBeGreaterThanOrEqual(300);
+    for (const k of ['resolve_slot', 'eligible_offer']) {
+      expect(p[k]!.address.limit).toBeLessThanOrEqual(1000);
+      expect(p[k]!.address.windowSeconds).toBe(600);
+    }
+  });
+
+  it('resolve_slot checks the address only, even if a user id were passed', async () => {
+    const { rpc, calls } = fakeRpc();
+    const r = await enforceRateLimit(rpc, 'resolve_slot', { userId: 'u1', forwardedFor: '203.0.113.9', now: NOW });
+    expect(r).toEqual({ ok: true });
+    expect(calls).toHaveLength(1);
+    expect(calls[0]).toMatchObject({ action: 'resolve_slot', limit: RATE_POLICIES.resolve_slot.address.limit });
+    expect(calls[0]!.key.startsWith('ip:')).toBe(true);
+  });
+
+  it('a normal guest (one call under the limit) is allowed on both read paths', async () => {
+    const { rpc } = fakeRpc();
+    for (const a of ['resolve_slot', 'eligible_offer'] as const) {
+      expect(await enforceRateLimit(rpc, a, { userId: 'u1', forwardedFor: '203.0.113.9', now: NOW })).toEqual({ ok: true });
+    }
+  });
+
+  it('refuses resolve_slot and eligible_offer when the address is over the limit', async () => {
+    const { rpc } = fakeRpc(new Set(['ip:']));
+    for (const a of ['resolve_slot', 'eligible_offer'] as const) {
+      expect(await enforceRateLimit(rpc, a, { userId: 'u1', forwardedFor: '1.2.3.4', now: NOW })).toEqual({ ok: false, retryAfterSeconds: 42 });
+    }
   });
 });
 
@@ -83,6 +120,21 @@ describe('wiring', () => {
     expect(s).toContain(`'${action}'`);
     expect(s).toContain('tooManyRequests(');
     expect(s.indexOf('enforceRateLimit(')).toBeGreaterThan(s.indexOf('getUser('));
+  });
+  it('eligible-offer enforces the eligible_offer limit after identity and before reading the body', () => {
+    const s = src('eligible-offer');
+    expect(s).toContain("'eligible_offer'");
+    expect(s).toContain('tooManyRequests(');
+    expect(s.indexOf('enforceRateLimit(')).toBeGreaterThan(s.indexOf('getUser('));
+    expect(s.indexOf('enforceRateLimit(')).toBeLessThan(s.indexOf('req.json()'));
+  });
+  it('resolve-slot enforces the resolve_slot limit on the address alone, before any lookup', () => {
+    const s = src('resolve-slot');
+    expect(s).toContain("'resolve_slot'");
+    expect(s).toContain('tooManyRequests(');
+    expect(s).toContain('userId: null');
+    expect(s.indexOf('enforceRateLimit(')).toBeLessThan(s.indexOf('parseSlotQuery('));
+    expect(s.indexOf('enforceRateLimit(')).toBeLessThan(s.indexOf(".from('experiences')"));
   });
   it('checkout limits before it builds payment deps', () => {
     const s = src('checkout-session');
