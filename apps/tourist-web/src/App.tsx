@@ -1,5 +1,5 @@
 import { Route, Routes, useLocation } from 'react-router-dom';
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { BottomNav } from './components/BottomNav';
 import { useStore } from './state/store';
 import { useLiveSync } from './state/useLiveSync';
@@ -38,8 +38,27 @@ export function App() {
   // meant the component called three hooks while onboarding and four afterwards — so the moment a
   // guest finished setup, React hit a changed hook order and threw "Internal React error: Expected
   // static flag was missing" into the console on the single most important transition in the app.
+  //
+  // It also moves keyboard and screen-reader focus to the new screen's heading. Without that, focus
+  // fell back to the page body after every navigation, so paying gave a keyboard user no sign that
+  // anything had happened and the next Tab started from an arbitrary place. Not on first load.
+  const firstRender = useRef(true);
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: 'instant' as ScrollBehavior });
+    if (firstRender.current) {
+      firstRender.current = false;
+      return;
+    }
+    const timer = window.setTimeout(() => {
+      // A screen that put focus somewhere itself (Search focuses its field) keeps it.
+      const held = document.activeElement;
+      if (held && held !== document.body && held.closest('main')) return;
+      const target = document.querySelector<HTMLElement>('main h1') ?? document.querySelector<HTMLElement>('main');
+      if (!target) return;
+      if (!target.hasAttribute('tabindex')) target.tabIndex = -1;
+      target.focus({ preventScroll: true });
+    }, 0);
+    return () => window.clearTimeout(timer);
   }, [pathname]);
 
   // Live mode only: recover the guest's bookings from the server. A no-op in demo. Above the

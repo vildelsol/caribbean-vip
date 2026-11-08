@@ -33,6 +33,9 @@ body,
  */
 html {
   color-scheme: light;
+  /* The bottom nav and the booking bar are fixed. Without this, Tab to a control near the foot of a
+     screen left it hidden behind them (WCAG 2.4.11). Generous on purpose: overshoot only scrolls a little further. */
+  scroll-padding-bottom: calc(var(--nav-height) + env(safe-area-inset-bottom, 0px) + 96px);
 }
 
 /*
