@@ -29,6 +29,7 @@ import {
 import { useStore } from '../state/store';
 import { isLiveMode, callCheckout, resolveSlot, ensureLiveUser } from '../lib/api';
 import { Icon } from '../components/Icon';
+import { DialogSurface } from '../components/DialogSurface';
 import {
   Badge,
   EmptyState,
@@ -621,13 +622,14 @@ export function Checkout() {
       */}
       {clashPrompt && clash && clashMessage ? (
         <div className="clash-scrim" role="presentation" onClick={() => setClashPrompt(false)}>
-          <div
+          <DialogSurface
             className="clash-sheet"
             role="alertdialog"
             aria-modal="true"
             aria-labelledby="clash-title"
             aria-describedby="clash-detail"
             onClick={(e) => e.stopPropagation()}
+            onClose={() => setClashPrompt(false)}
           >
             <h2 id="clash-title" className="t-display-sm clash-sheet__title">
               {clashMessage.headline}
@@ -658,7 +660,7 @@ export function Checkout() {
                 {clashMessage.proceedLabel}
               </TextButton>
             </div>
-          </div>
+          </DialogSurface>
         </div>
       ) : null}
     </main>
