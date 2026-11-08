@@ -391,3 +391,16 @@
   margin-left: auto;
   flex: none;
 }
+
+/* 200% text zoom on a phone leaves about 190px. Below 260px these layouts give up their side-by-side
+   arrangement; at 375px and wider none of this applies. (Audit of 2026-11-07.) */
+@media (max-width: 260px) {
+  .near-row__inner {
+    flex-direction: column;
+  }
+  .near-row__photo {
+    width: auto;
+    height: 120px;
+    margin: -13px -13px 0 -13px;
+  }
+}
