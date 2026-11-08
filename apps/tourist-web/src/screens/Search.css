@@ -2,6 +2,9 @@
 
 .search__head {
   display: flex;
+  /* At 200% text zoom (about 190px wide) the field used to shrink to 4px and could not take a query.
+     With a floor on its basis it drops to its own row there, and sits beside the controls at 375px. */
+  flex-wrap: wrap;
   align-items: center;
   gap: 9px;
   padding: 18px var(--s-md) 0;
@@ -21,7 +24,7 @@
 
 /* The field is the widest thing on the row; the two controls either side are fixed. */
 .search__field {
-  flex: 1;
+  flex: 1 1 8rem;
   min-width: 0;
   display: flex;
   align-items: center;

@@ -368,9 +368,15 @@ button.chip:active {
 
 .stepper {
   display: flex;
+  /* At 200% text zoom the label column shrank to nothing and printed over the buttons. */
+  flex-wrap: wrap;
   align-items: center;
-  gap: 10px;
+  gap: 8px 10px;
   padding: 12px 0;
+}
+
+.stepper > .grow {
+  flex: 1 1 7rem;
 }
 
 .stepper__btn {

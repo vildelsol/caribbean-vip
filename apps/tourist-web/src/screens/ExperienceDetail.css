@@ -428,8 +428,10 @@
   z-index: 30;
 
   display: flex;
+  /* At 200% text zoom the price and the button no longer fit on one row and the button was cut off. */
+  flex-wrap: wrap;
   align-items: center;
-  gap: 14px;
+  gap: 10px 14px;
   padding: 12px var(--s-md);
   background: rgba(251, 246, 236, 0.97);
   backdrop-filter: blur(8px);
@@ -442,7 +444,7 @@
 }
 
 .detail__action .btn {
-  flex: 1;
+  flex: 1 1 7.5rem;
   min-height: 48px;
 }
 
