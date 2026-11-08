@@ -303,12 +303,36 @@ export function Checkout() {
       {/* ---------------- Date ---------------- */}
       <section className="checkout__block">
         <h3 className="t-caption-strong checkout__label">Choose a day</h3>
-        <div className="day-strip">
+        {/* One Tab stop for the whole strip (roving tabindex); arrow keys move between days. Thirteen
+            separate stops made a keyboard user Tab through every day to reach the times. */}
+        <div
+          className="day-strip"
+          role="group"
+          aria-label="Choose a day"
+          onKeyDown={(e) => {
+            const keys = ['ArrowLeft', 'ArrowRight', 'Home', 'End'];
+            if (!keys.includes(e.key)) return;
+            const buttons = Array.from(
+              e.currentTarget.querySelectorAll<HTMLButtonElement>('button:not(:disabled)'),
+            );
+            if (buttons.length === 0) return;
+            const at = buttons.indexOf(document.activeElement as HTMLButtonElement);
+            let next = at < 0 ? 0 : at;
+            if (e.key === 'ArrowRight') next = Math.min(buttons.length - 1, at + 1);
+            else if (e.key === 'ArrowLeft') next = Math.max(0, at - 1);
+            else if (e.key === 'Home') next = 0;
+            else next = buttons.length - 1;
+            e.preventDefault();
+            buttons[next]?.focus();
+          }}
+        >
           {days.map((d) => {
             const on = d.iso === dateISO;
+            const stop = dateISO ? on : d.iso === days.find((x) => x.hasAvailability)?.iso;
             return (
               <button
                 key={d.iso}
+                tabIndex={stop ? 0 : -1}
                 type="button"
                 className={`day ${on ? 'day--on' : ''} ${d.hasAvailability ? '' : 'day--full'}`}
                 disabled={!d.hasAvailability}

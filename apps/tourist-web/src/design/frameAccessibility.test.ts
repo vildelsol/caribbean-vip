@@ -26,6 +26,15 @@ describe('keyboard', () => {
   });
 });
 
+describe('checkout day strip', () => {
+  it('is one Tab stop with arrow-key movement, not a stop per day', () => {
+    const src = read('screens/Checkout.tsx');
+    expect(src).toMatch(/tabIndex=\{stop \? 0 : -1\}/);
+    expect(src).toMatch(/e\.key === 'ArrowRight'/);
+    expect(src).toMatch(/className="day-strip"\s+role="group"/);
+  });
+});
+
 describe('200% text zoom on the booking path', () => {
   const wraps = (file: string, selector: string) => {
     const block = new RegExp(`${selector.replace(/[.>]/g, '\\$&')}\\s*\\{[^}]*flex-wrap:\\s*wrap`).test(read(file));
