@@ -14,6 +14,7 @@
 
 import { createClient } from 'npm:@supabase/supabase-js@^2';
 import { isPubliclyBookable } from '../_shared/listingVisibility.ts';
+import { enforceRateLimit, tooManyRequests, type RateRpc } from '../_shared/rateLimit.ts';
 import { parseSlotQuery } from '../_shared/slotQuery.ts';
 
 const CORS = {
@@ -25,6 +26,22 @@ const CORS = {
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response(null, { headers: CORS });
   if (req.method !== 'GET') return json({ error: 'GET only' }, 405);
+
+  const supabase = createClient(
+    Deno.env.get('SUPABASE_URL') ?? '',
+    Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '',
+    { auth: { persistSession: false, autoRefreshToken: false } },
+  );
+
+  // The anon key is enough to call this, so there is no user to key on: the address rule stands alone.
+  const limited = await enforceRateLimit(supabase.rpc.bind(supabase) as unknown as RateRpc, 'resolve_slot', {
+    userId: null,
+    forwardedFor: req.headers.get('x-forwarded-for'),
+    now: new Date(),
+  });
+  if (!limited.ok) {
+    return tooManyRequests(limited.retryAfterSeconds, CORS, { error: 'Too many requests. Please wait a moment and try again.' });
+  }
 
   const url = new URL(req.url);
   // Validated before any query: a malformed date or time used to reach Postgres, whose error text
@@ -38,12 +55,6 @@ Deno.serve(async (req) => {
     return json({ error: 'experience_title, date (YYYY-MM-DD) and time (HH:MM) are required' }, 400);
   }
   const { title, startsAt } = query;
-
-  const supabase = createClient(
-    Deno.env.get('SUPABASE_URL') ?? '',
-    Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '',
-    { auth: { persistSession: false, autoRefreshToken: false } },
-  );
 
   try {
     // Two plain queries rather than one nested one. This was `.in('experience_id', <query

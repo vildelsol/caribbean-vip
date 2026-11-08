@@ -19,7 +19,8 @@ export interface RateRule {
   windowSeconds: number;
 }
 export interface RatePolicy {
-  user: RateRule;
+  /** Absent for a function that has no signed-in caller to key on; the address rule then stands alone. */
+  user?: RateRule;
   address: RateRule;
 }
 
@@ -27,6 +28,15 @@ export const RATE_POLICIES = {
   checkout: { user: { limit: 10, windowSeconds: 600 }, address: { limit: 60, windowSeconds: 600 } },
   claim_offer: { user: { limit: 30, windowSeconds: 600 }, address: { limit: 120, windowSeconds: 600 } },
   claim_guest: { user: { limit: 5, windowSeconds: 600 }, address: { limit: 30, windowSeconds: 600 } },
+  // Read paths, called as a guest browses, so the limits are loose: they stop a scraper or a loop,
+  // not a person. A guest picking times makes tens of resolve_slot calls in ten minutes. The address
+  // limit sits at the database ceiling (check_rate_limit clamps to 1000) because a cruise terminal
+  // or hotel shares one address among many guests. resolve-slot accepts the anon key, which names no
+  // user, so it has no user rule and the address rule stands alone.
+  resolve_slot: { address: { limit: 900, windowSeconds: 600 } },
+  // Position updates arrive every few seconds while the app is open; 120 per ten minutes is one
+  // call every five seconds, for ten minutes, per guest.
+  eligible_offer: { user: { limit: 120, windowSeconds: 600 }, address: { limit: 900, windowSeconds: 600 } },
 } as const satisfies Record<string, RatePolicy>;
 
 export type RateAction = keyof typeof RATE_POLICIES;
@@ -76,7 +86,7 @@ export async function enforceRateLimit(
 ): Promise<RateDecision> {
   const policy: RatePolicy = RATE_POLICIES[action];
   const checks: Array<Promise<{ allowed: boolean; retry: number }>> = [];
-  if (who.userId) checks.push(check(rpc, `user:${who.userId}`, action, policy.user));
+  if (who.userId && policy.user) checks.push(check(rpc, `user:${who.userId}`, action, policy.user));
   const addr = clientAddress(who.forwardedFor);
   if (addr) checks.push(addressKey(addr, who.now).then((k) => check(rpc, k, action, policy.address)));
   const results = await Promise.all(checks);
