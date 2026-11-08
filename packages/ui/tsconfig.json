@@ -1,5 +1,5 @@
 {
   "extends": "@cvip/config/tsconfig.base.json",
-  "compilerOptions": { "rootDir": "./src", "noEmit": true },
+  "compilerOptions": { "rootDir": "./src", "noEmit": true, "lib": ["ES2022", "DOM"] },
   "include": ["src/**/*"]
 }

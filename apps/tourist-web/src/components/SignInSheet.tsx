@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { DialogSurface } from './DialogSurface';
 import { shouldConfirmSignIn, startSignIn, verifySignIn } from '../lib/account';
 import { SIGN_IN_ORPHAN_WARNING } from '../lib/accountCopy';
 import { useStore } from '../state/store';
@@ -36,13 +37,13 @@ export function SignInSheet({
 
   if (!acknowledged && shouldConfirmSignIn(status, state.bookings)) {
     return (
-      <div className="acct" role="alertdialog" aria-labelledby="signin-warn">
+      <DialogSurface className="acct" role="alertdialog" aria-labelledby="signin-warn" onClose={() => onCancel?.()}>
         <p id="signin-warn" className="t-caption c-ink">
           {SIGN_IN_ORPHAN_WARNING}
         </p>
         <PrimaryButton onClick={() => setAcknowledged(true)}>Continue</PrimaryButton>
         <TextButton onClick={() => onCancel?.()}>Go back</TextButton>
-      </div>
+      </DialogSurface>
     );
   }
 

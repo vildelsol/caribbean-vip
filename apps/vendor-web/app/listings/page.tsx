@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { Crest } from '../../components/Crest';
 import { formatUsd } from '../../lib/vendorData';
 import { useActiveMembership, useCanManageListings } from '../../lib/session';
+import { DialogSurface } from '../../components/DialogSurface';
 import { NO_LISTING_PERMISSION } from '../../lib/permissions';
 import {
   LISTING_CATEGORIES,
@@ -308,7 +309,7 @@ export default function Listings() {
 
       {/* ── Edit modal ── */}
       {editing && (
-        <div className="modal-backdrop" role="dialog" aria-modal="true" aria-label="Edit listing">
+        <DialogSurface className="modal-backdrop" role="dialog" aria-modal="true" aria-label="Edit listing" onClose={closeEdit}>
           <div className="modal">
             <div className="modal__head">
               <h2>Edit listing</h2>
@@ -388,12 +389,12 @@ export default function Listings() {
               </button>
             </div>
           </div>
-        </div>
+        </DialogSurface>
       )}
 
       {/* ── New listing modal ── */}
       {adding && (
-        <div className="modal-backdrop" role="dialog" aria-modal="true" aria-label="New listing">
+        <DialogSurface className="modal-backdrop" role="dialog" aria-modal="true" aria-label="New listing" onClose={closeAdd}>
           <div className="modal">
             <div className="modal__head">
               <h2>New listing</h2>
@@ -508,7 +509,7 @@ export default function Listings() {
               </button>
             </div>
           </div>
-        </div>
+        </DialogSurface>
       )}
     </>
   );

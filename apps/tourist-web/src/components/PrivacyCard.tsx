@@ -5,6 +5,7 @@ import { eraseMyData, eraseOutsideTools, exportMyData, removeMyAccount, retained
 import { supabase } from '../lib/supabase';
 import { useStore } from '../state/store';
 import { useOfferConsent } from '../state/useConsent';
+import { DialogSurface } from './DialogSurface';
 import { SecondaryButton } from './kit';
 import './OfferConsentCard.css';
 import './PrivacyCard.css';
@@ -176,7 +177,7 @@ export function PrivacyCard() {
       ) : null}
       {erased && erased.accountRemovable ? (
         removeConfirm ? (
-          <div className="privacy-card__confirm" role="alertdialog" aria-labelledby="remove-title">
+          <DialogSurface className="privacy-card__confirm" role="alertdialog" aria-labelledby="remove-title" onClose={() => setRemoveConfirm(false)}>
             <p className="t-caption-strong" id="remove-title">
               Remove your sign-in?
             </p>
@@ -192,7 +193,7 @@ export function PrivacyCard() {
                 {busy === 'remove' ? 'Removing…' : 'Yes, remove it'}
               </SecondaryButton>
             </div>
-          </div>
+          </DialogSurface>
         ) : (
           <SecondaryButton onClick={() => setRemoveConfirm(true)} disabled={busy !== null}>
             Also remove my sign-in
@@ -200,7 +201,7 @@ export function PrivacyCard() {
         )
       ) : null}
       {erased ? null : confirming ? (
-        <div className="privacy-card__confirm" role="alertdialog" aria-labelledby="erase-title">
+        <DialogSurface className="privacy-card__confirm" role="alertdialog" aria-labelledby="erase-title" onClose={() => setConfirming(false)}>
           <p className="t-caption-strong" id="erase-title">
             Erase your data?
           </p>
@@ -220,7 +221,7 @@ export function PrivacyCard() {
               {busy === 'erase' ? 'Erasing…' : 'Yes, erase it'}
             </SecondaryButton>
           </div>
-        </div>
+        </DialogSurface>
       ) : (
         <>
           <p className="t-caption c-muted profile__hint">
