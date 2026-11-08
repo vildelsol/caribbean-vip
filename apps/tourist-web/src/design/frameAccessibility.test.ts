@@ -45,3 +45,31 @@ describe('200% text zoom on the booking path', () => {
     expect(wraps('components/kit.css', '.stepper')).toBe(true);
   });
 });
+
+describe('200% text zoom, the rest of the app (audit of 2026-11-07)', () => {
+  const narrow = (file: string) => /@media \(max-width: 260px\)\s*\{/.test(read(file));
+
+  it('Explore stacks its pill, moods and Hidden Gems below 260px', () => {
+    const css = read('screens/Explore.css');
+    expect(narrow('screens/Explore.css')).toBe(true);
+    expect(css).toMatch(/@media \(max-width: 260px\)[\s\S]*\.ex-moods\s*\{[^}]*grid-template-columns:\s*minmax\(0, 1fr\)/);
+    expect(css).toMatch(/@media \(max-width: 260px\)[\s\S]*\.island-pill\s*\{[^}]*flex-wrap:\s*wrap/);
+  });
+
+  it('result cards on Search and Nearby stack their photo above the text below 260px', () => {
+    expect(read('screens/Search.css')).toMatch(/@media \(max-width: 260px\)[\s\S]*\.result-row__inner\s*\{[^}]*flex-direction:\s*column/);
+    expect(read('screens/Nearby.css')).toMatch(/@media \(max-width: 260px\)[\s\S]*\.near-row__inner\s*\{[^}]*flex-direction:\s*column/);
+  });
+
+  it('the Trips pass wraps so its text is not squeezed to nothing', () => {
+    expect(read('screens/Trips.css')).toMatch(/@media \(max-width: 260px\)[\s\S]*\.vip-pass\s*\{[^}]*flex-wrap:\s*wrap/);
+  });
+
+  it('the Profile stats wrap', () => {
+    expect(wrapsProfile()).toBe(true);
+  });
+});
+
+function wrapsProfile(): boolean {
+  return /\.profile__stats-glass\s*\{[^}]*flex-wrap:\s*wrap/.test(read('screens/Profile.css'));
+}

@@ -585,3 +585,20 @@
   gap: 3px;
   color: var(--gold-text);
 }
+
+/* 200% text zoom on a phone leaves about 190px. Below 260px these layouts give up their side-by-side
+   arrangement; at 375px and wider none of this applies. (Audit of 2026-11-07.) */
+@media (max-width: 260px) {
+  .vip-pass {
+    flex-wrap: wrap;
+  }
+  .vip-pass__body {
+    flex: 1 1 100%;
+    order: 3;
+  }
+  .vip-pass__note,
+  .vip-pass__ref {
+    white-space: normal;
+    overflow: visible;
+  }
+}

@@ -80,6 +80,8 @@
 /* Frosted glass stats row at the bottom of the hero */
 .profile__stats-glass {
   display: flex;
+  flex-wrap: wrap; /* three stats no longer fit one row at 200% text zoom */
+  gap: 14px 0;
   align-items: center;
   width: calc(100% + var(--s-md) * 2);
   margin: 0 calc(-1 * var(--s-md));
@@ -89,7 +91,7 @@
 }
 
 .profile__stat-pill {
-  flex: 1;
+  flex: 1 1 4.5rem;
   display: flex;
   flex-direction: column;
   align-items: center;

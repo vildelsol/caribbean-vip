@@ -820,3 +820,31 @@
   line-height: 1.5;
   color: var(--ink-muted);
 }
+
+/* 200% text zoom on a phone leaves about 190px. Below 260px these layouts give up their side-by-side
+   arrangement; at 375px and wider none of this applies. (Audit of 2026-11-07.) */
+@media (max-width: 260px) {
+  /* The brand and the place no longer fit side by side next to the bell: stack them. */
+  .island-pill {
+    flex-wrap: wrap;
+    row-gap: 2px;
+    max-width: calc(100% - 52px);
+  }
+  .island-pill__rule {
+    display: none;
+  }
+  .island-pill__name {
+    white-space: normal;
+    overflow: visible;
+  }
+  .ex-hero__place {
+    font-size: 28px;
+  }
+  .ex-moods {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .ex-gems,
+  .ex-gems:has(> :last-child:nth-child(2)) {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

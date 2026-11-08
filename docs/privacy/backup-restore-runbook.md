@@ -13,6 +13,12 @@ request already holds the request row.
 backups, region (`us-east-1`). Ro to confirm from the dashboard. Backups themselves hold erased data
 until they age out **[COUNSEL: acceptable if the period is stated in the notice]**.
 
+As read from the CLI on 2026-11-07 (`supabase backups list`), **staging project only**
+(`fsnkzpxgrckfifmhwsff`, `us-east-1`): `pitr_enabled` is **false** and no backups are listed. So
+staging cannot be restored to a point in time and the restore drill below cannot be rehearsed there
+yet. The production project does not exist yet; it needs a plan with backups and PITR enabled before
+launch, and the drill must be run against it once it does.
+
 ## Restore procedure (draft)
 1. **Before restoring**, export `privacy_requests` from the live database to a file outside it. If
    the database is already lost, take it from the newest backup, then check later requests in the
