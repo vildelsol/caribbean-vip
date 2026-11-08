@@ -1,0 +1,17 @@
+{
+  "detector": {
+    "ignoreRules": [],
+    "ignoreFiles": [],
+    "ignoreValues": [
+      {
+        "rule": "side-tab",
+        "value": "*",
+        "files": [
+          "apps/admin-web/app/reviews/page.tsx"
+        ],
+        "createdAt": "2026-11-06T04:20:37.566Z",
+        "reason": "Existing codebase pattern: identical 4px queue-row border in apps/admin-web/app/{vendors,listings,promotions}/page.tsx. Reviews is the fourth sibling in that workbench family; deviating alone would be the inconsistency. Not user confirmed - changing all four is a design-system decision for Ro."
+      }
+    ]
+  }
+}
