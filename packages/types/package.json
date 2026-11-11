@@ -15,7 +15,7 @@
   },
   "dependencies": {
     "@babel/runtime": "^8.0.10",
-    "zod": "^3.24.1"
+    "zod": "^4.6.7"
   },
   "devDependencies": {
     "@cvip/config": "workspace:*",
