@@ -21,6 +21,6 @@
     "vitest": "^5.1.0"
   },
   "dependencies": {
-    "@babel/runtime": "^8.0.10"
+    "@babel/runtime": "^8.1.0"
   }
 }
