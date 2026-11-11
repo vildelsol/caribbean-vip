@@ -182,8 +182,8 @@ importers:
   packages/demo:
     dependencies:
       '@babel/runtime':
-        specifier: ^8.0.10
-        version: 8.0.10
+        specifier: ^8.1.0
+        version: 8.1.0
       '@cvip/payments':
         specifier: workspace:*
         version: link:../payments
@@ -223,8 +223,8 @@ importers:
   packages/payments:
     dependencies:
       '@babel/runtime':
-        specifier: ^8.0.10
-        version: 8.0.10
+        specifier: ^8.1.0
+        version: 8.1.0
       '@cvip/types':
         specifier: workspace:*
         version: link:../types
@@ -245,8 +245,8 @@ importers:
   packages/supabase:
     dependencies:
       '@babel/runtime':
-        specifier: ^8.0.10
-        version: 8.0.10
+        specifier: ^8.1.0
+        version: 8.1.0
       '@cvip/types':
         specifier: workspace:*
         version: link:../types
@@ -270,8 +270,8 @@ importers:
   packages/types:
     dependencies:
       '@babel/runtime':
-        specifier: ^8.0.10
-        version: 8.0.10
+        specifier: ^8.1.0
+        version: 8.1.0
       zod:
         specifier: ^3.24.1
         version: 3.25.76
@@ -292,8 +292,8 @@ importers:
   packages/ui:
     dependencies:
       '@babel/runtime':
-        specifier: ^8.0.10
-        version: 8.0.10
+        specifier: ^8.1.0
+        version: 8.1.0
     devDependencies:
       '@cvip/config':
         specifier: workspace:*
@@ -378,8 +378,8 @@ packages:
     peerDependencies:
       '@babel/core': ^7.0.0-0
 
-  '@babel/runtime@8.0.10':
-    resolution: {integrity: sha512-0QyWQOIhl2onOgg96BuOYV+oCgLINVDPC8RkVPCiQhLILVqpefDUmcY+aAsW6vp7fcuTZL6SXXlFrSDCTFIu1w==}
+  '@babel/runtime@8.1.0':
+    resolution: {integrity: sha512-MQye/pU7gzXerMzlhScFNH1u4Je6rR8cqJWSgAfD+rIwbbtwG8tVDegoI7sWfcXkfVRW09G7vk2vjxGIuKFfwg==}
 
   '@babel/template@7.29.7':
     resolution: {integrity: sha512-puq+Gf35oI24FeN11LkoUQFqv9uwNeWpxXZi/Ji3rRIoKAzKnxRaZ+Gkj0vKS9ZCiTESfng1N9LyOyXvo+m+Gg==}
@@ -2057,7 +2057,7 @@ snapshots:
       '@babel/core': 7.29.7
       '@babel/helper-plugin-utils': 7.29.7
 
-  '@babel/runtime@8.0.10': {}
+  '@babel/runtime@8.1.0': {}
 
   '@babel/template@7.29.7':
     dependencies:
