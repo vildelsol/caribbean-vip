@@ -54,3 +54,15 @@ describe('merchant of record setting', () => {
     expect(deps).not.toMatch(/PAYOUT_MODEL'\)\s*\?\?\s*'(vendor_is_merchant|platform_collects)'/);
   });
 });
+
+describe('refunds', () => {
+  const stripe = readFileSync(join(ROOT, 'supabase', 'functions', '_shared', 'stripeProvider.ts'), 'utf8');
+
+  it('return the platform fee with the money when a vendor was paid directly', () => {
+    expect(stripe).toMatch(/refund_application_fee:\s*true/);
+  });
+
+  it('come out of the vendor account the payment went to', () => {
+    expect(stripe).toMatch(/stripeAccount:\s*req\.payee\.accountRef/);
+  });
+});

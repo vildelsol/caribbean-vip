@@ -293,7 +293,10 @@ export interface RefundRequest {
   paymentRef: string;
   amountMinor: number;
   idempotencyKey: string;
-  /** The account the original payment went to; a refund must come back out of the same one. */
+  /**
+   * The account the original payment went to; a refund must come back out of the same one. With a
+   * payee the platform's fee is returned too (decided 2026-11-14), in proportion for a partial refund.
+   */
   payee: PayeeAccount | null;
 }
 

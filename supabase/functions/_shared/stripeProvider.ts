@@ -92,7 +92,13 @@ export function makeStripeProvider(secretKey: string, webhookSecrets: string[]):
 
     async refund(req: RefundRequest): Promise<void> {
       await stripe.refunds.create(
-        { payment_intent: req.paymentRef, amount: req.amountMinor },
+        {
+          payment_intent: req.paymentRef,
+          amount: req.amountMinor,
+          // Ro's rule, 2026-11-14: the platform's fee goes back with a refund, in proportion for a
+          // partial one, so the vendor is not left carrying a fee on money the guest got back.
+          ...(req.payee ? { refund_application_fee: true } : {}),
+        },
         {
           idempotencyKey: req.idempotencyKey,
           // A refund must come out of the account the payment went to.

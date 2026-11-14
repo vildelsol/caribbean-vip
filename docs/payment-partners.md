@@ -53,7 +53,8 @@ function refuse to run, because a silent default would decide who the seller is.
   `PayoutAccountPort`. Until they exist an admin sets the account by hand, with the service role.
 - **Column names:** `payments.stripe_event_id` and friends carry Stripe's name for historical reasons.
   They hold the active partner's ids. Renaming is mechanical and left for a migration of its own.
-- **Fee rule:** `platformTake` (commission plus service fee) is an assumption. Whether the platform's
-  fee is returned on a refund, and who remits tax, are for the founders and counsel.
+- **Fee rule (decided by Ro, 2026-11-14):** the platform keeps commission plus service fee
+  (`platformTake`), and returns that fee with a refund, in proportion for a partial one. Who remits
+  tax on the vendor's share is still for counsel.
 - **Country coverage:** whether Stripe Connect can pay vendors in Jamaica, Barbados and Cayman is
   unconfirmed, which is why the partner is swappable.
