@@ -18,6 +18,10 @@ onboarding real vendors.
 **OD-01 (recorded 2026-11-14). Leaning: marketplace, the platform is an intermediary and the vendor
 is the seller and merchant of record. PENDING COUNSEL on every island. Not a decision.**
 
+*Ro's instruction, 2026-11-14: set the build up for the vendor as merchant of record, and keep the
+payout partner swappable, because the product may be sold as a white-label template. Built behind
+`PAYOUT_MODEL` (see `docs/payment-partners.md`); counsel can still reverse it by changing one setting.*
+
 Ro's description of the business is a marketplace, which points to the platform as intermediary. That
 only holds if the facts match: the vendor sets price and terms, is named to the guest as the seller,
 and is paid directly, with the platform's commission taken at the split. If it were chosen:

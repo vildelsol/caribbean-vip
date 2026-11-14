@@ -68,7 +68,7 @@ erDiagram
 
 | Entity | Key columns | Notes |
 |---|---|---|
-| `vendor_organizations` | `island_id`, `legal_name`, `trading_name`, `status`, `verification_notes`, `subscription_plan_id`, `stripe_account_id` (null until Connect) | Status enum: `draft`, `pending_review`, `approved`, `changes_requested`, `rejected`, `suspended`. Only `approved` is public (V-02). |
+| `vendor_organizations` | `island_id`, `legal_name`, `trading_name`, `status`, `verification_notes`, `subscription_plan_id` | Status enum: `draft`, `pending_review`, `approved`, `changes_requested`, `rejected`, `suspended`. Only `approved` is public (V-02). |
 | `vendor_members` | `vendor_org_id`, `user_id`, `role`, `permissions` | Basis of `is_vendor_member()` used by every vendor RLS policy. |
 | `vendor_locations` | `vendor_org_id`, `name`, `lat`, `lng`, `address`, `operating_hours` | |
 | `vendor_documents` | `vendor_org_id`, `kind`, `storage_path`, `review_state`, `reviewed_by` | Private bucket only; signed URLs (PRD §14). |

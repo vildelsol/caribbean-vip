@@ -10,3 +10,5 @@ export * from './ports.ts';
 export * from './checkout.ts';
 export * from './webhook.ts';
 export * from './stripeErasurePort.ts';
+export * from './stripeEvents.ts';
+export * from './payoutPort.ts';

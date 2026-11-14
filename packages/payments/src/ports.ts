@@ -119,6 +119,9 @@ export interface BookingStore {
   /** Settlement currency from `platform_settings` — USD at MVP (OD-09). */
   getSettlementCurrency(): Promise<Currency>;
 
+  /** The vendor's payout account, or null if it has none. Read server-side only. */
+  getVendorPayout(vendorOrgId: string): Promise<VendorPayout | null>;
+
   /** Returns false when the slot is full, closed or missing. Wraps `reserve_availability()`. */
   reserveCapacity(slotId: string, seats: number): Promise<boolean>;
   releaseCapacity(slotId: string, seats: number): Promise<void>;
@@ -215,8 +218,18 @@ export interface CheckoutSessionRequest {
   metadata: Record<string, string>;
   successUrl: string;
   cancelUrl: string;
-  /** Stripe idempotency key — a retried create must not open a second session. */
+  /** Provider idempotency key — a retried create must not open a second session. */
   idempotencyKey: string;
+  /**
+   * Who is paid, when the vendor is the merchant of record: the vendor's account at this provider.
+   * `null` means the platform collects the money itself (`PayoutModel` `platform_collects`).
+   */
+  payee: PayeeAccount | null;
+  /**
+   * What the platform keeps out of the payment (commission plus service fee). Meaningful only with a
+   * payee: the provider routes the rest of the payment to that account. Zero without one.
+   */
+  platformFeeMinor: number;
   /**
    * When the session stops accepting payment. Without it Stripe leaves a session open for 24 hours,
    * and the seats reserved for it stay taken that long. See `checkoutExpiry`.
@@ -229,47 +242,82 @@ export interface CheckoutSession {
   url: string;
 }
 
+/** The vendor's account at the payment provider. `accountRef` is the provider's own opaque id. */
+export interface PayeeAccount {
+  provider: string;
+  accountRef: string;
+}
+
 /**
- * AD-09: nothing here mentions a destination account, so adding Stripe Connect later means
- * changing the adapter, not the booking logic.
+ * Who is the merchant of record, and so where a guest's money goes.
+ *
+ * - `vendor_is_merchant`: the vendor sells and is paid directly by the provider, which keeps the
+ *   platform's fee out of the payment. A vendor with no ready payout account cannot be booked.
+ * - `platform_collects`: every payment lands in the platform's own account. Used for the demo and
+ *   staging, where no vendor has a real payout account. Never the production position while OD-01
+ *   leans to the marketplace model (docs/open-decisions.md).
+ */
+export type PayoutModel = 'vendor_is_merchant' | 'platform_collects';
+
+export const PAYOUT_MODELS: readonly PayoutModel[] = ['vendor_is_merchant', 'platform_collects'];
+
+/** A vendor's payout account as stored: what the provider told us, never what the vendor typed. */
+export interface VendorPayout {
+  provider: string;
+  accountRef: string;
+  /** `ready` only once the provider says the account can take payments and receive payouts. */
+  status: 'ready' | 'onboarding' | 'restricted';
+}
+
+/**
+ * A payment event, in the platform's own words. Each provider adapter translates its webhook into
+ * this, so the core never sees a provider's event names.
+ */
+export interface PaymentEvent {
+  /** Unique per delivered event at the provider; replays carry the same id. */
+  id: string;
+  kind: 'pending' | 'paid' | 'failed' | 'refunded' | 'partially_refunded';
+  /** From the metadata we attached at checkout, when the provider echoes it. */
+  bookingId: string | null;
+  checkoutSessionId: string | null;
+  /** The provider's id for the payment itself (a Stripe payment intent). */
+  paymentRef: string | null;
+}
+
+/** Events the adapter does not act on are still acknowledged, with their type for the log. */
+export type ParsedWebhook =
+  | { handled: true; event: PaymentEvent }
+  | { handled: false; id: string; type: string };
+
+export interface RefundRequest {
+  paymentRef: string;
+  amountMinor: number;
+  idempotencyKey: string;
+  /** The account the original payment went to; a refund must come back out of the same one. */
+  payee: PayeeAccount | null;
+}
+
+/**
+ * The seam for a payment partner (docs/payment-partners.md). Nothing here is Stripe's: a different
+ * partner implements these three methods and a `PayoutAccountPort`, and the booking logic is
+ * untouched.
  */
 export interface PaymentProvider {
   readonly name: string;
   createCheckoutSession(req: CheckoutSessionRequest): Promise<CheckoutSession>;
   /**
-   * Verifies the signature and parses the payload. Must throw on an invalid signature — the core
+   * Verifies the signature and translates the payload. Must throw on an invalid signature: the core
    * treats a throw as "reject without touching the database".
    */
-  verifyWebhook(rawBody: string, signature: string): Promise<StripeLikeEvent>;
-  refund(paymentIntentId: string, amountMinor: number, idempotencyKey: string): Promise<void>;
-}
-
-/** The subset of a Stripe event the core reads. Deliberately not Stripe's own type. */
-export interface StripeLikeEvent {
-  id: string;
-  type: string;
-  data: {
-    object: {
-      id: string;
-      object: string;
-      amount_total?: number | null;
-      currency?: string | null;
-      payment_intent?: string | null;
-      payment_status?: string | null;
-      status?: string | null;
-      /** `charge` objects: the amounts and the flag Stripe sets once a charge is fully refunded. */
-      amount?: number | null;
-      amount_refunded?: number | null;
-      refunded?: boolean | null;
-      metadata?: Record<string, string> | null;
-      last_payment_error?: { code?: string | null; message?: string | null } | null;
-    };
-  };
+  parseWebhook(rawBody: string, signature: string): Promise<ParsedWebhook>;
+  refund(req: RefundRequest): Promise<void>;
 }
 
 export interface PaymentCoreDeps {
   store: BookingStore;
   payments: PaymentProvider;
+  /** Where the money goes. Required, never defaulted: a silent default would pick who sells. */
+  payoutModel: PayoutModel;
   clock: Clock;
   ids: IdGenerator;
   /** HMAC secret for voucher tokens (AD-04). Never leaves the server. */

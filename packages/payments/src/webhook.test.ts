@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { startCheckout } from './checkout.ts';
-import { handleStripeWebhook } from './webhook.ts';
+import { handlePaymentWebhook } from './webhook.ts';
 import type { PaymentCoreDeps } from './ports.ts';
 import {
   FakeBookingStore,
@@ -26,6 +26,7 @@ async function withPendingBooking() {
   const deps: PaymentCoreDeps = {
     store,
     payments,
+    payoutModel: 'platform_collects',
     clock,
     ids: new SequentialIds(),
     voucherSecret: 'test-secret-at-least-32-characters-long!!',
@@ -52,7 +53,7 @@ describe('signature verification', () => {
     const { deps, store, bookingId } = await withPendingBooking();
     const before = store.seenEventIds.size;
 
-    const r = await handleStripeWebhook(
+    const r = await handlePaymentWebhook(
       deps,
       stripeEvent({ bookingId }),
       'forged-signature',
@@ -68,7 +69,7 @@ describe('exactly once (T-05)', () => {
   it('confirms the booking and issues one voucher', async () => {
     const { deps, store, bookingId } = await withPendingBooking();
 
-    const r = await handleStripeWebhook(deps, stripeEvent({ bookingId }), 'valid-signature');
+    const r = await handlePaymentWebhook(deps, stripeEvent({ bookingId }), 'valid-signature');
 
     expect(r.status).toBe('processed');
     if (r.status !== 'processed') return;
@@ -83,9 +84,9 @@ describe('exactly once (T-05)', () => {
     const { deps, store, bookingId } = await withPendingBooking();
     const body = stripeEvent({ bookingId, id: 'evt_replay' });
 
-    await handleStripeWebhook(deps, body, 'valid-signature');
-    const second = await handleStripeWebhook(deps, body, 'valid-signature');
-    const third = await handleStripeWebhook(deps, body, 'valid-signature');
+    await handlePaymentWebhook(deps, body, 'valid-signature');
+    const second = await handlePaymentWebhook(deps, body, 'valid-signature');
+    const third = await handlePaymentWebhook(deps, body, 'valid-signature');
 
     expect(second.status).toBe('duplicate');
     expect(third.status).toBe('duplicate');
@@ -100,8 +101,8 @@ describe('exactly once (T-05)', () => {
     // ids, so a different event for an already-confirmed booking is a no-op too.
     const { deps, store, bookingId } = await withPendingBooking();
 
-    await handleStripeWebhook(deps, stripeEvent({ bookingId, id: 'evt_1' }), 'valid-signature');
-    const second = await handleStripeWebhook(
+    await handlePaymentWebhook(deps, stripeEvent({ bookingId, id: 'evt_1' }), 'valid-signature');
+    const second = await handlePaymentWebhook(
       deps,
       stripeEvent({ bookingId, id: 'evt_2', type: 'payment_intent.succeeded', objectType: 'payment_intent', objectId: 'pi_test_1' }),
       'valid-signature',
@@ -123,8 +124,8 @@ describe('concurrent delivery (audit finding 3)', () => {
     const body = stripeEvent({ bookingId, id: 'evt_race' });
 
     const results = await Promise.all([
-      handleStripeWebhook(deps, body, 'valid-signature'),
-      handleStripeWebhook(deps, body, 'valid-signature'),
+      handlePaymentWebhook(deps, body, 'valid-signature'),
+      handlePaymentWebhook(deps, body, 'valid-signature'),
     ]);
 
     expect(store.vouchers).toHaveLength(1);
@@ -137,8 +138,8 @@ describe('concurrent delivery (audit finding 3)', () => {
     const { deps, store, bookingId } = await withPendingBooking();
 
     const results = await Promise.all([
-      handleStripeWebhook(deps, stripeEvent({ bookingId, id: 'evt_a' }), 'valid-signature'),
-      handleStripeWebhook(deps, stripeEvent({ bookingId, ...pi('evt_b') }), 'valid-signature'),
+      handlePaymentWebhook(deps, stripeEvent({ bookingId, id: 'evt_a' }), 'valid-signature'),
+      handlePaymentWebhook(deps, stripeEvent({ bookingId, ...pi('evt_b') }), 'valid-signature'),
     ]);
 
     expect(store.vouchers).toHaveLength(1);
@@ -150,8 +151,8 @@ describe('concurrent delivery (audit finding 3)', () => {
     expect(store.slots.get(slotFixture().id)?.bookedCount).toBe(2);
 
     await Promise.all([
-      handleStripeWebhook(deps, stripeEvent({ bookingId, id: 'evt_x1', type: 'checkout.session.expired' }), 'valid-signature'),
-      handleStripeWebhook(deps, stripeEvent({ bookingId, id: 'evt_x2', type: 'checkout.session.expired' }), 'valid-signature'),
+      handlePaymentWebhook(deps, stripeEvent({ bookingId, id: 'evt_x1', type: 'checkout.session.expired' }), 'valid-signature'),
+      handlePaymentWebhook(deps, stripeEvent({ bookingId, id: 'evt_x2', type: 'checkout.session.expired' }), 'valid-signature'),
     ]);
 
     expect(store.releases).toHaveLength(1);
@@ -165,7 +166,7 @@ describe('out-of-order delivery', () => {
     // Stripe does not guarantee ordering, and this is the common inversion.
     const { deps, store, bookingId } = await withPendingBooking();
 
-    const first = await handleStripeWebhook(
+    const first = await handlePaymentWebhook(
       deps,
       stripeEvent({
         bookingId,
@@ -181,7 +182,7 @@ describe('out-of-order delivery', () => {
     expect(store.bookings.get(bookingId)?.status).toBe('confirmed');
 
     // The later session event must not double-issue.
-    const second = await handleStripeWebhook(
+    const second = await handlePaymentWebhook(
       deps,
       stripeEvent({ bookingId, id: 'evt_cs' }),
       'valid-signature',
@@ -197,7 +198,7 @@ describe('delayed and failed payments', () => {
     // hand out a voucher for money that never arrives.
     const { deps, store, bookingId } = await withPendingBooking();
 
-    const r = await handleStripeWebhook(
+    const r = await handlePaymentWebhook(
       deps,
       stripeEvent({ bookingId, paymentStatus: 'unpaid' }),
       'valid-signature',
@@ -211,12 +212,12 @@ describe('delayed and failed payments', () => {
   it('confirms once the async payment succeeds', async () => {
     const { deps, store, bookingId } = await withPendingBooking();
 
-    await handleStripeWebhook(
+    await handlePaymentWebhook(
       deps,
       stripeEvent({ bookingId, id: 'evt_a', paymentStatus: 'unpaid' }),
       'valid-signature',
     );
-    const r = await handleStripeWebhook(
+    const r = await handlePaymentWebhook(
       deps,
       stripeEvent({
         bookingId,
@@ -236,7 +237,7 @@ describe('delayed and failed payments', () => {
     const { deps, store, bookingId } = await withPendingBooking();
     expect(store.slots.get(slotFixture().id)?.bookedCount).toBe(2);
 
-    const r = await handleStripeWebhook(
+    const r = await handlePaymentWebhook(
       deps,
       stripeEvent({ bookingId, id: 'evt_fail', type: 'payment_intent.payment_failed', objectType: 'payment_intent', objectId: 'pi_test_1' }),
       'valid-signature',
@@ -254,7 +255,7 @@ describe('delayed and failed payments', () => {
   it('releases the seats when a checkout session expires', async () => {
     const { deps, store, bookingId } = await withPendingBooking();
 
-    await handleStripeWebhook(
+    await handlePaymentWebhook(
       deps,
       stripeEvent({ bookingId, id: 'evt_exp', type: 'checkout.session.expired', paymentStatus: null }),
       'valid-signature',
@@ -266,8 +267,8 @@ describe('delayed and failed payments', () => {
   it('does not tear down a CONFIRMED booking on a late failure event', async () => {
     const { deps, store, bookingId } = await withPendingBooking();
 
-    await handleStripeWebhook(deps, stripeEvent({ bookingId, id: 'evt_ok' }), 'valid-signature');
-    const late = await handleStripeWebhook(
+    await handlePaymentWebhook(deps, stripeEvent({ bookingId, id: 'evt_ok' }), 'valid-signature');
+    const late = await handlePaymentWebhook(
       deps,
       stripeEvent({ bookingId, id: 'evt_late_fail', type: 'payment_intent.payment_failed', objectType: 'payment_intent', objectId: 'pi_test_1' }),
       'valid-signature',
@@ -281,11 +282,11 @@ describe('delayed and failed payments', () => {
 describe('refunds', () => {
   it('marks the booking refunded but does NOT silently reclaim capacity', async () => {
     const { deps, store, bookingId } = await withPendingBooking();
-    await handleStripeWebhook(deps, stripeEvent({ bookingId, id: 'evt_paid' }), 'valid-signature');
+    await handlePaymentWebhook(deps, stripeEvent({ bookingId, id: 'evt_paid' }), 'valid-signature');
 
     const bookedAfterPayment = store.slots.get(slotFixture().id)?.bookedCount;
 
-    const r = await handleStripeWebhook(
+    const r = await handlePaymentWebhook(
       deps,
       stripeEvent({ bookingId, id: 'evt_refund', type: 'charge.refunded', objectType: 'charge', objectId: 'ch_1' }),
       'valid-signature',
@@ -301,9 +302,9 @@ describe('refunds', () => {
   // session, not to the charge) and no session id. Only its payment intent leads back.
   it('finds the booking from the charge\'s payment intent when it carries no metadata', async () => {
     const { deps, store, bookingId } = await withPendingBooking();
-    await handleStripeWebhook(deps, stripeEvent({ bookingId, id: 'evt_paid', paymentIntent: 'pi_real' }), 'valid-signature');
+    await handlePaymentWebhook(deps, stripeEvent({ bookingId, id: 'evt_paid', paymentIntent: 'pi_real' }), 'valid-signature');
 
-    const r = await handleStripeWebhook(
+    const r = await handlePaymentWebhook(
       deps,
       stripeEvent({ id: 'evt_refund', type: 'charge.refunded', objectType: 'charge', objectId: 'ch_1', paymentIntent: 'pi_real' }),
       'valid-signature',
@@ -315,8 +316,8 @@ describe('refunds', () => {
 
   it('records the charge\'s payment intent, not the charge id', async () => {
     const { deps, store, bookingId } = await withPendingBooking();
-    await handleStripeWebhook(deps, stripeEvent({ bookingId, id: 'evt_paid', paymentIntent: 'pi_real' }), 'valid-signature');
-    await handleStripeWebhook(
+    await handlePaymentWebhook(deps, stripeEvent({ bookingId, id: 'evt_paid', paymentIntent: 'pi_real' }), 'valid-signature');
+    await handlePaymentWebhook(
       deps,
       stripeEvent({ id: 'evt_refund', type: 'charge.refunded', objectType: 'charge', objectId: 'ch_1', paymentIntent: 'pi_real' }),
       'valid-signature',
@@ -329,9 +330,9 @@ describe('refunds', () => {
 
   it('ignores a charge whose payment intent matches no booking', async () => {
     const { deps, store, bookingId } = await withPendingBooking();
-    await handleStripeWebhook(deps, stripeEvent({ bookingId, id: 'evt_paid', paymentIntent: 'pi_real' }), 'valid-signature');
+    await handlePaymentWebhook(deps, stripeEvent({ bookingId, id: 'evt_paid', paymentIntent: 'pi_real' }), 'valid-signature');
 
-    const r = await handleStripeWebhook(
+    const r = await handlePaymentWebhook(
       deps,
       stripeEvent({ id: 'evt_refund', type: 'charge.refunded', objectType: 'charge', objectId: 'ch_1', paymentIntent: 'pi_other' }),
       'valid-signature',
@@ -343,10 +344,10 @@ describe('refunds', () => {
 
   it('cancels the booking\'s voucher when the booking is refunded', async () => {
     const { deps, store, bookingId } = await withPendingBooking();
-    await handleStripeWebhook(deps, stripeEvent({ bookingId, id: 'evt_paid', paymentIntent: 'pi_real' }), 'valid-signature');
+    await handlePaymentWebhook(deps, stripeEvent({ bookingId, id: 'evt_paid', paymentIntent: 'pi_real' }), 'valid-signature');
     expect(store.vouchers.map((v) => v.state)).toEqual(['active']);
 
-    await handleStripeWebhook(
+    await handlePaymentWebhook(
       deps,
       stripeEvent({ id: 'evt_refund', type: 'charge.refunded', objectType: 'charge', objectId: 'ch_1', paymentIntent: 'pi_real' }),
       'valid-signature',
@@ -357,10 +358,10 @@ describe('refunds', () => {
 
   it('leaves a redeemed voucher redeemed: the guest already took the tour', async () => {
     const { deps, store, bookingId } = await withPendingBooking();
-    await handleStripeWebhook(deps, stripeEvent({ bookingId, id: 'evt_paid', paymentIntent: 'pi_real' }), 'valid-signature');
+    await handlePaymentWebhook(deps, stripeEvent({ bookingId, id: 'evt_paid', paymentIntent: 'pi_real' }), 'valid-signature');
     store.vouchers[0]!.state = 'redeemed';
 
-    await handleStripeWebhook(
+    await handlePaymentWebhook(
       deps,
       stripeEvent({ id: 'evt_refund', type: 'charge.refunded', objectType: 'charge', objectId: 'ch_1', paymentIntent: 'pi_real' }),
       'valid-signature',
@@ -371,9 +372,9 @@ describe('refunds', () => {
 
   it('does nothing for a partial refund: the booking and voucher stay valid', async () => {
     const { deps, store, bookingId } = await withPendingBooking();
-    await handleStripeWebhook(deps, stripeEvent({ bookingId, id: 'evt_paid', paymentIntent: 'pi_real' }), 'valid-signature');
+    await handlePaymentWebhook(deps, stripeEvent({ bookingId, id: 'evt_paid', paymentIntent: 'pi_real' }), 'valid-signature');
 
-    const r = await handleStripeWebhook(
+    const r = await handlePaymentWebhook(
       deps,
       stripeEvent({ id: 'evt_refund', type: 'charge.refunded', objectType: 'charge', objectId: 'ch_1', paymentIntent: 'pi_real', refund: 'partial' }),
       'valid-signature',
@@ -386,12 +387,12 @@ describe('refunds', () => {
 
   it('a redelivered refund still cancels a voucher an earlier crashed delivery left live', async () => {
     const { deps, store, bookingId } = await withPendingBooking();
-    await handleStripeWebhook(deps, stripeEvent({ bookingId, id: 'evt_paid', paymentIntent: 'pi_real' }), 'valid-signature');
+    await handlePaymentWebhook(deps, stripeEvent({ bookingId, id: 'evt_paid', paymentIntent: 'pi_real' }), 'valid-signature');
     // The first delivery won the transition, then crashed before voiding.
     store.bookings.get(bookingId)!.status = 'refunded';
     expect(store.vouchers.map((v) => v.state)).toEqual(['active']);
 
-    const r = await handleStripeWebhook(
+    const r = await handlePaymentWebhook(
       deps,
       stripeEvent({ id: 'evt_refund', type: 'charge.refunded', objectType: 'charge', objectId: 'ch_1', paymentIntent: 'pi_real' }),
       'valid-signature',
@@ -405,7 +406,7 @@ describe('refunds', () => {
 describe('events we should not act on', () => {
   it('acknowledges an unhandled event type instead of erroring it into an infinite retry', async () => {
     const { deps, bookingId } = await withPendingBooking();
-    const r = await handleStripeWebhook(
+    const r = await handlePaymentWebhook(
       deps,
       stripeEvent({ bookingId, id: 'evt_x', type: 'customer.created' }),
       'valid-signature',
@@ -417,7 +418,7 @@ describe('events we should not act on', () => {
 
   it('ignores an event that matches no booking', async () => {
     const { deps } = await withPendingBooking();
-    const r = await handleStripeWebhook(
+    const r = await handlePaymentWebhook(
       deps,
       stripeEvent({ bookingId: null, id: 'evt_orphan', objectId: 'cs_unknown' }),
       'valid-signature',
@@ -433,7 +434,7 @@ describe('events we should not act on', () => {
     expect(sessionId).toBeTruthy();
     void payments;
 
-    const r = await handleStripeWebhook(
+    const r = await handlePaymentWebhook(
       deps,
       stripeEvent({ bookingId: null, id: 'evt_by_session', objectId: sessionId as string }),
       'valid-signature',

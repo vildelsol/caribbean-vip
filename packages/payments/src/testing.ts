@@ -20,12 +20,15 @@ import type {
   Clock,
   IdGenerator,
   OptionSnapshot,
+  ParsedWebhook,
   PaymentProvider,
   PaymentRecord,
   PromotionSnapshot,
+  RefundRequest,
   SlotSnapshot,
-  StripeLikeEvent,
+  VendorPayout,
 } from './ports.ts';
+import { normalizeStripeEvent, type StripeLikeEvent } from './stripeEvents.ts';
 
 export class FakeClock implements Clock {
   constructor(private current: Date = new Date('2026-08-02T12:00:00Z')) {}
@@ -70,6 +73,8 @@ export class FakeBookingStore implements BookingStore {
   vouchers: { tokenHash: string; bookingId: string | null; state: string }[] = [];
   tripItems: { bookingId: string }[] = [];
   releases: { slotId: string; seats: number }[] = [];
+  /** Vendor payout accounts by vendor org id. Empty means no vendor has one. */
+  vendorPayouts = new Map<string, VendorPayout>();
 
   settlementCurrency: Currency;
   pricingConfig: { taxRate: number; serviceFeeRate: number; commissionRate: number };
@@ -114,6 +119,10 @@ export class FakeBookingStore implements BookingStore {
 
   async getSettlementCurrency(): Promise<Currency> {
     return this.settlementCurrency;
+  }
+
+  async getVendorPayout(vendorOrgId: string): Promise<VendorPayout | null> {
+    return this.vendorPayouts.get(vendorOrgId) ?? null;
   }
 
   /** Mirrors `reserve_availability()`: refuses rather than oversells. */
@@ -308,13 +317,15 @@ export class FakePaymentProvider implements PaymentProvider {
     return { id: `cs_test_${this.seq}`, url: `https://checkout.test/cs_test_${this.seq}` };
   }
 
-  async verifyWebhook(rawBody: string, signature: string): Promise<StripeLikeEvent> {
+  async parseWebhook(rawBody: string, signature: string): Promise<ParsedWebhook> {
     if (signature !== this.validSignature) throw new Error('invalid signature');
-    return JSON.parse(rawBody) as StripeLikeEvent;
+    return normalizeStripeEvent(JSON.parse(rawBody) as StripeLikeEvent);
   }
 
-  async refund(): Promise<void> {
-    // no-op
+  readonly refunds: RefundRequest[] = [];
+
+  async refund(req: RefundRequest): Promise<void> {
+    this.refunds.push(req);
   }
 }
 

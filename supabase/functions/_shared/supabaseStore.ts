@@ -118,6 +118,18 @@ export function makeSupabaseStore(supabase: SupabaseClient): BookingStore {
       return (data.value as string).replace(/"/g, '') as Currency;
     },
 
+    async getVendorPayout(vendorOrgId) {
+      const { data, error } = await supabase
+        .from('vendor_payout_accounts')
+        .select('provider, account_ref, status')
+        .eq('vendor_org_id', vendorOrgId)
+        .maybeSingle();
+      if (error) throw new Error(`vendor payout lookup failed: ${error.message}`);
+      if (!data) return null;
+      const status = data.status as 'ready' | 'onboarding' | 'restricted';
+      return { provider: data.provider as string, accountRef: data.account_ref as string, status };
+    },
+
     async reserveCapacity(slotId, seats) {
       const { data, error } = await supabase.rpc('reserve_availability', {
         slot_id: slotId,
