@@ -2,7 +2,8 @@ import { describe, expect, it } from 'vitest';
 import { platformTake, startCheckout, type CheckoutRequest } from './checkout.ts';
 import { canTakeBookings, createNullPayoutPort } from './payoutPort.ts';
 import type { PaymentCoreDeps, PayoutModel, VendorPayout } from './ports.ts';
-import { FakeBookingStore, FakeClock, FakePaymentProvider, SequentialIds, optionFixture, slotFixture } from './testing.ts';
+import { handlePaymentWebhook } from './webhook.ts';
+import { FakeBookingStore, FakeClock, FakePaymentProvider, SequentialIds, optionFixture, slotFixture, stripeEvent } from './testing.ts';
 
 /**
  * The vendor is the merchant of record (OD-01, leaning). A vendor with no ready payout account at the
@@ -102,12 +103,34 @@ describe('vendor is the merchant of record', () => {
     expect(payments.sessions[1]?.platformFeeMinor).toBe(payments.sessions[0]?.platformFeeMinor);
   });
 
-  it('a retry is refused if the vendor stopped being payable in between', async () => {
-    const { deps, store, slot } = build('vendor_is_merchant');
+  it('a retry sends the terms fixed at the first checkout, even if the vendor row changed since', async () => {
+    const { deps, store, payments, slot } = build('vendor_is_merchant');
     await startCheckout(deps, request());
-    store.vendorPayouts.set(slot.vendorOrgId, { provider: 'fake', accountRef: 'acct_vendor_1', status: 'restricted' });
+    // The vendor's row now points somewhere else and is restricted. The retry must not follow it.
+    store.vendorPayouts.set(slot.vendorOrgId, { provider: 'fake', accountRef: 'acct_someone_else', status: 'restricted' });
     const replay = await startCheckout(deps, request());
-    expect(replay.ok).toBe(false);
+    expect(replay.ok && replay.idempotentReplay).toBe(true);
+    expect(payments.sessions[1]?.payee).toEqual({ provider: 'fake', accountRef: 'acct_vendor_1' });
+    expect(payments.sessions[1]?.expiresAt).toEqual(payments.sessions[0]?.expiresAt);
+  });
+
+  it('a retry sends the same expiry even when the clock has moved on', async () => {
+    const { deps, payments } = build('vendor_is_merchant');
+    await startCheckout(deps, request());
+    (deps.clock as FakeClock).advance(5 * 60_000);
+    await startCheckout(deps, request());
+    expect(payments.sessions[1]?.expiresAt).toEqual(payments.sessions[0]?.expiresAt);
+  });
+
+  it('writes the terms with the booking: payee, fee and rule', async () => {
+    const { deps, store } = build('vendor_is_merchant');
+    const r = await startCheckout(deps, request());
+    if (!r.ok) throw new Error('checkout failed');
+    expect(store.paymentTerms.get(r.bookingId)).toMatchObject({
+      payoutModel: 'vendor_is_merchant',
+      payeeAccountRef: 'acct_vendor_1',
+      platformFeeMinor: 3026,
+    });
   });
 });
 
@@ -147,5 +170,78 @@ describe('payout port', () => {
     const port = createNullPayoutPort();
     expect(await port.status({ provider: 'none', accountRef: 'x' })).toBe('restricted');
     await expect(port.ensureAccount({ vendorOrgId: 'v', email: null })).rejects.toThrow();
+  });
+});
+
+/**
+ * With vendors paid through their own accounts a vendor can create a genuine, correctly signed event
+ * that names ANOTHER vendor's booking. The core must tie an event to the account the booking went to.
+ */
+describe('webhook: an event must come from the booking\'s own payee', () => {
+  async function pending(model: PayoutModel) {
+    const ctx = build(model);
+    const r = await startCheckout(ctx.deps, request());
+    if (!r.ok) throw new Error('checkout failed');
+    return { ...ctx, bookingId: r.bookingId };
+  }
+  const SIG = 'valid-signature';
+
+  it('confirms a payment from the right vendor account for the right amount (positive control)', async () => {
+    const { deps, store, bookingId } = await pending('vendor_is_merchant');
+    const r = await handlePaymentWebhook(deps, stripeEvent({ bookingId, account: 'acct_vendor_1' }), SIG);
+    expect(r.status).toBe('processed');
+    expect(store.bookings.get(bookingId)?.status).toBe('confirmed');
+  });
+
+  it('ignores a payment event from a different vendor account naming this booking', async () => {
+    const { deps, store, bookingId } = await pending('vendor_is_merchant');
+    const r = await handlePaymentWebhook(deps, stripeEvent({ bookingId, account: 'acct_vendor_B' }), SIG);
+    expect(r).toMatchObject({ status: 'ignored', reason: 'payee_mismatch' });
+    expect(store.bookings.get(bookingId)?.status).toBe('pending_payment');
+    expect(store.vouchers).toHaveLength(0);
+  });
+
+  it('ignores an event with no account at all when the booking went to a vendor', async () => {
+    const { deps, store, bookingId } = await pending('vendor_is_merchant');
+    const r = await handlePaymentWebhook(deps, stripeEvent({ bookingId }), SIG);
+    expect(r).toMatchObject({ status: 'ignored', reason: 'payee_mismatch' });
+    expect(store.bookings.get(bookingId)?.status).toBe('pending_payment');
+  });
+
+  it('a foreign account cannot fail or refund the booking either', async () => {
+    const { deps, store, bookingId } = await pending('vendor_is_merchant');
+    const expired = await handlePaymentWebhook(
+      deps,
+      stripeEvent({ bookingId, id: 'evt_x', type: 'checkout.session.expired', account: 'acct_vendor_B' }),
+      SIG,
+    );
+    expect(expired).toMatchObject({ reason: 'payee_mismatch' });
+    expect(store.bookings.get(bookingId)?.status).toBe('pending_payment');
+    expect(store.releases).toHaveLength(0);
+  });
+
+  it('under platform_collects an event carrying a vendor account is not ours', async () => {
+    const { deps, bookingId } = await pending('platform_collects');
+    const r = await handlePaymentWebhook(deps, stripeEvent({ bookingId, account: 'acct_vendor_B' }), SIG);
+    expect(r).toMatchObject({ status: 'ignored', reason: 'payee_mismatch' });
+  });
+
+  it('ignores a payment for the wrong amount, so a small genuine payment cannot buy a big booking', async () => {
+    const { deps, store, bookingId } = await pending('vendor_is_merchant');
+    const r = await handlePaymentWebhook(deps, stripeEvent({ bookingId, account: 'acct_vendor_1', amountTotal: 50 }), SIG);
+    expect(r).toMatchObject({ status: 'ignored', reason: 'amount_mismatch' });
+    expect(store.bookings.get(bookingId)?.status).toBe('pending_payment');
+  });
+
+  it('ignores a payment in the wrong currency', async () => {
+    const { deps, bookingId } = await pending('vendor_is_merchant');
+    const r = await handlePaymentWebhook(deps, stripeEvent({ bookingId, account: 'acct_vendor_1', currency: 'jmd' }), SIG);
+    expect(r).toMatchObject({ reason: 'amount_mismatch' });
+  });
+
+  it('ignores a payment that states no amount at all', async () => {
+    const { deps, bookingId } = await pending('vendor_is_merchant');
+    const r = await handlePaymentWebhook(deps, stripeEvent({ bookingId, account: 'acct_vendor_1', amountTotal: null }), SIG);
+    expect(r).toMatchObject({ reason: 'amount_mismatch' });
   });
 });

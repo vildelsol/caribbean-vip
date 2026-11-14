@@ -39,13 +39,12 @@ create policy vendor_payout_accounts_read on vendor_payout_accounts
   for select to authenticated
   using (is_vendor_owner(vendor_org_id) or is_admin());
 
-revoke all on vendor_payout_accounts from anon;
-revoke insert, update, delete on vendor_payout_accounts from authenticated;
+-- Supabase's default grants also include TRUNCATE, REFERENCES and TRIGGER, which row level security
+-- does not cover. Take everything away, then give back the one thing the read policy governs.
+revoke all on vendor_payout_accounts from anon, authenticated;
+grant select on vendor_payout_accounts to authenticated;
 
--- Carry over anything the old column held, then drop it.
-insert into vendor_payout_accounts (vendor_org_id, provider, account_ref, status)
-select id, 'stripe', stripe_account_id, 'onboarding'
-  from vendor_organizations
- where stripe_account_id is not null;
-
+-- The old column is dropped WITHOUT copying its value across. It was null everywhere, and a value a
+-- vendor owner had typed there must never become an account the platform trusts: only an account the
+-- payment partner itself created (PayoutAccountPort.ensureAccount) may enter this table.
 alter table vendor_organizations drop column stripe_account_id;

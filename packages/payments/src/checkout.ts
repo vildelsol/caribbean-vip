@@ -166,11 +166,25 @@ export async function startCheckout(
         error: { code: 'IDEMPOTENCY_KEY_IN_USE', message: 'That request key has already been used.' },
       };
     }
-    const replayPayee = await resolvePayee(deps, existing.vendorOrgId, {
-      commissionMinor: existing.commissionMinor,
-      serviceFeeMinor: existing.serviceFeeMinor,
-    });
-    if (!replayPayee.ok) return replayPayee;
+    // The terms written when the booking was made, not today's payout row: a retry must send the
+    // provider exactly the call it sent the first time. Only a booking from before terms were
+    // recorded falls back to working it out again.
+    const stored = await store.getPaymentTerms(existing.id);
+    let replayPayee: { payee: PayeeAccount | null; platformFeeMinor: number; expiresAt: Date };
+    if (stored) {
+      replayPayee = {
+        payee: stored.payeeAccountRef ? { provider: stored.provider, accountRef: stored.payeeAccountRef } : null,
+        platformFeeMinor: stored.platformFeeMinor,
+        expiresAt: stored.sessionExpiresAt,
+      };
+    } else {
+      const fresh = await resolvePayee(deps, existing.vendorOrgId, {
+        commissionMinor: existing.commissionMinor,
+        serviceFeeMinor: existing.serviceFeeMinor,
+      });
+      if (!fresh.ok) return fresh;
+      replayPayee = { ...fresh, expiresAt: checkoutExpiry(clock.now(), deps.pendingPaymentTtlMinutes) };
+    }
     const session = await payments.createCheckoutSession({
       bookingReference: existing.reference,
       amountMinor: existing.totalMinor,
@@ -183,7 +197,7 @@ export async function startCheckout(
       idempotencyKey: request.idempotencyKey,
       payee: replayPayee.payee,
       platformFeeMinor: replayPayee.platformFeeMinor,
-      expiresAt: checkoutExpiry(clock.now(), deps.pendingPaymentTtlMinutes),
+      expiresAt: replayPayee.expiresAt,
     });
 
     return {
@@ -258,6 +272,15 @@ export async function startCheckout(
     });
 
     await store.createGuestLines(booking.id, lineDetails);
+
+    // Fixed here, before the session exists, so nothing later can send this booking's money elsewhere.
+    await store.recordPaymentTerms(booking.id, {
+      payoutModel: deps.payoutModel,
+      provider: payeeResolution.payee?.provider ?? payments.name,
+      payeeAccountRef: payeeResolution.payee?.accountRef ?? null,
+      platformFeeMinor: payeeResolution.platformFeeMinor,
+      sessionExpiresAt: expiresAt,
+    });
 
     const session = await payments.createCheckoutSession({
       bookingReference: reference,

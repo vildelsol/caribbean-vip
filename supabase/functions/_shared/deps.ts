@@ -36,6 +36,12 @@ export function makeDeps(overrides?: Partial<PaymentCoreDeps>): PaymentCoreDeps 
     throw new Error(`PAYOUT_MODEL must be one of: ${PAYOUT_MODELS.join(', ')}`);
   }
 
+  // With vendors paid through their own accounts the payment events go only to the Connect endpoint.
+  // Without its secret every delivery is refused: guests are charged and nothing ever confirms.
+  if (payoutModel === 'vendor_is_merchant' && !stripeConnectWebhookSecret) {
+    throw new Error('STRIPE_CONNECT_WEBHOOK_SECRET is required when PAYOUT_MODEL is vendor_is_merchant');
+  }
+
   const supabase = createClient(supabaseUrl, serviceRoleKey, {
     auth: { persistSession: false, autoRefreshToken: false },
   });

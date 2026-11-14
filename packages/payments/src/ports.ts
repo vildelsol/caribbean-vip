@@ -122,6 +122,11 @@ export interface BookingStore {
   /** The vendor's payout account, or null if it has none. Read server-side only. */
   getVendorPayout(vendorOrgId: string): Promise<VendorPayout | null>;
 
+  /** Written once, with the booking, before its checkout session is created. */
+  recordPaymentTerms(bookingId: string, terms: PaymentTerms): Promise<void>;
+  /** Null for a booking made before terms were recorded. */
+  getPaymentTerms(bookingId: string): Promise<PaymentTerms | null>;
+
   /** Returns false when the slot is full, closed or missing. Wraps `reserve_availability()`. */
   reserveCapacity(slotId: string, seats: number): Promise<boolean>;
   releaseCapacity(slotId: string, seats: number): Promise<void>;
@@ -261,6 +266,20 @@ export type PayoutModel = 'vendor_is_merchant' | 'platform_collects';
 
 export const PAYOUT_MODELS: readonly PayoutModel[] = ['vendor_is_merchant', 'platform_collects'];
 
+/**
+ * Where a booking's payment was sent, fixed when its checkout was created and read back from then on
+ * (retries, webhook checks, refunds). Never recomputed from the live payout table.
+ */
+export interface PaymentTerms {
+  payoutModel: PayoutModel;
+  provider: string;
+  /** Null exactly when the platform collected the money itself. */
+  payeeAccountRef: string | null;
+  platformFeeMinor: number;
+  /** A retry must send the provider the same expiry, or it rejects the reused idempotency key. */
+  sessionExpiresAt: Date;
+}
+
 /** A vendor's payout account as stored: what the provider told us, never what the vendor typed. */
 export interface VendorPayout {
   provider: string;
@@ -282,6 +301,15 @@ export interface PaymentEvent {
   checkoutSessionId: string | null;
   /** The provider's id for the payment itself (a Stripe payment intent). */
   paymentRef: string | null;
+  /**
+   * The account the event came from, when the provider says (Stripe's `account`): a vendor's connected
+   * account, or null for the platform's own. Checked against the booking's stored payee, because a
+   * genuine event from ANOTHER vendor's account is otherwise indistinguishable from the right one.
+   */
+  payeeRef: string | null;
+  /** What the provider says was paid, when the event carries it. Checked against the booking. */
+  amountMinor: number | null;
+  currency: string | null;
 }
 
 /** Events the adapter does not act on are still acknowledged, with their type for the log. */

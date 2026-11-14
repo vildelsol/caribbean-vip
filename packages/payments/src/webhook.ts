@@ -73,6 +73,24 @@ export async function handlePaymentWebhook(
     return { status: 'ignored', reason: 'no_matching_booking', eventId: event.id };
   }
 
+  // 2b. Is this event about THIS booking's money? Metadata is set by whoever created the session, and
+  // with vendors paid through their own accounts a vendor can create a genuine, correctly signed
+  // event naming another vendor's booking. So the event must come from the account the booking was
+  // sent to, and a payment must be for the amount and currency the booking says.
+  const terms = await store.getPaymentTerms(booking.id);
+  const expectedPayee = terms ? terms.payeeAccountRef : null;
+  if (event.payeeRef !== expectedPayee) {
+    return { status: 'ignored', reason: 'payee_mismatch', eventId: event.id };
+  }
+  if (event.kind === 'paid') {
+    if (
+      event.amountMinor !== booking.totalMinor ||
+      (event.currency ?? '').toUpperCase() !== booking.currency.toUpperCase()
+    ) {
+      return { status: 'ignored', reason: 'amount_mismatch', eventId: event.id };
+    }
+  }
+
   // 3. Act, then record. Exactly-once comes from the compare-and-set in `transitionBookingStatus`:
   // of any number of concurrent or repeated deliveries one wins the transition and runs the side
   // effects; the rest see `duplicate`. The payment event is only a record of what the provider sent.

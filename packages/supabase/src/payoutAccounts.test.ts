@@ -32,9 +32,9 @@ describe('vendor payout accounts', () => {
     expect(verbs).toEqual(['select']);
   });
 
-  it('takes write privileges away from signed-in users and everything from anon', () => {
-    expect(allSql).toMatch(/revoke insert, update, delete on vendor_payout_accounts from authenticated/i);
-    expect(allSql).toMatch(/revoke all on vendor_payout_accounts from anon/i);
+  it('takes every privilege away from anon and signed-in users, then grants read only', () => {
+    expect(allSql).toMatch(/revoke all on vendor_payout_accounts from anon, authenticated/i);
+    expect(allSql).toMatch(/grant select on vendor_payout_accounts to authenticated/i);
   });
 
   it('no longer keeps a payout account on the publicly readable vendor row', () => {
@@ -64,5 +64,39 @@ describe('refunds', () => {
 
   it('come out of the vendor account the payment went to', () => {
     expect(stripe).toMatch(/stripeAccount:\s*req\.payee\.accountRef/);
+  });
+});
+
+describe('booking payment terms', () => {
+  it('are service-role only: row level security on and no policy at all', () => {
+    expect(allSql).toMatch(/alter table booking_payment_terms enable row level security/i);
+    expect(policiesOn('booking_payment_terms')).toEqual([]);
+    expect(allSql).toMatch(/revoke all on booking_payment_terms from anon, authenticated/i);
+  });
+
+  it('cannot name a payee under platform_collects or omit one under vendor_is_merchant', () => {
+    expect(allSql).toMatch(/payout_model = 'vendor_is_merchant' and payee_account_ref is not null/i);
+    expect(allSql).toMatch(/payout_model = 'platform_collects' and payee_account_ref is null and platform_fee_minor = 0/i);
+  });
+});
+
+describe('payout migration hygiene', () => {
+  const migration = readFileSync(join(migrationsDir, '20261114000001_vendor_payout_accounts.sql'), 'utf8');
+
+  it('does not copy a vendor-typed value from the old column into the trusted table', () => {
+    expect(migration).not.toMatch(/insert into vendor_payout_accounts/i);
+  });
+
+  it('removes every default privilege, TRUNCATE included, before granting read back', () => {
+    expect(migration).toMatch(/revoke all on vendor_payout_accounts from anon, authenticated/i);
+    expect(migration).toMatch(/grant select on vendor_payout_accounts to authenticated/i);
+  });
+});
+
+describe('connect webhook secret', () => {
+  const deps = readFileSync(join(ROOT, 'supabase', 'functions', '_shared', 'deps.ts'), 'utf8');
+
+  it('is required whenever vendors are the merchant, or no booking would ever confirm', () => {
+    expect(deps).toMatch(/payoutModel === 'vendor_is_merchant' && !stripeConnectWebhookSecret/);
   });
 });

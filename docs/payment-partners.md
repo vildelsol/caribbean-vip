@@ -20,6 +20,20 @@ function refuse to run, because a silent default would decide who the seller is.
 | `vendor_is_merchant` | Payment goes to the vendor's account at the partner. A vendor with no `ready` account cannot be booked (`VENDOR_NOT_PAYABLE`), and the platform's own account is never a fallback. | Production |
 | `platform_collects` | Every payment lands in the platform's own account. No split. | Demo and staging, where vendors have no real payout account |
 
+## What the core checks on every payment event
+
+A genuine, correctly signed event is not enough: with vendors paid through their own accounts, a vendor
+can create a real event that names another vendor's booking. So the core, using the terms written when
+the booking was made (`booking_payment_terms`, service role only):
+
+- ignores any event whose account is not the account that booking was sent to (`payee_mismatch`);
+- ignores a payment whose amount or currency is not the booking's, or that states no amount
+  (`amount_mismatch`);
+- sends a retry of a checkout to the same account with the same expiry as the first, never to whatever
+  the vendor's payout row says today.
+
+A partner's adapter must therefore fill `payeeRef`, `amountMinor` and `currency` on `PaymentEvent`.
+
 ## The two ports (`packages/payments`)
 
 1. **`PaymentProvider`** (`ports.ts`): `createCheckoutSession`, `parseWebhook`, `refund`.

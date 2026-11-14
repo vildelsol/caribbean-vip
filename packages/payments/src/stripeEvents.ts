@@ -95,6 +95,10 @@ export function normalizeStripeEvent(event: StripeLikeEvent): ParsedWebhook {
       // A session and a charge both point at their payment intent; a payment_intent event is one.
       // Using `object.id` for a charge would store `ch_…` where a `pi_…` belongs.
       paymentRef: object.object === 'payment_intent' ? object.id : (object.payment_intent ?? null),
+      payeeRef: event.account ?? null,
+      // A session states its total in `amount_total`; a payment intent or charge in `amount`.
+      amountMinor: object.amount_total ?? object.amount ?? null,
+      currency: object.currency ? object.currency.toUpperCase() : null,
     },
   };
 }
