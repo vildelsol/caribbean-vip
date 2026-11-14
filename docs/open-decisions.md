@@ -13,6 +13,37 @@ onboarding real vendors.
 | OD-05 | Maps provider and notification provider | Cost and deployment environment | Adapter interfaces with mock implementations (AD-07); either provider swaps by env var | Staging with real maps |
 | OD-06 | Native app-store launch vs Expo-managed pilot distribution | Changes build pipeline, review timeline and update cadence | Expo managed workflow, which supports both paths | Distribution decision |
 
+## Leaning, not decided
+
+**OD-01 (recorded 2026-11-14). Leaning: marketplace, the platform is an intermediary and the vendor
+is the seller and merchant of record. PENDING COUNSEL on every island. Not a decision.**
+
+Ro's description of the business is a marketplace, which points to the platform as intermediary. That
+only holds if the facts match: the vendor sets price and terms, is named to the guest as the seller,
+and is paid directly, with the platform's commission taken at the split. If it were chosen:
+
+- **Stripe Connect becomes the OD-02 answer**, not manual settlement. Manual settlement collects
+  every guest payment into one platform account, which is how a seller behaves, and contradicts the
+  intermediary position.
+- `stripeProvider.ts` gains a destination account and an application fee (AD-09 says only that file
+  changes). `vendors.stripe_account_id`, null today, must be set before a listing can sell.
+- Vendor onboarding adds Connect KYC to the document checks.
+- Refund authority (OD-08, admin only today) must follow whoever carries the liability.
+- Checkout and terms name the vendor as seller and the platform as intermediary; the vendor agreement
+  becomes a marketplace or agency agreement rather than a supplier agreement.
+- No payout ledger is needed, because Stripe splits at charge time.
+
+**Open risk before this can be chosen:** whether Stripe Connect can pay vendors in Jamaica, Barbados
+and Cayman. A 2026-11-14 search found Jamaica listed as supported in some sources, Barbados listed as
+unsupported in one and conflicting in others, and nothing on Cayman. None of those was Stripe's own
+Connect country list. Check Stripe's cross-border payout documentation or Stripe support before
+relying on any of it. If Connect cannot reach a vendor's country, the intermediary model needs a
+different payment route, and that is a counsel question too.
+
+**For counsel (also `vendor-document-requirements.md`):** is the platform an intermediary or the
+seller on each island, who is merchant of record, what must be disclosed to the guest, and does the
+platform risk being treated as the seller anyway if it sets cancellation terms or issues refunds itself.
+
 ## Surfaced during architecture
 
 | ID | Question | Recommendation | Impact if changed later |
