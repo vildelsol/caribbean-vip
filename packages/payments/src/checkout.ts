@@ -25,7 +25,49 @@ import {
   type PriceBreakdown,
   type PriceLine,
 } from '@cvip/types';
-import type { PaymentCoreDeps, PromotionSnapshot } from './ports.ts';
+import type { PayeeAccount, PaymentCoreDeps, PromotionSnapshot } from './ports.ts';
+import { canTakeBookings } from './payoutPort.ts';
+
+/**
+ * What the platform keeps out of a payment: its commission plus the service fee charged to the guest.
+ * Everything else, the vendor's net and the tax collected on their behalf, goes to the vendor. One
+ * function, so the rule is changed in one place if counsel or the founders decide otherwise.
+ */
+export function platformTake(parts: { commissionMinor: number; serviceFeeMinor: number }): number {
+  return parts.commissionMinor + parts.serviceFeeMinor;
+}
+
+type PayeeResolution =
+  | { ok: true; payee: PayeeAccount | null; platformFeeMinor: number }
+  | { ok: false; error: CheckoutError };
+
+/**
+ * Who a payment goes to. Under `vendor_is_merchant` a vendor with no ready payout account at THIS
+ * provider cannot be booked: the guest is told before any seat is held, and nothing is charged to the
+ * platform's own account as a fallback, because that would quietly make the platform the seller.
+ */
+async function resolvePayee(
+  deps: PaymentCoreDeps,
+  vendorOrgId: string,
+  take: { commissionMinor: number; serviceFeeMinor: number },
+): Promise<PayeeResolution> {
+  if (deps.payoutModel === 'platform_collects') return { ok: true, payee: null, platformFeeMinor: 0 };
+  const payout = await deps.store.getVendorPayout(vendorOrgId);
+  if (!canTakeBookings(payout, deps.payments.name) || payout === null) {
+    return {
+      ok: false,
+      error: {
+        code: 'VENDOR_NOT_PAYABLE',
+        message: 'This operator cannot take bookings yet. Please choose another experience.',
+      },
+    };
+  }
+  return {
+    ok: true,
+    payee: { provider: payout.provider, accountRef: payout.accountRef },
+    platformFeeMinor: platformTake(take),
+  };
+}
 
 /** Seats one line may ask for. A request naming a whole departure is a hold, not a booking. */
 export const MAX_LINE_QUANTITY = 20;
@@ -76,6 +118,7 @@ export type CheckoutError =
   | { code: 'SOLD_OUT'; message: string }
   | { code: 'IDEMPOTENCY_KEY_IN_USE'; message: string }
   | { code: 'TOO_MANY_PENDING_BOOKINGS'; message: string }
+  | { code: 'VENDOR_NOT_PAYABLE'; message: string }
   | { code: 'PROVIDER_FAILED'; message: string };
 
 export type CheckoutResult =
@@ -123,6 +166,25 @@ export async function startCheckout(
         error: { code: 'IDEMPOTENCY_KEY_IN_USE', message: 'That request key has already been used.' },
       };
     }
+    // The terms written when the booking was made, not today's payout row: a retry must send the
+    // provider exactly the call it sent the first time. Only a booking from before terms were
+    // recorded falls back to working it out again.
+    const stored = await store.getPaymentTerms(existing.id);
+    let replayPayee: { payee: PayeeAccount | null; platformFeeMinor: number; expiresAt: Date };
+    if (stored) {
+      replayPayee = {
+        payee: stored.payeeAccountRef ? { provider: stored.provider, accountRef: stored.payeeAccountRef } : null,
+        platformFeeMinor: stored.platformFeeMinor,
+        expiresAt: stored.sessionExpiresAt,
+      };
+    } else {
+      const fresh = await resolvePayee(deps, existing.vendorOrgId, {
+        commissionMinor: existing.commissionMinor,
+        serviceFeeMinor: existing.serviceFeeMinor,
+      });
+      if (!fresh.ok) return fresh;
+      replayPayee = { ...fresh, expiresAt: checkoutExpiry(clock.now(), deps.pendingPaymentTtlMinutes) };
+    }
     const session = await payments.createCheckoutSession({
       bookingReference: existing.reference,
       amountMinor: existing.totalMinor,
@@ -133,7 +195,9 @@ export async function startCheckout(
       successUrl: deps.successUrl,
       cancelUrl: deps.cancelUrl,
       idempotencyKey: request.idempotencyKey,
-      expiresAt: checkoutExpiry(clock.now(), deps.pendingPaymentTtlMinutes),
+      payee: replayPayee.payee,
+      platformFeeMinor: replayPayee.platformFeeMinor,
+      expiresAt: replayPayee.expiresAt,
     });
 
     return {
@@ -149,6 +213,13 @@ export async function startCheckout(
   const priced = await priceFromDatabase(deps, request);
   if (!priced.ok) return priced;
   const { breakdown, slot, lineDetails } = priced;
+
+  // Before any seat is held: a vendor who cannot be paid is refused with nothing reserved.
+  const payeeResolution = await resolvePayee(deps, slot.vendorOrgId, {
+    commissionMinor: breakdown.commission.amountMinor,
+    serviceFeeMinor: breakdown.serviceFee.amountMinor,
+  });
+  if (!payeeResolution.ok) return payeeResolution;
 
   // After the idempotency replay above, so retrying one request is never a second hold; before the
   // reservation, so a refused guest holds nothing.
@@ -202,6 +273,15 @@ export async function startCheckout(
 
     await store.createGuestLines(booking.id, lineDetails);
 
+    // Fixed here, before the session exists, so nothing later can send this booking's money elsewhere.
+    await store.recordPaymentTerms(booking.id, {
+      payoutModel: deps.payoutModel,
+      provider: payeeResolution.payee?.provider ?? payments.name,
+      payeeAccountRef: payeeResolution.payee?.accountRef ?? null,
+      platformFeeMinor: payeeResolution.platformFeeMinor,
+      sessionExpiresAt: expiresAt,
+    });
+
     const session = await payments.createCheckoutSession({
       bookingReference: reference,
       amountMinor: breakdown.total.amountMinor,
@@ -212,6 +292,8 @@ export async function startCheckout(
       successUrl: deps.successUrl,
       cancelUrl: deps.cancelUrl,
       idempotencyKey: request.idempotencyKey,
+      payee: payeeResolution.payee,
+      platformFeeMinor: payeeResolution.platformFeeMinor,
       expiresAt,
     });
 

@@ -43,4 +43,5 @@ echo "--> stripe-webhook (JWT verification off — see the note at the top of th
 npx supabase functions deploy stripe-webhook --project-ref "$REF" --import-map "$MAP" --no-verify-jwt
 
 echo "==> Done. Secrets are set in the dashboard, not here:"
-echo "    STRIPE_SECRET_KEY, STRIPE_WEBHOOK_SECRET, VOUCHER_HMAC_SECRET, APP_URL"
+echo "    STRIPE_SECRET_KEY, STRIPE_WEBHOOK_SECRET, VOUCHER_HMAC_SECRET, APP_URL, PAYOUT_MODEL
+    (and STRIPE_CONNECT_WEBHOOK_SECRET once vendors are paid through connected accounts)"

@@ -20,12 +20,16 @@ import type {
   Clock,
   IdGenerator,
   OptionSnapshot,
+  ParsedWebhook,
   PaymentProvider,
   PaymentRecord,
   PromotionSnapshot,
+  RefundRequest,
   SlotSnapshot,
-  StripeLikeEvent,
+  PaymentTerms,
+  VendorPayout,
 } from './ports.ts';
+import { normalizeStripeEvent, type StripeLikeEvent } from './stripeEvents.ts';
 
 export class FakeClock implements Clock {
   constructor(private current: Date = new Date('2026-08-02T12:00:00Z')) {}
@@ -70,6 +74,10 @@ export class FakeBookingStore implements BookingStore {
   vouchers: { tokenHash: string; bookingId: string | null; state: string }[] = [];
   tripItems: { bookingId: string }[] = [];
   releases: { slotId: string; seats: number }[] = [];
+  /** Terms written at checkout, by booking id. */
+  paymentTerms = new Map<string, PaymentTerms>();
+  /** Vendor payout accounts by vendor org id. Empty means no vendor has one. */
+  vendorPayouts = new Map<string, VendorPayout>();
 
   settlementCurrency: Currency;
   pricingConfig: { taxRate: number; serviceFeeRate: number; commissionRate: number };
@@ -114,6 +122,19 @@ export class FakeBookingStore implements BookingStore {
 
   async getSettlementCurrency(): Promise<Currency> {
     return this.settlementCurrency;
+  }
+
+  async recordPaymentTerms(bookingId: string, terms: PaymentTerms): Promise<void> {
+    if (this.paymentTerms.has(bookingId)) throw new Error('terms are written once');
+    this.paymentTerms.set(bookingId, { ...terms });
+  }
+
+  async getPaymentTerms(bookingId: string): Promise<PaymentTerms | null> {
+    return this.paymentTerms.get(bookingId) ?? null;
+  }
+
+  async getVendorPayout(vendorOrgId: string): Promise<VendorPayout | null> {
+    return this.vendorPayouts.get(vendorOrgId) ?? null;
   }
 
   /** Mirrors `reserve_availability()`: refuses rather than oversells. */
@@ -308,13 +329,15 @@ export class FakePaymentProvider implements PaymentProvider {
     return { id: `cs_test_${this.seq}`, url: `https://checkout.test/cs_test_${this.seq}` };
   }
 
-  async verifyWebhook(rawBody: string, signature: string): Promise<StripeLikeEvent> {
+  async parseWebhook(rawBody: string, signature: string): Promise<ParsedWebhook> {
     if (signature !== this.validSignature) throw new Error('invalid signature');
-    return JSON.parse(rawBody) as StripeLikeEvent;
+    return normalizeStripeEvent(JSON.parse(rawBody) as StripeLikeEvent);
   }
 
-  async refund(): Promise<void> {
-    // no-op
+  readonly refunds: RefundRequest[] = [];
+
+  async refund(req: RefundRequest): Promise<void> {
+    this.refunds.push(req);
   }
 }
 
@@ -361,16 +384,24 @@ export function stripeEvent(over: {
   bookingId?: string | null;
   /** `charge` events only. Defaults to a full refund; `partial` leaves part of the charge unrefunded. */
   refund?: 'full' | 'partial';
+  /** Stripe's `account`: set for an event from a vendor's connected account. */
+  account?: string | null;
+  /** What the session says was paid. Defaults to the 2-adult fixture booking: 21360 USD. */
+  amountTotal?: number | null;
+  currency?: string | null;
 }): string {
   const event: StripeLikeEvent = {
     id: over.id ?? 'evt_test_1',
     type: over.type ?? 'checkout.session.completed',
+    ...(over.account ? { account: over.account } : {}),
     data: {
       object: {
         id: over.objectId ?? 'cs_test_1',
         object: over.objectType ?? 'checkout.session',
         payment_status: over.paymentStatus === undefined ? 'paid' : over.paymentStatus,
         payment_intent: over.paymentIntent ?? 'pi_test_1',
+        amount_total: over.amountTotal === undefined ? 21360 : over.amountTotal,
+        currency: over.currency === undefined ? 'usd' : over.currency,
         metadata: over.bookingId ? { booking_id: over.bookingId } : {},
         ...(over.objectType === 'charge'
           ? {

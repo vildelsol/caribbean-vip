@@ -2,14 +2,14 @@
  * stripe-webhook — T-05.
  *
  * POST with raw Stripe webhook body + Stripe-Signature header.
- * Verifies signature, delegates to handleStripeWebhook, stores the ticket token on the
+ * Verifies signature, delegates to handlePaymentWebhook, stores the ticket token on the
  * booking row so the tourist app can fetch it after redirect.
  *
  * Returns 200 for every outcome except a bad signature (400). Stripe interprets any non-2xx
  * as a failure and retries; returning 200 for duplicates or ignored events is intentional.
  */
 
-import { handleStripeWebhook } from '@cvip/payments';
+import { handlePaymentWebhook } from '@cvip/payments';
 import { createClient } from 'npm:@supabase/supabase-js@^2';
 import { makeDeps } from '../_shared/deps.ts';
 
@@ -29,7 +29,7 @@ Deno.serve(async (req) => {
     return new Response('Server configuration error', { status: 500 });
   }
 
-  const outcome = await handleStripeWebhook(deps, rawBody, sig);
+  const outcome = await handlePaymentWebhook(deps, rawBody, sig);
 
   if (outcome.status === 'rejected') {
     return new Response('Bad signature', { status: 400 });

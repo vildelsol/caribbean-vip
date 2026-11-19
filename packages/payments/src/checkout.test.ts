@@ -43,6 +43,7 @@ function build(over: { slot?: Parameters<typeof slotFixture>[0] } = {}) {
   const deps: PaymentCoreDeps = {
     store,
     payments,
+    payoutModel: 'platform_collects',
     clock,
     ids: new SequentialIds(),
     voucherSecret: 'test-secret-at-least-32-characters-long!!',

@@ -164,13 +164,16 @@ key on destinations, vendor organizations, experiences and promotions, and local
 theme + content switch driven by `profiles.selected_island_id`. There is no per-island build, no
 per-island database, and no per-island app-store listing.
 
-### AD-09 — Stripe Connect-ready without Connect
+### AD-09 — Payment partner behind a port; the vendor is the merchant of record
 
-Payments go through a `PaymentProvider` interface whose booking-facing methods (`createCheckout`,
-`handleWebhookEvent`, `refund`) never mention the destination account. Adding Connect later means
-adding a `transfer_data`/`on_behalf_of` field inside the Stripe adapter and a
-`vendor_organizations.stripe_account_id` column — no change to booking logic. Whether Connect is used
-at launch is OD-02.
+*Updated 2026-11-14.* Payments go through a provider-neutral `PaymentProvider` (`createCheckoutSession`,
+`parseWebhook`, `refund`) and a `PayoutAccountPort`, in `packages/payments`. The core never sees a
+partner's event names: each adapter translates its webhooks to a `PaymentEvent` (`stripeEvents.ts` is
+Stripe's). A checkout carries an optional `payee` (the vendor's account at that partner) and the
+platform's fee; with `PAYOUT_MODEL=vendor_is_merchant` a vendor with no ready account cannot be booked.
+Vendor accounts live in `vendor_payout_accounts`, written only by the service role. A different partner
+is one adapter file and one row of config: `docs/payment-partners.md`. Whether the vendor is the
+merchant of record is OD-01, leaning yes and pending counsel.
 
 ### AD-10 — Guest browsing via RLS on anonymous role, not a separate public API
 

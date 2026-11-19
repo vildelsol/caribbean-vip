@@ -32,6 +32,8 @@ Stop the loss first; investigate after. Pick what fits.
 | Supabase service-role key | Rotate in the dashboard; redeploy every function (`scripts/deploy-functions.sh <ref>`); update `SUPABASE_SERVICE_ROLE_KEY` wherever it is stored | All functions fail until redeployed |
 | `STRIPE_SECRET_KEY` | Roll the key in Stripe; set the new secret in Supabase | Checkout and refunds stop until set |
 | `STRIPE_WEBHOOK_SECRET` | Roll the endpoint secret in Stripe; set the new secret | Webhooks fail until set; Stripe retries |
+| `STRIPE_CONNECT_WEBHOOK_SECRET` | Roll the Connect endpoint's secret in Stripe; set the new secret | Events for vendors' connected accounts fail until set; Stripe retries |
+| `PAYOUT_MODEL` | Not a secret; check the intruder did not change it. Setting `platform_collects` in production would route guest money to the platform's account | Checkout refuses to run if it is unset or invalid |
 | `VOUCHER_HMAC_SECRET` | Rotate only after counsel and Ro agree | **Every issued voucher stops validating**; reissue is needed |
 | `APP_URL` or `SUPABASE_URL` | Not secrets; check they were not changed by the intruder | |
 | A guest's or staff session | Sign the user out everywhere in Supabase Auth | They must sign in again |

@@ -47,7 +47,10 @@ Tick each box only after you have seen the result, not after you have run the co
 
 - [ ] Set secrets in Supabase → Edge Functions → Secrets **[Ro]**: `STRIPE_SECRET_KEY` (live),
       `STRIPE_WEBHOOK_SECRET` (live endpoint), `VOUCHER_HMAC_SECRET` (new, random, 32 bytes or more),
-      `APP_URL` (production tourist URL, `https` only).
+      `APP_URL` (production tourist URL, `https` only), `PAYOUT_MODEL` set to `vendor_is_merchant`
+      (never defaulted: a function with it unset or invalid refuses to run; staging and the demo use
+      `platform_collects`), and `STRIPE_CONNECT_WEBHOOK_SECRET` (the Connect endpoint's own secret,
+      once vendors are paid through connected accounts). See `docs/payment-partners.md`.
 - [ ] `./scripts/deploy-functions.sh <production-ref>`. It sets `--import-map` and, for `stripe-webhook`
       only, `--no-verify-jwt`. Confirm all 10 functions show as deployed.
 - [ ] Stripe → Developers → Webhooks: add the production `stripe-webhook` URL, event
